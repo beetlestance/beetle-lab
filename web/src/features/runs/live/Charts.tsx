@@ -97,6 +97,7 @@ export function WholeRun({
         title="Live windows received since this page opened"
         tall
         xs={xs}
+        breaks={history.points.map((point) => point.gapBefore)}
         domain={domain}
         series={[wholeSeries(view, history, slowest)]}
         format={p95 ? ms : whole}
@@ -113,7 +114,7 @@ export function MetricsGrid({ history, domain }: { history: LiveHistory; domain:
   const xs = history.points.map((p) => p.t);
   const pick = (key: 'rps' | 'p50' | 'p95' | 'p99' | 'failedPerSecond' | 'vus' | 'vusMax') =>
     history.points.map((p) => p[key]);
-  const shared = { xs, domain, hoverT, onHover: setHoverT };
+  const shared = { xs, breaks: history.points.map((point) => point.gapBefore), domain, hoverT, onHover: setHoverT };
   return (
     <section className="live-grid-section" aria-labelledby="live-metrics-grid">
       <header className="live-section-head">

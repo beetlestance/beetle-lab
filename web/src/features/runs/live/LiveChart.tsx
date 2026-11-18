@@ -88,6 +88,9 @@ function SeriesPaths({ props, scale }: { props: ChartProps; scale: Scale }) {
       <g key={`${s.key}-${j}`} className={`live-series tone-${s.tone}${s.dashed ? ' dashed' : ''}`}>
         {s.area && <path className="live-area" d={`${d.line} L${d.lastX},${scale.H} L${d.firstX},${scale.H} Z`} />}
         <path className="live-line" d={d.line} vectorEffect="non-scaling-stroke" />
+        {d.firstX === d.lastX && (
+          <circle className="live-single-point" cx={d.firstX} cy={d.lastY} r={2.5} fill="var(--key)" />
+        )}
       </g>
     )),
   );
@@ -198,6 +201,7 @@ interface Segment {
   line: string;
   firstX: number;
   lastX: number;
+  lastY: number;
 }
 function linePath(
   xs: readonly number[],
@@ -219,7 +223,8 @@ function linePath(
     if (current) {
       current.line += ` L${px},${py}`;
       current.lastX = px;
-    } else current = { line: `M${px},${py}`, firstX: px, lastX: px };
+      current.lastY = py;
+    } else current = { line: `M${px},${py}`, firstX: px, lastX: px, lastY: py };
   });
   if (current) segments.push(current);
   return segments;

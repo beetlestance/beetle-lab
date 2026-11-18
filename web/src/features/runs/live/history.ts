@@ -13,6 +13,8 @@ export interface LivePoint {
   /** Window end, in ms since the run origin. */
   readonly t: number;
   readonly sequence: number;
+  /** Missing source time before this received window; never connect across it. */
+  readonly gapBefore: boolean;
   readonly rps: number | null;
   readonly p50: number | null;
   readonly p95: number | null;
@@ -51,10 +53,11 @@ export function emptyHistory(startedAt: string | null | undefined): LiveHistory 
 
 const cap = <T>(items: T[]) => (items.length > HISTORY_LIMIT ? items.slice(items.length - HISTORY_LIMIT) : items);
 
-function livePoint(frame: LiveMetricSnapshot, figures: LiveFigures, originMs: number): LivePoint {
+function livePoint(frame: LiveMetricSnapshot, figures: LiveFigures, originMs: number, gapBefore: boolean): LivePoint {
   return {
     t: frame.endTimeMs - originMs,
     sequence: frame.publishedSequence,
+    gapBefore,
     rps: figures.rps,
     p50: figures.p50?.value ?? null,
     p95: figures.p95?.value ?? null,
@@ -87,7 +90,10 @@ export function appendFrame(history: LiveHistory, frame: LiveMetricSnapshot, fig
   if (last && frame.publishedSequence <= last.sequence) return history;
   const originMs = Number.isFinite(history.originMs) ? history.originMs : frame.startTimeMs;
   return {
-    points: cap([...history.points, livePoint(frame, figures, originMs)]),
+    points: cap([
+      ...history.points,
+      livePoint(frame, figures, originMs, !!last && frame.startTimeMs > last.t + originMs),
+    ]),
     target: cap([...history.target, ...freshTarget(history, frame, originMs)]),
     originMs,
     fromStart: history.fromStart,

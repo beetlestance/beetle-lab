@@ -20,7 +20,8 @@ source timestamps remain visible rather than becoming NaN or fabricated zero.
 `Feed.tsx` validates Run before access and binds route UUIDs without letter case.
 `stream.ts` (`useLiveStream`) owns feed status, pause, retry and the latest frame;
 `history.ts` keeps at most 900 frames this browser received. Chart captions always
-state this coverage; a known run origin is not evidence of earlier windows. Target runtime charts use
+state this coverage; a known origin is not evidence of earlier windows. Missing
+source time breaks metric lines; singleton readings remain visible. Target charts use
 `LiveMetricSnapshot.target` values as reported (units are not documented).
 Direct entries resolve organisation/workspace names once through shared scoped
 query keys. Metadata errors hide stale names and offer retry while metrics continue.

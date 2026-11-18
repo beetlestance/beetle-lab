@@ -117,3 +117,13 @@ it('formats clocks, latencies and percentages', () => {
   expect(percent(0.0004)).toBe('0.04%');
   expect(percent(0.01)).toBe('1%');
 });
+
+it('marks missing source windows rather than connecting coalesced or paused intervals',()=>{
+ const plan=readPlan(config);const current=liveRun();let history=emptyHistory(startedAt);
+ const base=liveFrame(current).frame;
+ for(const [sequence,start] of [[1,1000],[2,2000],[3,5000]] as const){
+  const next={...base,publishedSequence:sequence,startTimeMs:start,endTimeMs:start+1000};
+  history=appendFrame(history,next,liveFigures(next,plan));
+ }
+ expect(history.points.map(point=>point.gapBefore)).toEqual([false,false,true]);
+});
