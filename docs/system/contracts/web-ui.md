@@ -73,6 +73,7 @@ cursor is backlog to drain at the normal cadence, not a tight loop.
 | Run timeline             | 100 rows and 64 KiB of projected rows, oldest evicted with a visible notice; bootstrap uses at most 2 requests (limit 1, then a seek to `durableThrough - 100`) |
 | Artifact inventory       | One current page of 100 descriptors; pages never appended across attempts or manifests                                                                          |
 | Result panel             | At most 128 declared artifacts, shown as declarations, never as download receipts                                                                               |
+| Live chart buffers | At most 900 received windows; run-relative coordinates do not imply historical backfill |
 | Script source            | verified text ≤ 1 MiB; at most 34 rendered rows and four index bytes per line; Copy/Export use complete source                                                  |
 | Script changes           | two verified artifacts; ≤ 4,096 combined lines and 4M LCS cells, checked before allocation; same-suite choices from one page of 100 revisions                   |
 | Command search           | First page of 100 per scope; query up to 128 characters; 40 results with the full match count                                                                   |

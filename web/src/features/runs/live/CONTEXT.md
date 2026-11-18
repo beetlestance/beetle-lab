@@ -13,12 +13,13 @@ running, cancelling, finalizing (timeline rows), ended. `plan.ts` reads stages,
 requests (rN = index in `config.requests`) and thresholds from the saved
 revision; `model.ts` derives window figures from one live frame. There is no
 pooled latency series, so percentiles show the slowest endpoint and are never
-averaged; rules read "unknown" when the pooled value cannot be bounded.
+averaged; rules read "unknown" when the pooled value cannot be bounded. Configured
+limits use known metric/stat dimensions; unknown dimensions are labelled explicitly.
 Elapsed time stays unavailable for missing, browser-unparseable or future starts;
 source timestamps remain visible rather than becoming NaN or fabricated zero.
 `stream.ts` (`useLiveStream`) owns feed status, pause, retry and the latest frame;
-`history.ts` keeps at most 900 frames this browser received (charts say "since
-this page opened" without a start time). Target runtime charts use
+`history.ts` keeps at most 900 frames this browser received. Chart captions always
+state this coverage; a known run origin is not evidence of earlier windows. Target runtime charts use
 `LiveMetricSnapshot.target` values as reported (units are not documented).
 Direct entries resolve organisation/workspace names once through shared scoped
 query keys. Metadata errors hide stale names and offer retry while metrics continue.

@@ -61,7 +61,7 @@ it('derives window rates, pooled failure and slowest-endpoint percentiles withou
   expect(readRule({ ...plan.rules[0]!, value: 100 }, figures).state).toBe('unknown');
   expect(readRule({ ...plan.rules[0]!, value: 10 }, figures).state).toBe('over');
   expect(readRule(plan.rules[1]!, figures).state).toBe('holding');
-  expect(readRule(plan.rules[2]!, figures)).toMatchObject({ state: 'unknown', value: null });
+  expect(readRule(plan.rules[2]!, figures)).toMatchObject({ state: 'unknown', value: null, unit: 'ratio' });
 });
 
 it('leaves totals unknown when a planned endpoint is outside the live subset', () => {

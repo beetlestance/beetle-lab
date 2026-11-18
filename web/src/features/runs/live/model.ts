@@ -1,3 +1,5 @@
+import { ruleUnit } from './rule-units.js';
+import type { RuleUnit } from './rule-units.js';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
 import type { PlanRequest, PlanRule, RunPlan } from './plan.js';
 
@@ -182,7 +184,7 @@ export interface RuleReading {
   /** Display value for the latest window, or null when the live view cannot measure it. */
   readonly value: number | null;
   readonly bound: 'exact' | 'at-most';
-  readonly unit: 'ms' | 'ratio';
+  readonly unit: RuleUnit;
 }
 
 const passes = (value: number, rule: PlanRule) => {
@@ -227,7 +229,7 @@ export function readRule(rule: PlanRule, figures: LiveFigures): RuleReading {
   if (rule.metric === 'http_req_duration' && ['p50', 'p95', 'p99'].includes(rule.stat))
     return readPercentileRule(rule, figures);
   if (rule.metric === 'http_req_failed' && rule.stat === 'rate') return readFailedRule(rule, figures);
-  return unknown(rule, 'ms');
+  return unknown(rule, ruleUnit(rule));
 }
 
 export function ruleName(rule: PlanRule): string {

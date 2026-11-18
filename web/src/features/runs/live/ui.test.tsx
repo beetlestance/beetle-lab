@@ -46,6 +46,9 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(within(table).getAllByRole('row')[1]).toHaveTextContent('POST /checkout75%900');
   expect(screen.getByText(/3 more series are recorded but not in the live view/)).toBeVisible();
   expect(screen.getByText('Checked at the end')).toBeVisible();
+  expect(screen.getByText('over 99%')).toBeVisible();
+  expect(screen.getByText('Live windows received since this page opened')).toBeVisible();
+  expect(screen.queryByText('Since the run started')).toBeNull();
   expect(screen.getByRole('heading', { name: 'Target runtime' })).toBeVisible();
   expect(screen.getByRole('img', { name: /Heap and RSS: heap 399, RSS 570/ })).toBeVisible();
   // No report or metrics downloads while live.

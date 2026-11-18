@@ -94,7 +94,7 @@ export function WholeRun({
         />
       </header>
       <LiveChart
-        title={history.fromStart ? 'Since the run started' : 'Since this page opened'}
+        title="Live windows received since this page opened"
         tall
         xs={xs}
         domain={domain}

@@ -1,3 +1,4 @@
+import { ruleValue } from './rule-units.js';
 import { Status } from '../../../components/Badge.js';
 import { Table, Td, Th } from '../../../components/Table.js';
 import type { LiveFigures, RuleReading } from './model.js';
@@ -16,7 +17,7 @@ export function Thresholds({ readings }: { readings: readonly RuleReading[] }) {
       <h2 id="live-thresholds">Thresholds</h2>
       <ul>
         {readings.map((reading) => {
-          const fmt = reading.unit === 'ms' ? ms : percent;
+          const fmt = (value: number) => ruleValue(reading.unit, value);
           const fill =
             reading.value === null || reading.rule.value <= 0
               ? 0

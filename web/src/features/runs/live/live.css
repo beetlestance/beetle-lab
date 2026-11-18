@@ -58,6 +58,7 @@
 }
 .live-threshold-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--s-12);
   color: var(--mute);
@@ -314,4 +315,9 @@
     display: block;
     margin: var(--s-4) 0 0;
   }
+}
+
+.live-threshold-head .number {
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
