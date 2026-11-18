@@ -1,0 +1,17 @@
+---
+// Applies the stored skin before first paint, as the app does: `beetle.theme` is
+// 'scarab', anything else means Darkroom. The Starlight light theme never applies.
+// Inline on purpose (no flash); csp-inline-hashes.mjs adds its hash to the CSP.
+---
+
+<script is:inline>
+  (() => {
+    let skin = 'darkroom';
+    try {
+      if (localStorage.getItem('beetle.theme') === 'scarab') skin = 'scarab';
+    } catch {
+      /* Storage can be unavailable; Darkroom stays. */
+    }
+    document.documentElement.dataset.theme = skin;
+  })();
+</script>

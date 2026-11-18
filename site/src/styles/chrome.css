@@ -1,0 +1,155 @@
+/* Previous/next cards and the responsive layout of the docs chrome (header.css,
+   navigation.css): three columns from 80rem, page bar below, Menu below 50rem. */
+
+/* Previous and next. */
+.bl-pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.bl-pager a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 15px 19px;
+  border: 1px solid var(--line);
+  border-radius: var(--bl-radius);
+  text-decoration: none;
+}
+.bl-pager a:hover {
+  border-color: var(--faint);
+  background: var(--tab-hover);
+}
+.bl-pager [rel='next'] {
+  grid-column: 2;
+  align-items: flex-end;
+  text-align: end;
+}
+.bl-pager .label {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.bl-pager .title {
+  display: flex;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* Wide: three columns, the rail sticky beside the article. */
+@media (min-width: 80rem) {
+  .bl-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) 216px;
+    justify-content: space-between;
+    gap: 56px;
+  }
+  .bl-rail {
+    position: sticky;
+    top: var(--sl-nav-height);
+    align-self: start;
+    max-height: calc(100vh - var(--sl-nav-height));
+    overflow-y: auto;
+    padding-top: 40px;
+    scrollbar-width: none;
+  }
+  .bl-pagebar {
+    display: none;
+  }
+}
+@media (max-width: 79.99rem) {
+  .bl-toc {
+    display: none;
+  }
+  [data-has-toc] .bl-frame,
+  [data-has-sidebar] .bl-frame {
+    padding-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
+  }
+  [data-has-sidebar] .bl-page .sidebar-pane {
+    top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height));
+  }
+}
+
+/* From 50rem: the sidebar sits in the grid and sticks under the header. */
+@media (min-width: 50rem) {
+  [data-has-sidebar] .bl-frame {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    column-gap: 56px;
+  }
+  .bl-page .sidebar-pane {
+    display: block;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    position: sticky;
+    top: var(--sl-nav-height);
+    inset: auto;
+    width: auto;
+    max-height: calc(100vh - var(--sl-nav-height));
+    padding: 40px 0;
+    border: 0;
+    background: var(--bg);
+  }
+  .bl-section-menu {
+    display: none;
+  }
+}
+@media (min-width: 50rem) and (max-width: 63.99rem) {
+  [data-has-sidebar] .bl-frame {
+    grid-template-columns: 200px minmax(0, 1fr);
+    column-gap: 32px;
+  }
+  .bl-tabs {
+    display: none;
+  }
+}
+
+/* Phones: logo and Menu in the header, page bar below, sidebar as the Menu. */
+@media (max-width: 49.99rem) {
+  .bl-header-right,
+  .bl-tabs,
+  .bl-brand-name {
+    display: none;
+  }
+  /* The Menu: a popover under the header, over the page bar. */
+  [data-has-sidebar] .bl-page .sidebar-pane {
+    position: fixed;
+    z-index: var(--sl-z-index-menu);
+    inset: var(--sl-nav-height) 0 0;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 20px var(--gutter) 40px;
+    border: 0;
+    background: var(--bg);
+    color: inherit;
+    overflow-y: auto;
+  }
+  .bl-page .content-panel:first-child {
+    padding-top: 28px;
+  }
+  .bl-crumb {
+    display: none;
+  }
+  .content-panel h1#_top {
+    margin-top: 0;
+    font-size: 32px;
+    letter-spacing: -0.8px;
+  }
+  .bl-page .content-panel .sl-container > .bl-lede {
+    margin-top: 18px;
+    font-size: 18px;
+  }
+  .bl-pager {
+    grid-template-columns: 1fr;
+  }
+  .bl-pager [rel='next'] {
+    grid-column: 1;
+  }
+  .bl-page main {
+    padding-bottom: 64px;
+  }
+}

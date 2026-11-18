@@ -1,223 +1,325 @@
-/* Beetle Lab docs theme, from the Penpot "Docs" page and the Darkroom skin
-   tokens (primitives / theme/darkroom). The light theme is derived from the
-   same hues; the design system itself defines dark skins only. */
+/* Beetle Lab docs: Starlight's colour and type variables mapped onto the skin
+   tokens (skins.css), and the article styles of the Penpot "Docs" boards. */
 
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/jetbrains-mono';
 
-:root {
-  --sl-font: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --sl-font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
-  --sl-content-width: 45rem;
-  --sl-sidebar-width: 18.5rem;
-  --sl-nav-height: 4.375rem;
+:root,
+:root[data-theme] {
+  --sl-font: var(--font-sans);
+  --sl-font-mono: var(--font-mono);
+  --sl-text-body: 16px;
+  --sl-line-height: 1.5;
+  --sl-content-width: 720px;
+  --sl-sidebar-width: 232px;
+  --sl-nav-height: 70px;
+  --sl-mobile-toc-height: 53px;
+  --sl-content-pad-x: 0px;
+  --sl-color-accent-low: var(--warn-bg);
+  --sl-color-accent: var(--amber);
+  --sl-color-accent-high: var(--amber-hover);
+  --sl-color-white: var(--ink);
+  --sl-color-gray-1: var(--ink);
+  --sl-color-gray-2: var(--mute);
+  --sl-color-gray-3: var(--mute);
+  --sl-color-gray-4: var(--faint);
+  --sl-color-gray-5: var(--line);
+  --sl-color-gray-6: var(--panel);
+  --sl-color-gray-7: var(--zebra);
+  --sl-color-black: var(--bg);
+  --sl-color-bg: var(--bg);
+  --sl-color-bg-nav: var(--bg);
+  --sl-color-bg-sidebar: var(--bg);
+  --sl-color-bg-inline-code: transparent;
+  --sl-color-hairline: var(--line);
+  --sl-color-hairline-light: var(--line);
+  --sl-color-hairline-shade: var(--line);
+  --sl-color-text: var(--ink);
+  --sl-color-text-accent: var(--amber);
+  --sl-color-text-invert: var(--on-amber);
+  --sl-color-backdrop-overlay: rgb(0 0 0 / 55%);
   --bl-radius: 10px;
   --bl-radius-sm: 7px;
 }
-
-/* Darkroom: palette.darkroom.* */
-:root,
-::backdrop {
-  --sl-color-accent-low: #3a2c17;
-  --sl-color-accent: #f2a541;
-  --sl-color-accent-high: #f7c98a;
-  --sl-color-white: #ece4d6;
-  --sl-color-gray-1: #e2d9ca;
-  --sl-color-gray-2: #a99f90;
-  --sl-color-gray-3: #8a8072;
-  --sl-color-gray-4: #5c544a;
-  --sl-color-gray-5: #3b342d;
-  --sl-color-gray-6: #211e1a;
-  --sl-color-black: #161412;
-  --sl-color-bg-nav: #161412;
-  --sl-color-bg-sidebar: #161412;
-  --sl-color-hairline: #2b2722;
-  --sl-color-hairline-light: #2b2722;
-  --sl-color-hairline-shade: #161412;
-  --sl-color-text-accent: #f2a541;
-  --sl-color-bg-inline-code: #2b2722;
-  --sl-color-text: #e2d9ca;
-  --bl-surface: #211e1a;
-  --bl-zebra: #1c1916;
-  --bl-raised: #2b2722;
-  --bl-track: #2f2a25;
-  --bl-code: #e9c68f;
-  --bl-pass: #9fcf8a;
-  --bl-fail: #ff7f6b;
-  --bl-info: #8db4e8;
-  --bl-accent-ink: #1d1408;
+@media (max-width: 49.99rem) {
+  :root,
+  :root[data-theme] {
+    --sl-nav-height: 56px;
+  }
 }
 
-:root[data-theme='light'],
-[data-theme='light'] ::backdrop {
-  --sl-color-accent-low: #f6e3c6;
-  --sl-color-accent: #a86c22;
-  --sl-color-accent-high: #6e4410;
-  --sl-color-white: #211e1a;
-  --sl-color-gray-1: #2b2722;
-  --sl-color-gray-2: #5f574c;
-  --sl-color-gray-3: #7c7366;
-  --sl-color-gray-4: #a99f90;
-  --sl-color-gray-5: #d8cfc0;
-  --sl-color-gray-6: #ede6da;
-  --sl-color-gray-7: #f4efe6;
-  --sl-color-black: #f9f6f0;
-  --sl-color-bg-nav: #f9f6f0;
-  --sl-color-bg-sidebar: #f9f6f0;
-  --sl-color-hairline: #e3dbcd;
-  --sl-color-hairline-light: #e3dbcd;
-  --sl-color-hairline-shade: #f9f6f0;
-  --sl-color-text-accent: #8a5718;
-  --sl-color-bg-inline-code: #ede6da;
-  --sl-color-text: #2b2722;
-  --bl-surface: #f1ebe0;
-  --bl-zebra: #f5f0e8;
-  --bl-raised: #e6ddce;
-  --bl-track: #e3dbcd;
-  --bl-code: #8a5718;
-  --bl-pass: #3f7d2c;
-  --bl-fail: #b3402f;
-  --bl-info: #2f5f9a;
-  --bl-accent-ink: #fff8ee;
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+::selection {
+  background: var(--selection);
+}
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
 }
 
-body { font-feature-settings: 'ss01'; }
-
-/* Header: no rule under it, as in the app. */
-.header { border-bottom: 0; }
-.site-title { font-size: 1rem; font-weight: 500; color: var(--sl-color-white); gap: .625rem; }
-.site-title img { height: 1.375rem; width: auto; }
-.site-title::after {
-  content: 'Docs';
-  font-size: .8125rem;
-  font-weight: 400;
-  color: var(--sl-color-gray-2);
-  background: var(--bl-raised);
-  border-radius: 6px;
-  padding: .125rem .5rem;
+/* Title block: breadcrumb, title, lede. */
+.bl-crumb {
+  display: flex;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
 }
-
-/* Sidebar: muted group labels, a quiet active row with an accent dot. */
-#starlight__sidebar .group-label .large,
-#starlight__sidebar summary .large {
-  font-size: .8125rem;
+.bl-crumb a {
+  color: inherit;
+  text-decoration: none;
+}
+.bl-crumb a:hover {
+  color: var(--ink);
+}
+.content-panel h1#_top {
+  margin-top: 20px;
+  font-size: 38px;
   font-weight: 500;
-  color: var(--sl-color-gray-2);
+  line-height: 1.1;
+  letter-spacing: -0.95px;
+  color: var(--ink);
 }
-#starlight__sidebar a {
-  color: var(--sl-color-gray-2);
-  font-size: .9375rem;
-  border-radius: var(--bl-radius-sm);
-  padding-block: .375rem;
+.bl-page .content-panel .sl-container > .bl-lede {
+  margin-top: 20px;
 }
-#starlight__sidebar a:hover { color: var(--sl-color-white); }
-#starlight__sidebar a[aria-current='page'],
-#starlight__sidebar a[aria-current='page']:hover,
-#starlight__sidebar a[aria-current='page']:focus {
-  color: var(--sl-color-white);
-  background: var(--bl-surface);
-  font-weight: 400;
-}
-#starlight__sidebar a[aria-current='page']::before {
-  content: '';
-  display: inline-block;
-  inline-size: 6px;
-  block-size: 6px;
-  border-radius: 50%;
-  background: var(--sl-color-accent);
-  margin-inline-end: .5rem;
-  vertical-align: middle;
+.bl-lede {
+  margin-bottom: 0;
+  font-size: 20px;
+  line-height: 1.45;
+  color: var(--mute);
 }
 
-/* Page title and lede. */
-.content-panel h1#_top { font-size: 2.375rem; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
-.sl-markdown-content h2 { font-size: 1.5rem; font-weight: 500; letter-spacing: -0.008em; }
-.sl-markdown-content h3 { font-size: 1.1875rem; font-weight: 500; }
-.content-panel { border-top: 0; }
-
-/* Inline code is coloured, not boxed. */
+/* Article text. Starlight wraps headings for the anchor link and sets the heading
+   inline, so the wrapper carries the heading's size and line height. */
+.sl-markdown-content .sl-heading-wrapper.level-h2 {
+  font-size: 24px;
+  line-height: 1.3;
+}
+.sl-markdown-content .sl-heading-wrapper.level-h3 {
+  font-size: 19px;
+  line-height: 1.35;
+}
+.sl-markdown-content .sl-heading-wrapper > .sl-anchor-link {
+  margin-top: 0;
+}
+.sl-markdown-content {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.sl-markdown-content :is(h2, h3, h4):not(:where(.not-content *)) {
+  color: var(--ink);
+  font-weight: 500;
+}
+.sl-markdown-content h2:not(:where(.not-content *)) {
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+.sl-markdown-content h3:not(:where(.not-content *)) {
+  font-size: 19px;
+  line-height: 1.35;
+}
+.sl-markdown-content
+  :is(h1, h2, h3, h4, h5, h6):not(:where(.not-content *)):not(:first-child),
+.sl-markdown-content .sl-heading-wrapper:not(:first-child) {
+  margin-top: 36px;
+}
+.sl-markdown-content :is(h2, h3, h4) + *,
+.sl-markdown-content .sl-heading-wrapper + * {
+  margin-top: 20px;
+}
+.sl-markdown-content > * + *,
+.sl-markdown-content :is(.expressive-code, .starlight-aside, table) {
+  margin-top: 20px;
+}
+.sl-markdown-content a:not(:where(.not-content *)) {
+  color: var(--amber);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.sl-markdown-content strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.sl-markdown-content :is(ul, ol):not(:where(.not-content *)) li + li {
+  margin-top: 6px;
+}
 .sl-markdown-content :not(pre) > code {
   background: transparent;
-  color: var(--bl-code);
+  color: var(--doc-code);
   padding: 0;
-  font-size: .875em;
+  font-size: 0.875em;
+  white-space: nowrap;
 }
 
-/* Asides: surface card with a coloured mark. */
+/* Asides: a titled card with a coloured mark (amber for caution, blue for note). */
 .starlight-aside {
-  background: var(--bl-surface);
-  border: 1px solid var(--bl-raised);
-  border-radius: var(--bl-radius);
-  padding: 1rem 1.25rem 1rem 1.5rem;
   position: relative;
+  padding: 16px 20px 16px 37px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--bl-radius);
+  font-size: 15px;
+  line-height: 1.5;
 }
 .starlight-aside::before {
   content: '';
   position: absolute;
-  inset-block: 1rem;
-  inset-inline-start: 1.25rem;
+  inset-block: 16px;
+  inset-inline-start: 20px;
   inline-size: 3px;
   border-radius: 2px;
   background: var(--sl-color-asides-border);
 }
-.starlight-aside > * { padding-inline-start: 1rem; }
-.starlight-aside__title { font-size: .9375rem; font-weight: 600; }
-.starlight-aside__icon { display: none; }
-.starlight-aside--note { --sl-color-asides-border: var(--bl-info); --sl-color-asides-text-accent: var(--bl-info); background: var(--bl-surface); }
-.starlight-aside--tip { --sl-color-asides-border: var(--bl-pass); --sl-color-asides-text-accent: var(--bl-pass); background: var(--bl-surface); }
-.starlight-aside--caution { --sl-color-asides-border: var(--sl-color-accent); --sl-color-asides-text-accent: var(--sl-color-accent); background: var(--bl-surface); }
-.starlight-aside--danger { --sl-color-asides-border: var(--bl-fail); --sl-color-asides-text-accent: var(--bl-fail); background: var(--bl-surface); }
+.starlight-aside__title {
+  gap: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.starlight-aside__icon {
+  display: none;
+}
+.starlight-aside__content {
+  margin-top: 4px;
+  color: var(--ink);
+}
+.starlight-aside--note {
+  --sl-color-asides-border: var(--info);
+  --sl-color-asides-text-accent: var(--info);
+}
+.starlight-aside--tip {
+  --sl-color-asides-border: var(--green);
+  --sl-color-asides-text-accent: var(--green);
+}
+.starlight-aside--caution {
+  --sl-color-asides-border: var(--amber);
+  --sl-color-asides-text-accent: var(--amber);
+}
+.starlight-aside--danger {
+  --sl-color-asides-border: var(--red);
+  --sl-color-asides-text-accent: var(--red);
+}
+.starlight-aside:is(.starlight-aside--note, .starlight-aside--tip, .starlight-aside--caution, .starlight-aside--danger) {
+  background: var(--panel);
+}
 
-/* Tables: rows are rounded surface strips, as in the app's run tables. */
+/* Tables: a header row, then separate rounded row cards alternating panel and zebra. */
 .sl-markdown-content table:not(:where(.not-content *)) {
   display: table;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0 4px;
-  font-size: .9375rem;
+  margin-block: 16px 0;
+  font-size: 15px;
+  line-height: 1.5;
 }
 .sl-markdown-content th:not(:where(.not-content *)) {
   border: 0;
   background: transparent;
-  color: var(--sl-color-gray-2);
-  font-size: .8125rem;
+  color: var(--mute);
+  font-size: 13px;
   font-weight: 500;
-  padding: 0 .875rem .25rem;
+  text-align: start;
+  padding: 0 14px 2px;
 }
 .sl-markdown-content td:not(:where(.not-content *)) {
   border: 0;
-  background: var(--bl-surface);
-  padding: .6875rem .875rem;
+  background: var(--panel);
+  padding: 11px 14px;
   vertical-align: top;
 }
-.sl-markdown-content tr:nth-child(even) td:not(:where(.not-content *)) { background: var(--bl-zebra); }
-.sl-markdown-content td:first-child { border-start-start-radius: var(--bl-radius-sm); border-end-start-radius: var(--bl-radius-sm); }
-.sl-markdown-content td:last-child { border-start-end-radius: var(--bl-radius-sm); border-end-end-radius: var(--bl-radius-sm); }
-
-/* Table of contents: a thin rail with the current entry in accent. */
-starlight-toc h2, mobile-starlight-toc h2 { font-size: .8125rem; font-weight: 500; color: var(--sl-color-gray-2); }
-starlight-toc a { border-inline-start: 2px solid var(--sl-color-hairline); padding-inline-start: .625rem; color: var(--sl-color-gray-2); }
-starlight-toc a[aria-current='true'] { border-color: var(--sl-color-accent); color: var(--sl-color-white); }
-
-/* Previous and next. */
-.pagination-links a {
-  border: 1px solid var(--bl-raised);
-  border-radius: var(--bl-radius);
-  box-shadow: none;
+.sl-markdown-content tbody tr:nth-child(even) td:not(:where(.not-content *)) {
+  background: var(--zebra);
 }
-.pagination-links a:hover { border-color: var(--sl-color-gray-4); }
-.pagination-links .link-title { font-size: 1.0625rem; font-weight: 500; color: var(--sl-color-white); }
+.sl-markdown-content td:first-child {
+  border-start-start-radius: var(--bl-radius-sm);
+  border-end-start-radius: var(--bl-radius-sm);
+}
+.sl-markdown-content td:last-child {
+  border-start-end-radius: var(--bl-radius-sm);
+  border-end-end-radius: var(--bl-radius-sm);
+}
+.sl-markdown-content td > code:only-child {
+  font-size: 13px;
+}
+@media (max-width: 49.99rem) {
+  .sl-markdown-content table:not(:where(.not-content *)) {
+    display: block;
+    overflow-x: auto;
+  }
+  .sl-markdown-content td:not(:where(.not-content *)) {
+    min-width: 4.5rem;
+  }
+}
 
-/* Buttons on the home page. */
-.sl-link-button.primary { background: var(--sl-color-accent); color: var(--bl-accent-ink); border-color: var(--sl-color-accent); border-radius: var(--bl-radius-sm); font-weight: 500; }
-.sl-link-button.minimal, .sl-link-button.secondary { border: 1px solid var(--bl-raised); border-radius: var(--bl-radius-sm); color: var(--sl-color-white); }
-
-/* Search button matches the app's search control. */
-site-search button[data-open-modal] { background: var(--bl-surface); border: 0; border-radius: var(--bl-radius-sm); }
-
-/* Inline code never breaks at its hyphens; on narrow screens wide tables scroll instead. */
-.sl-markdown-content :not(pre) > code { white-space: nowrap; }
-@media (max-width: 50rem) {
-  .sl-markdown-content table:not(:where(.not-content *)) { display: block; overflow-x: auto; }
-  .sl-markdown-content td:not(:where(.not-content *)) { min-width: 7.5rem; }
+/* Code blocks: language and Copy in a bar above the code. */
+.expressive-code .frame {
+  border-radius: var(--bl-radius);
+  overflow: hidden;
+  background: var(--panel);
+}
+.expressive-code .frame .header {
+  display: flex !important;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  background: var(--zebra);
+  border: 0;
+}
+.expressive-code .frame .header::before,
+.expressive-code .frame .header::after {
+  display: none;
+}
+.expressive-code .bl-lang {
+  font: 12px/1.5 var(--font-mono);
+  color: var(--faint);
+}
+.expressive-code pre {
+  border: 0;
+}
+.expressive-code .copy {
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+.expressive-code .frame .copy button {
+  opacity: 1;
+  width: auto;
+  height: 28px;
+  margin: 6px 8px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mute);
+  font: 13px/1.5 var(--font-sans);
+}
+/* Expressive Code draws its icon in ::after through a mask; show the word instead. */
+.expressive-code .frame .copy button::after {
+  content: 'Copy';
+  position: static;
+  margin: 0;
+  background: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+  line-height: inherit;
+}
+.expressive-code .frame .copy button::before,
+.expressive-code .frame .copy button div {
+  display: none;
+}
+.expressive-code .frame .copy button:is(:hover, :focus-visible) {
+  color: var(--ink);
+  background: var(--line);
+}
+.expressive-code .copy .feedback {
+  font-family: var(--font-sans);
 }

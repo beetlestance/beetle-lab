@@ -1,0 +1,37 @@
+---
+// Header from the Penpot "Docs" boards: brand, section tabs, Search, "Open the app"
+// and the skin switch. On phones only the brand shows; the rest is in the Menu.
+import Search from 'virtual:starlight/components/Search';
+import SiteTitle from 'virtual:starlight/components/SiteTitle';
+import SkinSwitch from './SkinSwitch.astro';
+import { sections } from './sections';
+
+const tabs = sections(Astro.locals.starlightRoute.sidebar);
+const appUrl = import.meta.env.DOCS_APP_URL;
+---
+
+<div class="bl-header">
+  <div class="bl-header-left">
+    <SiteTitle />
+    <nav class="bl-tabs" aria-label="Sections">
+      {
+        tabs.map((tab) => (
+          <a href={tab.href} aria-current={tab.current ? 'true' : undefined}>
+            {tab.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+  <div class="bl-header-right">
+    <Search />
+    {
+      appUrl && (
+        <a class="bl-open-app" href={appUrl}>
+          Open the app<span aria-hidden="true">→</span>
+        </a>
+      )
+    }
+    <SkinSwitch name="skin-header" />
+  </div>
+</div>

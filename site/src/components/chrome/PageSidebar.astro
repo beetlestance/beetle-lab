@@ -1,0 +1,54 @@
+---
+// Wide screens: the "On this page" rail. Narrower: the page bar under the header,
+// with the section's pages ("Guides ▾") and "On this page ›".
+import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
+import TableOfContents from 'virtual:starlight/components/TableOfContents';
+import { sections } from './sections';
+
+const { toc, sidebar, hasSidebar } = Astro.locals.starlightRoute;
+const section = sections(sidebar).find((group) => group.current);
+---
+
+<div class="bl-pagebar">
+  {
+    hasSidebar && section && (
+      <details class="bl-section-menu">
+        <summary>
+          {section.label}
+          <span aria-hidden="true">▾</span>
+        </summary>
+        <ul>
+          {section.links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={link.isCurrent ? 'page' : undefined}>
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )
+  }
+  {toc && <MobileTableOfContents />}
+</div>
+{
+  toc && (
+    <div class="bl-toc">
+      <TableOfContents />
+    </div>
+  )
+}
+
+<script>
+  // Close the section menu on Escape or a click outside it, like the TOC dropdown.
+  document.querySelectorAll<HTMLDetailsElement>('.bl-section-menu').forEach((menu) => {
+    window.addEventListener('click', (event) => {
+      if (!menu.contains(event.target as Node)) menu.open = false;
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !menu.open) return;
+      menu.open = false;
+      menu.querySelector('summary')?.focus();
+    });
+  });
+</script>

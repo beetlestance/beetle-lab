@@ -1,0 +1,187 @@
+/* Docs header from the Penpot "Docs" boards: brand, section tabs, Search ⌘K,
+   "Open the app" and the Darkroom/Scarab switch. */
+
+/* Header. */
+.bl-page > .bl-header-bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--sl-z-index-navbar);
+  height: var(--sl-nav-height);
+  padding: 0 var(--gutter);
+  border: 0;
+  background: var(--bg);
+}
+.bl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1280px;
+  height: 100%;
+  margin-inline: auto;
+}
+.bl-header-left,
+.bl-header-right {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.bl-header-left {
+  gap: 28px;
+}
+.bl-header-right {
+  gap: 12px;
+}
+.bl-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bl-brand svg {
+  flex: none;
+}
+.bl-tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--line);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--mute);
+}
+.bl-tabs {
+  display: flex;
+  gap: 4px;
+}
+.bl-tabs a {
+  padding: 7px 10px;
+  border-radius: var(--bl-radius-sm);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--mute);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bl-tabs a:hover {
+  color: var(--ink);
+  background: var(--tab-hover);
+}
+.bl-tabs a[aria-current='true'] {
+  color: var(--ink);
+  background: var(--panel);
+}
+
+/* Search: "Search ⌘K" (Starlight's search, so ⌘K/Ctrl+K and the dialog are its own). */
+.bl-header site-search button[data-open-modal] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  max-width: none;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--bl-radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.bl-header site-search button[data-open-modal]:hover {
+  background: var(--line);
+}
+.bl-header site-search button[data-open-modal] > svg {
+  display: none;
+}
+.bl-header site-search button[data-open-modal] > span {
+  display: block;
+}
+.bl-header site-search button[data-open-modal] > kbd {
+  display: flex;
+  gap: 0;
+  height: 22px;
+  margin: 0;
+  padding: 0 6px;
+  align-items: center;
+  border-radius: 4px;
+  background: var(--line);
+  color: var(--mute);
+  font: 13px/1.5 var(--font-sans);
+}
+.bl-header site-search kbd kbd {
+  padding: 0;
+  font: inherit;
+  background: none;
+  border: 0;
+}
+.bl-header site-search button[data-open-modal]:disabled {
+  opacity: 1;
+}
+
+.bl-open-app {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 37px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--bl-radius-sm);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.bl-open-app span {
+  color: var(--amber);
+}
+.bl-open-app:hover {
+  background: var(--panel);
+}
+
+/* Skin switch: a segmented radio group. */
+.bl-skin {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: var(--bl-radius);
+  background: var(--panel);
+}
+.bl-skin label {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+.bl-skin input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.bl-skin span {
+  display: block;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mute);
+}
+.bl-skin label:hover span {
+  color: var(--ink);
+}
+.bl-skin input:checked + span {
+  background: var(--line);
+  color: var(--ink);
+}
+.bl-skin input:focus-visible + span {
+  outline: 2px solid var(--amber);
+  outline-offset: 0;
+}

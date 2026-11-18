@@ -1,0 +1,28 @@
+---
+// Flat sidebar from the Penpot "Docs" boards: a label per section and plain links;
+// the current page has a dot and a filled row. No collapsing groups.
+import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+import { sections } from './sections';
+
+const groups = sections(Astro.locals.starlightRoute.sidebar);
+---
+
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>
+{
+  groups.map((group) => (
+    <section class="bl-side-group" aria-label={group.label}>
+      <h2>{group.label}</h2>
+      <ul>
+        {group.links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={link.isCurrent ? 'page' : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))
+}

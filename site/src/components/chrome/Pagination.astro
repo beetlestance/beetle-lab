@@ -1,0 +1,29 @@
+---
+// Previous and next as two bordered cards, as in the Penpot "Docs" boards.
+const { prev, next } = Astro.locals.starlightRoute.pagination;
+---
+
+{
+  (prev || next) && (
+    <nav class="bl-pager print:hidden" aria-label="Previous and next page">
+      {prev && (
+        <a href={prev.href} rel="prev">
+          <span class="label">{Astro.locals.t('page.previousLink')}</span>
+          <span class="title">
+            <span aria-hidden="true">←</span>
+            {prev.label}
+          </span>
+        </a>
+      )}
+      {next && (
+        <a href={next.href} rel="next">
+          <span class="label">{Astro.locals.t('page.nextLink')}</span>
+          <span class="title">
+            {next.label}
+            <span aria-hidden="true">→</span>
+          </span>
+        </a>
+      )}
+    </nav>
+  )
+}

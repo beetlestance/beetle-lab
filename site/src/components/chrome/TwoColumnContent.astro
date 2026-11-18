@@ -1,0 +1,15 @@
+---
+// Article and "On this page" rail side by side; below 80rem the rail becomes the page bar.
+const { toc, hasSidebar } = Astro.locals.starlightRoute;
+---
+
+<div class="bl-columns">
+  <div class="main-pane"><slot /></div>
+  {
+    (toc || hasSidebar) && (
+      <aside class="bl-rail print:hidden">
+        <slot name="right-sidebar" />
+      </aside>
+    )
+  }
+</div>
