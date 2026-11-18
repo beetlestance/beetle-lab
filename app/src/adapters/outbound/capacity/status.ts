@@ -18,6 +18,15 @@ export function agentFacts(
     daemon: daemon ? { cpuMillis: daemon.cpuMillis, memoryBytes: daemon.memoryBytes } : null,
     stagingFreeBytes: frame.observation.freeStagingDiskBytes,
     backendDisk: { totalBytes: disk.total, availableBytes: disk.available },
+    engines: frame.engines
+      .filter((engine) => pins.includes(engine.imageDigest))
+      .map((engine) => ({
+        profileId: engine.installedIdentity.profileId,
+        id: engine.id,
+        version: engine.version,
+        imageDigest: engine.imageDigest,
+        configVersion: engine.configVersion,
+      })),
     imageDigests: frame.engines.map((engine) => engine.imageDigest).filter((digest) => pins.includes(digest)),
   };
 }

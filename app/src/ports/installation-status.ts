@@ -1,6 +1,13 @@
 import type { PoolUsage, RunQueueStatus, SlotUsage } from '@beetle/contracts/api';
 import type { RunKey } from './runs.js';
 
+export interface EngineVersionFact {
+  readonly profileId: string;
+  readonly id: string;
+  readonly version: string;
+  readonly imageDigest: string;
+  readonly configVersion: number;
+}
 /** Last agent facts from one validated capabilities frame plus the backend disk sample. */
 export interface AgentFacts {
   /** Oldest source time of the accepted sample (agent sample start or backend read start). */
@@ -11,6 +18,7 @@ export interface AgentFacts {
   readonly backendDisk: { readonly totalBytes: number; readonly availableBytes: number };
   /** Image digests the agent reported for the configured pins in that frame. */
   readonly imageDigests: readonly string[];
+  readonly engines?: readonly EngineVersionFact[];
 }
 /** One finished capacity sample. Unreachable means no HTTP reply; unavailable means refused or invalid facts. */
 export type AgentSampleOutcome =
@@ -23,7 +31,12 @@ export interface AgentStatusRecorder {
 export interface AgentStatusView {
   readonly last: AgentSampleOutcome | null;
   readonly lastFacts: AgentFacts | null;
-  readonly engines: readonly { readonly profileId: string; readonly imageDigest: string }[];
+  readonly engines: readonly {
+    readonly profileId: string;
+    readonly imageDigest: string;
+    readonly id?: string;
+    readonly configVersion?: number;
+  }[];
 }
 
 /** Backend dispatch accounting: charged runs/exports and the effective pool mirror. */

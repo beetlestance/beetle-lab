@@ -147,9 +147,9 @@ it('waits for capacity with slot holders and queue position from getRunQueue', a
   expect(screen.getByRole('link', { name: 'catalog-crawl 4444' })).toBeVisible();
   expect(screen.getByRole('link', { name: /suite 3333 1234/ })).toBeVisible();
   expect(screen.getByRole('heading', { name: 'steady-1.2k is waiting for capacity' })).toBeVisible();
-  expect(fixture.records.filter(request=>request.path.endsWith('/queue'))).toHaveLength(1);
-  await act(async()=>new Promise(resolve=>setTimeout(resolve,2200)));
-  expect(fixture.records.filter(request=>request.path.endsWith('/queue'))).toHaveLength(2);
+  expect(fixture.records.filter((request) => request.path.endsWith('/queue'))).toHaveLength(1);
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 2200)));
+  expect(fixture.records.filter((request) => request.path.endsWith('/queue'))).toHaveLength(2);
 });
 
 it('keeps the compare action disabled with an explanation, and lists script versions', async () => {
@@ -415,4 +415,22 @@ it('hides cached queue holders after a refresh fails and keeps explicit retry', 
   expect(await screen.findByText(/The queue could not be read/)).toBeVisible();
   expect(screen.queryByRole('link', { name: /cached-holder/ })).toBeNull();
   expect(screen.getByRole('button', { name: /^Retry$/ })).toBeEnabled();
+});
+
+it('shows only the matching installed engine version, with explicit metadata retry', async () => {
+  const current = liveRun({ state: 'dispatching', startedAt: null });
+  let fail = true;
+  const fixture = routesFor(
+    () => current,
+    (request) =>
+      fail && request.path.endsWith('/installation/status') ? new Response(null, { status: 503 }) : undefined,
+  );
+  mountLive(fixture.client, { run: current });
+  expect(await screen.findByRole('button', { name: 'Retry engine version' })).toBeVisible();
+  expect(screen.queryByText(/Starting k6 2\.4\.0/)).toBeNull();
+  fail = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Retry engine version' }));
+  expect(await screen.findByText('Starting k6 2.4.0 in its own container')).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Retry engine version' })).toBeNull();
+  expect(fixture.records.filter((request) => request.path.endsWith('/installation/status'))).toHaveLength(2);
 });

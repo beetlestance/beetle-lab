@@ -12,8 +12,8 @@ import { WholeRun, MetricsGrid, TargetRuntime, chartDomain } from './Charts.js';
 import { headlineOf, sentenceOf, statusOf, isEarlyPhase } from './copy.js';
 import type { Phase } from './copy.js';
 import { useSessionAccess } from '../../../app/session.js';
-import { useRevision, useSuite, useQueue } from './data.js';
-import type { QueueRead } from './data.js';
+import { useRevision, useSuite, usePhaseReads } from './data.js';
+import type { QueueRead, PhaseReads } from './data.js';
 import { RestoredBanner, ScriptPicker } from './Extras.js';
 import { LiveFeed } from './Feed.js';
 import { clock, shortId } from './format.js';
@@ -76,7 +76,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
     stream.historyEnabled,
     stream.acceptHistory,
   );
-  const queue = useQueue(run, stream.phase === 'waiting');
+  const phaseReads = usePhaseReads(run, stream.phase === 'starting', stream.phase === 'waiting');
   const [picker, setPicker] = useState(false);
   const at = positions(run, stream);
   return (
@@ -97,7 +97,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
         at={at}
         revision={revision.data}
         suite={suite.data}
-        queue={queue}
+        queue={phaseReads.queue}
         cancel={cancel}
         onScript={() => setPicker(true)}
       />
@@ -130,7 +130,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
       )}
       {isEarlyPhase(stream.phase) && <EarlyArt />}
       <StateBanners run={run} plan={plan} stream={stream} showResult={showResult} />
-      <PhaseBody phase={stream.phase} run={run} revision={revision.data} cancel={cancel} queue={queue} />
+      <PhaseBody phase={stream.phase} run={run} revision={revision.data} cancel={cancel} reads={phaseReads} />
       {isEarlyPhase(stream.phase) && <EarlyMetricsSkeleton />}
       <LiveBoard plan={plan} stream={stream} at={at} bootstrap={bootstrap} />
     </div>
@@ -231,10 +231,10 @@ function PhaseBody({
   run,
   revision,
   cancel,
-  queue,
+  reads,
 }: {
   phase: Phase;
-  queue: QueueRead;
+  reads: PhaseReads;
   run: Run;
   revision: SuiteRevision | undefined;
   cancel: Cancellation | undefined;
@@ -246,9 +246,9 @@ function PhaseBody({
     <div className="live-early-body">
       <EarlyMeter />
       {phase === 'waiting' ? (
-        <Waiting run={run} revision={revision} query={queue} />
+        <Waiting run={run} revision={revision} query={reads.queue} />
       ) : (
-        <Starting run={run} revision={revision} />
+        <Starting run={run} revision={revision} engineVersion={reads.engineVersion} />
       )}
       <div className="live-early-actions">
         <LiveCancelButton run={run} cancel={cancel} readOnly={session.readOnly} early />

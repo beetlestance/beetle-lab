@@ -1,3 +1,4 @@
+import { EngineStartLabel, EngineVersionNotice } from './EngineVersionNotice.js';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import type { Run, RunQueueStatus, SuiteRevision } from '@beetle/contracts/api';
@@ -5,7 +6,7 @@ import { routes } from '../../../app/routes.js';
 import { Button } from '../../../components/Button.js';
 import type { Row } from '../timeline/projection.js';
 import { useTimeline } from '../timeline/useTimeline.js';
-import type { QueueRead } from './data.js';
+import type { QueueRead, EngineVersionRead } from './data.js';
 import { shortId, wallTime } from './format.js';
 
 /** Queued: who holds the run slots and where this run stands (035 getRunQueue). */
@@ -119,7 +120,15 @@ function firstAt(rows: readonly Row[], kind: Row['kind']): string | null {
 }
 
 /** Dispatching or active before the first live window: the start-up steps reported so far. */
-export function Starting({ run, revision }: { run: Run; revision: SuiteRevision | undefined }) {
+export function Starting({
+  run,
+  revision,
+  engineVersion,
+}: {
+  run: Run;
+  revision: SuiteRevision | undefined;
+  engineVersion?: EngineVersionRead;
+}) {
   const timeline = useTimeline(run, false);
   const rows = timeline.data?.rows ?? [];
   const admitted = firstAt(rows, 'admitted');
@@ -136,7 +145,11 @@ export function Starting({ run, revision }: { run: Run; revision: SuiteRevision 
       at: compiled,
       done: compiled !== null,
     },
-    { label: `Starting ${run.engine.id} in its own container`, at: started, done: started !== null },
+    {
+      label: <EngineStartLabel id={run.engine.id} version={engineVersion?.value} />,
+      at: started,
+      done: started !== null,
+    },
     { label: 'First metrics arrive', at: null, done: false },
   ];
   return (
@@ -145,6 +158,7 @@ export function Starting({ run, revision }: { run: Run; revision: SuiteRevision 
         Starting
       </h2>
       <Steps steps={steps} showTimes={false} />
+      <EngineVersionNotice read={engineVersion} />
       {timeline.isError && <p className="live-note">Start-up events could not be read; the steps may lag.</p>}
     </section>
   );

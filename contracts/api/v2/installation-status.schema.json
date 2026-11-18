@@ -91,9 +91,20 @@
       "properties": {
         "profileId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/settings-values#/$defs/EngineProfile" },
         "imageDigest": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/imageDigest" },
-        "image": { "enum": ["verified_at_agent_start", "unknown"] }
+        "image": { "enum": ["verified_at_agent_start", "unknown"] },
+        "engine": { "$ref": "https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/EngineVersion" }
       },
       "required": ["profileId", "imageDigest", "image"],
+      "additionalProperties": false
+    },
+    "EngineVersion": {
+      "type": "object",
+      "properties": {
+        "id": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"},
+        "version": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[^\\u0000-\\u001f\\u007f\\u2028\\u2029]+(?![\\s\\S])"},
+        "configVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}
+      },
+      "required": ["id", "version", "configVersion"],
       "additionalProperties": false
     },
     "SlotUsage": {

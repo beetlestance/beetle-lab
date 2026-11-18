@@ -69,6 +69,7 @@ export async function getInstallationStatus(input: InstallationStatusInput): Pro
   const engines = (input.agent?.engines ?? []).map((pin) => ({
     profileId: pin.profileId,
     imageDigest: pin.imageDigest,
+    ...engineVersion(pin, facts),
     image: facts?.imageDigests.includes(pin.imageDigest) ? ('verified_at_agent_start' as const) : ('unknown' as const),
   }));
   return checked('InstallationStatus', {
@@ -99,4 +100,24 @@ export async function getRunQueue(
     workspaceId: key.scope.workspaceId.toLowerCase(),
   };
   return checked('RunQueueStatus', { scope, generatedAt: new Date(nowMs).toISOString(), ...facts });
+}
+
+/** Advisory metadata only; an image digest alone cannot select another installed profile. */
+function engineVersion(
+  pin: AgentStatusView['engines'][number],
+  facts: AgentFacts | null,
+): { engine?: NonNullable<InstallationStatus['engines'][number]['engine']> } {
+  if (!facts?.imageDigests.includes(pin.imageDigest)) return {};
+  const matching =
+    facts.engines?.filter(
+      (engine) =>
+        engine.profileId === pin.profileId &&
+        engine.id === pin.id &&
+        engine.configVersion === pin.configVersion &&
+        engine.imageDigest === pin.imageDigest,
+    ) ?? [];
+  if (matching.length !== 1) return {};
+  const { id, version, configVersion } = matching[0]!;
+  const checked = validateApi('EngineVersion', { id, version, configVersion });
+  return checked.ok ? { engine: checked.value } : {};
 }

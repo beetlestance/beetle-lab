@@ -80,6 +80,8 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
     configuration.profiles.map((profile) => ({
       profileId: profile.engine.profileId,
       imageDigest: profile.engine.imageDigest,
+      id: profile.engine.id,
+      configVersion: profile.engine.configVersion,
     })),
   );
   let source: CapacitySource;

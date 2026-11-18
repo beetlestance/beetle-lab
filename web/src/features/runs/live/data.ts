@@ -1,3 +1,4 @@
+import { installedEngineVersion } from './engine-version.js';
 import { useQuery } from '@tanstack/react-query';
 import type { Run, SuiteRevision } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../../app/api.js';
@@ -107,3 +108,43 @@ function verifiedRunRevision(value: SuiteRevision, run: Run): SuiteRevision {
     throw new Error('Saved revision does not match this run.');
   return value;
 }
+
+export interface EngineVersionRead {
+  readonly value: string | null;
+  readonly pending: boolean;
+  readonly busy: boolean;
+  retry(): void;
+}
+/** One immutable-label read per selected run; no additional polling or session owner. */
+export function usePhaseReads(run: Run, starting: boolean, waiting: boolean) {
+  const api = useApi();
+  const queue = useQueue(run, waiting);
+  const engine = run.engine;
+  const version = useQuery({
+    queryKey: [
+      ...queryKeys.run(run.scope.organizationId, run.scope.workspaceId, run.id),
+      'engine-version',
+      run.activeAttemptId,
+      engine.profileId,
+      engine.id,
+      engine.imageDigest,
+      engine.configVersion,
+    ],
+    queryFn: ({ signal }) => readResult(api.getInstallationStatus({ signal })),
+    select: (status) => installedEngineVersion(status, run),
+    enabled: starting,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  const engineVersion: EngineVersionRead = {
+    value: version.isError ? null : (version.data ?? null),
+    pending: version.isPending,
+    busy: version.isFetching,
+    retry: () => {
+      void version.refetch({ cancelRefetch: false });
+    },
+  };
+  return { queue, engineVersion };
+}
+export type PhaseReads = ReturnType<typeof usePhaseReads>;

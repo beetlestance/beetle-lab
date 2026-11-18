@@ -44,7 +44,10 @@ const reader: InstallationStatusReader = {
       otherWorkspaceRuns: 1,
     }),
 };
-function facts(observedAtMs: number, daemon: AgentFacts['daemon'] = { cpuMillis: 8500, memoryBytes: 16384 }): AgentFacts {
+function facts(
+  observedAtMs: number,
+  daemon: AgentFacts['daemon'] = { cpuMillis: 8500, memoryBytes: 16384 },
+): AgentFacts {
   return {
     observedAtMs,
     daemon,
@@ -65,7 +68,11 @@ it('reports disabled without an agent runtime and unknown before the first sampl
   expect(unknown.agent.state).toBe('unknown');
   expect(unknown.host.cpuCores).toEqual({ status: 'unknown', value: null });
   expect(unknown.disk.backendFreeBytes).toEqual({ status: 'unknown', value: null });
-  expect(unknown.disk).toMatchObject({ freeSpaceReserveBytes: 100, storageAllocationBytes: 1000, storageChargedBytes: 10 });
+  expect(unknown.disk).toMatchObject({
+    freeSpaceReserveBytes: 100,
+    storageAllocationBytes: 1000,
+    storageChargedBytes: 10,
+  });
   expect(unknown.engines.map((engine) => engine.image)).toEqual(['unknown', 'unknown']);
 });
 
@@ -125,4 +132,55 @@ it('returns the scoped queue view and refuses a mismatched run identity', async 
   const queue = await getRunQueue({ scope, id: runId.toUpperCase() }, reader, 0);
   expect(queue).toMatchObject({ runId, position: 2, otherWorkspaceRuns: 1, generatedAt: new Date(0).toISOString() });
   await expect(getRunQueue({ scope, id: '00000000-0000-4000-8000-000000000071' }, reader, 0)).rejects.toThrow();
+});
+
+const enginePin = { profileId: 'standard', imageDigest: digest, id: 'k6', configVersion: 1 };
+const engineFact = { ...enginePin, version: '2.4.0' };
+it('returns version metadata only for the exact approved selector and fresh ready facts', async () => {
+  const board = new AgentStatusBoard([enginePin]);
+  board.record({ kind: 'ready', checkedAtMs: 1000, facts: { ...facts(1000), engines: [engineFact] } });
+  expect((await status(board, 1000)).engines[0]?.engine).toEqual({ id: 'k6', version: '2.4.0', configVersion: 1 });
+  expect((await status(board, 7000)).engines[0]?.engine).toBeUndefined();
+  board.record({ kind: 'unreachable', checkedAtMs: 8000 });
+  expect((await status(board, 8000)).engines[0]?.engine).toBeUndefined();
+});
+it.each(['profile', 'engine', 'config', 'digest', 'ambiguous', 'control', 'newline', 'unverified'] as const)(
+  'refuses mismatched or ambiguous engine metadata: %s',
+  async (cause) => {
+    const item = { ...engineFact };
+    if (cause === 'profile') item.profileId = 'foreign';
+    if (cause === 'engine') item.id = 'foreign';
+    if (cause === 'config') item.configVersion = 2;
+    if (cause === 'digest') item.imageDigest = missing;
+    if (cause === 'control') item.version = 'bad\u0000';
+    if (cause === 'newline') item.version = '2.4.0\n';
+    const board = new AgentStatusBoard([enginePin]);
+    board.record({
+      kind: 'ready',
+      checkedAtMs: 1000,
+      facts: {
+        ...facts(1000),
+        imageDigests: cause === 'unverified' ? [] : [digest],
+        engines: cause === 'ambiguous' ? [item, { ...item, version: 'other' }] : [item],
+      },
+    });
+    expect((await status(board, 1000)).engines[0]?.engine).toBeUndefined();
+  },
+);
+it('detaches retained version and image facts from mutable recorder inputs', async () => {
+  const item = { ...engineFact };
+  const images = [digest];
+  const entries = [item];
+  const disk = { totalBytes: 9000, availableBytes: 7000 };
+  const input = { ...facts(1000), backendDisk: disk, engines: entries, imageDigests: images };
+  const board = new AgentStatusBoard([enginePin]);
+  board.record({ kind: 'ready', checkedAtMs: 1000, facts: input });
+  item.version = 'poison';
+  entries.length = 0;
+  images.length = 0;
+  disk.availableBytes = 1;
+  const value = await status(board, 1000);
+  expect(value.engines[0]).toMatchObject({ image: 'verified_at_agent_start', engine: { version: '2.4.0' } });
+  expect(value.disk.backendFreeBytes.value).toBe(7000);
+  expect(Object.isFrozen(board.snapshot().lastFacts?.engines?.[0])).toBe(true);
 });

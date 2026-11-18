@@ -8,3 +8,8 @@ unknown or not_measured, never zero. getRunQueue adds the route scope and requir
 stored run identity. Both validate a <=64 KiB response and never contact the agent or
 authorize dispatch. See docs/system/contracts/resources.md#installation-status-read.
 Focused checks: npx vitest run app/test/application/installation-status.test.ts
+
+Optional installed engine metadata requires fresh ready facts and one exact approved
+profile/engine/config/image match. Invalid/ambiguous metadata stays absent. Board
+facts and their nested fields are copied/frozen; no caller aliases survive.
+Version is not historical-run evidence. See contracts/engine-metadata.md.

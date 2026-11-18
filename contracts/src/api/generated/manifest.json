@@ -15,7 +15,7 @@
     "api/v2/input-columns.schema.json": "1c67bd9f3374844f39c7362ab7f82d3bbbc34146d84046cc131eb57cf7ec00ed",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",
     "api/v2/input.schema.json": "f514537351425f79cb013907cd830c812465d369b7dea14788bbf75fd49578fd",
-    "api/v2/installation-status.schema.json": "c1807d78775968025708ba0684beb157108d6d8414d24d1d59c59e0e29dfa9ff",
+    "api/v2/installation-status.schema.json": "4babdc7b7693be5a3159e840380901fb151dfe4ee74442c65c90fa6fb1369001",
     "api/v2/live-history.schema.json": "7fbe41a9e0d0cedcea3410d4069addb84d116702b0cb964b00bb172fad219c64",
     "api/v2/live-metrics.schema.json": "a03dd7c2236dea9e5fda24e6511b8863c39eb378d9a534cfaf29aec59aa31b9c",
     "api/v2/namespace-requests.schema.json": "6a913fb93f867d4c311d60a2613b11d712b1a70a20442ae6a9262fffcd9ece42",

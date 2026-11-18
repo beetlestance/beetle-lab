@@ -85,8 +85,8 @@ profile.
 
 ## Installation status read
 
-`getInstallationStatus` and run-scoped `getRunQueue` (`app/src/application/installation-status/`)
-are informational reads behind the session guard; neither contacts the agent nor grants dispatch.
+`getInstallationStatus` and scoped `getRunQueue` are informational session-guarded reads;
+neither contacts the agent nor grants dispatch. [Engine metadata](engine-metadata.md) defines version labels.
 
 - Agent state comes from the last capacity sample held in memory (no migration). Without a runtime
   it is `disabled`; before a sample, `unknown`. No HTTP reply is `unreachable`; a refusal or failed

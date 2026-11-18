@@ -16,10 +16,25 @@ export class AgentStatusBoard implements AgentStatusRecorder {
   record(outcome: AgentSampleOutcome): void {
     // A clock rollback must not let an older sample masquerade as the latest one.
     if (this.last !== null && outcome.checkedAtMs < this.last.checkedAtMs) return;
-    this.last = Object.freeze({ ...outcome });
-    if (outcome.kind === 'ready') this.lastFacts = Object.freeze({ ...outcome.facts });
+    if (outcome.kind === 'ready') {
+      const facts = freezeFacts(outcome.facts);
+      this.last = Object.freeze({ ...outcome, facts });
+      this.lastFacts = facts;
+    } else this.last = Object.freeze({ ...outcome });
   }
   snapshot(): AgentStatusView {
     return Object.freeze({ last: this.last, lastFacts: this.lastFacts, engines: this.engines });
   }
+}
+
+function freezeFacts(facts: AgentFacts): AgentFacts {
+  return Object.freeze({
+    ...facts,
+    daemon: facts.daemon ? Object.freeze({ ...facts.daemon }) : null,
+    backendDisk: Object.freeze({ ...facts.backendDisk }),
+    imageDigests: Object.freeze([...facts.imageDigests]),
+    ...(facts.engines === undefined
+      ? {}
+      : { engines: Object.freeze(facts.engines.map((engine) => Object.freeze({ ...engine }))) }),
+  });
 }

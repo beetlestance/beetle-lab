@@ -12,7 +12,8 @@ Queue reads share one scoped query; errors hide cached capacity/holders and expo
 retry. Preflight completion needs the verified saved revision; compilation needs
 phase.started prepare/execute (validate.finished can also describe failure).
 Early steps expose completed/pending state to assistive technology without fake
-percentages, engine versions, request initiators or elapsed-time progress.
+percentages, request initiators or elapsed-time progress. Installed engine labels
+use one scoped status read with exact selector matching and explicit retry.
 
 plan.ts reads the pinned revision's stages, requests and thresholds. Request rN
 means index N. model.ts derives one window's figures; pooled latency is unavailable,

@@ -38,6 +38,13 @@ describe('agent status recording from the capacity source', () => {
         stagingFreeBytes: 1,
         imageDigests: [`sha256:${'d'.repeat(64)}`],
       });
+      expect(ready.facts.engines?.[0]).toMatchObject({
+        profileId: f.state.frame.engines[0]!.installedIdentity.profileId,
+        id: f.state.frame.engines[0]!.id,
+        version: f.state.frame.engines[0]!.version,
+        imageDigest: f.state.frame.engines[0]!.imageDigest,
+        configVersion: f.state.frame.engines[0]!.configVersion,
+      });
       expect(ready.facts.backendDisk.totalBytes).toBeGreaterThan(0);
       f.state.frame = capabilities(10500);
       f.state.now = 11100;
@@ -45,6 +52,7 @@ describe('agent status recording from the capacity source', () => {
       const second = outcomes.at(-1);
       expect(second?.kind === 'ready' ? second.facts.daemon : 'missing').toBeNull();
     } finally {
+      await source.close();
       await f.cleanup();
     }
   });
@@ -62,8 +70,14 @@ describe('agent status recording from the capacity source', () => {
       foreign.observation.installationId = 'abcdefab-cdef-4abc-8def-abcdefabcdef';
       f.calls.mockResolvedValueOnce({ ok: true, value: foreign });
       await source.sample();
-      expect(outcomes.map((outcome) => outcome.kind)).toEqual(['unreachable', 'unreachable', 'unavailable', 'unavailable']);
+      expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+        'unreachable',
+        'unreachable',
+        'unavailable',
+        'unavailable',
+      ]);
     } finally {
+      await source.close();
       await f.cleanup();
     }
   });
@@ -77,6 +91,7 @@ describe('agent status recording from the capacity source', () => {
       expect(await source.sample()).toBeNull();
       expect(outcomes.map((outcome) => outcome.kind)).toEqual(['ready']);
     } finally {
+      await source.close();
       await f.cleanup();
     }
   });

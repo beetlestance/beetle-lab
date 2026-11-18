@@ -84,6 +84,7 @@ export const apiMessageSchemas = freezeSchema({
   HostFacts: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/HostFacts' },
   DiskFacts: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/DiskFacts' },
   EngineImageStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/EngineImageStatus' },
+  EngineVersion: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/EngineVersion' },
   SlotUsage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/SlotUsage' },
   PoolUsage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/PoolUsage' },
   InstallationStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/InstallationStatus' },
