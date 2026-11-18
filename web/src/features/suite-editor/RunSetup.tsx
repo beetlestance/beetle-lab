@@ -1,95 +1,25 @@
-import { Button } from '../../components/Button.js';
-import { Checkbox, Select } from '../../components/Fields.js';
+import { Select } from '../../components/Fields.js';
 import type { Config } from '../suites/draft.js';
-import { Card, TextField, WholeField } from './fields.js';
-import { switchExecutor } from './load.js';
-import { isObj, list, objects, setEntry, setScenario, text, uniqueId } from './model.js';
+import { SetupDatasets } from './SetupDatasets.js';
+import type { InputCatalog } from './fields.js';
+import { Card, SecondsField, TextField, WholeField } from './fields.js';
+import { SetupScenarios } from './SetupScenarios.js';
+import { isObj, objects, setEntry, text } from './model.js';
 import type { Obj, SetConfig } from './model.js';
-import { ExecutorSelect, ScenarioFields } from './ScenarioFields.js';
+import { OptionalTitle } from './OptionalTitle.js';
+import { SecretsSection } from './SecretsSection.js';
 
 /** "Suite / Edit / Run setup": every scenario, the request mix, readiness and target sampling. */
-export function RunSetup({ config, set }: { config: Config; set: SetConfig }) {
+export function RunSetup({ config, set, inputs }: { config: Config; set: SetConfig; inputs: InputCatalog }) {
   return (
     <>
-      <Scenarios config={config} set={set} />
+      <SetupScenarios config={config} set={set} />
       <RequestMix config={config} set={set} />
       <Readiness config={config} set={set} />
       <Sampling config={config} set={set} />
+      <SecretsSection config={config} set={set} />
+      <SetupDatasets config={config} set={set} inputs={inputs} />
     </>
-  );
-}
-
-function Scenarios({ config, set }: { config: Config; set: SetConfig }) {
-  const plan = isObj(config.loadPlan) ? config.loadPlan : { version: 1, scenarios: [], slos: [] };
-  const scenarios = list(plan.scenarios);
-  function add() {
-    const taken = objects(scenarios).map((item) => text(item.id));
-    const id = uniqueId('scenario', taken);
-    const scenario = switchExecutor(
-      { id, name: id, startTime: '0s', gracefulStop: '30s', vus: 10 },
-      'constant-arrival-rate',
-    );
-    let next: Config = { ...config, loadPlan: { ...plan, scenarios: [...scenarios, scenario] } };
-    for (const request of objects(config.requests)) next = setEntry(next, id, text(request.id), {});
-    set(next);
-  }
-  function remove(index: number) {
-    const removed = objects(scenarios)[index];
-    set({
-      ...config,
-      loadPlan: { ...plan, scenarios: scenarios.filter((_, at) => at !== index) },
-      selections: objects(config.selections).filter((selection) => selection.scenarioId !== removed?.id),
-    });
-  }
-  return (
-    <Card
-      title={`Scenarios (${scenarios.length} of 64)`}
-      action={
-        <Button variant="text" disabled={scenarios.length >= 64} onClick={add}>
-          Add scenario
-        </Button>
-      }
-    >
-      <ol className="editor-list">
-        {scenarios.map((scenario, index) => {
-          if (!isObj(scenario)) return null;
-          const path = `/loadPlan/scenarios/${index}`;
-          const change = (next: Obj) => set(setScenario(config, index, next));
-          return (
-            <li key={index} className="scenario-block">
-              <div className="field-row four">
-                <TextField
-                  label={`Scenario ${index + 1} name`}
-                  path={`${path}/name`}
-                  value={scenario.name}
-                  maxLength={64}
-                  change={(name) => change({ ...scenario, name })}
-                />
-                <ExecutorSelect scenario={scenario} path={path} set={change} />
-                <TextField
-                  label="Starts after"
-                  path={`${path}/startTime`}
-                  value={scenario.startTime}
-                  maxLength={12}
-                  change={(startTime) => change({ ...scenario, startTime })}
-                />
-                <TextField
-                  label="Graceful stop"
-                  path={`${path}/gracefulStop`}
-                  value={scenario.gracefulStop}
-                  maxLength={12}
-                  change={(gracefulStop) => change({ ...scenario, gracefulStop })}
-                />
-              </div>
-              <ScenarioFields scenario={scenario} path={path} set={change} simple={false} />
-              <Button variant="text" size="sm" disabled={scenarios.length <= 1} onClick={() => remove(index)}>
-                Remove scenario {index + 1}
-              </Button>
-            </li>
-          );
-        })}
-      </ol>
-    </Card>
   );
 }
 
@@ -99,23 +29,32 @@ function MixRow({
   label,
   edit,
   replace,
+  share,
 }: {
   entry: Obj;
   path: string;
   label: string;
   edit: (patch: Obj) => void;
   replace: (entry: Obj) => void;
+  share: string;
 }) {
   const wait = isObj(entry.wait) ? entry.wait : {};
   return (
     <div className="field-row mix-row">
       <p className="mix-name">{label}</p>
       <WholeField
-        label={`${label} weight`}
+        label={
+          <>
+            <span className="sr-only">{label} </span>Weight
+          </>
+        }
         path={`${path}/weight`}
         value={entry.weight}
         change={(weight) => edit({ weight })}
       />
+      <p className="mix-share" aria-label={`${label} share`}>
+        {share}
+      </p>
       <WholeField
         label="Wait, ms"
         path={`${path}/wait/durationMs`}
@@ -132,7 +71,7 @@ function MixRow({
         label="Limit per virtual user"
         path={`${path}/maxIterationsPerVu`}
         value={entry.maxIterationsPerVu}
-        hint="Empty means no limit"
+        placeholder="No limit"
         change={(limit) => {
           if (limit !== '') return edit({ maxIterationsPerVu: limit });
           const rest = { ...entry };
@@ -162,6 +101,14 @@ function ScenarioMix({
   const selections = objects(config.selections);
   const selectionIndex = selections.findIndex((item) => item.scenarioId === scenarioId);
   const entries = objects(selections[selectionIndex]?.entries);
+  const total = entries.reduce(
+    (sum, entry) => (typeof entry.weight === 'number' && entry.weight > 0 ? sum + entry.weight : NaN),
+    0,
+  );
+  const share = (entry: Obj) =>
+    Number.isFinite(total) && total > 0 && typeof entry.weight === 'number'
+      ? `${Math.round((entry.weight / total) * 100)}%`
+      : '—';
   const missing = requests.filter((request) => !entries.some((entry) => entry.requestId === request.id));
   const edit = (requestId: string, patch: Obj) => set(setEntry(config, scenarioId, requestId, patch));
   const replace = (position: number, entry: Obj) =>
@@ -175,13 +122,14 @@ function ScenarioMix({
     });
   return (
     <fieldset className="editor-rows">
-      <legend>{text(scenario.name, `Scenario ${index + 1}`)}</legend>
+      <legend className="sr-only">{text(scenario.name, `Scenario ${index + 1}`)}</legend>
       {entries.map((entry, position) => (
         <MixRow
           key={position}
           entry={entry}
           path={`/selections/${selectionIndex}/entries/${position}`}
           label={name(entry.requestId)}
+          share={share(entry)}
           edit={(patch) => edit(text(entry.requestId), patch)}
           replace={(next) => replace(position, next)}
         />
@@ -212,43 +160,59 @@ function RequestMix({ config, set }: { config: Config; set: SetConfig }) {
   };
   const scenarios = objects(isObj(config.loadPlan) ? config.loadPlan.scenarios : []);
   return (
-    <Card title="Request mix">
-      <p className="editor-note">
-        Weights set how often each request is picked. Wait adds a pause after it, plus up to the jitter at random.
-      </p>
+    <>
       {scenarios.map((scenario, index) => (
-        <ScenarioMix key={index} config={config} set={set} scenario={scenario} index={index} name={name} />
+        <Card
+          key={index}
+          title={`Request mix for ${text(scenario.name, `Scenario ${index + 1}`)}`}
+          className="request-mix-card"
+        >
+          <p className="editor-note">Each virtual user picks a request by weight, waits, then picks again.</p>
+          <ScenarioMix config={config} set={set} scenario={scenario} index={index} name={name} />
+        </Card>
       ))}
-    </Card>
+    </>
   );
+}
+
+function defaultProbe() {
+  return {
+    path: '/health',
+    attempts: 10,
+    intervalMs: 1000,
+    timeoutMs: 2000,
+    wallBudgetMs: 30000,
+    expectedStatus: 200,
+    assertions: [],
+  };
 }
 
 function Readiness({ config, set }: { config: Config; set: SetConfig }) {
   const probe = isObj(config.readiness) ? config.readiness : null;
   const change = (patch: Obj) => set({ ...config, readiness: { ...probe, ...patch } });
   return (
-    <Card title="Readiness probe">
-      <Checkbox
-        label="Wait until the target answers before starting load"
-        checked={!!probe}
-        onChange={(event) => {
-          const next = { ...config };
-          if (event.target.checked)
-            next.readiness = {
-              path: '/health',
-              attempts: 10,
-              intervalMs: 1000,
-              timeoutMs: 2000,
-              wallBudgetMs: 30000,
-              expectedStatus: 200,
-              assertions: [],
-            };
-          else delete next.readiness;
-          set(next);
-        }}
-      />
+    <Card
+      className="setup-readiness"
+      title={
+        <OptionalTitle
+          title="Wait until the target is ready"
+          label="Wait until the target answers before starting load"
+          enabled={!!probe}
+          toggle={(enabled) => {
+            const next = { ...config };
+            if (enabled) next.readiness = defaultProbe();
+            else delete next.readiness;
+            set(next);
+          }}
+        />
+      }
+    >
+      <p className="editor-note">
+        Before any load, Beetle Lab calls this path until it answers. If it never does, the run stops without sending
+        load.
+      </p>
       {probe && (
-        <div className="field-row four">
+        <div className="field-row readiness-fields">
           <TextField label="Probe path" path="/readiness/path" value={probe.path} change={(path) => change({ path })} />
           <WholeField
             label="Expected status"
@@ -262,20 +226,35 @@ function Readiness({ config, set }: { config: Config; set: SetConfig }) {
             value={probe.attempts}
             change={(attempts) => change({ attempts })}
           />
-          <WholeField
-            label="Between attempts, ms"
+          <SecondsField
+            label={
+              <>
+                <span className="sr-only">Between attempts, seconds</span>
+                <span aria-hidden="true">Every</span>
+              </>
+            }
             path="/readiness/intervalMs"
             value={probe.intervalMs}
             change={(intervalMs) => change({ intervalMs })}
           />
-          <WholeField
-            label="Attempt timeout, ms"
+          <SecondsField
+            label={
+              <>
+                <span className="sr-only">Attempt timeout, seconds</span>
+                <span aria-hidden="true">Each attempt times out after</span>
+              </>
+            }
             path="/readiness/timeoutMs"
             value={probe.timeoutMs}
             change={(timeoutMs) => change({ timeoutMs })}
           />
-          <WholeField
-            label="Give up after, ms"
+          <SecondsField
+            label={
+              <>
+                <span className="sr-only">Give up after, seconds</span>
+                <span aria-hidden="true">Give up after</span>
+              </>
+            }
             path="/readiness/wallBudgetMs"
             value={probe.wallBudgetMs}
             change={(wallBudgetMs) => change({ wallBudgetMs })}
@@ -290,19 +269,27 @@ function Sampling({ config, set }: { config: Config; set: SetConfig }) {
   const sampling = isObj(config.targetSampling) ? config.targetSampling : null;
   const change = (patch: Obj) => set({ ...config, targetSampling: { ...sampling, ...patch } });
   return (
-    <Card title="Target sampling">
-      <Checkbox
-        label="Read the target's process stats during the run"
-        hint="The target must serve them, for example at /debug/process."
-        checked={!!sampling}
-        onChange={(event) => {
-          const next = { ...config };
-          if (event.target.checked)
-            next.targetSampling = { path: '/debug/process', intervalMs: 5000, timeoutMs: 1000, cooldownMs: 10000 };
-          else delete next.targetSampling;
-          set(next);
-        }}
-      />
+    <Card
+      className="setup-sampling"
+      title={
+        <OptionalTitle
+          title="Read the target’s own figures"
+          label="Read the target's process stats during the run"
+          enabled={!!sampling}
+          toggle={(enabled) => {
+            const next = { ...config };
+            if (enabled)
+              next.targetSampling = { path: '/debug/process', intervalMs: 5000, timeoutMs: 1000, cooldownMs: 10000 };
+            else delete next.targetSampling;
+            set(next);
+          }}
+        />
+      }
+    >
+      <p className="editor-note">
+        Polls a JSON endpoint on your service for heap, RSS, GC and event-loop figures before, during and after load.
+        Shown under Target runtime on the result.
+      </p>
       {sampling && (
         <div className="field-row four">
           <TextField
@@ -311,11 +298,11 @@ function Sampling({ config, set }: { config: Config; set: SetConfig }) {
             value={sampling.path}
             change={(path) => change({ path })}
           />
-          <WholeField
-            label="Read every, ms"
+          <SecondsField
+            label="Read every, seconds"
             path="/targetSampling/intervalMs"
             value={sampling.intervalMs}
-            hint="1,000 to 60,000"
+            hint="1 to 60 seconds"
             change={(intervalMs) => change({ intervalMs })}
           />
           <WholeField
@@ -325,14 +312,19 @@ function Sampling({ config, set }: { config: Config; set: SetConfig }) {
             hint="100 to 5,000"
             change={(timeoutMs) => change({ timeoutMs })}
           />
-          <WholeField
-            label="Keep reading after load, ms"
+          <SecondsField
+            label="Keep reading after load, seconds"
             path="/targetSampling/cooldownMs"
             value={sampling.cooldownMs}
-            hint="0 to 60,000"
+            hint="0 to 60 seconds"
             change={(cooldownMs) => change({ cooldownMs })}
           />
         </div>
+      )}
+      {sampling && (
+        <p className="editor-note sampling-limit">
+          At most 256 readings are kept per run, including before and after load. For a longer run, read less often.
+        </p>
       )}
     </Card>
   );

@@ -1,10 +1,13 @@
 import type { ApiClientFailure } from '@beetle/contracts/api';
+import { datasetProblems } from './dataset-problems.js';
+import { secretProblems } from './secret-problems.js';
 import type { Config } from '../suites/draft.js';
 import { seconds } from './load.js';
 import { identifierPattern, isObj, list, methods, objects, text } from './model.js';
 
 /** One thing to fix before saving; `path` is a JSON pointer into the config, or '' for the whole draft. */
-export type Problem = { path: string; message: string };
+export type { Problem } from './model.js';
+import type { Problem } from './model.js';
 
 /** DOM id of the control that edits `path`; jump-to falls back to the nearest parent control. */
 export const fieldId = (path: string) => `suite-field${path}`;
@@ -102,7 +105,7 @@ export function validate(config: Config): Problem[] {
     if (!isObj(rule) || typeof rule.value !== 'number' || rule.value < 0)
       add(`/loadPlan/slos/${index}/value`, `Threshold ${index + 1} needs a number of 0 or more.`);
   });
-  return found;
+  return [...found, ...secretProblems(config), ...datasetProblems(config)].slice(0, 64);
 }
 
 const codeText: Record<string, string> = {
@@ -129,6 +132,7 @@ const labelers: Record<string, Labeler> = {
   target: () => 'Target URL',
   message: () => 'What changed',
   requests: requestLabel,
+  secrets: (parts) => `Secret ${ordinal(parts[1])}${tail(parts, 2)}`,
   datasets: (parts) => `Dataset ${ordinal(parts[1])}${tail(parts, 2)}`,
   selections: () => 'Request mix',
   loadPlan: (parts) =>

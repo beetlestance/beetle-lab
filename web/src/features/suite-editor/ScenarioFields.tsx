@@ -106,46 +106,56 @@ function RampHoldDrain({ scenario, path, set }: { scenario: Obj; path: string; s
  * Executor parameters of one scenario. `simple` shows the ramp/hold/drain view; the caller decides it once
  * (from `rampHoldDrain`) so a half-typed value does not swap the layout under the cursor.
  */
+const hasScenarioFields = (keys: readonly string[], stages: boolean, scenario: Obj) =>
+  keys.length > 0 || stages || isObj(scenario.stopRule);
 export function ScenarioFields({
   scenario,
   path,
   set,
   simple,
+  omit,
+  hideStages = false,
 }: {
   scenario: Obj;
   path: string;
   set: (next: Obj) => void;
   simple: boolean;
+  omit?: ReadonlySet<string> | undefined;
+  hideStages?: boolean;
 }) {
   if (simple && objects(scenario.stages).length === 3)
     return <RampHoldDrain scenario={scenario} path={path} set={set} />;
-  const keys = order.filter((key) => key in scenario);
+  const keys = order.filter((key) => key in scenario && !omit?.has(key));
+  const stages = !hideStages && Array.isArray(scenario.stages);
+  if (!hasScenarioFields(keys, stages, scenario)) return null;
   return (
     <>
-      <div className="field-row four">
-        {keys.map((key) =>
-          wholeKeys.has(key) ? (
-            <WholeField
-              key={key}
-              label={labels[key]!}
-              path={`${path}/${key}`}
-              value={scenario[key]}
-              change={(value) => set({ ...scenario, [key]: value })}
-            />
-          ) : (
-            <TextField
-              key={key}
-              label={labels[key]!}
-              path={`${path}/${key}`}
-              value={scenario[key]}
-              maxLength={12}
-              hint="For example 30s or 5m"
-              change={(value) => set({ ...scenario, [key]: value })}
-            />
-          ),
-        )}
-      </div>
-      {Array.isArray(scenario.stages) && <Stages scenario={scenario} path={path} set={set} />}
+      {keys.length > 0 && (
+        <div className="field-row four">
+          {keys.map((key) =>
+            wholeKeys.has(key) ? (
+              <WholeField
+                key={key}
+                label={labels[key]!}
+                path={`${path}/${key}`}
+                value={scenario[key]}
+                change={(value) => set({ ...scenario, [key]: value })}
+              />
+            ) : (
+              <TextField
+                key={key}
+                label={labels[key]!}
+                path={`${path}/${key}`}
+                value={scenario[key]}
+                maxLength={12}
+                hint="For example 30s or 5m"
+                change={(value) => set({ ...scenario, [key]: value })}
+              />
+            ),
+          )}
+        </div>
+      )}
+      {stages && <Stages scenario={scenario} path={path} set={set} />}
       {isObj(scenario.stopRule) && (
         <StopRule
           rule={scenario.stopRule}

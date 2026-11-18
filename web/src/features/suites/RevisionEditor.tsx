@@ -8,7 +8,7 @@ import { EditorPageHeader } from '../suite-editor/EditorPageHeader.js';
 import '../suite-editor/request-detail.css';
 import { requestKey } from '../suite-editor/model.js';
 import { jumpTo } from '../suite-editor/problems.js';
-import { SavePanel } from '../suite-editor/SavePanel.js';
+import { ProblemList, SavePanel } from '../suite-editor/SavePanel.js';
 import { useRevisionDraft } from '../suite-editor/useRevisionDraft.js';
 import '../suite-editor/editor.css';
 import { ConfigFields } from './ConfigFields.js';
@@ -27,7 +27,9 @@ function keyOf(text: string, index: number): string {
 /** Switches to the view that shows `path`, then focuses it once rendered. */
 function jumpFor(text: string, setView: (view: EditorView) => void) {
   return (path: string) => {
-    const setup = /^\/(loadPlan\/scenarios\/[1-9]|selections|readiness|targetSampling)/.test(path);
+    const setup =
+      /^\/(loadPlan\/scenarios\/[1-9]|selections|readiness|targetSampling|secrets|datasets)/.test(path) ||
+      /^\/loadPlan\/scenarios\/0\/(?!stages|executor|maxVUs)/.test(path);
     const request = /^\/requests\/(\d+)\/(name|query|headers|assertions|body\/format)/.exec(path);
     if (!path) setView({ mode: 'json', request: null });
     else if (setup) setView({ mode: 'run-setup', request: null });
@@ -64,6 +66,11 @@ export function RevisionEditor({
   return (
     <>
       {subeditor && <EditorPageHeader text={draft.text} view={view} close={closePage} />}
+      {subeditor && draft.problems.length > 0 && (
+        <div className="editor-subpage-problems">
+          <ProblemList problems={draft.problems} jump={jumpFor(draft.text, setView)} />
+        </div>
+      )}
       <section
         className={subeditor ? 'suite-editor-layout suite-editor-subpage' : 'suite-editor-layout'}
         aria-label="Edit suite configuration"

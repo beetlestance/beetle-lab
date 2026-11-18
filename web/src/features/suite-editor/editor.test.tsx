@@ -119,7 +119,10 @@ it('names a deleted input file and refuses to save until it is replaced', async 
   mount(fixture.client, path);
   await screen.findByText('Fix 1 thing before saving');
   fireEvent.click(screen.getByRole('button', { name: 'users.csv was deleted.' }));
-  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('combobox', { name: 'Dataset 1 source' })));
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole('combobox', { name: 'Dataset 1 rows from' })),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
   fireEvent.click(screen.getByRole('button', { name: 'Save revision' }));
   expect(fixture.records.filter((record) => record.method === 'POST')).toHaveLength(0);
 });

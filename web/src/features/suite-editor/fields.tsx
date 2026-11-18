@@ -19,7 +19,7 @@ export function Card({
   children,
   className = '',
 }: {
-  title: string;
+  title: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -44,13 +44,15 @@ export function WholeField({
   change,
   hint,
   hideLabel,
+  placeholder,
 }: {
-  label: string;
+  label: ReactNode;
   path: string;
   value: unknown;
   change: (value: number | string) => void;
   hint?: string;
   hideLabel?: boolean;
+  placeholder?: string;
 }) {
   return (
     <TextInput
@@ -60,6 +62,7 @@ export function WholeField({
       hint={hint}
       inputMode="numeric"
       maxLength={16}
+      placeholder={placeholder}
       value={numberText(value)}
       onChange={(event) => change(wholeOrRaw(event.target.value.trim()))}
     />
@@ -76,7 +79,7 @@ export function TextField({
   maxLength = 4096,
   placeholder,
 }: {
-  label: string;
+  label: ReactNode;
   path: string;
   value: unknown;
   change: (value: string) => void;
@@ -95,6 +98,40 @@ export function TextField({
       placeholder={placeholder}
       value={typeof value === 'string' ? value : numberText(value)}
       onChange={(event) => change(event.target.value)}
+    />
+  );
+}
+
+/** Seconds in the form, exact integer milliseconds in the configuration; invalid text remains invalid. */
+export function SecondsField({
+  label,
+  path,
+  value,
+  change,
+  hint,
+}: {
+  label: ReactNode;
+  path: string;
+  value: unknown;
+  change: (milliseconds: number | string) => void;
+  hint?: string;
+}) {
+  return (
+    <TextInput
+      id={fieldId(path)}
+      label={label}
+      hint={hint}
+      inputMode="decimal"
+      maxLength={20}
+      value={typeof value === 'number' ? String(value / 1000) : numberText(value)}
+      onChange={(event) => {
+        const raw = event.target.value;
+        const [whole, fraction = ''] = raw.split('.');
+        const milliseconds = Number(whole) * 1000 + Number(fraction.padEnd(3, '0'));
+        change(
+          /^(0|[1-9][0-9]{0,8})(\.[0-9]{1,3})?$/.test(raw) && Number.isSafeInteger(milliseconds) ? milliseconds : raw,
+        );
+      }}
     />
   );
 }

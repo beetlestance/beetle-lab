@@ -47,7 +47,7 @@ type BodyProps = {
 
 /** The structured views: Run setup, one request, or every form section. */
 function StructuredView({ config, set, inputs, view, setView, metadata }: BodyProps) {
-  if (view.mode === 'run-setup') return <RunSetup config={config} set={set} />;
+  if (view.mode === 'run-setup') return <RunSetup config={config} set={set} inputs={inputs} />;
   const request = requestIndex(config, view.request);
   if (request !== null)
     return (

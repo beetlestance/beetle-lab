@@ -1,5 +1,7 @@
 import type { Config } from '../suites/draft.js';
 
+/** A client authoring problem, addressed by a JSON pointer into the draft. */
+export type Problem = { path: string; message: string };
 export type Obj = Record<string, unknown>;
 export type SetConfig = (next: Config) => void;
 

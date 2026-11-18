@@ -14,7 +14,7 @@ export type SaveState = {
   newIntent: () => void;
 };
 
-function ProblemList({ problems, jump }: { problems: readonly Problem[]; jump: (path: string) => void }) {
+export function ProblemList({ problems, jump }: { problems: readonly Problem[]; jump: (path: string) => void }) {
   if (!problems.length) return null;
   return (
     <div className="save-problems" role="alert">
