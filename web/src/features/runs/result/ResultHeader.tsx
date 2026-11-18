@@ -6,11 +6,12 @@ import { errorMessage, useApi } from '../../../app/api.js';
 import { routes } from '../../../app/routes.js';
 import { Status } from '../../../components/Badge.js';
 import { Button } from '../../../components/Button.js';
-import { runStatus, shortId } from '../../run-results/format.js';
+import { runStatus } from '../../run-results/format.js';
 import { usePin } from './usePin.js';
 import { useWrite } from './useWrite.js';
 import type { Write } from './useWrite.js';
 import { ResultDownloads } from './ResultDownloads.js';
+import { ResultContext } from './ResultContext.js';
 
 /** Header of the Run result boards: status, verdict title, summary sentence, actions. */
 export function ResultHeader({
@@ -21,12 +22,14 @@ export function ResultHeader({
   onDelete,
   refresh,
   ordinal,
+  suiteName,
 }: {
   run: Run;
   title: string;
   sentence: string;
   readOnly: boolean;
   ordinal?: number | undefined;
+  suiteName?: string | undefined;
   onDelete(): void;
   /** RunDetail's run re-read; available even in read-only history. */
   refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
@@ -34,12 +37,8 @@ export function ResultHeader({
   const status = displayedStatus(run, readOnly);
   return (
     <header className="result-head">
+      <ResultContext run={run} suiteName={suiteName} ordinal={ordinal} />
       <div className="result-head-main">
-        <p className="result-context">
-          <Link to={routes.runs(run.scope.organizationId, run.scope.workspaceId)}>Runs</Link>
-          <span aria-hidden="true"> / </span>
-          run <span className="number">{shortId(run.id)}</span>
-        </p>
         <h1 className="result-title">{title}</h1>
         {sentence && <p className="result-sentence">{sentence}</p>}
       </div>

@@ -49,7 +49,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `1ad78be84714` |
-| `web/src/features/runs/result/useResultReads.ts` | `48bd0b8fd120` |
+| `web/src/features/runs/result/useResultReads.ts` | `38c36f18eee5` |
 | `app/src/application/run-metrics/chart-history.ts` | `8c4d276be252` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `a6611d151c82` |

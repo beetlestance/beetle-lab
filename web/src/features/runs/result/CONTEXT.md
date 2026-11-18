@@ -15,7 +15,8 @@ Read-only and restored-backup state comes from useSessionAccess, not a session r
   output full, incomplete, errored, pending) and the title and sentence. Sentence
   figures come only from the stored summary; unknown parts are left out.
 - ResultHeader: page h1, status, Refresh run (from RunDetail), Run again (createRun
-  with the run's revision, profile, budget and policy), Pin, Delete run. Read-only
+  with the run's revision, profile, budget and policy), Pin, Delete run. ResultContext
+  reads namespace names only; suite/revision/engine/start time use accepted records. Read-only
   sessions hide writes; Refresh run and published downloads remain available.
 - ResultDownloads: metadata only on open, at most two pages/128 files, one
   manifest. Native UUID links only; errors hide links. Script opens its saved revision.
@@ -36,5 +37,4 @@ RecordedCharts owns the once-per-entry chart query, one memoized projection and
 shared cursor. Advanced per-series browsing mounts only on explicit expansion.
 Peak binds to summary source; unknowns/gaps and native marker time stay exact.
 Still pending: previous-run delta and remaining result states.
-
 Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx

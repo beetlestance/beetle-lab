@@ -5,15 +5,17 @@
   gap: var(--s-24);
 }
 .result-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: var(--s-20);
 }
 .result-context {
-  margin: 0 0 var(--s-16);
+  grid-column: 1 / -1;
+  margin: 0;
   color: var(--mute);
   font-size: var(--fs-md);
+  overflow-wrap: anywhere;
 }
 .result-context a {
   color: inherit;
@@ -164,7 +166,7 @@
 }
 @media (max-width: 759px) {
   .result-head {
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
   }
   .result-head-side {
     justify-items: start;

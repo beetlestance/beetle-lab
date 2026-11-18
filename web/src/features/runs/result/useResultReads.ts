@@ -78,9 +78,14 @@ export function useResultReads(run: Run) {
     chartHistory,
     summary: summary.data ?? null,
     summaryStatus: summary.isPending ? 'loading' : summary.isError ? 'error' : 'ready',
-    suite: suite.data,
-    revision: revision.isError ? undefined : revision.data,
+    suite: available(suite),
+    revision: available(revision),
     revisionQuery: revision,
   } as const;
 }
 export type ResultReads = ReturnType<typeof useResultReads>;
+
+/** A failed refresh cannot continue granting a current name or revision label. */
+function available<T>(query: { isError: boolean; data: T | undefined }): T | undefined {
+  return query.isError ? undefined : query.data;
+}
