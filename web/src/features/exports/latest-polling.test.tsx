@@ -38,12 +38,7 @@ it('stops latest-job polling after a failed refresh even when a live job remains
   });
   expect(view.result.current.listing.isSuccess).toBe(true);
   unavailable = true;
-  const queryKey = [
-    ...queryKeys.exports(rev.scope.organizationId, rev.scope.workspaceId),
-    'latest',
-    'revision',
-    rev.id.toLowerCase(),
-  ];
+  const queryKey = queryKeys.latestRevisionExport(rev.scope.organizationId, rev.scope.workspaceId, rev.id);
   await act(async () => {
     await e.client.refetchQueries({ queryKey, exact: true }, { cancelRefetch: false });
     await vi.advanceTimersByTimeAsync(20);

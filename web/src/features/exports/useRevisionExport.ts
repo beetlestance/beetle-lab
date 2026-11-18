@@ -32,7 +32,7 @@ function useJob(revision: SuiteRevision, created: string | null) {
   const { organizationId, workspaceId } = revision.scope;
   const params = { organizationId, workspaceId };
   const listing = useQuery({
-    queryKey: [...queryKeys.exports(organizationId, workspaceId), 'latest', 'revision', revision.id.toLowerCase()],
+    queryKey: queryKeys.latestRevisionExport(organizationId, workspaceId, revision.id),
     queryFn: ({ signal }) =>
       readResult(api.getLatestRevisionExport({ params: { ...params, revisionId: revision.id }, signal })),
     refetchInterval: (query) =>

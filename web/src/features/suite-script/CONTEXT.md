@@ -24,10 +24,14 @@ board with its Changes and One column variants.
   bounded GET of exactly the published bytes, checked against the SHA-256). Scripts
   over 1 MiB are offered as a download. Input file names come from bounded
   `getInput` reads of the manifest (at most 64).
-- `ChangesTab.tsx`, `useComparison.ts`, `diff.ts` and `changes.ts` compare the
-  saved configuration JSON of two revisions of the same suite (first page of 100
-  revisions), not the generated scripts. The LCS diff declines inputs above
-  4M cells; long unchanged runs fold.
+- Changes compares two verified generated JavaScript artifacts, using the scoped
+  latest export for each revision (revision choices: first page of 100). The shared
+  `script-read.ts` binds scope, revision digest and artifact identity before reading
+  or showing cached bytes. Configuration-derived summary chips stay separate.
+- Comparison never creates exports automatically. Missing scripts offer explicit
+  preparation and recheck; errors stop polling. LCS declines more than 4,096 combined
+  lines or 4M cells before allocation; unchanged runs fold. Split/unified views
+  share the same real line counts and bounded source.
 - "Run this revision" opens the suite page's Start run dialog (`suite-overview`
   `StartRun`) with this revision chosen. It is shown only after the workspace name
   the dialog needs has been read.

@@ -22,6 +22,8 @@ export const queryKeys = {
       cursor,
     ] as const;
   },
+  latestRevisionExport: (org: string, workspace: string, revision: string) =>
+    [...queryKeys.exports(org, workspace), 'latest', 'revision', revision.toLowerCase()] as const,
   exports: (org: string, workspace: string) => [...queryKeys.workspace(org, workspace), 'exports'] as const,
   export: (org: string, workspace: string, id: string) =>
     [...queryKeys.exports(org, workspace), id.toLowerCase()] as const,

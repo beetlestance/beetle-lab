@@ -27,28 +27,17 @@
 .script-note {
   color: var(--mute);
   font-size: var(--fs-sm);
-}
-.script-note {
-  color: var(--mute);
-  font-size: var(--fs-sm);
-}
-.script-note {
   margin: var(--s-8) 0;
 }
 .script-note code,
 .diff-text code {
   font-family: var(--font-mono);
 }
-.script-actions,
-.script-toolbar {
+.script-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: var(--s-12);
-}
-.script-toolbar {
-  justify-content: space-between;
-  margin-bottom: var(--s-16);
 }
 .script-source,
 .diff-scroll {
@@ -59,27 +48,30 @@
 }
 .script-diff-summary {
   margin: 0;
+  font-size: 16px;
   font-weight: 500;
+  line-height: 24px;
 }
 .script-bullets {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-8);
-  margin: var(--s-12) 0;
+  margin: 8px 0 16px;
   padding: 0;
   list-style: none;
 }
 .script-bullets li {
-  padding: var(--s-4) var(--s-10);
+  padding: 3px 10px;
   border-radius: var(--r-sm);
   background: var(--chip-strong);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
+  line-height: 21px;
 }
 .diff-table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--fs-sm);
-  line-height: 1.6;
+  line-height: 21px;
 }
 .diff-split {
   table-layout: fixed;
@@ -142,9 +134,6 @@
   line-height: 29px;
 }
 .script-page .tabs {
-  margin-top: 44px;
-}
-.script-description + .tabs {
   margin-top: 0;
 }
 .script-page .tab {
@@ -176,4 +165,66 @@
   margin-top: 16px;
   font-size: var(--fs-sm);
   line-height: 20px;
+}
+
+.script-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.script-compare-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: var(--mute);
+  font-size: var(--fs-md);
+}
+.script-compare-controls .field {
+  min-width: 0;
+  max-width: 100%;
+}
+.script-compare-controls .select {
+  width: 213px;
+  min-height: 40px;
+  max-width: 100%;
+}
+.script-compare-controls .segmented {
+  min-height: 40px;
+}
+.script-changes {
+  margin-top: 16px;
+}
+.diff-table th {
+  height: 37px;
+  padding: 8px 12px 6px;
+  text-align: left;
+  font-weight: 400;
+  color: var(--mute);
+}
+.script-comparison-status {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border-radius: var(--r-xl);
+  background: var(--panel);
+}
+@media (max-width: 760px) {
+  .script-compare-controls {
+    width: 100%;
+  }
+}
+
+.diff-split .diff-number {
+  width: 40px;
+}
+.diff-unified .diff-number {
+  width: 34px;
+}
+.diff-table th {
+  font-size: var(--fs-md);
+  line-height: 21px;
 }

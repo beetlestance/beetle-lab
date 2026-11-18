@@ -1,35 +1,23 @@
 import { useState } from 'react';
-import type { SuiteRevisionSummary } from '@beetle/contracts/api';
-import { Select } from '../../components/Fields.js';
-import { SegmentedFilter } from '../../components/SegmentedFilter.js';
-import { LoadingState } from '../../components/States.js';
+import type { SuiteRevision } from '@beetle/contracts/api';
+import { ComparisonStatus } from './ComparisonStatus.js';
+import type { Comparison, Layout } from './comparison-model.js';
 import { hunks, sideBySide } from './diff.js';
 import type { Diff, DiffLine, Hunk } from './diff.js';
 
-export type Comparison = {
-  ordinal: number;
-  other: { ordinal: number } | undefined;
-  choices: readonly SuiteRevisionSummary[];
-  otherId: string;
-  setOtherId: (id: string) => void;
-  diff: Diff | null | undefined;
-  changes: readonly string[];
-  failed: boolean;
-};
-type Layout = 'split' | 'unified';
 const marks = { same: ' ', add: '+', del: '−' } as const;
 
 function UnifiedRows({ lines }: { lines: readonly DiffLine[] }) {
   return lines.map((line, index) => (
     <tr key={index} className={`diff-${line.kind}`}>
+      <td className="diff-number">{line.kind === 'add' ? '' : line.left}</td>
+      <td className="diff-number">{line.kind === 'del' ? '' : line.right}</td>
       <td
         className="diff-mark"
         aria-label={line.kind === 'same' ? undefined : line.kind === 'add' ? 'added' : 'removed'}
       >
         {marks[line.kind]}
       </td>
-      <td className="diff-number">{line.kind === 'add' ? '' : line.left}</td>
-      <td className="diff-number">{line.kind === 'del' ? '' : line.right}</td>
       <td className="diff-text">
         <code>{line.text || ' '}</code>
       </td>
@@ -59,13 +47,54 @@ function SplitRows({ lines }: { lines: readonly DiffLine[] }) {
   ));
 }
 
-function DiffTable({ diff, layout, caption }: { diff: Diff; layout: Layout; caption: string }) {
+function DiffTable({
+  diff,
+  layout,
+  caption,
+  before,
+  after,
+}: {
+  diff: Diff;
+  layout: Layout;
+  caption: string;
+  before: number;
+  after: number;
+}) {
   const [open, setOpen] = useState<ReadonlySet<number>>(new Set());
   const parts: Hunk[] = hunks(diff.lines);
   return (
     <div className="diff-scroll">
       <table className={`diff-table diff-${layout}`}>
         <caption className="sr-only">{caption}</caption>
+        <colgroup>
+          {layout === 'split' ? (
+            <>
+              <col style={{ width: 40 }} />
+              <col />
+              <col style={{ width: 40 }} />
+              <col />
+            </>
+          ) : (
+            <>
+              <col style={{ width: 34 }} />
+              <col style={{ width: 34 }} />
+              <col style={{ width: 24 }} />
+              <col />
+            </>
+          )}
+        </colgroup>
+        <thead>
+          <tr>
+            {layout === 'split' ? (
+              <>
+                <th colSpan={2}>Revision {before}</th>
+                <th colSpan={2}>Revision {after}</th>
+              </>
+            ) : (
+              <th colSpan={4}>{caption}</th>
+            )}
+          </tr>
+        </thead>
         <tbody>
           {parts.map((part, index) =>
             part.kind === 'fold' && !open.has(index) ? (
@@ -102,57 +131,36 @@ function DiffResult({ comparison, diff, layout }: { comparison: Comparison; diff
           ))}
         </ul>
       )}
-      <p className="script-note">Lines are from the saved configuration JSON, not the generated script.</p>
       <DiffTable
         key={`${comparison.otherId}-${layout}`}
         diff={diff}
         layout={layout}
         caption={`${heading}${layout === 'unified' ? ', one column' : ''}`}
+        before={comparison.other!.ordinal}
+        after={comparison.ordinal}
       />
     </>
   );
 }
 
-function DiffStatus({ comparison }: { comparison: Comparison }) {
-  if (comparison.failed)
-    return (
-      <p role="alert" className="field-error">
-        The other revision could not be read.
-      </p>
-    );
-  if (comparison.diff === undefined) return <LoadingState label="Comparing revisions…" />;
-  return <p className="script-note">These configurations are too large to compare here.</p>;
-}
-
-/** "Script / … / Changes" (and One column): a line diff of the two saved configurations. */
-export function ChangesTab({ comparison }: { comparison: Comparison }) {
-  const [layout, setLayout] = useState<Layout>('split');
-  const { choices, otherId, setOtherId, diff } = comparison;
-  if (!choices.length) return <p className="script-note">This is the only revision, so there is nothing to compare.</p>;
+/** Verified exported JavaScript, with independent summaries from the saved configurations. */
+export function ChangesTab({
+  comparison,
+  layout,
+  revision,
+  openCurrent,
+}: {
+  comparison: Comparison;
+  layout: Layout;
+  revision: SuiteRevision;
+  openCurrent(): void;
+}) {
   return (
     <div className="script-changes">
-      <div className="script-toolbar">
-        <SegmentedFilter<Layout>
-          label="Diff layout"
-          value={layout}
-          onChange={setLayout}
-          options={[
-            { value: 'split', label: 'Side by side' },
-            { value: 'unified', label: 'One column' },
-          ]}
-        />
-        <Select label="Compare with" value={otherId} onChange={(event) => setOtherId(event.target.value)}>
-          {choices.map((choice) => (
-            <option key={choice.id} value={choice.id}>
-              Revision {choice.ordinal}
-            </option>
-          ))}
-        </Select>
-      </div>
-      {diff && !comparison.failed ? (
-        <DiffResult comparison={comparison} diff={diff} layout={layout} />
+      {comparison.status === 'ready' && comparison.diff ? (
+        <DiffResult comparison={comparison} diff={comparison.diff} layout={layout} />
       ) : (
-        <DiffStatus comparison={comparison} />
+        <ComparisonStatus comparison={comparison} revision={revision} openCurrent={openCurrent} />
       )}
     </div>
   );

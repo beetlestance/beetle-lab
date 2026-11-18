@@ -9,6 +9,15 @@ export type Hunk = { kind: 'lines'; lines: DiffLine[] } | { kind: 'fold'; lines:
 
 /** Largest product of line counts diffed in the browser (an LCS table of this many cells). */
 export const maximumDiffCells = 4_000_000;
+/** Bounds both line arrays and all rows after every fold is expanded. */
+export const maximumDiffLines = 4096;
+function lineCount(text: string, maximum: number): number {
+  let count = 1;
+  for (let at = 0; at < text.length; at++) {
+    if (text.charCodeAt(at) === 10 && ++count > maximum) return count;
+  }
+  return count;
+}
 
 function table(a: readonly string[], b: readonly string[]): Uint32Array {
   const width = b.length + 1;
@@ -24,9 +33,9 @@ function table(a: readonly string[], b: readonly string[]): Uint32Array {
 
 /** Line diff from `before` to `after` by longest common subsequence; null when too large to diff here. */
 export function lineDiff(before: string, after: string): Diff | null {
-  const a = before.split('\n');
-  const b = after.split('\n');
-  if ((a.length + 1) * (b.length + 1) > maximumDiffCells) return null;
+  const input = boundedInput(before, after);
+  if (!input) return null;
+  const { a, b } = input;
   const cells = table(a, b);
   const width = b.length + 1;
   const lines: DiffLine[] = [];
@@ -91,4 +100,16 @@ export function sideBySide(lines: readonly DiffLine[]): [DiffLine | null, DiffLi
   }
   flush();
   return rows;
+}
+
+function boundedLines(before: string, after: string): boolean {
+  const count = lineCount(before, maximumDiffLines);
+  return count < maximumDiffLines && count + lineCount(after, maximumDiffLines - count) <= maximumDiffLines;
+}
+
+function boundedInput(before: string, after: string) {
+  if (!boundedLines(before, after)) return null;
+  const a = before.split('\n');
+  const b = after.split('\n');
+  return (a.length + 1) * (b.length + 1) > maximumDiffCells ? null : { a, b };
 }

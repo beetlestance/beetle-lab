@@ -78,7 +78,7 @@ function summary(value: SuiteRevision) {
     previousRevisionId: ordinal === 1 ? null : earlierId,
   };
 }
-function routes(job: ExportJob | null, overrides: Partial<Record<'revision', SuiteRevision>> = {}) {
+function routes(job: ExportJob | null, overrides: { revision?: SuiteRevision; comparedJob?: ExportJob } = {}) {
   const { second, first } = revisions();
   const page = {
     scope: current.scope,
@@ -92,7 +92,14 @@ function routes(job: ExportJob | null, overrides: Partial<Record<'revision', Sui
     [(path) => path.includes(`/suites/${current.suiteId}/revisions?`), page],
     [(path) => path.endsWith(`/revisions/${current.id}`), overrides.revision ?? second],
     [(path) => path.endsWith(`/revisions/${earlierId}`), first],
-    [(path) => path.endsWith('/exports/latest'), { scope: current.scope, revisionId: current.id, job }],
+    [
+      (path) => path.endsWith(`/revisions/${current.id}/exports/latest`),
+      { scope: current.scope, revisionId: current.id, job },
+    ],
+    [
+      (path) => path.endsWith(`/revisions/${earlierId}/exports/latest`),
+      { scope: current.scope, revisionId: earlierId, job: overrides.comparedJob ?? null },
+    ],
     [(path) => !!job && path.endsWith(`/exports/${job.id}`), job],
     [(path) => path.endsWith(`/workspaces/${workspaceId}`), workspace(organizationId)],
   ];
@@ -116,15 +123,22 @@ function mount(handler: (request: RequestRecord) => Response) {
   );
   return api;
 }
-async function readyJob(): Promise<ExportJob> {
+async function readyJob(owner = current, source = script): Promise<ExportJob> {
   const artifact = {
-    artifactId: current.id,
-    bytes: bytes.byteLength,
-    sha256: await sha256(bytes),
+    artifactId: owner.id,
+    bytes: new TextEncoder().encode(source).byteLength,
+    sha256: await sha256(new TextEncoder().encode(source)),
     name: 'suite.js',
     mediaType: 'text/javascript',
   };
-  return { ...exportJob(), state: 'ready', artifact } as ExportJob;
+  return {
+    ...exportJob(),
+    id: owner.id === current.id ? exportJob().id : '55555555-5555-4555-8555-555555555555',
+    revisionId: owner.id,
+    revisionDigest: owner.digest,
+    state: 'ready',
+    artifact,
+  } as ExportJob;
 }
 
 it('shows not found when the revision belongs to another suite', async () => {
@@ -179,18 +193,52 @@ it('refuses a script whose bytes do not match the published SHA-256', async () =
   expect(screen.queryByRole('region', { name: 'Script source' })).toBeNull();
 });
 
-it('diffs the saved configurations side by side and in one column', async () => {
-  mount(routes(null));
+it('compares verified generated JavaScript in both layouts and keeps configuration summaries separate', async () => {
+  const { first } = revisions();
+  const before = script.replace('http://synthetic.invalid', 'http://synthetic.invalid/before');
+  const currentJob = await readyJob();
+  const otherJob = await readyJob(first, before);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input) => {
+      const source = String(input).includes(otherJob.id) ? before : script;
+      const payload = new TextEncoder().encode(source);
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array(payload));
+            controller.close();
+          },
+        }),
+      );
+    }),
+  );
+  const api = mount(routes(currentJob, { comparedJob: otherJob }));
   fireEvent.click(await screen.findByRole('tab', { name: /Changes/ }));
-  expect((await screen.findAllByText(/Revision 1 → revision 2/)).length).toBeGreaterThan(0);
+  expect(await screen.findByText('Revision 1 → revision 2 · 1 line added, 1 removed')).toBeInTheDocument();
   expect(screen.getByText('1 request added')).toBeInTheDocument();
-  expect(
-    screen.getByText('Lines are from the saved configuration JSON, not the generated script.'),
-  ).toBeInTheDocument();
+  expect(screen.getByText("http.get('http://synthetic.invalid/before');")).toBeInTheDocument();
+  expect(screen.queryByText('Lines are from the saved configuration JSON, not the generated script.')).toBeNull();
   expect(screen.getByRole('radio', { name: 'Side by side' })).toBeChecked();
   fireEvent.click(screen.getByRole('radio', { name: 'One column' }));
   await waitFor(() => expect(screen.getByRole('radio', { name: 'One column' })).toBeChecked());
   expect(screen.getAllByLabelText('added').length).toBeGreaterThan(0);
+  expect(api.records.every((record) => record.method === 'GET')).toBe(true);
+});
+
+it('offers explicit preparation and recheck when scripts are missing, without creating jobs or fake counts', async () => {
+  const api = mount(routes(null));
+  fireEvent.click(await screen.findByRole('tab', { name: /Changes/ }));
+  expect(
+    await screen.findByText('Both revisions need a verified exported script before their JavaScript can be compared.'),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Open revision 1 to prepare its script' })).toHaveAttribute(
+    'href',
+    `/organizations/${organizationId}/workspaces/${workspaceId}/suites/${current.suiteId}/revisions/${earlierId}/script`,
+  );
+  expect(screen.getByRole('button', { name: 'Check again' })).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Changes' })).not.toHaveTextContent('+0');
+  expect(api.records.every((record) => record.method === 'GET')).toBe(true);
 });
 
 it('shows a retryable export read failure rather than claiming the revision has no script', async () => {

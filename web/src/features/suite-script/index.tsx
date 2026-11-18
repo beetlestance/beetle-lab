@@ -4,19 +4,21 @@ import { useSessionAccess } from '../../app/session.js';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { ExportJob, Suite, SuiteRevision, SuiteRevisionSummary, Workspace } from '@beetle/contracts/api';
+import type { Suite, SuiteRevision, SuiteRevisionSummary, Workspace } from '@beetle/contracts/api';
 import { ApiFailure, readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Button } from '../../components/Button.js';
 import { NotFound } from '../../components/NotFound.js';
 import { AuthoringState } from '../suites/AuthoringState.js';
-import { TabPanel, Tabs } from '../../components/Tabs.js';
+import { TabPanel } from '../../components/Tabs.js';
 import { ExportDialog } from '../exports/ExportDialog.js';
-import { maximumShownScriptBytes, readScript } from '../exports/scriptText.js';
+import { useScriptText } from './script-read.js';
 import { useRevisionExport } from '../exports/useRevisionExport.js';
 import { savedWhen } from '../suite-editor/ConflictDialog.js';
 import { StartRun } from '../suite-overview/index.js';
+import { ScriptTabs } from './ComparisonControls.js';
+import type { Layout } from './comparison-model.js';
 import { ChangesTab } from './ChangesTab.js';
 import { ScriptTab } from './ScriptTab.js';
 import { useComparison } from './useComparison.js';
@@ -39,19 +41,6 @@ function savedLine(revision: SuiteRevision): string {
 function savedSeparator(message: string | null | undefined, saved: string) {
   if (!message || !saved) return '';
   return /[.!?。！？]$/.test(message.trimEnd()) ? ' ' : '. ';
-}
-
-/** The ready script's text, read once through the verified content route. */
-function useScriptText(revision: SuiteRevision, job: ExportJob | undefined) {
-  const { organizationId, workspaceId } = revision.scope;
-  const readable = job?.state === 'ready' && !!job.artifact && job.artifact.bytes <= maximumShownScriptBytes;
-  return useQuery({
-    queryKey: [...queryKeys.export(organizationId, workspaceId, job?.id ?? ''), 'content'],
-    enabled: readable,
-    queryFn: ({ signal }) => readScript(job!, signal),
-    retry: false,
-    staleTime: Infinity,
-  });
 }
 
 function ScriptHeader({
@@ -88,13 +77,12 @@ function ScriptHeader({
           </Button>
         </div>
       </header>
-      {(revision.message || saved) && (
-        <p className="script-description">
-          {revision.message && <span>{revision.message}</span>}
-          {savedSeparator(revision.message, saved)}
-          {saved && <span>{saved}</span>}
-        </p>
-      )}
+      <p className="script-description">
+        {revision.message && <span>{revision.message}</span>}
+        {savedSeparator(revision.message, saved)}
+        {saved && <span>{saved}</span>}
+        {!revision.message && !saved && 'Saved details were not recorded.'}
+      </p>
       {copied && (
         <p role="status" className="script-note">
           {copied}
@@ -138,15 +126,34 @@ function RunRevision({
   );
 }
 
+function useCurrentScript(revision: SuiteRevision) {
+  const flow = useRevisionExport(revision);
+  const script = useScriptText(revision.scope, revision, flow.job);
+  return {
+    flow,
+    script,
+    current: {
+      job: flow.job,
+      text: script,
+      pending: flow.listing.isPending || (flow.create.id !== null && flow.detail.isPending),
+      failed: flow.listing.isError || flow.detail.isError || script.isError,
+    },
+    retry: () => {
+      void flow.listing.refetch({ cancelRefetch: false });
+      if (flow.detail.isError) void flow.detail.refetch({ cancelRefetch: false });
+      if (script.isError) void script.refetch();
+    },
+  };
+}
+
 function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: SuiteRevision; workspace: Workspace }) {
   const { organizationId, workspaceId } = revision.scope;
   const [tab, setTab] = useState<Tab>('script');
   const [exporting, setExporting] = useState(false);
-  const flow = useRevisionExport(revision);
-  const comparison = useComparison(suite, revision);
-  const script = useScriptText(revision, flow.job);
+  const [layout, setLayout] = useState<Layout>('split');
+  const { flow, script, current, retry } = useCurrentScript(revision);
+  const comparison = useComparison(suite, revision, current, retry);
   const suiteHref = routes.suite(organizationId, workspaceId, suite.id);
-  const counts = comparison.diff ? `+${comparison.diff.added} −${comparison.diff.removed}` : undefined;
   return (
     <section className="content-section script-page">
       <ScriptBreadcrumbs suite={suite} revision={revision} workspace={workspace} choices={comparison.choices} />
@@ -163,21 +170,24 @@ function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: Su
           />
         }
       />
-      <Tabs<Tab>
-        label="Script views"
-        idBase="script"
-        selected={tab}
-        onSelect={setTab}
-        items={[
-          { id: 'script', label: 'Script' },
-          { id: 'changes', label: 'Changes', count: counts },
-        ]}
+      <ScriptTabs
+        tab={tab}
+        select={setTab}
+        comparison={comparison}
+        layout={layout}
+        setLayout={setLayout}
+        suite={suite}
       />
       <TabPanel idBase="script" id={tab}>
         {tab === 'script' ? (
           <ScriptTab revision={revision} flow={flow} script={script} open={() => setExporting(true)} />
         ) : (
-          <ChangesTab comparison={comparison} />
+          <ChangesTab
+            comparison={comparison}
+            layout={layout}
+            revision={revision}
+            openCurrent={() => setExporting(true)}
+          />
         )}
       </TabPanel>
       {exporting && (

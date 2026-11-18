@@ -7,15 +7,15 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 
 ## Ownership
 
-| Concern | Owner |
-| --- | --- |
-| Routes and route builders | `web/src/app/routes.ts`, the only source of in-app URLs |
-| Server state | One TanStack Query client; keys from `web/src/app/queries.ts`, nested organisation → workspace → run → attempt |
-| API access | The generated client from `contracts/`; no hand-written DTOs, no second client factory |
-| Session access | The session gate's one verified read, passed down as `SessionContext` (`web/src/app/session.tsx`: read-only and restored backup); features never read the session |
-| Input bytes | One byte client per paired session (`InputTransferContext`); see [inputs](inputs.md) |
-| Drafts, chart and form state | The feature that renders them; never in the query cache or browser storage |
-| Visual tokens and motion | `web/src/styles/tokens.css` (Darkroom and Scarab skins, bundled fonts, reduced-motion policy) and the primitives in `web/src/components/`; features add no palette or fonts |
+| Concern                      | Owner                                                                                                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routes and route builders    | `web/src/app/routes.ts`, the only source of in-app URLs                                                                                                                     |
+| Server state                 | One TanStack Query client; keys from `web/src/app/queries.ts`, nested organisation → workspace → run → attempt                                                              |
+| API access                   | The generated client from `contracts/`; no hand-written DTOs, no second client factory                                                                                      |
+| Session access               | The session gate's one verified read, passed down as `SessionContext` (`web/src/app/session.tsx`: read-only and restored backup); features never read the session           |
+| Input bytes                  | One byte client per paired session (`InputTransferContext`); see [inputs](inputs.md)                                                                                        |
+| Drafts, chart and form state | The feature that renders them; never in the query cache or browser storage                                                                                                  |
+| Visual tokens and motion     | `web/src/styles/tokens.css` (Darkroom and Scarab skins, bundled fonts, reduced-motion policy) and the primitives in `web/src/components/`; features add no palette or fonts |
 
 ## Scope and lifetime
 
@@ -54,29 +54,30 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 
 ## Polling
 
-| Surface | Interval | Stops on |
-| --- | --- | --- |
+| Surface                                                  | Interval          | Stops on                                                                   |
+| -------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------- |
 | Run result, run timeline, Overview featured run (active) | 2 s while visible | Terminal run (then one final refresh after any issued read settles), error |
-| Artifact publication (pending) | 2 s while visible | Ready, absent, error; terminal run alone does not mean ready |
-| Export jobs list / single job | 2 s / 1 s | All jobs terminal, error |
-| Retention batch (applied) | 2 s | Any other state |
-| Overview aggregates, suite summaries, command search | Never | Manual refresh only |
+| Artifact publication (pending)                           | 2 s while visible | Ready, absent, error; terminal run alone does not mean ready               |
+| Export jobs list / single job                            | 2 s / 1 s         | All jobs terminal, error                                                   |
+| Retention batch (applied)                                | 2 s               | Any other state                                                            |
+| Overview aggregates, suite summaries, command search     | Never             | Manual refresh only                                                        |
 
 Errors stop automatic polling; recovery is an explicit retry. A page with a next
 cursor is backlog to drain at the normal cadence, not a tight loop.
 
 ## Bounded views
 
-| Surface | Bound |
-| --- | --- |
-| Lists and folder pickers | Pages of 100; folder history 20 pages; one selected label across pages |
-| Run timeline | 100 rows and 64 KiB of projected rows, oldest evicted with a visible notice; bootstrap uses at most 2 requests (limit 1, then a seek to `durableThrough - 100`) |
-| Artifact inventory | One current page of 100 descriptors; pages never appended across attempts or manifests |
-| Result panel | At most 128 declared artifacts, shown as declarations, never as download receipts |
-| Script source | verified text ≤ 1 MiB; at most 34 rendered rows and four index bytes per line; Copy/Export use complete source |
-| Command search | First page of 100 per scope; query up to 128 characters; 40 results with the full match count |
-| Input upload | One file up to 8 MiB; 64 KiB sequential appends; directory import 128 files, 8 MiB each, 128 MiB total, depth 8 |
-| Input download | One verified result up to 8 MiB per control; one object URL, revoked on replacement or unmount |
+| Surface                  | Bound                                                                                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lists and folder pickers | Pages of 100; folder history 20 pages; one selected label across pages                                                                                          |
+| Run timeline             | 100 rows and 64 KiB of projected rows, oldest evicted with a visible notice; bootstrap uses at most 2 requests (limit 1, then a seek to `durableThrough - 100`) |
+| Artifact inventory       | One current page of 100 descriptors; pages never appended across attempts or manifests                                                                          |
+| Result panel             | At most 128 declared artifacts, shown as declarations, never as download receipts                                                                               |
+| Script source            | verified text ≤ 1 MiB; at most 34 rendered rows and four index bytes per line; Copy/Export use complete source                                                  |
+| Script changes           | two verified artifacts; ≤ 4,096 combined lines and 4M LCS cells, checked before allocation; same-suite choices from one page of 100 revisions                   |
+| Command search           | First page of 100 per scope; query up to 128 characters; 40 results with the full match count                                                                   |
+| Input upload             | One file up to 8 MiB; 64 KiB sequential appends; directory import 128 files, 8 MiB each, 128 MiB total, depth 8                                                 |
+| Input download           | One verified result up to 8 MiB per control; one object URL, revoked on replacement or unmount                                                                  |
 
 ## Transfers
 
@@ -127,6 +128,10 @@ and checks that run belongs to the suite, while labelling the selected script
 revision separately. Malformed/duplicate origins issue no read. Cached namespace,
 suite or revision refresh failures keep unknown export replay mounted; initial
 not-found and foreign-suite data still refuse. Restored history disables run admission.
+Changes compares generated JavaScript bytes, independently of configuration-derived
+summary chips. Both sources bind scope, revision digest and published artifact
+identity before rendering. Missing scripts require explicit preparation; comparison
+never creates export jobs automatically or substitutes a configuration diff.
 
 ## Suite inventory
 
@@ -173,10 +178,10 @@ filters keeps the suite context; an explicit workspace-history link clears it.
 
 ## Anchors
 
-| Code | Reviewed |
-| --- | --- |
+| Code                                           | Reviewed       |
+| ---------------------------------------------- | -------------- |
 | `web/src/app/routes.ts` | `e76ff2493fa2` |
-| `web/src/app/queries.ts` | `31296c59bb64` |
+| `web/src/app/queries.ts` | `3ec14ef5ff88` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |
 | `web/src/features/command-search/model.ts` | `6d1867832757` |

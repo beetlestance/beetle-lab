@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { configChanges } from './changes.js';
-import { hunks, lineDiff, maximumDiffCells, sideBySide } from './diff.js';
+import { hunks, lineDiff, maximumDiffCells, maximumDiffLines, sideBySide } from './diff.js';
 
 describe('lineDiff', () => {
   it('reports additions and removals with line numbers on each side', () => {
@@ -14,6 +14,14 @@ describe('lineDiff', () => {
       { kind: 'same', text: 'c', left: 3, right: 3 },
       { kind: 'add', text: 'd', right: 4 },
     ]);
+  });
+
+  it('rejects newline-dense input before allocating per-line arrays or expanded rows', () => {
+    const text = '\n'.repeat(1_048_575);
+    expect(lineDiff(text, 'one line')).toBeNull();
+    expect(lineDiff('one line', text)).toBeNull();
+    const near = '\n'.repeat(maximumDiffLines - 2);
+    expect(lineDiff(near, 'changed')?.lines.length).toBe(maximumDiffLines);
   });
 
   it('declines inputs whose comparison table would exceed the bound', () => {
