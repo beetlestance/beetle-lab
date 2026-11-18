@@ -31,10 +31,7 @@ export function RunDetail(scope: RunScope & { runId: string }) {
   const refresh = { run: () => void query.refetch(), busy: query.isFetching };
   if (missing(query.error))
     return (
-      <NotFound
-        kind="run"
-        back={{ to: routes.runs(scope.organizationId, scope.workspaceId), label: 'Back to runs' }}
-      />
+      <NotFound kind="run" back={{ to: routes.runs(scope.organizationId, scope.workspaceId), label: 'Back to runs' }} />
     );
   return (
     <>
