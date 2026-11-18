@@ -36,6 +36,23 @@ An input that a revision uses is **pinned** and cannot be deleted until no
 revision needs it. Downloads are verified (size and SHA-256) before the browser
 offers the file.
 
+### Add a sample file
+
+To try a suite before you have real data, open the workspace's **Inputs** tab and
+choose **Add a sample file**. Pick one of three samples, check its name and
+choose **Add sample**.
+
+| Sample | Contents |
+| --- | --- |
+| `users.csv` | 100 test users: `id`, `username`, `email`, `password` |
+| `product-ids.csv` | 500 product IDs in one `product_id` column |
+| `order-body.json` | A JSON array of 20 order objects to send as request bodies |
+
+The file is generated in your browser and uploaded like any other input, to the
+workspace's root folder. The data is made up and the same every time. If an input
+with the same name is already listed, the dialog says so and offers a free name
+such as `users-2.csv`; only the inputs on the listed page are checked.
+
 ## Request bodies and templates
 
 A request body can be literal text or JSON, or a template that fills values from

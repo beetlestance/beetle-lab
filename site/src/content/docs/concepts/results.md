@@ -58,7 +58,18 @@ says it cannot advise.
 
 ## Comparing runs
 
-Select two to four finished runs in the same workspace. The first is the baseline.
+Compare two to four finished runs of the same workspace:
+
+1. Open the workspace's **Runs** tab and tick the runs. Only finished runs can be
+   ticked. The first one you tick is the **baseline**.
+2. Choose **Compare 2** (the number follows your selection).
+
+The comparison shows each run with its status, the baseline marked **Baseline**
+and **Make baseline** on the others. Whole-run figures show how far each run
+moved from the baseline: a relative change, percentage points for rates, or
+"same". Where either side has no value, no change is shown. **What was different
+between the runs** lists revision, engine profile, limits, execution policy and
+note, and a chart shows one chosen metric for each run.
 
 - Metrics are matched by the stable identity of each request and assertion, even
   if they were renamed between revisions. Removed ones show as not applicable.
@@ -67,13 +78,14 @@ Select two to four finished runs in the same workspace. The first is the baselin
 - Warnings point out what could make the runs unequal: different target revision,
   contention from other runs, unknown secret versions, disabled sampling, or a
   missing or partial result.
+- Each run's chart keeps its own time axis and scale; the charts are not overlaid.
 
-A comparison states differences; it never claims two runs were equivalent.
+A comparison states differences; it never claims two runs were equivalent. The
+automation client's `compare` command returns the same comparison as JSON.
 
 ## Exports
 
 From a suite revision you can export a standalone k6 script that runs the same
 plan outside Beetle Lab. Export runs as its own admitted job, produced by the same
-compiler the engine uses. A revision that depends on something a standalone
-script cannot carry, such as an installed secret, is refused with an explicit
-reason rather than exported partially.
+compiler the engine uses, and is never a run. A revision that uses a secret is
+refused rather than exported partially. See [Export a k6 script](/guides/export-scripts/).
