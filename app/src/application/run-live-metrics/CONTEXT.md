@@ -5,7 +5,8 @@ Validate scope/run/selected active attempt and durable physical binding before I
 recheck the same authority/current active run after it. Never reads Offer/config.
 Five-second whole-operation lifetime; original metadata/network calls remain owned
 after caller abort until settlement. Close fences synchronously, aborts and drains.
-Shared frame/hash/64 KiB validation and <=6 s capture/publication/window-end age,
-no future or wall regression; freshness is rechecked after final metadata read.
+Shared frame/hash/64 KiB validation and agent-origin <=6 s freshness budget.
+Only the agent compares source UTC. Recheck receiver monotonic expiry after final
+metadata, then return that expiry and verification stamp alongside the frame.
 No durable mutation, launch, ACK, retry or inferred execution/result status.
 Tests: app/test/run-live-metrics and app/test/http/run-live-metrics.

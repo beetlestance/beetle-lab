@@ -27,9 +27,14 @@ export interface RunExecutionReader {
 export interface RunLiveMetricQuery extends RunKey {
   readonly attemptId: string;
 }
+export interface RunLiveMetricValue {
+  readonly frame: LiveMetricSnapshot;
+  readonly freshUntilMonotonicMs: number;
+  readonly observedMonotonicMs: number;
+}
 export interface RunLiveMetricsService {
   readonly reader: {
-    getRunLiveMetrics(query: RunLiveMetricQuery, context: MetricReadContext): Promise<LiveMetricSnapshot>;
+    getRunLiveMetrics(query: RunLiveMetricQuery, context: MetricReadContext): Promise<RunLiveMetricValue>;
   };
   close(): Promise<void>;
 }

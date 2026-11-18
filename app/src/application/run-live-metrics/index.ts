@@ -5,6 +5,7 @@ import type {
   RunExecutionReader,
   RunLiveMetricQuery,
   RunLiveMetricsService,
+  RunLiveMetricValue,
   RunnerLiveMetricGateway,
 } from '../../ports/run-live-metrics.js';
 import type { MetricReadContext } from '../../ports/run-metrics.js';
@@ -43,7 +44,7 @@ export function createRunLiveMetricsService(options: Options): RunLiveMetricsSer
   const active = new Map<MetricReadOperation, Promise<unknown>>();
   let closed = false;
   let closing: Promise<void> | undefined;
-  async function capture(q: RunLiveMetricQuery, owner: MetricReadOperation): Promise<LiveMetricSnapshot> {
+  async function capture(q: RunLiveMetricQuery, owner: MetricReadOperation): Promise<RunLiveMetricValue> {
     owner.check();
     const before = captureLiveAttemptBinding(await read({ id: q.id, scope: q.scope }), q);
     owner.check();
@@ -62,7 +63,7 @@ export function createRunLiveMetricsService(options: Options): RunLiveMetricsSer
     const finalMonotonic = monotonic();
     if (finalMonotonic < receivedMonotonic) throw new MetricReadError('unavailable');
     assertFresh(frame, expected, result.freshUntilMonotonicMs, finalMonotonic);
-    return frame;
+    return { frame, freshUntilMonotonicMs: result.freshUntilMonotonicMs, observedMonotonicMs: finalMonotonic };
   }
   return Object.freeze({
     reader: Object.freeze({

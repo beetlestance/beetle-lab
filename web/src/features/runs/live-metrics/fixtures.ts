@@ -35,7 +35,10 @@ export function fixture(patch: Partial<LiveReadPorts> = {}) {
   let mono = 0;
   let value = frame();
   const fetch = vi.fn<typeof globalThis.fetch>(
-    async () => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } }),
+    async () =>
+      new Response(JSON.stringify(value), {
+        headers: { 'content-type': 'application/json', 'x-beetle-live-fresh-for-ms': '6000' },
+      }),
   );
   const hash = vi.fn(digest);
   const controller = new AbortController();

@@ -129,8 +129,9 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 | Target readings | optional `target` only when `targetSampling` is configured: ≤ 8 newest `before`/`during` samples of 12 fixed target-reported keys (null = unknown), ascending, none after `publishedAtMs` or older than 8 × interval + 5 s; `omittedSamples` counts those dropped for that frame; the interval comes from approval (agent refuses any other as `target`); read synchronously at publication; a block that cannot be read or fit is dropped (`targetOmittedFrames`), never the metrics |
 | Browser | polls the visible selected active attempt every 2 s after the previous read settles; switches to sealed history at terminal state; may keep target samples by `observedAtMs` (≤ 256, the artifact cap) for the run chart, showing each sample's own age |
 
-Freshness is compared only on the agent's wall clock; each hop subtracts its own
-monotonic elapsed time, so clock offsets between services never extend the 6 s age.
+Freshness is compared only on the agent's wall clock; each HTTP hop carries
+`X-Beetle-Live-Fresh-For-Ms` (1..6000), debiting its own whole request with monotonic
+time. Public onSend rechecks expiry; browser receipt never renews it or compares UTC.
 Unchanged revisions keep their original timestamps and expiry. A truncated, mixed or
 mis-hashed mailbox image, plaintext payload, regression or overlap is `unavailable`
 without retry. A safe producer failure leaves the outcome alone; failed producer

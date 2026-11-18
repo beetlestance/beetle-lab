@@ -85,10 +85,11 @@ export class LiveMetricReads {
       this.check(signal, start);
       if (!/^application\/json(?:;\s*charset=utf-8)?$/i.test(response.headers.get('content-type') ?? ''))
         throw new Error('Live metric content type invalid');
+      const expiry = receiptExpiry(response.headers.get('x-beetle-live-fresh-for-ms'), start.mono);
       bodyOwned = true;
       const bytes = await responseBody(response, { maximum: 65536 }, signal);
       this.check(signal, start);
-      const result = await this.capture(bytes, input.params, signal, start);
+      const result = await this.capture(bytes, input.params, signal, { ...start, expiry });
       this.check(signal, start);
       return result;
     } finally {
@@ -101,7 +102,7 @@ export class LiveMetricReads {
     bytes: Uint8Array,
     params: RunAttemptParams,
     signal: AbortSignal,
-    start: { wall: number; mono: number },
+    start: { wall: number; mono: number; expiry: number },
   ): Promise<LiveFrame> {
     const input: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
     const checked = validateApi('LiveMetricSnapshot', input);
@@ -116,14 +117,9 @@ export class LiveMetricReads {
     const fingerprint = await this.ports.digest(new TextEncoder().encode(encodeCanonicalJson(frame, 65536)));
     this.check(signal, start);
     const now = this.sample();
-    const age = Math.max(...[frame.capturedAtMs, frame.publishedAtMs, frame.endTimeMs].map((time) => now.wall - time));
-    if (
-      !liveMetricScopeMatches(frame.scope, { ...params, generation: 1 }) ||
-      [frame.capturedAtMs, frame.publishedAtMs, frame.endTimeMs].some((time) => time > now.wall)
-    )
-      throw new Error('Live metrics mismatched');
-    if (age > 6000) throw new LiveMetricStale();
-    return { frame, fingerprint, receivedWall: now.wall, receivedMono: now.mono, expiresAtMono: now.mono + 6000 - age };
+    if (!liveMetricScopeMatches(frame.scope, { ...params, generation: 1 })) throw new Error('Live metrics mismatched');
+    if (now.mono >= start.expiry) throw new LiveMetricStale();
+    return { frame, fingerprint, receivedWall: now.wall, receivedMono: now.mono, expiresAtMono: start.expiry };
   }
   private sample() {
     const wall = this.ports.wall();
@@ -142,3 +138,10 @@ function path(params: RunAttemptParams): string {
   return `/api/v2/organizations/${params.organizationId}/workspaces/${params.workspaceId}/runs/${params.runId}/attempts/${params.attemptId}/metrics/live`;
 }
 export const liveMetricReads = new LiveMetricReads();
+
+/** Conservative transit debit: source UTC is compared only at the agent. */
+function receiptExpiry(value: string | null, started: number): number {
+  if (!value || !/^[1-9][0-9]{0,3}$/.test(value) || Number(value) > 6000)
+    throw new Error('Live metric freshness budget invalid');
+  return started + Number(value);
+}

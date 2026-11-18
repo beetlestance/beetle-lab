@@ -5,7 +5,9 @@ retire display leases immediately. Document visibility pauses reads and values.
 
 LiveMetricReads owns <=2 actual fetch/body/hash originals, <=64 KiB/4096 fragments,
 fatal UTF8, subset and canonical-frame WebCrypto hashes, fixed same-origin UUID
-route, five-second deadline and <=6 s capture/publication/window-end freshness.
+route and five-second deadline. The required freshness header is 1..6000 ms;
+request-start monotonic time plus this budget bounds fetch/body/hash work. Source
+UTC is never compared with browser UTC, and receipt never renews expiry.
 Abort retains ignored originals and late-body cancellation through actual cleanup.
 The shared responseBody owns stream cancellation/closed/lock cleanup; retained
 artifact reads keep exact-length verification through their thin adapter.
