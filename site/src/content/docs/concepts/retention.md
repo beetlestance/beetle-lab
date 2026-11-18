@@ -32,17 +32,25 @@ like other settings; see [Organisations and workspaces](/concepts/workspaces/). 
 is one setting, so a workspace override replaces the whole policy, not single
 rules.
 
+In the app, **Settings** edits the age rule as **Remove finished runs older
+than**, in days; empty means off. Count and storage rules are set through the
+[HTTP API](/reference/api/); when a policy has them, the settings page says so
+under the age rule.
+
 ## Preview, then apply
 
-Retention never runs on its own. In a workspace's settings:
+Retention never runs on its own. In the workspace's **Settings** tab, open the
+retention controls and preview:
 
 1. **Preview.** Beetle Lab captures a page of up to 100 candidate runs, each with
    its estimated size and the rule that selected it. It also lists how many runs
    it left out, and why.
-2. **Apply.** You confirm that exact page. Only the runs shown are deleted.
+2. **Apply.** You confirm that exact page with **Remove** and the number of runs.
+   Only the runs shown are deleted, or **Discard preview** to drop it.
 
-A preview expires. An expired preview cannot be applied; take a new one. Before
-deleting each run, Beetle Lab checks again that it is still a safe candidate.
+A preview expires after 15 minutes. An expired preview cannot be applied; take a
+new one. If anything that affects the selection changed since the preview, such
+as a pin or a settings change, Apply refuses the whole page and deletes nothing.
 
 At organisation and installation level, the preview walks through the workspaces
 one at a time and links to each. Applying always happens in a workspace.
@@ -52,16 +60,45 @@ one at a time and links to each. Applying always happens in a workspace.
 | Left out | Why |
 | --- | --- |
 | Active runs | Only completed runs (`finished`, `cancelled` or `errored`) can be deleted |
+| Pinned runs | You asked to keep them; see [Pinning runs](#pinning-runs) |
 | Runs already being cleaned up | Their deletion is already under way |
 | Runs whose size cannot be confirmed | Shown as unknown rather than guessed |
 
 Completed runs that are left out still count towards the count and storage rules.
-They are kept, but they use part of the allowance.
+They are kept, but they use part of the allowance. The preview lists them under
+**Never removed by this preview**, grouped by reason with their estimated size.
+
+## Pinning runs
+
+A **pin** keeps one completed run out of retention and out of manual deletion
+until you unpin it. It is a protection, not a copy: the run stays where it is and
+still uses its space.
+
+- Open a finished run and choose **Pin this run**. The button shows **Pinned**
+  once the server confirms; nothing is shown as pinned before that, because
+  deleting depends on it. Press it again to unpin.
+- Only completed runs can be pinned. A queued, active or finalizing run has no
+  pin control, and a run whose deletion has started cannot be pinned.
+- A workspace holds at most 256 pinned runs. The 257th pin is refused; unpin one
+  first. The **Pinned** filter in the **Runs** tab lists them, and a **Pinned**
+  badge marks them in the list.
+- A pinned run still counts towards the count and storage rules. If pinned runs
+  alone use more than a storage or count limit, no preview can meet that limit;
+  the preview does not warn about this yet, so unpin runs or raise the limit.
+- Pinning or unpinning while a preview is open makes that preview stale. Apply
+  then refuses the whole page and removes nothing; take a fresh preview. Apply
+  checks every pin again itself, so a pinned run is never removed.
+- Deleting a pinned run by hand is refused. The delete dialog offers to unpin it
+  first.
+- A retired workspace keeps its pins with its runs. Restored history shows each
+  run's pin state from the backup, read-only.
 
 ## Deleting one run
 
-From a completed run's page you can delete just that run. It goes through the same
-preview and apply steps, and the same checks.
+From a completed run's page, choose **Delete run…** to delete just that run. The
+dialog previews the deletion, with what it would free and when it was checked,
+and deletes only when you confirm. It uses the same preview and apply steps and
+the same checks. A pinned run must be unpinned first.
 
 ## What deleting removes
 
