@@ -20,7 +20,8 @@ import type { ExecutionOperation } from '../execution/index.js';
 import { mapK6Result } from '../result/index.js';
 import { publishK6Result, type ResultPublication } from '../publication/index.js';
 import { Artifacts, outputRoot } from '../artifact-custody/index.js';
-import { startTargetSampling, type TargetSamplingOwner, type TargetSamplingReport } from '../target-sampling/index.js';
+import { AttemptTarget } from './target.js';
+import { executionLimits } from './reservation.js';
 import { MetricArchive, type ArchiveEvidence } from './archive/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
 import { AttemptLive } from './live.js';
@@ -43,8 +44,7 @@ class Attempt {
   private artifacts: Artifacts | undefined;
   private archive: MetricArchive | undefined;
   private archiveFailure: AttemptError | undefined;
-  private targetSampler: TargetSamplingOwner | undefined;
-  private targetReport: TargetSamplingReport | undefined;
+  private readonly target = new AttemptTarget();
   private historyAtCollect = 0;
   private reservation: OutputReservation | undefined;
   private stage: AttemptReason = 'input';
@@ -148,14 +148,16 @@ class Attempt {
     this.stage = 'execution';
     this.fence.check();
     this.quiet.execution = 'unknown';
-    const sampling = compiled.suite.targetSampling;
-    if (sampling)
-      this.targetSampler = await startTargetSampling({
-        target: compiled.suite.target,
-        config: sampling,
-        signal: this.fence.controller.signal,
-        wall: this.ports.clock.wall,
-      });
+    await this.target.start({
+      suite: compiled.suite,
+      directory: this.options.outputRoot,
+      uid: this.options.uid,
+      scope: this.state.scope!,
+      allowance: this.reservation!.targetHistory,
+      signal: this.fence.controller.signal,
+      wall: this.ports.clock.wall,
+      check: () => this.fence.check(),
+    });
     this.fence.check();
     const reservation = this.reservation!;
     const collectMs = this.input!.manifest.phases.find((item) => item.phase === 'collect')!.timeoutMs;
@@ -167,25 +169,18 @@ class Attempt {
       uid: this.options.uid,
       signal: this.fence.controller.signal,
       clock: this.ports.clock,
-      limits: {
-        maximumBuildBytes: reservation.build,
-        reservedOutputBytes: reservation.execution,
-        maximumMetricBytes: 68_719_476_736,
-        maximumMetricRecords: 268_435_456,
-        maximumDiagnosticBytes: 65_536,
-        drainTimeoutMs: 1000,
-        collectionTimeoutMs: Math.min(30_000, collectMs),
-      },
+      limits: executionLimits(reservation, collectMs),
       window: (window, signal) => this.writeWindow(window, signal),
       measureStarted: async (receipt) => {
         if (this.measured || this.collecting) this.fail('execution');
         this.measured = true;
         await this.phases!.transition('execute', 1, receipt.observedAt, receipt.build.bytes);
+        await this.target.startRecording();
         await this.startLive(compiled);
       },
       collectStarted: async (receipt) => {
         if (this.collecting) this.fail('execution');
-        if (this.targetSampler) this.targetReport = await this.targetSampler.finish();
+        await this.target.finish();
         this.fence.check();
         await this.closeLive();
         this.collecting = true;
@@ -194,8 +189,11 @@ class Attempt {
         await this.phases!.transition(
           'collect',
           this.measured ? 1 : 0,
-          this.targetSampler ? undefined : receipt.observedAt,
-          this.historyAtCollect + this.live.state().producedBytes + (this.measured ? 0 : receipt.build.bytes),
+          this.target.source ? undefined : receipt.observedAt,
+          this.historyAtCollect +
+            this.live.state().producedBytes +
+            this.target.bytes +
+            (this.measured ? 0 : receipt.build.bytes),
         );
       },
     });
@@ -216,6 +214,7 @@ class Attempt {
     this.quiet.notifications = 'confirmed';
     if (this.quiet.execution !== 'confirmed' || this.quiet.input !== 'confirmed') this.fail('cleanup');
     if (this.archiveFailure) throw this.archiveFailure;
+    if (this.target.failure) throw this.target.failure;
     this.fence.check();
   }
   private async startLive(compiled: CompiledInput): Promise<void> {
@@ -231,7 +230,7 @@ class Attempt {
         signal: this.fence.controller.signal,
         clock: this.ports.clock,
         archivePrefix: () => this.archive?.completedPrefix(),
-        ...(this.targetSampler ? { target: this.targetSampler } : {}),
+        ...(this.target.source ? { target: this.target.source } : {}),
       },
       this.ports.openMailbox,
     );
@@ -282,8 +281,8 @@ class Attempt {
     const collectOutputBytes = this.input!.manifest.phases.find((phase) => phase.phase === 'collect')!.outputBytes;
     const history = await this.archiveEvidence();
     const historyWork = archiveAccounting(this.archive, this.historyAtCollect, history);
-    const target = this.targetReport
-      ? await this.artifacts!.target(this.targetReport, this.reservation!.target)
+    const target = this.target.report
+      ? await this.artifacts!.target(this.target.report, this.reservation!.target)
       : undefined;
     const evidence = warningArtifact(compiled, this.state.execution!, this.state.scope!);
     const warnings = evidence ? await this.artifacts!.warnings(evidence, this.reservation!.warnings) : undefined;
@@ -291,7 +290,7 @@ class Attempt {
     const diagnostics = diagnosticReport
       ? await this.artifacts!.diagnostics(diagnosticReport, this.reservation!.diagnostics)
       : undefined;
-    const reports = performanceReports(mapped, this.state, this.reservation!, this.targetReport);
+    const reports = performanceReports(mapped, this.state, this.reservation!, this.target.report);
     const numericBytes = numericAllowance(
       this.reservation!,
       collectOutputBytes -
@@ -326,6 +325,7 @@ class Attempt {
     return this.quiet.artifacts === 'failed' ||
       this.artifacts?.quiescence === 'failed' ||
       this.archive?.quiescence === 'failed' ||
+      this.target.quiescence === 'failed' ||
       this.live.state().quiescence === 'failed'
       ? 'failed'
       : 'confirmed';
@@ -379,7 +379,7 @@ class Attempt {
       execution: this.execution,
       publication: this.publication,
       archive: this.archive,
-      targetSampler: this.targetSampler,
+      target: this.target,
       notifications: this.notifications,
       writer: this.writer,
       phases: this.phases,

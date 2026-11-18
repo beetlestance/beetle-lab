@@ -14,7 +14,8 @@ Fence/failure/close withdraw prefixes. Close drains issued originals, then close
 all retained handles; failed close remains failed. No per-sample sync, retry,
 unlink, background loop, retained sample corpus or authority over sealed reports.
 AppendFiles owns the same fixed-file native custody as the metric archive.
-This producer boundary is not wired into attempts or a public history route yet;
-it does not change installed budgets, the live frame or final target-runtime.json.
+AttemptTarget wires recording after the measured transition, carving 1 MiB from
+the admitted output/execute allowance. Public backfill and live-frame prefix
+transport remain unwired; final target-runtime.json is unchanged.
 Focused checks: vitest run engines/k6/wrapper/target-archive
 and engines/k6/wrapper/target-sampling/recording.test.ts.

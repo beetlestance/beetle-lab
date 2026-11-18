@@ -30,7 +30,11 @@ coverage/diagnostics/peak build; numeric4 also retains the complete native summa
 test duration (otherwise null). Absent quantiles stay unknown. Published files
 remain reported despite later notification failure. Receipt.ok means coordination,
 not test pass; native99 required failures can be healthy failed-test coordination.
-Target observations reserve 1 MiB within output/collect; cooldown precedes collect,
-cleanup aborts/drains sampler originals. Historical output is independent of live.
-Native descriptor/hash ownership is shared through ../artifact-custody/index.
-Checks: scoped Vitest engines/k6/test/{attempt,metric-archive}; Node types.
+Target reports reserve 1 MiB within output/collect; cooldown precedes collect.
+With live opt-in, target recording carves another 1 MiB from output/execute.
+AttemptTarget writes its initial retained snapshot after execute starts, then
+serially records later observations; a pending observation waits for that snapshot.
+All archive bytes charge execute. Cleanup drains sampler/recording before closing
+its file, and recording failures retain their cause across execution callbacks.
+No marker means no active archive. See target-recording.md in system contracts.
+Native custody: ../artifact-custody/index. Checks: Vitest test/{attempt,metric-archive}; Node types.

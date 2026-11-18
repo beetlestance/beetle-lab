@@ -22,8 +22,8 @@ Every ceiling is carved from the accepted Offer output budget by
 `engines/k6/wrapper/attempt/reservation.ts`; none raises a user budget or installed
 ceiling. Order of carving: control clamp(total/32, 64 KiB, 64 MiB), numeric 1 MiB
 (including 4096 B warnings and 32 KiB diagnostics), result 64 KiB, summary 1 MiB,
-reports 512 KiB, target 1 MiB if enabled, live min(8 MiB, total/8) if enabled; of the
-remainder, history takes ≤ min(256 MiB, quarter) and build ≤ 89 MiB. History is
+reports 512 KiB, target 1 MiB if enabled, live min(8 MiB, total/8) if enabled; of the remainder, active target recording reserves 1 MiB when sampling and live are enabled
+([recording contract](target-recording.md)); history then takes ≤ min(256 MiB, quarter) and build ≤ 89 MiB. History is
 further capped at the execute-phase allowance less the 1 MiB summary reserve and the
 live allowance. History or build below 64 KiB, or a collect phase with less than
 64 KiB drain room, fails `output_limit` before native load; history is never
@@ -212,7 +212,7 @@ a failed revocation keeps ownership and rejects close.
 
 | Code | Reviewed |
 | --- | --- |
-| `engines/k6/wrapper/attempt/reservation.ts` | `f10b08b3c4fd` |
+| `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/attempt/archive/` | `93c22f858025` |
 | `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
