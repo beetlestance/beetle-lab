@@ -1,0 +1,134 @@
+{
+  "scope": {
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002",
+    "attemptId": "00000000-0000-4000-8000-000000000003",
+    "generation": 1
+  },
+  "prefix": {
+    "scope": {
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1
+    },
+    "windows": 1,
+    "endTimeMs": 1000,
+    "data": {
+      "artifactId": "00000000-0000-4000-8000-000000000005",
+      "relativePath": "metric-windows.ndjson",
+      "bytes": 2048,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "index": {
+      "artifactId": "00000000-0000-4000-8000-000000000006",
+      "relativePath": "metric-index.ndjson",
+      "bytes": 1024,
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "target": {
+      "scope": {
+        "organizationId": "00000000-0000-4000-8000-000000000001",
+        "workspaceId": "00000000-0000-4000-8000-000000000002",
+        "attemptId": "00000000-0000-4000-8000-000000000003",
+        "generation": 1
+      },
+      "samples": 1,
+      "intervalMs": 1000,
+      "data": {
+        "artifactId": "00000000-0000-4000-8000-000000000007",
+        "relativePath": "target-samples.ndjson",
+        "bytes": 2048,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    }
+  },
+  "producerEpoch": "00000000-0000-4000-8000-000000000004",
+  "subset": {
+    "selected": [
+      {
+        "ordinal": 0,
+        "metric": "beetle_requests",
+        "kind": "counter",
+        "scope": "execute",
+        "tags": {
+          "phase": "execute",
+          "request": "r0"
+        }
+      }
+    ],
+    "excludedSeries": 0
+  },
+  "subsetDigest": "521314b9490e26192899786a1feda12a1e8a5321351dadbfaa529bdbaa6d6fea",
+  "sampled": false,
+  "samples": [
+    {
+      "sequence": 1,
+      "startTimeMs": 0,
+      "endTimeMs": 1000,
+      "series": [
+        {
+          "ordinal": 0,
+          "metric": "beetle_requests",
+          "kind": "counter",
+          "scope": "execute",
+          "tags": {
+            "phase": "execute",
+            "request": "r0"
+          },
+          "unit": "count",
+          "total": {
+            "kind": "counter",
+            "sum": 7
+          }
+        }
+      ]
+    }
+  ],
+  "targetSamples": [
+    {
+      "observedAt": "2026-01-01T00:00:00.000Z",
+      "phase": "before",
+      "status": "ready",
+      "reason": null,
+      "values": {
+        "heapAlloc": null,
+        "heapInuse": null,
+        "heapIdle": null,
+        "heapSys": null,
+        "heapReleased": null,
+        "heapObjects": null,
+        "stackInuse": null,
+        "rss": 1024,
+        "external": null,
+        "arrayBuffers": null,
+        "totalHeapSize": null,
+        "usedHeapSize": null,
+        "heapSizeLimit": null,
+        "mallocedMemory": null,
+        "peakMallocedMemory": null,
+        "goroutines": null,
+        "activeRequests": null,
+        "numCPU": null,
+        "totalMemory": null,
+        "freeMemory": null,
+        "uptime": null,
+        "cpuPercent": null,
+        "systemCpuPercent": null,
+        "uvThreadpoolSize": null,
+        "cppHeap.allocated_size": null,
+        "cppHeap.used_size": null,
+        "eventLoopDelay.mean": null,
+        "eventLoopDelay.p90": null,
+        "eventLoopDelay.p99": null,
+        "eventLoopDelay.max": null,
+        "gc.count": null,
+        "gc.duration": null,
+        "activeHandles": null,
+        "gc.totalMs": null,
+        "gc.maxMs": null,
+        "gc.avgMs": null
+      }
+    }
+  ]
+}

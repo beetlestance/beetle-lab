@@ -10,10 +10,16 @@ interface Entry {
 /** Compact actual selected windows; never synthesize percentile averages or lose endpoints. */
 export class HistorySamples {
   private entries: Entry[] = [];
-  private bytes = 65536;
+  private bytes: number;
   private nodes: number;
   constructor(metadata: unknown) {
-    this.nodes = jsonNodeCount(metadata);
+    try {
+      this.bytes = Buffer.byteLength(encodeCanonicalJson(metadata, LIVE_HISTORY_BYTES)) + 65536;
+      this.nodes = jsonNodeCount(metadata);
+      if (this.bytes > LIVE_HISTORY_BYTES) throw new OutputFailure('output_limit');
+    } catch {
+      throw new OutputFailure('output_limit');
+    }
   }
   add(value: LiveMetricHistorySample): void {
     const entry = {

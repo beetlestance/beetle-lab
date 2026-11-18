@@ -7,19 +7,10 @@ import type { OutputIO } from '../output/index.js';
 import type { CapturedOptions } from './options.js';
 import type { PrefixFiles } from './files.js';
 import { PrefixLines } from './lines.js';
+import { fields, required } from './records.js';
+import { targetSamples } from './target.js';
 export type PrefixHistory = LiveMetricHistory;
 
-function fields(input: unknown, names: readonly string[]): Record<string, unknown> {
-  if (
-    !input ||
-    typeof input !== 'object' ||
-    Array.isArray(input) ||
-    Object.keys(input).length !== names.length ||
-    names.some((name) => !Object.hasOwn(input, name))
-  )
-    throw new OutputFailure('integrity');
-  return input as Record<string, unknown>;
-}
 function header(input: unknown, lane: 'data' | 'index', options: CapturedOptions): void {
   const value = fields(input, ['format', 'version', 'scope', 'dataArtifactId']);
   const scope = validateApi('LiveMetricScope', value.scope);
@@ -33,12 +24,7 @@ function header(input: unknown, lane: 'data' | 'index', options: CapturedOptions
   )
     throw new OutputFailure('integrity');
 }
-async function required(lines: PrefixLines, maximum: number) {
-  const line = await lines.next(maximum);
-  if (!line) throw new OutputFailure('integrity');
-  return line;
-}
-/** Both prefix hashes and all records are verified, even when only900 windows are retained. */
+/** Both prefix hashes and all records are verified, even when only 900 windows are retained. */
 export async function scan(files: PrefixFiles, options: CapturedOptions, owner: OutputIO): Promise<PrefixHistory> {
   const data = new PrefixLines(files, 'data', options.prefix.data);
   const index = new PrefixLines(files, 'index', options.prefix.index);
@@ -54,6 +40,7 @@ export async function scan(files: PrefixFiles, options: CapturedOptions, owner: 
     sampled: options.prefix.windows > 900,
     samples: [],
   };
+  if (options.prefix.target) result.targetSamples = await targetSamples(files, options, owner);
   const limit = Math.min(900, options.prefix.windows);
   let next = 1;
   let previousEnd = -1;

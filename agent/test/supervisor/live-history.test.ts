@@ -48,3 +48,11 @@ it('retains failed native-close ownership and refuses positive retirement',async
 it('does not open native files when a frame has no completed prefix',async()=>{
  const e=await setup();delete e.value.archivePrefix;const actor=e.manager.actor(e.input);await actor.launch();expect(await actor.readLiveHistory(e.operation())).toEqual({ok:false,reason:'unavailable'});expect(e.native).not.toHaveBeenCalled();await e.manager.closeTelemetry();
 });
+
+it('refuses unapproved target metadata before issuing any native history read',async()=>{
+ const e=await setup();e.value.archivePrefix!.target={scope:e.input.key,samples:1,intervalMs:1000,
+  data:{artifactId:'00000000-0000-4000-8000-000000000007',relativePath:'target-samples.ndjson',bytes:2048,sha256:'c'.repeat(64)}};
+ const actor=e.manager.actor(e.input);await actor.launch();
+ expect(await actor.readLiveHistory(e.operation())).toEqual({ok:false,reason:'unavailable'});
+ expect(e.native).not.toHaveBeenCalled();await e.manager.closeTelemetry();
+});

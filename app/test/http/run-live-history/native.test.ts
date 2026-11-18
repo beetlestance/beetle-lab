@@ -2,7 +2,7 @@ import {expect,it,vi} from 'vitest';
 import {captureLiveMetricHistory} from '@beetle/contracts/api';
 import type {RunLiveHistoryService} from '../../../src/ports/run-live-history.js';
 import type {RunMetricsService} from '../../../src/ports/run-metrics.js';
-import data from '../../../../contracts/fixtures/api/valid/live-metric-history.json' with {type:'json'};
+import data from '../../../../contracts/fixtures/api/valid/live-target-history.json' with {type:'json'};
 import {hash} from '../../run-live-metrics/fixtures.js';
 import {httpFixture} from '../run-metrics/fixture.js';
 const unused=async()=>{throw Error('Unexpected synthetic sealed-history read')};

@@ -1,26 +1,30 @@
 # Advisory active history
 
-A completed prefix is not sealed output, a publication receipt or crash durability.
-This owner reads only fixed metric archive prefixes under a retained native lifetime.
-Callers must independently resolve the active attempt and approved producer epoch;
-received frame fields never establish their own authority. Shared snapshot capture
-binds nested scope, counts, names and extents, not caller authorisation.
+readLiveHistory reads fixed metric and optional target prefixes under one retained
+native lifetime. Callers independently resolve the active attempt and approved
+producer epoch; received metadata never establishes its own authority.
+Snapshot capture binds nested scope/counts/names/extents. Target hints require the
+approved sampler interval before this reader is called.
 
-Native range admission is shared with output readers and blocks overlapping cleanup.
-Read-only no-follow descriptors retain directory/file identity and exact UID/mode.
-Appending may grow files; replacement, truncation below the prefix or a changed
-captured prefix fails. Complete hashes and record correspondence precede success.
-No sealed-output reader or custody authority is relaxed. Root directory timestamps
-may change as the active producer creates other files; dev/inode identity may not.
+One shared native range credit excludes overlapping cleanup. Up to four read-only
+no-follow descriptors retain root/file identity and exact UID/mode: root, metric
+pair and optional target file. Appending is allowed; replacement, truncation below
+captured extents or changed captured bytes fails. All hashes and records, actual
+closes and final named checks precede success. A failed close retains admission.
+Root timestamps may change as the active producer creates other files; identity may not.
 
-Bounds: combined prefixes <=256 MiB; IO <=64 KiB; data record <=1 MiB, header<=1 KiB,
-index row<=256 B, windows<=65536. At most 900 deterministically selected source
-windows, including first/last, with explicit sampled coverage; never average p95.
-readLiveHistory owns a 30 s deadline and <=2 MiB projected response. No
-public HTTP history route exists merely because these native helpers are present.
+Metric pair <= 256 MiB / 65536 windows; target <= 1 MiB / 256 samples.
+IO <= 64 KiB; data record <= 1 MiB; target record <= 16 KiB; header <= 1 KiB;
+index row <= 256 B. Line buffers are bounded per lane; partial reads allow
+4 * ceil(prefixBytes / 64 KiB) + 1024 calls per file. One 30 s deadline covers all.
+Target header binds scope, UUID and interval, then contiguous sample rows/count
+and SHA verify the exact extent. The shared target schema keeps full values,
+units, phases and unknowns. No thinning, interpolation or timestamp rebasing.
 
-Line assembly uses one 1 MiB data record buffer and one 1 KiB index/header buffer;
-partial reads allow at most 4 * ceil(prefixBytes / 64 KiB) + 1024 calls per file.
-
-Sample retention also respects the shared 65536 JSON-node budget; pressure removes
-selected interior windows, never averages values, and marks coverage sampled.
+targetSamples is present iff a target prefix exists, with its exact retained count.
+All target bytes/nodes are reserved before metric selection. Response stays within
+2 MiB / 65536 JSON nodes. Metric pressure removes actual interior windows while
+preserving first/final and marking sampled; <= 900 windows, never averaged p95.
+Public access still requires the existing scoped backend and protected HTTP route.
+Contract: docs/system/contracts/active-history.md.
+Focused checks: agent/test/live-history and agent/test/supervisor/live-history.test.ts.

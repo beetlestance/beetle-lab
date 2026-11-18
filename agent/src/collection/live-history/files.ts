@@ -6,7 +6,7 @@ import type { LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import { OutputFailure } from '../output/index.js';
 import type { OutputIO, OutputPorts } from '../output/index.js';
 
-type Lane = 'data' | 'index';
+export type Lane = 'data' | 'index' | 'target';
 interface Entry {
   path: string;
   stat: BigIntStats;
@@ -42,7 +42,7 @@ export class PrefixFiles {
     this.metadata(stat, directory, minimum);
     return stat;
   }
-  private async open(path: string, directory: boolean, minimum: number): Promise<Entry> {
+  private async openEntry(path: string, directory: boolean, minimum: number): Promise<Entry> {
     const stat = await this.named(path, directory, minimum);
     const flags =
       constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK | (directory ? constants.O_DIRECTORY : 0);
@@ -57,17 +57,26 @@ export class PrefixFiles {
     if (!identity(actual, stat)) throw new OutputFailure('custody');
     return { path, stat, handle, directory, minimum };
   }
-  async openPair(): Promise<void> {
+  async open(): Promise<void> {
     if (this.root) throw new OutputFailure('invalid_options');
-    this.root = await this.open(this.options.directory, true, 0);
+    this.root = await this.openEntry(this.options.directory, true, 0);
     for (const lane of ['data', 'index'] as const) {
       const prefix = this.options.prefix[lane];
-      this.files.set(lane, await this.open(join(this.options.directory, prefix.relativePath), false, prefix.bytes));
+      this.files.set(
+        lane,
+        await this.openEntry(join(this.options.directory, prefix.relativePath), false, prefix.bytes),
+      );
     }
+    const target = this.options.prefix.target;
+    if (target)
+      this.files.set(
+        'target',
+        await this.openEntry(join(this.options.directory, target.data.relativePath), false, target.data.bytes),
+      );
     await this.check();
   }
   async check(namedOnly = false): Promise<void> {
-    if (!this.root || this.files.size !== 2) throw new OutputFailure('custody');
+    if (!this.root || this.files.size !== (this.options.prefix.target ? 3 : 2)) throw new OutputFailure('custody');
     for (const entry of [this.root, ...this.files.values()]) {
       const named = await this.named(entry.path, entry.directory, entry.minimum);
       if (!identity(named, entry.stat)) throw new OutputFailure('custody');
@@ -85,7 +94,7 @@ export class PrefixFiles {
     const length = Math.min(65536, buffer.length, file.minimum - position);
     if (!length) throw new OutputFailure('invalid_options');
     const { bytesRead } = await this.io.io(() => file.handle.read({ buffer, offset: 0, length, position }));
-    if (bytesRead <= 0 || bytesRead > length) throw new OutputFailure('integrity');
+    if (!Number.isSafeInteger(bytesRead) || bytesRead <= 0 || bytesRead > length) throw new OutputFailure('integrity');
     return bytesRead;
   }
 }

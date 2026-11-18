@@ -29,3 +29,23 @@ it('rejects a schema-valid history above the shared structural node bound in bot
  const client=createApiClient({baseUrl:'http://synthetic.invalid',fetch:async()=>new Response(bytes,{headers:{'content-type':'application/json'}})});
  expect(await client.getRunLiveHistory({params:{organizationId:value.scope.organizationId,workspaceId:value.scope.workspaceId,attemptId:value.scope.attemptId,runId:'00000000-0000-4000-8000-000000000099'}})).toMatchObject({ok:false,error:{kind:'response'}});
 });
+
+function targetHistory():LiveMetricHistory {
+ const value=fixture();value.prefix.target={scope:value.scope,samples:1,intervalMs:1000,
+  data:{artifactId:'00000000-0000-4000-8000-000000000007',relativePath:'target-samples.ndjson',bytes:2048,sha256:'c'.repeat(64)}};
+ const report=JSON.parse(readFileSync(new URL('../../fixtures/valid/target-runtime-report.json',import.meta.url),'utf8')) as {samples:NonNullable<LiveMetricHistory['targetSamples']>};
+ value.targetSamples=[report.samples[0]!];return value;
+}
+it('round-trips full target samples only with their exact captured prefix count',()=>{
+ const source=targetHistory();const result=decodeLiveMetricHistory(encodeLiveMetricHistory(source,hash),hash);
+ expect(result.targetSamples).toEqual(source.targetSamples);
+ expect(result.targetSamples![0]!.values).toHaveProperty('gc.totalMs');
+ source.targetSamples![0]!.values.rss=42;expect(result.targetSamples![0]!.values.rss).not.toBe(42);
+});
+it.each(['missing','count','unbound','invalid'] as const)('rejects %s target history without inventing absent observations',kind=>{
+ const value=targetHistory();if(kind==='missing')delete value.targetSamples;
+ if(kind==='count')value.prefix.target!.samples++;
+ if(kind==='unbound')delete value.prefix.target;
+ if(kind==='invalid')value.targetSamples![0]!.values.rss=-1;
+ expect(()=>captureLiveMetricHistory(value,hash)).toThrow('Live history rejected');
+});

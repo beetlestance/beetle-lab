@@ -1,7 +1,7 @@
-# Active metric history
+# Active history
 
 `GET …/runs/{runId}/attempts/{attemptId}/metrics/live-history` returns actual source
-windows from a completed archive prefix while that attempt is running. It is an
+windows and optional complete target samples from captured prefixes while running. It is an
 advisory read, without publication, result, release or crash-durability authority.
 
 ## Authority and lifetime
@@ -15,7 +15,7 @@ advisory read, without publication, result, release or crash-durability authorit
 - Native reads use retained no-follow descriptors, exact UID/mode and dev/inode
   checks. Files may append and the directory timestamps may change. Replacement,
   truncation below the captured extent and changed prefix bytes fail.
-- Both captured prefix hashes, headers, sequences, offsets, lengths and source
+- All captured prefix hashes, headers, sequences, offsets, lengths and source
   times are verified before success. Actual closes and final named checks precede
   returning data. Sealed-output readers and their gates remain separate.
 - Cancel/timeout hints retain issued originals. A failed native close keeps its
@@ -28,11 +28,11 @@ advisory read, without publication, result, release or crash-durability authorit
 | Agent and backend ingress | One history original each; no queue or automatic retry |
 | Lifetime | 30 s per read, without extending a run's execution budget |
 | Native admission | Shared output range credits; overlapping cleanup excluded |
-| Captured archive | Data + index ≤ 256 MiB, ≤ 65536 windows |
-| IO and records | ≤ 64 KiB reads; data record ≤ 1 MiB, header ≤ 1 KiB, index row ≤ 256 B |
+| Captured archive | Metric data + index ≤ 256 MiB / 65536 windows; target ≤ 1 MiB / 256 samples |
+| IO and records | ≤ 64 KiB reads; data record ≤ 1 MiB, header ≤ 1 KiB, index row ≤ 256 B; target record ≤ 16 KiB |
 | Partial reads | ≤ 4 × ceil(prefix bytes / 64 KiB) + 1024 calls per file |
 | Reply | Existing 2 MiB API ceiling, 65536 JSON nodes, depth 64, 4096 entries per collection |
-| Samples | ≤ 900 actual windows; first and final retained; explicit `sampled` flag |
+| Samples | ≤ 900 actual metric windows, first/final retained; every captured target sample retained |
 
 The scan validates every source record. It selects candidate windows across the
 prefix, then removes selected interior windows when byte/node budgets require it.
@@ -44,8 +44,14 @@ The response binds scope, producer epoch, subset digest and prefix identity.
 `contracts/src/api/live-history.ts` owns capture/encoding/decoding. The agent's
 private `/runner/v1/attempts/{id}/live-history` route shares this DTO and normal
 runner authentication. Latest-window reads retain their separate 5 s / 64 KiB limits.
-An optional nested target prefix is [approved metadata](target-recording.md#prefix-transport)
-only; this reader still verifies the metric pair and does not read target samples.
+With an approved [target prefix](target-recording.md#prefix-transport), the same native
+owner opens the fixed target file and verifies scope, UUID, interval, contiguous
+sequence/count, complete hash/extent and final name. The response's `targetSamples`
+exists iff that prefix exists, with its exact sample count and the full shared
+36-key target values, units, phases and nulls. No cross-peer UTC comparison drops
+recorded samples. Target metadata bytes/nodes are reserved before metric windows;
+pressure thins only metric windows. No new route, read credit, queue or retry.
+The shared sample schema is the existing runner `target-runtime-report` definition.
 
 ## Browser presentation
 
@@ -59,8 +65,8 @@ The browser validates the bounded JSON, subset SHA-256, scope, epoch and current
 archive identity before projecting at most 900 actual chart points. Archive window
 ordinals and feed publication sequences remain separate. Charts deduplicate shared
 windows, retain endpoints, label sampled coverage, and break across missing source
-time. Recorded metric history does not backfill target-runtime samples: those
-remain the bounded samples received while this page is open.
+time. Target samples are available from the endpoint; browser target backfill is
+not wired yet and still retains only page-received recent observations.
 
 ## Anchors
 
@@ -73,5 +79,5 @@ remain the bounded samples received while this page is open.
 | `app/src/application/run-live-history/` | `ddb71f298e44` |
 | `app/src/adapters/inbound/http/run-live-history/` | `5f005441d44a` |
 | `app/src/adapters/outbound/runner/live-history.ts` | `3565a7c2df1a` |
-| `agent/src/collection/live-history/` | `739ee70c2202` |
-| `contracts/src/api/live-history.ts` | `ff4f2ae50747` |
+| `agent/src/collection/live-history/` | `602b4e92daa8` |
+| `contracts/src/api/live-history.ts` | `5eb979384e3d` |

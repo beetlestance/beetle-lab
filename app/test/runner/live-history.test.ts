@@ -1,10 +1,10 @@
 import {expect,it} from 'vitest';
 import {captureLiveMetricHistory} from '@beetle/contracts/api';
-import data from '../../../contracts/fixtures/api/valid/live-metric-history.json' with {type:'json'};
+import data from '../../../contracts/fixtures/api/valid/live-target-history.json' with {type:'json'};
 import {hash} from '../run-live-metrics/fixtures.js';
 import {setup,originalIdentity} from './source-fixtures.js';
 import {turns} from './fixtures.js';
-function current(){const value=captureLiveMetricHistory(data,hash);const {organizationId,workspaceId,attemptId,generation}=originalIdentity();value.scope={organizationId,workspaceId,attemptId,generation};value.prefix.scope={...value.scope};return value;}
+function current(){const value=captureLiveMetricHistory(data,hash);const {organizationId,workspaceId,attemptId,generation}=originalIdentity();value.scope={organizationId,workspaceId,attemptId,generation};value.prefix.scope={...value.scope};if(value.prefix.target)value.prefix.target.scope={...value.scope};return value;}
 it('uses the fixed private read and retains its native socket original through actual close',async()=>{
  const e=setup();const value=current();let settled=false;const read=e.gateway.liveHistory(originalIdentity()).then(result=>{settled=true;return result});await turns();const io=e.native.originals[0]!;
  expect(io.options.path).toBe(`/runner/v1/attempts/${originalIdentity().attemptId}/live-history`);expect(io.options.headers).toMatchObject({'x-beetle-journal-authority':originalIdentity().journalAuthority});io.body(value);await turns();expect(settled).toBe(false);io.close();expect(await read).toEqual({ok:true,value});

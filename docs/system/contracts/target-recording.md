@@ -2,8 +2,8 @@
 
 Owner: `engines/k6/wrapper/attempt/target.ts`, composing the target sampler and
 `engines/k6/wrapper/target-archive`. This records samples and carries their optional prefix in approved live frames.
-Native/public target backfill remains unwired; live readings still carry at most
-eight recent target observations.
+Native/public active history now returns the captured target samples; browser
+backfill is not wired yet. Each live reading frame still carries at most eight.
 
 ## Limits and authority
 
@@ -51,7 +51,8 @@ The agent independently checks the approved interval. Its private frozen baselin
 refuses UUID/interval/count/extent/hash regression and survives omitted hints;
 equal counts keep exact bytes/hash, increasing counts require growing bytes.
 Returned frame mutation cannot change this baseline. Metadata hints grant no
-sealed-result or target-file-read authority.
+sealed-result authority. Target-file reads additionally require the existing
+approved actor, native custody and [active-history verification](active-history.md).
 
 ## Anchors
 
@@ -61,7 +62,7 @@ sealed-result or target-file-read authority.
 | `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/target-sampling/` | `93144f55e151` |
-| `engines/k6/wrapper/target-archive/` | `c031a2fc30f1` |
+| `engines/k6/wrapper/target-archive/` | `7bc3a5dba7c2` |
 | `engines/k6/wrapper/artifact-custody/append-files.ts` | `0a83d0325b03` |
 | `contracts/api/v2/live-history-prefix.schema.json` | `995b549a49d8` |
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |

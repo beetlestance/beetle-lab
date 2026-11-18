@@ -66,6 +66,14 @@
           "items": {
             "$ref": "https://beetle-lab.dev/contracts/api/v2/live-history#/$defs/LiveMetricHistorySample"
           }
+        },
+        "targetSamples": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "$ref": "https://beetle-lab.dev/contracts/api/v2/live-history#/$defs/LiveTargetHistorySample"
+          }
         }
       },
       "required": [
@@ -78,6 +86,9 @@
         "samples"
       ],
       "additionalProperties": false
+    },
+    "LiveTargetHistorySample": {
+      "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/sample"
     }
   }
 }

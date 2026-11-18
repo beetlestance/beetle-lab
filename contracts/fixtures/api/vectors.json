@@ -913,5 +913,10 @@
     "path": "valid/live-metric-prefix-with-target.json",
     "schema": "LiveMetricArchivePrefix",
     "valid": true
+  },
+  {
+    "path": "valid/live-target-history.json",
+    "schema": "LiveMetricHistory",
+    "valid": true
   }
 ]

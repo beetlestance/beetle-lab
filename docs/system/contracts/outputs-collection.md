@@ -63,7 +63,7 @@ intake and a committed collection intent.
 | Owner | Limit |
 | --- | --- |
 | Output-native registry (`agent/src/collection/native-custody`) | 4 lifetimes: collection ≤ 2, range ≤ 2, cleanup ≤ 2 borrowed from free credits |
-| Advisory prefix history ([native owner](../../../agent/src/collection/live-history/CONTEXT.md)) | shares range credits; samples grant no source, publication or release authority |
+| Advisory prefix history ([native owner](../../../agent/src/collection/live-history/CONTEXT.md)) | shares range credits; metric/target samples grant no source, publication or release authority |
 | Agent source routes | 2 source originals, each with one of 32 server request slots, reserved before body parse |
 | Backend runner client | source calls use at most 2 of the 8 ordinary gateway credits |
 | Backend byte store (`app/src/adapters/outbound/files/outputs`) | 2 jobs, one original per upload token |
@@ -178,7 +178,7 @@ candidates, so later work is never starved.
 with no items after source-free finalisation, otherwise `pending`. The requested attempt is used even
 when another is active. GET has no write, ACK or accounting effect.
 
-The content route (`…/artifacts/:artifact/content`) needs the local session guard, five UUID parameters,
+The content route (`…/artifacts/:artifact/content`) needs the administrator session guard, five UUID parameters,
 no query or body and at most one byte range (416 if unsatisfiable); a wrong scope or ID is 404 and
 pending publication a conflict. `contracts/src/artifact-download.ts` fixes attachment name and media type
 by kind; other headers follow [input content](inputs.md#transport-rules) (`nosniff`, `no-store`, SHA-256
@@ -212,7 +212,7 @@ marker (change requires recovery); task directories are committed before any pro
 
 | Code | Reviewed |
 | --- | --- |
-| `agent/src/collection/` | `e670dd584834` |
+| `agent/src/collection/` | `be40eea21fac` |
 | `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
 | `agent/src/transport/sources.ts` | `a1e3149482d3` |
 | `app/src/ports/output-bytes.ts` | `10c5f59ca356` |

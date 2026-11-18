@@ -36,7 +36,7 @@ export function readLiveHistory(input: PrefixReadOptions, ports: OutputPorts = n
     },
     async (options) => {
       files = new PrefixFiles(options, ports, owner);
-      await files.openPair();
+      await files.open();
       const value = await scan(files, options, owner);
       await files.check();
       owner.check();

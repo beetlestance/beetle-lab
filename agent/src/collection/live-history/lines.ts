@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { OutputFailure } from '../output/index.js';
-import type { PrefixFiles } from './files.js';
+import type { PrefixFiles, Lane } from './files.js';
 
 /** One bounded line plus a 64 KiB read buffer; never reads beyond the captured extent. */
 export class PrefixLines {
@@ -14,10 +14,10 @@ export class PrefixLines {
   private consumed = 0;
   constructor(
     private readonly files: PrefixFiles,
-    private readonly lane: 'data' | 'index',
+    private readonly lane: Lane,
     private readonly expected: { bytes: number; sha256: string },
   ) {
-    this.record = Buffer.alloc(lane === 'data' ? 1048576 : 1024);
+    this.record = Buffer.alloc(lane === 'data' ? 1048576 : lane === 'target' ? 16384 : 1024);
   }
   async next(maximum: number): Promise<{ value: unknown; bytes: number; offset: number } | undefined> {
     this.checkMaximum(maximum);

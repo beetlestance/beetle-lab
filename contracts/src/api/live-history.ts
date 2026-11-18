@@ -35,7 +35,8 @@ function checkedHistory(input: unknown, hash: LiveMetricHash): LiveMetricHistory
     value.subsetDigest !== hash(liveMetricSubsetText(subset)) ||
     value.sampled !== value.samples.length < value.prefix.windows ||
     value.samples.length > value.prefix.windows ||
-    !samplesMatch(value, subset)
+    !samplesMatch(value, subset) ||
+    !targetsMatch(value)
   )
     throw new LiveHistoryError();
   return { ...value, subset };
@@ -82,4 +83,10 @@ function samplesMatch(value: LiveMetricHistory, subset: LiveMetricHistory['subse
     value.samples.at(-1)!.sequence === value.prefix.windows &&
     previousEnd === value.prefix.endTimeMs
   );
+}
+
+function targetsMatch(value: LiveMetricHistory): boolean {
+  return value.prefix.target
+    ? value.targetSamples?.length === value.prefix.target.samples
+    : value.targetSamples === undefined;
 }
