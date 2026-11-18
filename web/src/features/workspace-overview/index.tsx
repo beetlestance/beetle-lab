@@ -38,8 +38,9 @@ export function WorkspaceOverview({ organizationId, workspaceId, workspaceName }
       </div>
     );
   const snapshot = query.data;
+  // A span, not a <p>: the empty state wraps its note in a paragraph already.
   const refresh = (
-    <p className="overview-snapshot">
+    <span className="overview-snapshot">
       As of <time dateTime={snapshot.generatedAt}>{clockTime(snapshot.generatedAt)}</time>.{' '}
       <button
         type="button"
@@ -49,7 +50,7 @@ export function WorkspaceOverview({ organizationId, workspaceId, workspaceName }
       >
         Refresh overview
       </button>
-    </p>
+    </span>
   );
   if (snapshot.counts.runs === 0)
     return (
