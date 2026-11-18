@@ -28,7 +28,11 @@ traffic, not a configured rate or an instantaneous peak guarantee.
 Limits stay 3,600 windows, 32 MiB data and 64 request labels; larger sources return
 `too_large` with no points. Replies are at most 1 MiB / 65,536 JSON nodes.
 Scope/attempt/source, deterministic ordinals, chronology, gap flags and peak bounds
-are checked on both sides. No chart UI consumes this new route yet.
+are checked on both sides. The result UI consumes this read once per entry; no
+automatic polling, reconnect refetch or per-series fanout. Its five plots share one
+hover, preserve source gaps and signed native time, and expose explicit retry.
+Peak tiles bind to the same numeric hash/manifest/marker as the summary. Per-series
+browsing remains an explicit advanced action.
 
 ## Ownership
 
@@ -44,9 +48,12 @@ history can read it without starting work. No mutation or current-work polling.
 | `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
-| `web/src/features/runs/result/Overview.tsx` | `60ccdb6036ab` |
-| `web/src/features/runs/result/useResultReads.ts` | `474ff2bb4a8d` |
+| `web/src/features/runs/result/Overview.tsx` | `1ad78be84714` |
+| `web/src/features/runs/result/useResultReads.ts` | `48bd0b8fd120` |
 | `app/src/application/run-metrics/chart-history.ts` | `8c4d276be252` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `a6611d151c82` |
 | `contracts/src/api/run-chart-history.ts` | `760adceea5f8` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `2e8b3ab203f4` |
+| `web/src/features/runs/result/chart-model.ts` | `52b2e65dd3d8` |
+| `web/src/features/runs/charts/` | `7df1caa86595` |

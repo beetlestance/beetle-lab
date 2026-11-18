@@ -1,3 +1,4 @@
+import type { MetricChartPoint } from '../charts/types.js';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
 import { targetFrame } from './target-history.js';
 import type { TargetHistory } from './target-history.js';
@@ -12,20 +13,9 @@ import type { LiveFigures, MetricWindowView } from './model.js';
  */
 export const HISTORY_LIMIT = 900;
 
-export interface LivePoint {
-  /** Window end, in ms since the run origin. */
-  readonly t: number;
+export interface LivePoint extends MetricChartPoint {
   readonly archiveSequence: number | null;
   readonly feedSourceSequence: number | null;
-  /** Missing source time before this received window; never connect across it. */
-  readonly gapBefore: boolean;
-  readonly rps: number | null;
-  readonly p50: number | null;
-  readonly p95: number | null;
-  readonly p99: number | null;
-  readonly failedPerSecond: number | null;
-  readonly vus: number | null;
-  readonly vusMax: number | null;
 }
 export interface HistoryCoverage {
   readonly throughTimeMs: number;

@@ -5,7 +5,7 @@ import { Banner } from '../../../components/Banner.js';
 import { useSessionAccess } from '../../../app/session.js';
 import { Button } from '../../../components/Button.js';
 import { formatTime } from '../../run-results/format.js';
-import { RunMetrics } from '../metrics/index.js';
+import { RecordedWhole, RecordedMetrics, AdvancedMetrics, useRecordedCharts } from './RecordedCharts.js';
 import { RunReads } from '../RunReads.js';
 import type { RunSnapshotProps } from '../RunSnapshot.js';
 import { RunTargetObservations } from '../target-observations/index.js';
@@ -17,6 +17,7 @@ import { ResultHeader } from './ResultHeader.js';
 import { RunNote } from './RunNote.js';
 import { ScriptVersion, SummaryTiles, Thresholds } from './Sections.js';
 import { MetricSummary, ResultEndpoints, OverviewStatus, readyOverview } from './Overview.js';
+import type { RunPlan } from '../live/plan.js';
 import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
 import type { ResultReads } from './useResultReads.js';
@@ -52,6 +53,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
   const ready = readyOverview(reads.overview);
+  const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
   const engine = view.status === 'ready' ? view.result : null;
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, readOnly);
@@ -79,20 +81,20 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         </h2>
         <OverviewStatus query={reads.overview} />
         {ready ? (
-          <MetricSummary overview={ready} />
+          <MetricSummary overview={ready} history={charts.data} />
         ) : (
           <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
         )}
         <RunNote run={run} readOnly={readOnly} />
       </section>
+      <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} />
       <div className="result-split">
         <ThresholdSection reads={reads} engine={engine} variant={variantOf(run)} />
         <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
       </div>
       <ResultEndpoints overview={ready} requests={plan.requests} />
-      <section id="result-charts" className="result-section" aria-label="Charts">
-        <RunMetrics run={run} terminal />
-      </section>
+      <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
+      <AdvancedMetrics run={run} />
       <TargetRuntime run={run} engine={engine} status={view.status} />
       <ReportTabs run={run} view={view} />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
@@ -175,4 +177,10 @@ function TargetRuntime({
       )}
     </section>
   );
+}
+
+function recordedLimit(plan: RunPlan): number | null {
+  const rules = plan.rules.filter((rule) => rule.metric === 'http_req_duration' && rule.stat === 'p95');
+  const first = rules[0];
+  return first && rules.every((rule) => rule.value === first.value) ? first.value : null;
 }

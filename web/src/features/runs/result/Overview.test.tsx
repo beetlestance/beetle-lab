@@ -1,8 +1,9 @@
+import historySource from '../../../../../contracts/fixtures/api/valid/run-chart-history.json' with { type: 'json' };
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
-import type { RunMetricOverview } from '@beetle/contracts/api';
+import type { RunMetricOverview, RunChartHistory } from '@beetle/contracts/api';
 import source from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with { type: 'json' };
 import { MetricSummary, ResultEndpoints } from './Overview.js';
 afterEach(cleanup);
@@ -31,4 +32,13 @@ it('states endpoint omissions and never converts a missing or zero denominator i
  expect(screen.getByText(/2 additional endpoint rows are omitted/)).toBeVisible();
  const row=within(screen.getByRole('table')).getAllByRole('row')[1]!;
  expect(within(row).getAllByRole('cell')[0]).toHaveTextContent('–');
+});
+
+it('uses an observed peak only from the same sealed numeric original',()=>{
+ const value=overview();const history=structuredClone(historySource) as RunChartHistory;value.source=history.source;
+ const view=render(<MetricSummary overview={value} history={history} />);
+ expect(screen.getByText('a second on average, observed peak 9')).toBeVisible();
+ const wrong={...history,source:{...history.source!,numericSha256:'f'.repeat(64)}};
+ view.rerender(<MetricSummary overview={value} history={wrong} />);
+ expect(screen.getByText('a second on average')).toBeVisible();expect(screen.getByText(/Observed peak is unavailable/)).toBeVisible();
 });

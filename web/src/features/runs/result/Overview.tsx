@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { RunMetricOverview, RunMetricEndpoint } from '@beetle/contracts/api';
+import type { RunMetricOverview, RunMetricEndpoint, RunChartHistory } from '@beetle/contracts/api';
 import { Button } from '../../../components/Button.js';
 import { Table, Th, Td } from '../../../components/Table.js';
 import { formatNumber, formatPercent } from '../../run-results/format.js';
 import type { PlanRequest } from '../live/plan.js';
 import type { ResultReads } from './useResultReads.js';
+import { sameChartSource } from './chart-model.js';
 import './overview.css';
 const number = (value: number | null | undefined) => formatNumber(value, 'integer');
 const ms = (value: number | null | undefined) => (value == null ? null : `${number(value)} ms`);
@@ -40,10 +41,20 @@ export function OverviewStatus({ query }: { query: ResultReads['overview'] }) {
     );
   return null;
 }
-export function MetricSummary({ overview }: { overview: RunMetricOverview }) {
+export function MetricSummary({
+  overview,
+  history,
+}: {
+  overview: RunMetricOverview;
+  history?: RunChartHistory | null;
+}) {
+  const peak = observedPeak(overview, history);
   const p = overview.latency?.percentiles;
   const tiles = [
-    { value: number(overview.requestsPerSecond), label: 'a second on average' },
+    {
+      value: number(overview.requestsPerSecond),
+      label: peak === null ? 'a second on average' : `a second on average, observed peak ${number(peak.value)}`,
+    },
     {
       value: ms(p?.p95.estimate),
       label: `p95, p50 ${missing(ms(p?.p50.estimate))}, p99 ${missing(ms(p?.p99.estimate))}`,
@@ -65,12 +76,7 @@ export function MetricSummary({ overview }: { overview: RunMetricOverview }) {
           </div>
         ))}
       </dl>
-      <p className="result-muted">
-        Latency percentiles are histogram estimates. Peak request rate is not available in this totals read.
-        {overview.source &&
-          !overview.source.coverage.complete &&
-          ' Source-window coverage is partial; these totals remain whole-run measurements.'}
-      </p>
+      <MeasurementNotes overview={overview} peak={peak} />
     </>
   );
 }
@@ -157,5 +163,24 @@ export function ResultEndpoints({
         </>
       )}
     </section>
+  );
+}
+
+function observedPeak(overview: RunMetricOverview, history: RunChartHistory | null | undefined) {
+  if (!history || history.reason !== null || !sameChartSource(overview, history)) return null;
+  const value = history.observedPeakRequestsPerSecond;
+  return value === null ? null : { value, knownWindows: history.knownRequestWindows };
+}
+function MeasurementNotes({ overview, peak }: { overview: RunMetricOverview; peak: ReturnType<typeof observedPeak> }) {
+  return (
+    <p className="result-muted">
+      Latency percentiles are histogram estimates.{' '}
+      {peak === null
+        ? 'Observed peak is unavailable.'
+        : `Peak is the highest recorded one-second request count across ${peak.knownWindows} known windows.`}
+      {overview.source &&
+        !overview.source.coverage.complete &&
+        ' Source-window coverage is partial; these totals remain whole-run measurements.'}
+    </p>
   );
 }

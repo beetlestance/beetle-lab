@@ -30,6 +30,8 @@ export function ReadAdmission({ children }: { children: ReactNode }) {
         owner.gate.run(request.signal, () => api.listRunArtifacts(request)),
       listRunMetricSeries: (request: Parameters<typeof api.listRunMetricSeries>[0]) =>
         owner.gate.run(request.signal, () => api.listRunMetricSeries(request)),
+      getRunChartHistory: (request: Parameters<typeof api.getRunChartHistory>[0]) =>
+        owner.gate.run(request.signal, () => api.getRunChartHistory(request)),
       getRunMetricOverview: (request: Parameters<typeof api.getRunMetricOverview>[0]) =>
         owner.gate.run(request.signal, () => api.getRunMetricOverview(request)),
       getRunMetricSamples: (request: Parameters<typeof api.getRunMetricSamples>[0]) =>

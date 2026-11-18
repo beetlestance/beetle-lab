@@ -40,6 +40,14 @@ export function useResultReads(run: Run) {
         api.getRunMetricOverview({ params: { ...params, runId: run.id, attemptId: run.activeAttemptId }, signal }),
       ),
   });
+  const chartHistory = useQuery({
+    queryKey: [...key, 'chart-history', attempt],
+    refetchOnReconnect: false,
+    queryFn: ({ signal }) =>
+      readResult(
+        api.getRunChartHistory({ params: { ...params, runId: run.id, attemptId: run.activeAttemptId }, signal }),
+      ),
+  });
   const suite = useQuery({
     queryKey: [...key, 'suite', run.suiteId.toLowerCase()],
     queryFn: ({ signal }) => readResult(api.getSuite({ params: { ...params, suiteId: run.suiteId }, signal })),
@@ -52,7 +60,7 @@ export function useResultReads(run: Run) {
   });
   useEffect(
     () => () => {
-      for (const part of ['result', 'summary', 'suite', 'revision', 'overview']) {
+      for (const part of ['result', 'summary', 'suite', 'revision', 'overview', 'chart-history']) {
         const queryKey = [...queryKeys.run(organizationId, workspaceId, run.id), part];
         void client.cancelQueries({ queryKey });
         client.removeQueries({ queryKey });
@@ -67,6 +75,7 @@ export function useResultReads(run: Run) {
   return {
     result: { query: result, status, view },
     overview,
+    chartHistory,
     summary: summary.data ?? null,
     summaryStatus: summary.isPending ? 'loading' : summary.isError ? 'error' : 'ready',
     suite: suite.data,

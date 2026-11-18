@@ -1,0 +1,15 @@
+.result-recorded-charts {
+  display: grid;
+  gap: var(--s-24);
+}
+.result-advanced-metrics {
+  border-top: var(--border-width) solid var(--line);
+  padding-top: var(--s-12);
+}
+.result-advanced-metrics > summary {
+  cursor: pointer;
+  color: var(--mute);
+}
+.result-advanced-metrics[open] > summary {
+  margin-bottom: var(--s-16);
+}

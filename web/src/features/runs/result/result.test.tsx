@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import chartData from '../../../../../contracts/fixtures/api/valid/run-chart-history.json' with { type: 'json' };
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -216,4 +217,28 @@ it('refuses saved threshold metadata whose revision digest differs from the acce
  mount(f.client,path);
  expect(await screen.findByText('Revision details could not be loaded.')).toBeVisible();
  expect(screen.queryByText(/saved.*by/i)).not.toBeInTheDocument();
+});
+
+it('shows recorded charts with a whole-run switch and keeps per-series browsing on demand',async()=>{
+ const current=finished();const f=fixture(current,request=>request.path.endsWith('/metrics/chart-history')?json({...chartData,id:current.id,scope:current.scope,attemptId:current.activeAttemptId}):undefined);
+ mount(f.client,path);
+ expect(await screen.findByRole('heading',{name:'The whole run'})).toBeVisible();
+ expect(screen.getByRole('heading',{name:'Requests and virtual users'})).toBeVisible();
+ expect(f.records.filter(record=>record.path.endsWith('/metrics/chart-history'))).toHaveLength(1);
+ expect(f.records.filter(record=>/\/metrics\?/.test(record.path))).toHaveLength(0);
+ fireEvent.click(screen.getByRole('radio',{name:'Requests'}));
+ expect(screen.getByRole('img',{name:/Recorded requests per one-second window/})).toBeVisible();
+ expect(f.records.filter(record=>record.path.endsWith('/metrics/chart-history'))).toHaveLength(1);
+});
+
+it('recovers a failed recorded-chart read explicitly without per-series fanout',async()=>{
+ const current=finished();let fail=true;
+ const f=fixture(current,request=>request.path.endsWith('/metrics/chart-history')?(fail?json(apiError('capacity_unavailable'),503):json({...chartData,id:current.id,scope:current.scope,attemptId:current.activeAttemptId})):undefined);
+ mount(f.client,path);
+ const retry=await screen.findByRole('button',{name:'Retry recorded charts'});
+ expect(screen.queryByRole('heading',{name:'The whole run'})).not.toBeInTheDocument();
+ fail=false;fireEvent.click(retry);
+ expect(await screen.findByRole('heading',{name:'The whole run'})).toBeVisible();
+ expect(f.records.filter(record=>record.path.endsWith('/metrics/chart-history'))).toHaveLength(2);
+ expect(f.records.filter(record=>/\/metrics\?/.test(record.path))).toHaveLength(0);
 });

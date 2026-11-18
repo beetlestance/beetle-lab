@@ -1,3 +1,4 @@
+import { MetricWindows } from '../charts/MetricWindows.js';
 import type { BootstrapState } from '../live-history/index.js';
 import { recordedCount } from './backfill.js';
 import { Button } from '../../../components/Button.js';
@@ -10,10 +11,8 @@ import type { ChartSeries, ChartTick } from './LiveChart.js';
 import { clock, ms, reading, span, whole } from './format.js';
 
 type Domain = readonly [number, number];
-export interface ChartHover {
-  readonly hoverT: number | null;
-  readonly onHover: (t: number | null) => void;
-}
+export type { ChartHover } from '../charts/types.js';
+import type { ChartHover } from '../charts/types.js';
 
 const lastT = (history: LiveHistory) => Math.max(history.points.at(-1)?.t ?? 0, history.target.at(-1)?.t ?? 0);
 const firstT = (history: LiveHistory) =>
@@ -144,51 +143,7 @@ function historyCaption(history: LiveHistory, status: BootstrapState['status'] |
 }
 
 export function MetricsGrid({ history, domain, hover }: { history: LiveHistory; domain: Domain; hover: ChartHover }) {
-  const xs = history.points.map((p) => p.t);
-  const pick = (key: 'rps' | 'p50' | 'p95' | 'p99' | 'failedPerSecond' | 'vus' | 'vusMax') =>
-    history.points.map((p) => p[key]);
-  const shared = { xs, breaks: history.points.map((point) => point.gapBefore), domain, ...hover };
-  return (
-    <section className="live-grid-section" aria-labelledby="live-metrics-grid">
-      <header className="live-section-head">
-        <h2 id="live-metrics-grid">Requests and virtual users</h2>
-        <p className="live-note">Point at any chart to read all of them at that second.</p>
-      </header>
-      <div className="live-charts">
-        <LiveChart
-          {...shared}
-          title="Requests a second"
-          format={whole}
-          series={[{ key: 'rps', label: 'requests', tone: 'amber', area: true, values: pick('rps') }]}
-        />
-        <LiveChart
-          {...shared}
-          title="Latency"
-          format={ms}
-          series={[
-            { key: 'p50', label: 'p50', tone: 'info', values: pick('p50') },
-            { key: 'p95', label: 'p95', tone: 'amber', values: pick('p95') },
-            { key: 'p99', label: 'p99', tone: 'violet', values: pick('p99') },
-          ]}
-        />
-        <LiveChart
-          {...shared}
-          title="Failed requests a second"
-          format={(v) => reading(v)}
-          series={[{ key: 'failed', label: 'failed', tone: 'fail', area: true, values: pick('failedPerSecond') }]}
-        />
-        <LiveChart
-          {...shared}
-          title="Active virtual users"
-          format={whole}
-          series={[
-            { key: 'vus', label: 'busy', tone: 'ink', area: true, values: pick('vus') },
-            { key: 'vusMax', label: 'allocated', tone: 'mute', dashed: true, values: pick('vusMax') },
-          ]}
-        />
-      </div>
-    </section>
-  );
+  return <MetricWindows points={history.points} domain={domain} hover={hover} />;
 }
 
 type TargetKey = keyof TargetPoint['values'];
