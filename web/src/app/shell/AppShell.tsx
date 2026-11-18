@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { routes } from '../routes.js';
+import { useSessionAccess } from '../session.js';
 import { navItems, shellScope } from '../navigation.js';
 import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BeetleMark } from './BeetleMark.js';
@@ -19,6 +20,7 @@ export type AppShellProps = {
 /** Header from every Penpot board plus the phone menu sheet ("Phone / Menu open"). */
 export function AppShell({ children, onSearch, activeRuns }: AppShellProps) {
   const { pathname } = useLocation();
+  const { signOut } = useSessionAccess();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const [lastPath, setLastPath] = useState(pathname);
@@ -67,6 +69,11 @@ export function AppShell({ children, onSearch, activeRuns }: AppShellProps) {
               <kbd aria-hidden="true">⌘K</kbd>
             </button>
             <ThemeSwitch className="shell-theme" />
+            {signOut && (
+              <button type="button" className="btn btn-text btn-sm shell-sign-out" onClick={signOut}>
+                Sign out
+              </button>
+            )}
           </div>
         </div>
       </header>
