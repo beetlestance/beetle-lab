@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { encodeSuiteListCursor } from '@beetle/contracts/api';
 import type { Folder, FolderPage, Suite, SuiteGroup, SuitePage, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { folder as baseFolder, ids, json, mount } from '../../app/test-fixtures.js';
 import { routes } from '../../app/routes.js';
@@ -134,6 +135,58 @@ describe('Suites / Folder board', () => {
     expect(await screen.findByRole('heading', { name: 'No suites in capacity yet' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New suite in capacity' })).toBeInTheDocument();
     expect(fixture.records.some((record) => record.path.includes('/suites?'))).toBe(false);
+  });
+  it('expands from eight rows to twenty, reuses no cursor with a changed limit, and resets on filtering', async () => {
+    const items = Array.from({ length: 20 }, (_, index) => ({ ...suite, id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(index).padStart(12, '0')}`, name: `suite-${index}`, currentRevisionId: null }));
+    const fixture = testClient(handler(request => {
+      if (!request.path.includes('/suites?')) return undefined;
+      const limit = Number(query(request).get('limit'));
+      const order = query(request).get('order') === 'name' ? 'name' : 'recent_run';
+      const ordered = [...items].sort((a, b) => order === 'name' ? a.name.localeCompare(b.name) : b.id.localeCompare(a.id));
+      const selected = ordered.slice(0, limit);
+      const nextCursor = limit < items.length ? encodeSuiteListCursor({ scope, query: { folderId: ids.folder, order, limit }, requestedAt: null, id: selected.at(-1)!.id }) : null;
+      return json({ scope, items: selected, summaries: selected.map(item => ({ suiteId: item.id, engineId: null, group: 'no_runs', latestRun: null })), nextCursor });
+    }));
+    mount(fixture.client, folderPath);
+    expect(await screen.findByRole('button', { name: 'Show 12 more' })).toBeVisible();
+    expect(screen.getAllByRole('button', { name: /Start run of suite-/ })).toHaveLength(8);
+    fireEvent.click(screen.getByRole('button', { name: 'Show 12 more' }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Start run of suite-/ })).toHaveLength(20));
+    expect(screen.queryByRole('button', { name: /Show.*more/ })).not.toBeInTheDocument();
+    const requests = fixture.records.filter(request => request.path.includes('/suites?'));
+    expect(requests.map(request => query(request).get('limit'))).toEqual(['8', '20']);
+    expect(requests.every(request => !query(request).has('cursor'))).toBe(true);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), { target: { value: 'name' } });
+    await waitFor(() => expect(query(fixture.records.filter(request => request.path.includes('/suites?')).at(-1)!).get('limit')).toBe('8'));
+    expect(await screen.findByRole('button', { name: 'Show 12 more' })).toBeVisible();
+  });
+  it('clears a name search while preserving the selected result, engine and order', async () => {
+    const fixture = testClient(handler((request) => query(request).get('name') === 'spike-9' ? json(suites([])) : undefined));
+    mount(fixture.client, folderPath);
+    fireEvent.click(await screen.findByRole('radio', { name: 'Failed 2' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Engine' }), { target: { value: 'k6' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort' }), { target: { value: 'name' } });
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'spike-9' } });
+    expect(await screen.findByText('No suites in capacity match “spike-9”. Search looks at suite names only.')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+    await waitFor(() => expect(screen.queryByText(/No suites in capacity match/)).not.toBeInTheDocument());
+    expect(screen.getByRole('radio', { name: 'Failed 2' })).toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Engine' })).toHaveValue('k6');
+    expect(screen.getByRole('combobox', { name: 'Sort' })).toHaveValue('name');
+    expect(screen.getByRole('searchbox')).toHaveValue('');
+    expect(screen.queryByText(/Showing 1 of 2 suites/)).not.toBeInTheDocument();
+  });
+  it('keeps empty-folder authoring disabled for restored history', async () => {
+    const fixture = testClient(handler((request) => request.path.includes('/folders?') ? json(folders(0)) : undefined));
+    mount(fixture.client, folderPath, { readOnly: true, restoredBackup: null });
+    expect(await screen.findByRole('button', { name: 'New suite in capacity' })).toBeDisabled();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(fixture.records.every(record => record.method === 'GET')).toBe(true);
+  });
+  it('disables new suites and run admission in restored populated folders', async () => {
+    mount(testClient(handler()).client, folderPath, { readOnly: true, restoredBackup: null });
+    expect(await screen.findByRole('button', { name: 'Start run of steady-1.2k' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'New suite' })).toBeDisabled();
   });
   it('reports a folder that is not in the workspace', async () => {
     mount(testClient(handler()).client, `${routes.suites(ids.a, ids.workspace)}?folder=${ids.parent}`);

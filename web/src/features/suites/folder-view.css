@@ -1,0 +1,182 @@
+/* Folder boards share the workspace header and native table semantics. */
+.suites-folder .suites-crumbs {
+  line-height: 17px;
+  margin-bottom: var(--s-10);
+}
+.suites-folder .suites-lede {
+  margin-top: var(--s-10);
+}
+.suites-folder .suites-header {
+  margin-bottom: var(--s-14);
+}
+.suites-folder .suites-toolbar {
+  align-items: flex-end;
+  margin-bottom: 44px;
+}
+.suites-folder .suites-actions {
+  align-items: center;
+}
+.suites-folder .suites-actions .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.suites-folder.suites-page-empty .suites-header {
+  margin-bottom: var(--s-24);
+}
+.suites-folder.suites-page-empty .folder-row-actions {
+  display: flex;
+}
+.suites-folder.suites-page-empty .folder-row-actions > button {
+  height: 32px;
+  min-height: 32px;
+  padding-block: var(--s-4);
+  line-height: 24px;
+}
+.suites-folder.suites-page-empty .suites-actions .btn {
+  min-height: 32px;
+  font-size: var(--fs-md);
+}
+.suites-folder .suites-crumbs a {
+  text-decoration: none;
+}
+.suites-folder .suites-crumbs a:hover {
+  text-decoration: underline;
+}
+.suites-folder.suites-page-empty .suites-toolbar {
+  margin-bottom: 0;
+}
+.suites-folder .folder-filters:has(+ .folder-no-match) {
+  margin-bottom: 44px;
+}
+.suites-folder .folder-filters .input,
+.suites-folder .folder-filters .select {
+  background-color: var(--panel);
+  min-height: 40px;
+  font-size: var(--fs-base);
+  line-height: 24px;
+  padding-left: calc(var(--s-12) - 1px);
+}
+.suites-folder .folder-filters > .field:not(.suites-search) {
+  flex: 0 0 140px;
+}
+.suites-folder .folder-filters > .field:nth-child(2) {
+  flex-basis: 170px;
+}
+.suites-folder .folder-filters .segment {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.suites-folder .folder-filters .segmented {
+  min-height: 40px;
+  gap: 0;
+  flex-shrink: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.folder-no-match {
+  margin-top: var(--s-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-16);
+  padding: var(--s-20) var(--s-14);
+  background: var(--zebra);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  line-height: 21px;
+}
+.folder-no-match .btn {
+  flex-shrink: 0;
+  font-weight: 400;
+}
+.suites-folder .suite-table .data-table {
+  min-width: 1050px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 var(--s-8);
+  margin: calc(-1 * var(--s-8)) 0;
+}
+.suites-folder .suite-table th {
+  padding: var(--s-12) var(--s-14) 0;
+  height: auto;
+  line-height: 21px;
+  background: transparent;
+}
+.suites-folder .suite-table th:nth-child(1) {
+  width: 29.6875%;
+}
+.suites-folder .suite-table th:nth-child(2) {
+  width: 8.59375%;
+}
+.suites-folder .suite-table th:nth-child(3) {
+  width: 19.53125%;
+}
+.suites-folder .suite-table th:nth-child(4) {
+  width: 10.15625%;
+}
+.suites-folder .suite-table th:nth-child(5) {
+  width: 19.53125%;
+}
+.suites-folder .suite-table th:nth-child(6) {
+  width: 12.5%;
+}
+.suites-folder .suite-table td {
+  padding: var(--s-12) var(--s-14);
+  height: auto;
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.suites-folder .suite-table td:last-child {
+  text-align: right;
+}
+.suites-folder .suite-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+.suites-folder .suite-table tbody tr:nth-child(odd) td {
+  background: var(--zebra);
+}
+.suites-folder .suite-table td:first-child {
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+}
+.suites-folder .suite-table td:last-child {
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.suites-folder .suite-table .suite-name {
+  font-size: var(--fs-base);
+  font-weight: 500;
+}
+.suites-folder .suite-table .suite-subline {
+  margin-top: var(--s-2);
+  font-size: var(--fs-md);
+  line-height: 21px;
+}
+.suites-folder .suite-table .status {
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.suites-folder .suite-table .status::before {
+  width: 8px;
+  height: 8px;
+}
+.suites-folder .suite-table .btn {
+  font-weight: 400;
+}
+.suites-folder .suite-table .number {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.suites-folder .suites-pager {
+  margin-top: var(--s-8);
+  padding-inline: var(--s-14);
+  line-height: 21px;
+}
+.suites-folder .suites-pager .btn {
+  font-weight: 400;
+}
+@media (max-width: 720px) {
+  .folder-no-match {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

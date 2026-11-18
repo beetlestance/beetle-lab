@@ -35,6 +35,28 @@ export function SuitesEmpty({ create }: { create: () => void }) {
     </section>
   );
 }
+/** A direct-folder summary proves emptiness without confusing it with a filtered page. */
+export function FolderEmpty({ name, create }: { name: string; create: () => void }) {
+  const { readOnly } = useSessionAccess();
+  return (
+    <section className="suites-empty" aria-labelledby="folder-empty-title">
+      <div className="suites-empty-text">
+        <h2 id="folder-empty-title">No suites in {name} yet</h2>
+        <p className="suites-empty-lede">
+          Add a suite here to keep it with the others for this service. Inputs stay shared across the whole workspace,
+          so any suite can use them.
+        </p>
+        <div>
+          <Button variant="primary" disabled={readOnly} onClick={create}>
+            New suite in {name}
+          </Button>
+        </div>
+        <p className="suites-empty-note">Folders only group suites. They never change how a run executes.</p>
+      </div>
+      <img className="suites-empty-art" src={suiteArt} width="560" height="392" alt="" />
+    </section>
+  );
+}
 /** The loading board has one accessible announcement; every skeleton is decorative. */
 export function SuitesLoading() {
   return (

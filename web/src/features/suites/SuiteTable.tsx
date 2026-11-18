@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import type { Suite, SuiteListSummary, SuitePage } from '@beetle/contracts/api';
+import { useSessionAccess } from '../../app/session.js';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
@@ -51,6 +52,7 @@ function SuiteRow({
   start: (suite: Suite) => void;
 }) {
   const { organizationId, workspaceId } = suite.scope;
+  const { readOnly } = useSessionAccess();
   return (
     <tr>
       <Td>
@@ -67,7 +69,7 @@ function SuiteRow({
       <Td>
         <Button
           size="sm"
-          disabled={!suite.currentRevisionId}
+          disabled={readOnly || !suite.currentRevisionId}
           onClick={() => start(suite)}
           aria-label={`Start run of ${suite.name}`}
         >
@@ -83,7 +85,7 @@ function LastRun({ suite, summary }: { suite: Suite; summary: SuiteListSummary |
   if (!latest)
     return (
       <>
-        <span>{groupText.no_runs.label}</span>
+        <span className="muted">{groupText.no_runs.label}</span>
         <span className="suite-subline">—</span>
       </>
     );
