@@ -36,7 +36,7 @@ export function mixText(summary: FolderSummary): string {
       : groups.passed === suiteCount
         ? [`All ${suiteCount} passed`]
         : groups.no_runs === suiteCount
-          ? [suiteCount === 1 ? 'No runs yet' : `None of ${suiteCount} has run yet`]
+          ? [`${suiteCount} with no runs`]
           : [
               mixOrder
                 .filter(([group]) => groups[group] > 0)

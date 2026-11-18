@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { Folder, FolderPage, FolderSummary, Suite, Workspace } from '@beetle/contracts/api';
+import { useSessionAccess } from '../../app/session.js';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
@@ -17,6 +18,7 @@ import { mixText, plural, searchTerm, useDebounced, WorkspaceTabs } from './list
 import { FolderActions, NewFolderButton } from './FolderActions.js';
 import { MetadataEditor } from './MetadataEditor.js';
 import { NewSuite } from './NewSuite.js';
+import { emptySuiteInventory, SuitesEmpty, SuitesLoading } from './SuiteStates.js';
 import { SuiteTable } from './SuiteTable.js';
 
 type Order = 'recent_run' | 'name';
@@ -41,55 +43,124 @@ export function SuiteIndex({ workspace }: { workspace: Workspace }) {
   const [text, setText] = useState('');
   const [order, setOrder] = useState<Order>('recent_run');
   const term = searchTerm(useDebounced(text));
+  const empty = !folders.isError && emptySuiteInventory(folders.data, workspace);
+  if (folders.isPending) return <SuitesLoading />;
   return (
-    <section className="content-section suites-page">
-      <header className="suites-header">
-        <p className="suites-eyebrow">Workspaces</p>
-        <h1>{workspace.name}</h1>
-        <p className="suites-lede">
-          {folders.data ? `${totals(folders.data, workspace)} ` : ''}Open a folder to filter and run its suites.
-        </p>
-      </header>
-      <div className="suites-toolbar">
-        <WorkspaceTabs workspace={workspace} />
-        <div className="suites-actions">
-          <NewFolderButton workspace={workspace} />
-          <Button variant="primary" onClick={() => setCreating(true)}>
-            New suite
-          </Button>
-        </div>
-      </div>
-      <div className="suites-filters">
-        <TextInput
-          className="suites-search"
-          type="search"
-          label={`Search every suite in ${workspace.name}`}
-          hideLabel
-          placeholder={`Search every suite in ${workspace.name}`}
-          maxLength={64}
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          hint={text.trim().length > 0 && text.trim().length < 3 ? 'Type at least 3 characters.' : undefined}
-        />
-        <Select label="Sort" hideLabel value={order} onChange={(event) => setOrder(event.target.value as Order)}>
-          <option value="recent_run">Recently run</option>
-          <option value="name">Name</option>
-        </Select>
-      </div>
-      {term ? (
+    <section className={`content-section suites-page${empty ? ' suites-page-empty' : ''}`}>
+      <SuiteIndexHeader
+        workspace={workspace}
+        page={folders.isError ? undefined : folders.data}
+        empty={empty}
+        create={() => setCreating(true)}
+      />
+      {!empty && (
+        <SuiteFilters workspace={workspace} text={text} order={order} chooseText={setText} chooseOrder={setOrder} />
+      )}
+      {empty ? (
+        <SuitesEmpty create={() => setCreating(true)} />
+      ) : term ? (
         <WorkspaceSearch workspace={workspace} term={term} order={order} clear={() => setText('')} />
       ) : (
         <QueryState query={folders} loading={<LoadingState variant="table" label="Loading folders…" />}>
-          {(page) => <FolderTable workspace={workspace} page={page} order={order} create={() => setCreating(true)} />}
+          {(page) => <FolderTable workspace={workspace} page={page} order={order} />}
         </QueryState>
       )}
-      {creating &&
-        (search.has('new') ? (
-          <MetadataEditor workspace={workspace} initialView={initialView} close={closeCreation} />
-        ) : (
-          <NewSuite workspace={workspace} folderId={workspace.rootFolderId} close={closeCreation} />
-        ))}
+      {creating && (
+        <SuiteCreation
+          workspace={workspace}
+          initialView={initialView}
+          fromLink={search.has('new')}
+          close={closeCreation}
+        />
+      )}
     </section>
+  );
+}
+function SuiteCreation({
+  workspace,
+  initialView,
+  fromLink,
+  close,
+}: {
+  workspace: Workspace;
+  initialView: 'form' | 'json';
+  fromLink: boolean;
+  close: () => void;
+}) {
+  return fromLink ? (
+    <MetadataEditor workspace={workspace} initialView={initialView} close={close} />
+  ) : (
+    <NewSuite workspace={workspace} folderId={workspace.rootFolderId} close={close} />
+  );
+}
+function SuiteIndexHeader({
+  workspace,
+  page,
+  empty,
+  create,
+}: {
+  workspace: Workspace;
+  page: FolderPage | undefined;
+  empty: boolean;
+  create: () => void;
+}) {
+  const { readOnly } = useSessionAccess();
+  return (
+    <>
+      <header className="suites-header">
+        <p className="suites-eyebrow">Workspaces</p>
+        <h1>{workspace.name}</h1>
+        {!empty && (
+          <p className="suites-lede">
+            {page ? `${totals(page, workspace)} ` : ''}Open a folder to filter and run its suites.
+          </p>
+        )}
+      </header>
+      <div className="suites-toolbar">
+        <WorkspaceTabs workspace={workspace} />
+        {!empty && (
+          <div className="suites-actions">
+            <NewFolderButton workspace={workspace} />
+            <Button variant="primary" disabled={readOnly} onClick={create}>
+              New suite
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+function SuiteFilters({
+  workspace,
+  text,
+  order,
+  chooseText,
+  chooseOrder,
+}: {
+  workspace: Workspace;
+  text: string;
+  order: Order;
+  chooseText: (value: string) => void;
+  chooseOrder: (value: Order) => void;
+}) {
+  return (
+    <div className="suites-filters">
+      <TextInput
+        className="suites-search"
+        type="search"
+        label={`Search every suite in ${workspace.name}`}
+        hideLabel
+        placeholder={`Search every suite in ${workspace.name}`}
+        maxLength={64}
+        value={text}
+        onChange={(event) => chooseText(event.target.value)}
+        hint={text.trim().length > 0 && text.trim().length < 3 ? 'Type at least 3 characters.' : undefined}
+      />
+      <Select label="Sort" hideLabel value={order} onChange={(event) => chooseOrder(event.target.value as Order)}>
+        <option value="recent_run">Recently run</option>
+        <option value="name">Name</option>
+      </Select>
+    </div>
   );
 }
 /** "45 suites in 6 folders." only when every folder is on this page. */
@@ -108,17 +179,7 @@ function topLevel(page: FolderPage, workspace: Workspace): Folder[] {
     return folder.parentFolderId?.toLowerCase() === root;
   });
 }
-function FolderTable({
-  workspace,
-  page,
-  order,
-  create,
-}: {
-  workspace: Workspace;
-  page: FolderPage;
-  order: Order;
-  create: () => void;
-}) {
+function FolderTable({ workspace, page, order }: { workspace: Workspace; page: FolderPage; order: Order }) {
   const rows = topLevel(page, workspace);
   const latest = (folder: Folder) => summaryOf(page, folder.id)?.latestRun?.requestedAt ?? '';
   const sorted = [...rows].sort((a, b) =>
@@ -130,19 +191,13 @@ function FolderTable({
     workspace,
     sorted.map((folder) => summaryOf(page, folder.id)?.latestRun?.suiteId),
   );
-  if (rows.length === 0 && (summaryOf(page, workspace.rootFolderId)?.suiteCount ?? 0) === 0)
+  if (rows.length === 0)
     return (
-      <EmptyState
-        title={`No suites in ${workspace.name} yet`}
-        actions={
-          <Button variant="primary" onClick={create}>
-            Write a suite
-          </Button>
-        }
-        note="A suite saves what to send and how hard. Every run keeps the revision that made it."
-      >
-        Start with a k6 load test against a service you run.
-      </EmptyState>
+      <p role="status" className="suites-footnote">
+        {page.nextCursor
+          ? 'No top-level folders on this page. The inventory is incomplete; search finds suites across the workspace.'
+          : 'Folder summaries are unavailable. Suite counts are unknown.'}
+      </p>
     );
   return (
     <>

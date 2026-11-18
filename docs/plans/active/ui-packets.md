@@ -1,6 +1,9 @@
 # Plan: UI task packets
 
-Status: active (2026-11-18). Board-to-API map for [ui-implementation.md](ui-implementation.md), read from Penpot and the contracts on 2026-11-18.
+Status: historical baseline map (2026-11-18), superseded for implementation.
+The current goal covers all 145 boards, requires image comparison and builds missing
+APIs. Do not follow this baseline's hide/reword/fallback instructions or treat its
+text-only inventory as acceptance. The contracts describe current implemented APIs.
 
 Sources: `docs/plans/active/ui-implementation.md`; Penpot "Screens" page (all 105
 top-level boards read as text via `execute_code`, read-only, no page switch, no

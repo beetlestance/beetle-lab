@@ -18,11 +18,7 @@ export function WorkspaceTabs({
     { to: routes.runs(organizationId, workspaceId), label: 'Runs', current: current === 'runs' },
     { to: routes.inputs(organizationId, workspaceId), label: 'Inputs', current: current === 'inputs' },
     { to: routes.exports(organizationId, workspaceId), label: 'Exports', current: current === 'exports' },
-    {
-      to: routes.workspaceSettings(organizationId, workspaceId),
-      label: 'Workspace settings',
-      current: current === 'settings',
-    },
+    { to: routes.workspaceSettings(organizationId, workspaceId), label: 'Settings', current: current === 'settings' },
   ];
   return <NavTabs label="Workspace sections" items={items} />;
 }

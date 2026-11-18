@@ -1,6 +1,9 @@
 # Plan: UI task packets, part 2
 
-Status: active (2026-11-18). Packages D–F and the gated boards; cross-cutting facts and A–C are in [part 1](ui-packets.md).
+Status: historical baseline map (2026-11-18), like [part 1](ui-packets.md).
+The current [implementation plan](ui-implementation.md) requires all 145 boards,
+missing backend behavior and image comparisons; its rules supersede fallback
+and hidden-field recommendations in this earlier map.
 
 ## D. Live run (20 boards: base, 6 states, 8 animated, Compare tooltip, Script picker, Download open, Phone, Ultrawide)
 

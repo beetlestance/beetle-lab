@@ -286,7 +286,7 @@ ul.tabs {
 }
 .tab[aria-selected='true'],
 .tab[aria-current='page'] {
-  background: var(--line);
+  background: var(--nav-selected);
   color: var(--ink);
 }
 .tab:focus-visible {

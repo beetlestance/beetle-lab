@@ -7,6 +7,7 @@ import { validId } from '../../app/routes.js';
 import { AuthoringState } from './AuthoringState.js';
 import { FolderView } from './FolderView.js';
 import { SuiteDetail } from './SuiteDetail.js';
+import { SuitesLoading } from './SuiteStates.js';
 import { SuiteIndex } from './SuiteIndex.js';
 import './suites.css';
 import './listing.css';
@@ -50,9 +51,9 @@ export function Suites({
   const folders = search.getAll('folder');
   const folderId = folders.length === 1 && validId(folders[0]) ? folders[0] : undefined;
   return (
-    <AuthoringState query={organization}>
+    <AuthoringState query={organization} loading={<SuitesLoading />}>
       {() => (
-        <AuthoringState query={workspace}>
+        <AuthoringState query={workspace} loading={<SuitesLoading />}>
           {(data) =>
             suiteId ? (
               <SuiteDetail key={`${organizationId}/${workspaceId}/${suiteId}`} workspace={data} suiteId={suiteId} />

@@ -55,7 +55,11 @@ describe('URL scope and cancellation', () => {
       const scopedWorkspace = { ...workspace(organizationId), id: workspaceId };
       if (path.includes('/workspaces?')) return json({ scope: scopedWorkspace.scope, items: [scopedWorkspace], nextCursor: null });
       if (path.endsWith(`/workspaces/${workspaceId}`)) return json(scopedWorkspace);
-      if (path.includes('/folders?')) return json({ scope: { kind: 'workspace', organizationId, workspaceId }, items: [], nextCursor: null });
+      if (path.includes('/folders?')) return json({ scope: { kind: 'workspace', organizationId, workspaceId },
+        items: [{ id: ids.root, scope: { kind: 'workspace', organizationId, workspaceId }, name: scopedWorkspace.name,
+          version: 1, parentFolderId: null, displayPath: [scopedWorkspace.name] }],
+        summaries: [{ folderId: ids.root, suiteCount: 0, subfolderCount: 0,
+          groups: { in_progress: 0, passed: 0, failed: 0, inconclusive: 0, stopped: 0, no_runs: 0 }, latestRun: null }], nextCursor: null });
       throw new Error('Unexpected UUID representation route');
     });
     mount(api.client);
@@ -65,7 +69,7 @@ describe('URL scope and cancellation', () => {
     fireEvent.click(link);
     await screen.findByText('Workspace overview unavailable. Counts are unknown.');
     fireEvent.click(screen.getByRole('link', { name: 'Workspaces' }));
-    expect(await screen.findByRole('heading', { name: 'No suites in Same workspace yet' })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: 'No suites here yet' })).toBeVisible();
     expect(api.records.some(record => record.path.includes(encodeURIComponent(organizationId)))).toBe(true);
     expect(api.records.some(record => record.path.includes(encodeURIComponent(workspaceId)))).toBe(true);
   });

@@ -2,6 +2,7 @@
    content up to 2000 px wide (ultrawide), 16 px gutter and a menu sheet on phones. */
 .shell {
   --shell-pad: max(var(--gutter), calc((100vw - var(--content-max)) / 2));
+  display: flow-root;
   min-height: 100dvh;
   background: var(--bg);
 }
@@ -110,7 +111,7 @@
 }
 .shell-nav a[aria-current='page'] {
   color: var(--ink);
-  background: var(--line);
+  background: var(--nav-selected);
 }
 .shell-nav-badge {
   display: inline-flex;
@@ -152,7 +153,7 @@
 }
 
 .shell-main {
-  padding: var(--s-40) var(--shell-pad) 96px;
+  padding: 44px var(--shell-pad) 96px;
 }
 .shell-main:focus {
   outline: none;

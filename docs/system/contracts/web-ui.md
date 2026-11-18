@@ -118,6 +118,14 @@ switch views without touching the draft. Invalid JSON stays editable but blocks 
 failed save keeps the draft; an unknown outcome offers replay of the identical
 request; a stale version offers a reload and never overwrites the newer revision.
 
+## Suite inventory
+
+The Suites empty screen needs a complete folder page with root summary proving
+zero suites and no non-root folders. A partial page or absent summaries stays
+unknown. Loading uses one accessible status and decorative skeletons, with no
+invented counts. Empty-state authoring opens the real engine and suite-details
+flow; authoring controls are disabled in restored read-only history.
+
 ## Overviews
 
 Organisation and workspace overviews are one scoped GET each, built from metadata

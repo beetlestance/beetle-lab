@@ -4,8 +4,21 @@ import { ApiFailure } from '../../app/api.js';
 import { QueryState } from '../../components/QueryState.js';
 
 /** A refresh failure must not retire the editor that owns a scoped draft or replay. */
-export function AuthoringState<T>({ query, children }: { query: UseQueryResult<T>; children: (data: T) => ReactNode }) {
-  if (query.data === undefined) return <QueryState query={query}>{children}</QueryState>;
+export function AuthoringState<T>({
+  query,
+  children,
+  loading,
+}: {
+  query: UseQueryResult<T>;
+  children: (data: T) => ReactNode;
+  loading?: ReactNode;
+}) {
+  if (query.data === undefined)
+    return (
+      <QueryState query={query} loading={loading}>
+        {children}
+      </QueryState>
+    );
   return (
     <>
       {query.isError && (

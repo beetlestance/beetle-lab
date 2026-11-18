@@ -1,0 +1,113 @@
+.suites-page-empty .suites-toolbar {
+  margin-bottom: 0;
+}
+.suites-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 560px);
+  gap: var(--s-40);
+  align-items: center;
+  margin-top: 42px;
+}
+.suites-empty-text {
+  display: grid;
+  gap: var(--s-14);
+}
+.suites-empty h2 {
+  margin: 0;
+  font-size: var(--fs-4xl);
+  line-height: 38px;
+  letter-spacing: var(--tracking-display);
+}
+.suites-empty-lede {
+  font-size: var(--fs-xl);
+  line-height: var(--lh-lede);
+}
+.suites-empty-note {
+  color: var(--mute);
+  font-size: var(--fs-md);
+  line-height: 21px;
+}
+.suites-empty .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+}
+.suites-empty-art {
+  width: 100%;
+  height: auto;
+}
+.suites-loading {
+  display: grid;
+  gap: 44px;
+}
+.suites-loading-intro {
+  display: grid;
+  gap: var(--s-14);
+}
+.suites-loading-intro .skeleton-bar {
+  background: var(--panel);
+  height: 16px;
+}
+.suites-loading-intro .suites-loading-title {
+  width: min(300px, 70%);
+  height: 34px;
+  border-radius: var(--r-sm);
+}
+.suites-loading-lede {
+  width: min(560px, 90%);
+}
+.suites-loading-caption {
+  width: min(392px, 70%);
+}
+.suites-loading-body {
+  display: grid;
+  grid-template-columns: minmax(0, 820px) minmax(0, 420px);
+  gap: var(--s-40);
+}
+.suites-loading-columns {
+  display: grid;
+  grid-template-columns: 150px 300px 200px 1fr;
+  padding: 0 var(--s-14);
+  align-items: center;
+  height: 37px;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.suites-loading-cards {
+  display: grid;
+  gap: var(--s-16);
+}
+.suites-loading-card {
+  display: grid;
+  gap: var(--s-14);
+  padding: var(--s-20) var(--s-22);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.suites-loading-label {
+  width: min(120px, 65%);
+}
+.suites-loading-value {
+  width: min(220px, 85%);
+  height: 22px;
+}
+.suites-loading-detail {
+  width: min(260px, 90%);
+}
+@media (max-width: 760px) {
+  .suites-empty,
+  .suites-loading-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .suites-empty h2 {
+    font-size: var(--fs-3xl);
+  }
+  .suites-empty-lede {
+    font-size: var(--fs-lg);
+  }
+  .suites-loading-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+  .suites-loading-columns span:nth-child(n + 3) {
+    display: none;
+  }
+}
