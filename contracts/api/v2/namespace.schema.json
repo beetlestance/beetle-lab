@@ -96,7 +96,7 @@
           },
           "required": ["in_progress", "passed", "failed", "inconclusive", "stopped", "no_runs"], "additionalProperties": false
         },
-        "latestRun": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteLatestRun" }, { "type": "null" }] }
+        "latestRun": { "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteLatestRun" }, { "type": "null" }] }
       },
       "required": ["folderId", "suiteCount", "subfolderCount", "groups", "latestRun"], "additionalProperties": false
     }

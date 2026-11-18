@@ -34,10 +34,11 @@ import { schema as ApiSession } from './session.js';
 import { schema as ApiSettingsOverrides } from './settings-overrides.js';
 import { schema as ApiSettingsValues } from './settings-values.js';
 import { schema as ApiSettings } from './settings.js';
+import { schema as ApiSuiteListing } from './suite-listing.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -212,6 +213,9 @@ export const apiMessageSchemas = freezeSchema({
   PatchInstallationSettingsRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings#/$defs/PatchInstallationSettingsRequest' },
   PatchOrganizationSettingsRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings#/$defs/PatchOrganizationSettingsRequest' },
   PatchWorkspaceSettingsRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/settings#/$defs/PatchWorkspaceSettingsRequest' },
+  SuiteGroup: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteGroup' },
+  SuiteLatestRun: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteLatestRun' },
+  SuiteListSummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteListSummary' },
   CreateSuiteRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/CreateSuiteRequest' },
   PatchSuiteRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/PatchSuiteRequest' },
   CreateSuiteRevisionRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite-requests#/$defs/CreateSuiteRevisionRequest' },
@@ -221,9 +225,6 @@ export const apiMessageSchemas = freezeSchema({
   SuiteRevision: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevision' },
   SuitePage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuitePage' },
   SuiteRevisionPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionPage' },
-  SuiteGroup: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteGroup' },
-  SuiteLatestRun: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteLatestRun' },
-  SuiteListSummary: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteListSummary' },
   SuiteDescription: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteDescription' },
   RevisionMessage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/RevisionMessage' },
 } as const);

@@ -3,16 +3,20 @@
 How the Suites tab lists folders and suites by their latest run without reading
 every run. Shapes are `SuiteListQuery`, `SuitePage`, `SuiteListSummary`,
 `SuiteLatestRun`, `SuiteGroup` and `FolderSummary` in
-`contracts/api/v2/suite*.schema.json` and `namespace.schema.json`; general suite
-and history rules are in [Public API](public-api.md).
+`contracts/api/v2/suite-listing.schema.json`, `suite-requests.schema.json` and
+`namespace.schema.json`; general suite and history rules are in [Public API](public-api.md).
 
 ## Latest run and display group
 
 - A suite's latest run is its latest **retained** run by `requestedAt`, then run
   UUID, both descending. Deleting it reveals the previous retained run; none left
   means no runs.
-- The header carries `suiteId`, `runId`, `state`, `outcome` and `requestedAt`;
-  `state` and `outcome` stay separate, as on `Run`.
+- The header carries `suiteId`, current `suiteName`, `runId`, `state`, `outcome`,
+  `requestedAt`, `startedAt` and `testDurationMs`; state/outcome stay separate.
+- `startedAt` is the active attempt's first durable runtime-start event, or null;
+  its RFC3339 source spelling and independent agent clock are preserved.
+  `testDurationMs` is the identity-bound ready history summary's measured k6 test
+  duration, or null until recorded. Missing values never become request age or zero.
 - Each suite is in exactly one group:
 
 | Group | Latest retained run |
@@ -29,9 +33,11 @@ and history rules are in [Public API](public-api.md).
   `runs_history_suite`. A suite without a revision is stored as a private
   `no_revision` group so the engine filter stays index-bounded; it is reported
   as `no_runs`.
-- Every header read is a primary-key run read checked against the stored
-  derivation; any mismatch, including a non-canonical stored time, is
-  `unavailable` for that workspace only.
+- Every header uses a scoped run/suite primary-key join, at most four indexed
+  durable runtime-event rows and at most 2048 bytes of validated summary JSON.
+  No metric/file reads or per-row HTTP requests. The stored latest-run derivation,
+  current name, run/attempt identity and submission sort key are checked; corrupt
+  or foreign facts make that workspace unavailable. No cross-clock order is assumed.
 
 ## Folder summaries (`listFolders`)
 
@@ -133,5 +139,6 @@ statements and assert index use with no full scan.
 | `app/src/adapters/outbound/sqlite/suite-list/index.ts` | `ff7fc6508555` |
 | `app/src/adapters/outbound/sqlite/suite-list/statements.ts` | `2e64b536de82` |
 | `app/src/adapters/outbound/sqlite/suite-list/folders.ts` | `96429cc9bf54` |
-| `app/src/adapters/outbound/sqlite/suite-list/latest-run.ts` | `960dfcbdefc2` |
+| `app/src/adapters/outbound/sqlite/suite-list/presentation.ts` | `e212702cc2b7` |
+| `app/src/adapters/outbound/sqlite/suite-list/latest-run.ts` | `9f7c47d3e604` |
 | `contracts/src/api/suite-list.ts` | `d5e892bde351` |

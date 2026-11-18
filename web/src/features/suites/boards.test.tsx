@@ -18,7 +18,7 @@ const suite: Suite = { id: suiteId, scope, version: 2, name: 'steady-1.2k', fold
 const capacity: Folder = { ...baseFolder(), name: 'capacity', displayPath: ['capacity'] };
 const rootFolder: Folder = { ...baseFolder(), id: ids.root, name: 'root', parentFolderId: null, displayPath: [] };
 const groups = { in_progress: 1, passed: 16, failed: 2, inconclusive: 0, stopped: 0, no_runs: 1 };
-const latestRun = { suiteId, runId: runIdLatest, state: 'active' as const, outcome: 'pending' as const, requestedAt: today.toISOString() };
+const latestRun = { suiteName: suite.name, startedAt: null, testDurationMs: null, suiteId, runId: runIdLatest, state: 'active' as const, outcome: 'pending' as const, requestedAt: today.toISOString() };
 function folders(suiteCount = 20): FolderPage {
   return {
     scope,
@@ -32,7 +32,7 @@ function folders(suiteCount = 20): FolderPage {
 }
 function suites(items: Suite[] = [suite], group: SuiteGroup = 'in_progress'): SuitePage {
   return { scope, items, nextCursor: null, summaries: items.map((item) => ({ suiteId: item.id, engineId: 'k6', group,
-    latestRun: group === 'failed' ? { ...latestRun, state: 'finished' as const, outcome: 'failed' as const } : latestRun })) };
+    latestRun: group === 'failed' ? { ...latestRun, suiteName: item.name, suiteId: item.id, state: 'finished' as const, outcome: 'failed' as const } : { ...latestRun, suiteName: item.name, suiteId: item.id } })) };
 }
 const config = {
   version: 1, target: 'http://checkout-api:8080', datasets: [], secrets: [],

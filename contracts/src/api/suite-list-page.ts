@@ -1,6 +1,8 @@
+import { validateApi } from './validate.js';
 import type {
   FolderPage,
   FolderSummary,
+  SuiteLatestRun,
   Suite,
   SuiteListQuery,
   SuiteListSummary,
@@ -25,7 +27,7 @@ function factsMatch(item: Suite, summary: SuiteListSummary): boolean {
   const run = summary.latestRun;
   return (
     same(summary.suiteId, item.id) &&
-    (run === null || same(run.suiteId, item.id)) &&
+    (run === null || (same(run.suiteId, item.id) && run.suiteName === item.name && validRunTimes(run))) &&
     suiteGroupOf(run) === summary.group &&
     (summary.engineId === null) === (item.currentRevisionId === null)
   );
@@ -92,7 +94,8 @@ function summaryMatches(summary: FolderSummary, id: string): boolean {
     same(summary.folderId, id) &&
     total === summary.suiteCount &&
     (summary.latestRun === null) === (withRuns === 0) &&
-    (summary.latestRun === null || summary.groups[suiteGroupOf(summary.latestRun)] > 0)
+    (summary.latestRun === null ||
+      (validRunTimes(summary.latestRun) && summary.groups[suiteGroupOf(summary.latestRun)] > 0))
   );
 }
 /** Folder summaries, when present, align with items and classify each direct suite once. */
@@ -102,5 +105,15 @@ export function folderPageSummariesMatch(page: FolderPage): boolean {
   return (
     summaries.length === page.items.length &&
     page.items.every((item, index) => summaryMatches(summaries[index]!, item.id))
+  );
+}
+
+/** Submission keys are canonical; agent start times retain the runner schema's RFC3339 representation. */
+function validRunTimes(run: SuiteLatestRun): boolean {
+  const submitted = Date.parse(run.requestedAt);
+  return (
+    Number.isFinite(submitted) &&
+    new Date(submitted).toISOString() === run.requestedAt &&
+    (run.startedAt === null || validateApi('RunTimestamp', run.startedAt).ok)
   );
 }

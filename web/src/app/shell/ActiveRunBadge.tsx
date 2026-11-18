@@ -15,13 +15,14 @@ export function ActiveRunBadge({ organizationId, workspaceId }: ShellScope) {
     const key = workspaceId
       ? [...queryKeys.workspace(organizationId, workspaceId), 'overview']
       : [...queryKeys.organization(organizationId), 'overview'];
-    return client.getQueryState<OrganizationOverview | WorkspaceOverview>(key);
+    const state = client.getQueryState<OrganizationOverview | WorkspaceOverview>(key);
+    return state?.status === 'success' ? state.data : undefined;
   };
-  const state = useSyncExternalStore(subscribe, read, read);
-  const count = state?.status === 'success' ? state.data?.counts.active : undefined;
+  const snapshot = useSyncExternalStore(subscribe, read, read);
+  const count = snapshot?.counts.active;
   if (count === undefined || count === 0) return null;
   return (
-    <span className="shell-nav-badge" title={`Overview snapshot: ${state?.data?.generatedAt}`}>
+    <span className="shell-nav-badge" title={`Overview snapshot: ${snapshot?.generatedAt}`}>
       <span className="sr-only">, </span>
       {count.toLocaleString()}
       <span className="sr-only"> running</span>

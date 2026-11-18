@@ -39,7 +39,10 @@
         "runId": "00000000-0000-4000-8000-000000000006",
         "state": "finished",
         "outcome": "failed",
-        "requestedAt": "2026-11-09T00:00:00.000Z"
+        "requestedAt": "2026-11-09T00:00:00.000Z",
+        "suiteName": "Example suite",
+        "startedAt": null,
+        "testDurationMs": null
       }
     }
   ]

@@ -1,0 +1,141 @@
+/* Suites folder index: 1280px board table, with row actions revealed on hover/focus. */
+.suites-index:not(.suites-page-empty) .suites-lede {
+  margin-top: var(--s-10);
+}
+.suites-index:not(.suites-page-empty) .suites-header {
+  margin-bottom: var(--s-14);
+}
+.suites-index:not(.suites-page-empty) .suites-toolbar {
+  align-items: flex-end;
+  margin-bottom: 44px;
+}
+.suites-index .suites-actions .btn {
+  min-height: 40px;
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.suites-index .suites-actions .btn-secondary {
+  font-weight: 400;
+}
+.suites-index .suites-filters .input,
+.suites-index .suites-filters .select {
+  min-height: 40px;
+  background-color: var(--panel);
+  padding-left: calc(var(--s-12) - 1px);
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.suites-index .suites-filters > .field:not(.suites-search) {
+  flex: 0 0 140px;
+}
+.folder-table {
+  overflow-y: hidden;
+}
+.folder-table .data-table {
+  min-width: 900px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 var(--s-8);
+  /* Exclude the table's outside spacing, retaining the 8px gaps between rows. */
+  margin: calc(-1 * var(--s-8)) 0;
+}
+.folder-table .data-table th {
+  height: auto;
+  padding: var(--s-12) var(--s-14) 0;
+  background: transparent;
+  line-height: 21px;
+}
+.folder-table .data-table th:nth-child(1) {
+  width: 39.0625%;
+}
+.folder-table .data-table th:nth-child(2) {
+  width: 10.9375%;
+}
+.folder-table .data-table th:nth-child(3) {
+  width: 35.9375%;
+}
+.folder-table .data-table th:nth-child(4) {
+  width: 14.0625%;
+}
+.folder-table .data-table th.numeric,
+.folder-table .data-table td.numeric {
+  padding-right: 26px;
+}
+.folder-table .data-table td {
+  height: auto;
+  padding: var(--s-12) var(--s-14);
+  line-height: 24px;
+  font-size: var(--fs-base);
+}
+.folder-table .data-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+.folder-table .data-table tbody tr:nth-child(odd) td {
+  background: var(--zebra);
+}
+.folder-table .data-table td:first-child {
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+}
+.folder-table .data-table td:nth-child(4) {
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.folder-table .suite-subline {
+  margin-top: var(--s-2);
+  font-size: var(--fs-md);
+  line-height: 21px;
+}
+.folder-table .suite-name {
+  font-size: var(--fs-base);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.folder-table .data-table th:last-child,
+.folder-table .data-table td:last-child {
+  position: relative;
+  width: 0;
+  padding: 0;
+}
+.folder-table .folder-row-actions {
+  position: absolute;
+  right: var(--s-14);
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.folder-table .data-table tbody tr:hover .folder-row-actions,
+.folder-table .data-table tbody tr:focus-within .folder-row-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .folder-table .folder-row-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.folder-table .status {
+  font-size: var(--fs-base);
+  line-height: 24px;
+}
+.folder-table .status::before {
+  width: 8px;
+  height: 8px;
+}
+@media (max-width: 1100px), (hover: none) {
+  .folder-table .data-table th:last-child,
+  .folder-table .data-table td:last-child {
+    width: 48px;
+  }
+  .folder-table .folder-row-actions {
+    position: static;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .folder-table .status {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

@@ -16,7 +16,7 @@ const suite = (n: number, revision = true): Suite => ({
   id: uuid(n), scope, version: 1, name: `Suite ${n}`, folderId: uuid(3), currentRevisionId: revision ? uuid(n + 100) : null });
 const summary = (n: number, minute: number | null, revision = true): SuiteListSummary => ({
   suiteId: uuid(n), engineId: revision ? 'k6' : null, group: minute === null ? 'no_runs' : 'failed',
-  latestRun: minute === null ? null : { suiteId: uuid(n), runId: uuid(n + 200), state: 'finished', outcome: 'failed', requestedAt: at(minute) } });
+  latestRun: minute === null ? null : { suiteName: `Suite ${n}`, startedAt: null, testDurationMs: null, suiteId: uuid(n), runId: uuid(n + 200), state: 'finished', outcome: 'failed', requestedAt: at(minute) } });
 
 it('derives one display group from state and outcome', () => {
   expect(suiteGroupOf(null)).toBe('no_runs');
@@ -62,4 +62,15 @@ it('checks folder summaries classify each direct suite once', () => {
   expect(folderPageSummariesMatch({ ...page, summaries: [{ ...page.summaries![0]!, suiteCount: 3 }] })).toBe(false);
   expect(folderPageSummariesMatch({ ...page, summaries: [{ ...page.summaries![0]!, latestRun: null }] })).toBe(false);
   expect(folderPageSummariesMatch({ ...page, summaries: [] })).toBe(false);
+});
+
+it('binds inline names and preserves valid agent timestamps without assuming synchronized clocks', () => {
+  const row = summary(5, 1); const base = row.latestRun!;
+  const page = (latestRun: typeof base): SuitePage => ({ scope, items: [suite(5)], summaries: [{ ...row, latestRun }], nextCursor: null });
+  expect(suiteListPageMatches(page({ ...base, startedAt: '2099-01-01T00:00:00.000Z' }), scope, { limit: 100 })).toBe(true);
+  expect(suiteListPageMatches(page({ ...base, suiteName: 'Other suite' }), scope, { limit: 100 })).toBe(false);
+  expect(suiteListPageMatches(page({ ...base, startedAt: '2026-11-09T00:00:00Z' }), scope, { limit: 100 })).toBe(true);
+  expect(suiteListPageMatches(page({ ...base, startedAt: '2026-11-09T01:00:00+01:00' }), scope, { limit: 100 })).toBe(true);
+  expect(suiteListPageMatches(page({ ...base, startedAt: 'invalid' }), scope, { limit: 100 })).toBe(false);
+  expect(suiteListPageMatches(page({ ...base, requestedAt: '2026-11-09T00:01:00Z' }), scope, { limit: 100 })).toBe(false);
 });

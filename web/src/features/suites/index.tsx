@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
+import { useWorkspaceSnapshot } from '../../app/overview.js';
+import { useSessionAccess } from '../../app/session.js';
 import { validId } from '../../app/routes.js';
 import { AuthoringState } from './AuthoringState.js';
 import { FolderView } from './FolderView.js';
@@ -39,6 +41,8 @@ export function Suites({
     enabled: organization.data !== undefined,
     queryFn: ({ signal }) => readResult(api.getWorkspace({ params, signal })),
   });
+  const { readOnly } = useSessionAccess();
+  useWorkspaceSnapshot(organizationId, workspaceId, !readOnly && workspace.isSuccess && organization.isSuccess);
   useEffect(
     () => () => {
       void client.cancelQueries({ queryKey: key });

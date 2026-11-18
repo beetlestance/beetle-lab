@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, expect, it } from 'vitest';
 import type { ReactNode } from 'react';
 import { ApiContext } from '../api.js';
 import { createQueryClient, queryKeys } from '../queries.js';
 import { SessionContext } from '../session.js';
-import { apiError, deferred, ids, json, testClient } from '../test-fixtures.js';
+import { apiError, deferred, ids, json, mount, readNamespace, testClient } from '../test-fixtures.js';
+import { routes } from '../routes.js';
 import { ActiveRunBadge } from './ActiveRunBadge.js';
 import valid from '../../../../contracts/fixtures/api/valid/workspace-overview.json';
 
@@ -99,4 +100,32 @@ it('issues no aggregate read in unscoped or restored read-only views', async () 
   await waitFor(() => expect(f.client.isFetching()).toBe(0));
   expect(f.api.records).toHaveLength(0);
   expect(screen.queryByText(/running/)).not.toBeInTheDocument();
+});
+
+it('loads one authoritative header snapshot from a fresh verified Suites scope', async () => {
+  const api = testClient(request => request.path.endsWith('/overview') ? json(snapshot(2)) : readNamespace(request));
+  mount(api.client, routes.suites(ids.a, ids.workspace));
+  expect(await screen.findByRole('link', { name: /Workspaces\s*,\s*2\s*running/ })).toBeVisible();
+  expect(api.records.filter(request => request.path.endsWith('/overview'))).toHaveLength(1);
+  expect(api.records.every(request => request.method === 'GET')).toBe(true);
+});
+it('does not request a header snapshot before the route organisation is verified', async () => {
+  const api = testClient(() => json({ ...apiError('not_found'), message: 'Resource not found' }, 404));
+  mount(api.client, routes.suites(ids.a, ids.workspace));
+  expect(await screen.findByRole('alert')).toBeVisible();
+  expect(api.records).toHaveLength(1);
+  expect(api.records[0]?.path).toBe(`/api/v2/organizations/${ids.a}`);
+});
+
+it('keeps the snapshot owned after Overview-to-Suites navigation in the same workspace', async () => {
+  let reads = 0; const pending = deferred<Response>();
+  const api = testClient(request => request.path.endsWith('/overview')
+    ? ++reads === 1 ? json(snapshot(1)) : pending.promise : readNamespace(request));
+  mount(api.client, routes.workspace(ids.a, ids.workspace));
+  await screen.findByRole('link', { name: /Workspaces\s*,\s*1\s*running/ });
+  fireEvent.click(screen.getByRole('link', { name: /Workspaces\s*,\s*1\s*running/ }));
+  await screen.findByRole('table', { name: 'Folders' });
+  await waitFor(() => expect(reads).toBe(2));
+  await act(async () => pending.resolve(json(snapshot(2))));
+  expect(await screen.findByRole('link', { name: /Workspaces\s*,\s*2\s*running/ })).toBeVisible();
 });

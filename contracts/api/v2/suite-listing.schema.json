@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/suite-listing",
+  "title": "ApiSuiteListing",
+  "$defs": {
+    "SuiteGroup": {
+      "enum": [
+        "in_progress",
+        "passed",
+        "failed",
+        "inconclusive",
+        "stopped",
+        "no_runs"
+      ]
+    },
+    "SuiteLatestRun": {
+      "type": "object",
+      "properties": {
+        "suiteId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "runId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "state": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run/properties/state"
+        },
+        "outcome": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run/properties/outcome"
+        },
+        "requestedAt": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+        },
+        "suiteName": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
+        "startedAt": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "testDurationMs": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.7976931348623157e+308
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "suiteId",
+        "runId",
+        "state",
+        "outcome",
+        "requestedAt",
+        "suiteName",
+        "startedAt",
+        "testDurationMs"
+      ],
+      "additionalProperties": false
+    },
+    "SuiteListSummary": {
+      "type": "object",
+      "properties": {
+        "suiteId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "engineId": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionSummary/properties/engineId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "group": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteGroup"
+        },
+        "latestRun": {
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteLatestRun"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "suiteId",
+        "engineId",
+        "group",
+        "latestRun"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

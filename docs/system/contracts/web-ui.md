@@ -124,7 +124,10 @@ The Suites empty screen needs a complete folder page with root summary proving
 zero suites and no non-root folders. A partial page or absent summaries stays
 unknown. Loading uses one accessible status and decorative skeletons, with no
 invented counts. Empty-state authoring opens the real engine and suite-details
-flow; authoring controls are disabled in restored read-only history.
+flow; authoring controls are disabled in restored read-only history. Folder rows
+use inline current names and measured durations, with one visible-tab clock for
+actual runtime elapsed. Missing/unparseable/future starts stay explicit; restored
+unfinished runs show their state at backup and never tick as current work.
 
 ## Overviews
 
@@ -140,7 +143,9 @@ Each hour partitions submissions by current passed, failed, in-progress and othe
 outcomes. The client checks bucket sums, scalar failure/state bounds and bounded
 recent/active witnesses; colours never infer outcomes from a total submission count.
 The header observes the current scope's successful cached snapshot without owning
-another query. Its badge counts active records exactly, including beyond the
+another query. Suites owns a snapshot read only after its organisation/workspace
+metadata succeeds, so a direct entry also fills the badge without early or duplicate
+reads. Its badge counts active records exactly, including beyond the
 20-header bound; absent/error snapshots and restored history show no badge.
 
 The selected suite shows configuration summaries parsed from its immutable

@@ -38,9 +38,9 @@ it('orders by latest retained Run with UUID ties, no-run suites last, and inline
     expect(page.nextCursor).toBeNull();
     expect(page.summaries).toEqual([
       { suiteId: uuid(52), engineId: 'k6', group: 'in_progress',
-        latestRun: { suiteId: uuid(52), runId: uuid(71), state: 'queued', outcome: 'pending', requestedAt: time(2) } },
+        latestRun: { suiteName: 'Beta', startedAt: null, testDurationMs: null, suiteId: uuid(52), runId: uuid(71), state: 'queued', outcome: 'pending', requestedAt: time(2) } },
       { suiteId: uuid(51), engineId: 'k6', group: 'in_progress',
-        latestRun: { suiteId: uuid(51), runId: uuid(72), state: 'queued', outcome: 'pending', requestedAt: time(1) } },
+        latestRun: { suiteName: 'Alpha load', startedAt: null, testDurationMs: null, suiteId: uuid(51), runId: uuid(72), state: 'queued', outcome: 'pending', requestedAt: time(1) } },
       { suiteId: uuid(54), engineId: 'k6', group: 'no_runs', latestRun: null },
       { suiteId: uuid(53), engineId: null, group: 'no_runs', latestRun: null },
     ]);
@@ -142,7 +142,7 @@ it('summarizes direct suites per folder in one read with subfolder counts', () =
     expect(page.items.map((item) => item.id)).toEqual([uuid(90)]);
     expect(page.summaries).toEqual([{ folderId: uuid(90), suiteCount: 4, subfolderCount: 0,
       groups: { in_progress: 1, passed: 0, failed: 1, inconclusive: 0, stopped: 0, no_runs: 2 },
-      latestRun: { suiteId: uuid(52), runId: uuid(71), state: 'queued', outcome: 'pending', requestedAt: time(2) } }]);
+      latestRun: { suiteName: 'Beta', startedAt: null, testDurationMs: null, suiteId: uuid(52), runId: uuid(71), state: 'queued', outcome: 'pending', requestedAt: time(2) } }]);
     expect(f.folders(90).summaries).toEqual([]);
   } finally {
     f.db.close();

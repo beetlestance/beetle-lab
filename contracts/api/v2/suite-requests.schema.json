@@ -115,7 +115,7 @@
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
         },
         "group": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteGroup"
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/suite-listing#/$defs/SuiteGroup"
         },
         "engineId": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionSummary/properties/engineId"

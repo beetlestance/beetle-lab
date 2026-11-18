@@ -37,7 +37,7 @@ it('serves folder-first suite listing, folder summaries and revision Run counts 
       suiteId: saved.pinned.suiteId,
       engineId: 'k6',
       group: 'in_progress',
-      latestRun: { suiteId: run.suiteId, runId: run.id, state: run.state, outcome: run.outcome, requestedAt: run.requestedAt },
+      latestRun: { suiteName: first.items[0]!.name, startedAt: null, testDurationMs: null, suiteId: run.suiteId, runId: run.id, state: run.state, outcome: run.outcome, requestedAt: run.requestedAt },
     },
   ]);
   const next = value(await api.listSuites({ params: saved.params, query: { limit: 1, cursor: first.nextCursor! } }));

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { Folder, FolderPage, FolderSummary, Suite, Workspace } from '@beetle/contracts/api';
 import { useSessionAccess } from '../../app/session.js';
@@ -19,6 +19,9 @@ import { FolderActions, NewFolderButton } from './FolderActions.js';
 import { MetadataEditor } from './MetadataEditor.js';
 import { NewSuite } from './NewSuite.js';
 import { emptySuiteInventory, SuitesEmpty, SuitesLoading } from './SuiteStates.js';
+import { LatestDuration } from './LatestDuration.js';
+import { useRunClock } from './useRunClock.js';
+import './folder-list.css';
 import { SuiteTable } from './SuiteTable.js';
 
 type Order = 'recent_run' | 'name';
@@ -46,7 +49,7 @@ export function SuiteIndex({ workspace }: { workspace: Workspace }) {
   const empty = !folders.isError && emptySuiteInventory(folders.data, workspace);
   if (folders.isPending) return <SuitesLoading />;
   return (
-    <section className={`content-section suites-page${empty ? ' suites-page-empty' : ''}`}>
+    <section className={`content-section suites-page suites-index${empty ? ' suites-page-empty' : ''}`}>
       <SuiteIndexHeader
         workspace={workspace}
         page={folders.isError ? undefined : folders.data}
@@ -181,15 +184,18 @@ function topLevel(page: FolderPage, workspace: Workspace): Folder[] {
 }
 function FolderTable({ workspace, page, order }: { workspace: Workspace; page: FolderPage; order: Order }) {
   const rows = topLevel(page, workspace);
+  const { restoredBackup } = useSessionAccess();
   const latest = (folder: Folder) => summaryOf(page, folder.id)?.latestRun?.requestedAt ?? '';
   const sorted = [...rows].sort((a, b) =>
     order === 'name'
       ? folderName(a, workspace).localeCompare(folderName(b, workspace))
       : latest(b).localeCompare(latest(a)),
   );
-  const names = useLatestSuiteNames(
-    workspace,
-    sorted.map((folder) => summaryOf(page, folder.id)?.latestRun?.suiteId),
+  const now = useRunClock(
+    restoredBackup === null &&
+      (page.summaries ?? []).some(
+        (summary) => summary.latestRun?.state === 'active' && summary.latestRun.startedAt !== null,
+      ),
   );
   if (rows.length === 0)
     return (
@@ -209,7 +215,7 @@ function FolderTable({ workspace, page, order }: { workspace: Workspace; page: F
           { key: 'suites', label: 'Suites', numeric: true },
           { key: 'last', label: 'Last run' },
           { key: 'result', label: 'Result' },
-          { key: 'actions', label: 'Actions' },
+          { key: 'actions', label: <span className="sr-only">Actions</span> },
         ]}
       >
         {sorted.map((folder) => (
@@ -218,7 +224,7 @@ function FolderTable({ workspace, page, order }: { workspace: Workspace; page: F
             workspace={workspace}
             folder={folder}
             summary={summaryOf(page, folder.id)}
-            names={names}
+            now={now}
           />
         ))}
       </Table>
@@ -232,12 +238,12 @@ function FolderRow({
   workspace,
   folder,
   summary,
-  names,
+  now,
 }: {
   workspace: Workspace;
   folder: Folder;
   summary: FolderSummary | undefined;
-  names: ReadonlyMap<string, string | undefined>;
+  now: number;
 }) {
   const run = summary?.latestRun ?? null;
   const name = folderName(folder, workspace);
@@ -253,7 +259,7 @@ function FolderRow({
       <Td>
         {run ? (
           <>
-            <span>{names.get(run.suiteId.toLowerCase()) ?? 'A suite in this folder'}</span>
+            <span>{run.suiteName}</span>
             <time className="suite-subline" dateTime={run.requestedAt}>
               {when(run.requestedAt)}
             </time>
@@ -263,7 +269,11 @@ function FolderRow({
         )}
       </Td>
       <Td>
-        {run ? <LatestStatus workspace={workspace} run={run} folderName={name} /> : <span className="muted">—</span>}
+        {run ? (
+          <LatestStatus workspace={workspace} run={run} folderName={name} now={now} />
+        ) : (
+          <span className="muted">—</span>
+        )}
       </Td>
       <Td>
         <FolderActions workspace={workspace} folder={folder} />
@@ -275,34 +285,25 @@ function LatestStatus({
   workspace,
   run,
   folderName: name,
+  now,
 }: {
   workspace: Workspace;
   run: NonNullable<FolderSummary['latestRun']>;
   folderName: string;
+  now: number;
 }) {
   const status = runStatus(run);
   return (
-    <Link
-      to={routes.run(workspace.scope.organizationId, workspace.id, run.runId)}
-      aria-label={`${status.label}, latest run in ${name}`}
-    >
-      <Status tone={status.tone}>{status.label}</Status>
-    </Link>
+    <div>
+      <Link
+        to={routes.run(workspace.scope.organizationId, workspace.id, run.runId)}
+        aria-label={`${status.label}, latest run in ${name}`}
+      >
+        <Status tone={status.tone}>{status.label}</Status>
+      </Link>
+      <LatestDuration run={run} now={now} />
+    </div>
   );
-}
-/** Names of the suites behind each folder's latest run: one cached read per suite, at most 20. */
-function useLatestSuiteNames(workspace: Workspace, ids: (string | undefined)[]) {
-  const api = useApi();
-  const organizationId = workspace.scope.organizationId;
-  const unique = [...new Set(ids.filter((id): id is string => !!id).map((id) => id.toLowerCase()))].slice(0, 20);
-  const results = useQueries({
-    queries: unique.map((suiteId) => ({
-      queryKey: queryKeys.suite(organizationId, workspace.id, suiteId),
-      queryFn: ({ signal }: { signal: AbortSignal }) =>
-        readResult(api.getSuite({ params: { organizationId, workspaceId: workspace.id, suiteId }, signal })),
-    })),
-  });
-  return new Map(unique.map((id, index) => [id, results[index]?.data?.name]));
 }
 function WorkspaceSearch({
   workspace,

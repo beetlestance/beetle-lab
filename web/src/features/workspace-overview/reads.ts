@@ -3,13 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 
-export function useWorkspaceOverview(organizationId: string, workspaceId: string) {
-  const api = useApi();
-  return useQuery({
-    queryKey: [...queryKeys.workspace(organizationId, workspaceId), 'overview'],
-    queryFn: ({ signal }) => readResult(api.getWorkspaceOverview({ params: { organizationId, workspaceId }, signal })),
-  });
-}
+export { useWorkspaceSnapshot as useWorkspaceOverview } from '../../app/overview.js';
 
 /**
  * First pages of suites and runs, under the exact keys and queries the list views
