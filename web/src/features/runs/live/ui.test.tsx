@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { queryKeys } from '../../../app/queries.js';
 import type { Run } from '@beetle/contracts/api';
 import { LiveMetricReads } from '../live-metrics/read.js';
 import { ids, json, liveFrame, liveRun, mountLive, routesFor, suiteId } from './fixtures.js';
@@ -220,4 +221,23 @@ it('shows unavailable elapsed time for a valid timestamp the browser cannot pars
   expect(await screen.findByText('Elapsed time unavailable')).toBeVisible();
   expect(screen.getByText(/started 2026-12-31T23:59:60Z/)).toBeVisible();
   expect(screen.queryByText(/NaN/)).toBeNull();
+});
+
+it('reads real namespace names once and retries metadata without retiring live metrics', async () => {
+  const current=recent();let failed=false;
+  vi.spyOn(LiveMetricReads.prototype,'read').mockImplementation(async()=>liveFrame(current,1));
+  const fixture=routesFor(()=>current,request=>failed&&request.path.endsWith('/workspaces/'+current.scope.workspaceId)
+    ?new Response('',{status:503}):undefined);
+  const view=mountLive(fixture.client,{run:current});
+  expect(await screen.findByRole('link',{name:'Same workspace'})).toHaveAttribute('href',expect.stringContaining(current.scope.workspaceId));
+  expect(fixture.records.filter(request=>request.path.endsWith('/organizations/'+current.scope.organizationId))).toHaveLength(1);
+  expect(fixture.records.filter(request=>request.path.endsWith('/workspaces/'+current.scope.workspaceId))).toHaveLength(1);
+  failed=true;
+  await act(async()=>view.queryClient.invalidateQueries({queryKey:queryKeys.workspace(current.scope.organizationId,current.scope.workspaceId),exact:true}));
+  expect(await screen.findByText('Workspace unavailable')).toBeVisible();
+  expect(screen.queryByRole('link',{name:'Same workspace'})).toBeNull();
+  expect(screen.getByRole('button',{name:'Pause stream'})).toBeEnabled();
+  failed=false;fireEvent.click(screen.getByRole('button',{name:'Retry workspace name'}));
+  expect(await screen.findByRole('link',{name:'Same workspace'})).toBeVisible();
+  expect(fixture.records.every(request=>request.method==='GET')).toBe(true);
 });

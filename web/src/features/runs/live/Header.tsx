@@ -7,6 +7,7 @@ import { Status } from '../../../components/Badge.js';
 import type { StatusTone } from '../../../components/Badge.js';
 import { Button } from '../../../components/Button.js';
 import type { useCancellation } from '../useCancellation.js';
+import { useLiveNamespace } from './data.js';
 import { shortId, wallTime } from './format.js';
 
 export type Cancellation = ReturnType<typeof useCancellation>;
@@ -28,12 +29,34 @@ export interface HeaderProps {
 const cancelRequested = (run: Run, cancel: Cancellation | undefined) =>
   run.cancellationRequested || cancel?.accepted === true;
 
+function WorkspaceCrumb({ run }: { run: Run }) {
+  const namespace = useLiveNamespace(run);
+  const failed = namespace.organization.isError || namespace.workspace.isError;
+  const name = !failed && namespace.workspace.isSuccess ? namespace.workspace.data.name : null;
+  return (
+    <>
+      {name ? (
+        <Link to={routes.workspace(run.scope.organizationId, run.scope.workspaceId)}>{name}</Link>
+      ) : (
+        <span>{failed ? 'Workspace unavailable' : 'Reading workspace…'}</span>
+      )}
+      {failed && (
+        <Button size="sm" variant="text" disabled={namespace.busy} onClick={namespace.retry}>
+          Retry workspace name
+        </Button>
+      )}
+    </>
+  );
+}
+
 function ContextLine({ run, suiteName, revisionOrdinal }: Pick<HeaderProps, 'run' | 'suiteName' | 'revisionOrdinal'>) {
   const started = run.startedAt
     ? `started ${wallTime(run.startedAt) || run.startedAt}`
     : `requested ${wallTime(run.requestedAt) || run.requestedAt}`;
   return (
     <p className="live-context">
+      <WorkspaceCrumb run={run} />
+      {' / '}
       <Link to={routes.runs(run.scope.organizationId, run.scope.workspaceId)}>Runs</Link>
       <span aria-hidden="true"> / </span>
       {suiteName ?? 'Suite'} (k6 load test), run <span className="number">{shortId(run.id)}</span>

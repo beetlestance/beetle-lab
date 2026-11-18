@@ -6,7 +6,7 @@ import { ApiContext } from '../../../app/api.js';
 import { createQueryClient } from '../../../app/queries.js';
 import { SessionContext, writableSession } from '../../../app/session.js';
 import type { SessionAccess } from '../../../app/session.js';
-import { ids, json, testClient } from '../../../app/test-fixtures.js';
+import { ids, json, testClient, readNamespace } from '../../../app/test-fixtures.js';
 import type { RequestRecord } from '../../../app/test-fixtures.js';
 import { frame as baseFrame, latest } from '../live-metrics/fixtures.js';
 import { emptyEvents, revision as baseRevision, run, runId, suiteId, revisionId } from '../test-fixtures.js';
@@ -221,6 +221,8 @@ export function routesFor(current: () => Run, extra?: (request: RequestRecord) =
       return json({ scope: summary.scope, suiteId, items, nextCursor: null });
     }
     if (request.path.includes('/events?')) return json(emptyEvents(current()));
+    if (request.path.endsWith('/organizations/'+current().scope.organizationId) ||
+        request.path.endsWith('/workspaces/'+current().scope.workspaceId)) return readNamespace(request);
     throw new Error(`Unexpected synthetic route ${request.path}`);
   });
 }

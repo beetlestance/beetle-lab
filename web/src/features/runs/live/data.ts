@@ -65,3 +65,28 @@ export function useAttribution(run: Run, enabled: boolean) {
     staleTime: Number.POSITIVE_INFINITY,
   });
 }
+
+/** Resolve direct-entry names without making metadata availability a metrics gate. */
+export function useLiveNamespace(run: Run) {
+  const api = useApi();
+  const params = workspace(run);
+  const organization = useQuery({
+    queryKey: queryKeys.organization(params.organizationId),
+    queryFn: ({ signal }) =>
+      readResult(api.getOrganization({ params: { organizationId: params.organizationId }, signal })),
+  });
+  const current = useQuery({
+    queryKey: queryKeys.workspace(params.organizationId, params.workspaceId),
+    enabled: organization.isSuccess,
+    queryFn: ({ signal }) => readResult(api.getWorkspace({ params, signal })),
+  });
+  return {
+    organization,
+    workspace: current,
+    busy: organization.isFetching || current.isFetching,
+    retry: () => {
+      if (organization.isError) void organization.refetch({ cancelRefetch: false });
+      else void current.refetch({ cancelRefetch: false });
+    },
+  };
+}

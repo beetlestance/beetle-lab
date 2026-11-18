@@ -20,6 +20,8 @@ source timestamps remain visible rather than becoming NaN or fabricated zero.
 `history.ts` keeps at most 900 frames this browser received (charts say "since
 this page opened" without a start time). Target runtime charts use
 `LiveMetricSnapshot.target` values as reported (units are not documented).
+Direct entries resolve organisation/workspace names once through shared scoped
+query keys. Metadata errors hide stale names and offer retry while metrics continue.
 Optional `cancel` takes RunDetail's cancellation owner; there is no second owner.
 The p95-rise line reads getRunLatencyAttribution only once terminal. The
 restored-backup banner and Cancel use useSessionAccess (app/session.tsx); no session read.
