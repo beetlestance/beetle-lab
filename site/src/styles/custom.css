@@ -88,7 +88,7 @@
 }
 @media (max-width: 75rem) {
   .bl-hero {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
     gap: 0;
   }
@@ -211,7 +211,7 @@
 }
 @media (max-width: 30rem) {
   .bl-life ol {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -269,7 +269,7 @@
 }
 @media (max-width: 30rem) {
   .bl-paths {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .bl-home-note {
