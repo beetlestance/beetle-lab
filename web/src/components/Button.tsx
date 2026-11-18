@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from 'react';
 import './primitives.css';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'text';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'inverse' | 'text';
 export type ButtonSize = 'md' | 'sm';
 
 /** Class names for a link or other element that should look like a button. */

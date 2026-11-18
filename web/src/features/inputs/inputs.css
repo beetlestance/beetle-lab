@@ -4,7 +4,12 @@
   align-items: end;
   gap: var(--s-24);
   flex-wrap: wrap;
-  margin-bottom: var(--s-32);
+  margin: var(--s-24) 0 var(--s-32);
+}
+.inputs-kicker {
+  margin-bottom: var(--s-8);
+  color: var(--mute);
+  font-size: var(--fs-md);
 }
 .inputs-header h1 {
   font-size: var(--fs-4xl);

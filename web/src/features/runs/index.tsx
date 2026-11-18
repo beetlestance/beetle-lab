@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { routes, validId } from '../../app/routes.js';
+import { validId } from '../../app/routes.js';
 import { queryKeys } from '../../app/queries.js';
 import type { RunScope } from './types.js';
 import { RunHistory } from './RunHistory.js';
@@ -31,11 +30,6 @@ function ScopedRuns({ organizationId, workspaceId, runId }: RunScope & { runId?:
   const scope = { organizationId, workspaceId };
   return (
     <section className="content-section runs-page">
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link to={routes.workspace(organizationId, workspaceId)}>Workspace</Link>
-        <Link to={routes.suites(organizationId, workspaceId)}>Suites</Link>
-        <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
-      </nav>
       {runId ? <RunDetail {...scope} runId={runId} /> : <RunHistory {...scope} />}
     </section>
   );

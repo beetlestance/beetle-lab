@@ -5,7 +5,7 @@ import { errorMessage, useApi } from '../../../app/api.js';
 import { routes } from '../../../app/routes.js';
 import { Status } from '../../../components/Badge.js';
 import { Button } from '../../../components/Button.js';
-import { runStatus } from '../../run-results/format.js';
+import { runStatus, shortId } from '../../run-results/format.js';
 import { usePin } from './usePin.js';
 import { useWrite } from './useWrite.js';
 import type { Write } from './useWrite.js';
@@ -31,6 +31,11 @@ export function ResultHeader({
   return (
     <header className="result-head">
       <div className="result-head-main">
+        <p className="result-context">
+          <Link to={routes.runs(run.scope.organizationId, run.scope.workspaceId)}>Runs</Link>
+          <span aria-hidden="true"> / </span>
+          run <span className="number">{shortId(run.id)}</span>
+        </p>
         <h1 className="result-title">{title}</h1>
         {sentence && <p className="result-sentence">{sentence}</p>}
       </div>

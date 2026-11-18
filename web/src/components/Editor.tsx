@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { ApiClientFailure, ApiClientResult } from '@beetle/contracts/api';
 import { errorMessage, unknownOutcome } from '../app/api.js';
+import { Dialog } from './Dialog.js';
 
 export interface EditorField {
   name: string;
@@ -77,9 +78,17 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
   }
   if (saved)
     return (
-      <aside className="editor" role="status">
-        Changes saved. <button onClick={close}>Close editor</button>
-      </aside>
+      <Dialog
+        title={intent.title}
+        onClose={close}
+        actions={
+          <button type="button" className="primary" onClick={close}>
+            Close editor
+          </button>
+        }
+      >
+        <p role="status">Changes saved.</p>
+      </Dialog>
     );
   if (location.pathname !== intent.path)
     return (
@@ -88,9 +97,10 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
       </aside>
     );
   return (
-    <section className="editor" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`}>{intent.title}</h2>
+    <Dialog title={intent.title} onClose={close} dismissible={!pending}>
       <form
+        className="editor"
+        aria-label={intent.title}
         onSubmit={(event) => {
           event.preventDefault();
           void send(false);
@@ -108,12 +118,12 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
               setAttempt(null);
             }}
           />
-          <div className="actions">
-            <button className="primary" type="submit" disabled={!!unknown}>
-              {pending ? 'Saving…' : 'Save'}
-            </button>
+          <div className="dialog-actions">
             <button type="button" onClick={close}>
               Discard draft
+            </button>
+            <button className="primary" type="submit" disabled={!!unknown}>
+              {pending ? 'Saving…' : 'Save'}
             </button>
           </div>
         </fieldset>
@@ -122,7 +132,7 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
       {failure && (
         <EditorFailure failure={failure} unknown={!!unknown} retry={() => void send(true)} refresh={intent.refresh} />
       )}
-    </section>
+    </Dialog>
   );
 }
 function EditorFailure({

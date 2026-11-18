@@ -32,7 +32,7 @@ it('supports direct inventory navigation without querying the folder or suite li
   mount(api.client, routes.inputs(ids.a, ids.workspace));
   expect(await screen.findByText('No input files yet')).toBeTruthy();
   expect(api.records.some(request => /\/(folders|suites)\?/.test(request.path))).toBe(false);
-  expect(screen.getByText(workspace().name, { selector: 'strong' })).toBeTruthy();
+  expect(screen.getByText(workspace().name, { selector: '.inputs-kicker' })).toBeTruthy();
 });
 
 it('rejects malformed input namespace routes before issuing scoped reads', async () => {

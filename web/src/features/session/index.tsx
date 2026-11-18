@@ -17,12 +17,6 @@ export function SessionApp(options: SessionOptions) {
   if (state.kind === 'paired')
     return (
       <>
-        <div className="session-toolbar" aria-label="Administrator session">
-          <span>
-            Administrator · expires <time dateTime={state.session.expiresAt}>{state.session.expiresAt} UTC</time>
-          </span>
-          <button onClick={gate.logout}>Sign out</button>
-        </div>
         {state.session.readOnly && (
           <p role="status">Read-only restored history. Runs, settings and stored data cannot be changed.</p>
         )}
@@ -30,7 +24,7 @@ export function SessionApp(options: SessionOptions) {
           key={state.generation}
           apiClient={state.client}
           inputTransfers={state.transfers}
-          session={sessionAccess(state.session)}
+          session={sessionAccess(state.session, gate.logout)}
         />
       </>
     );

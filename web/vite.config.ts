@@ -12,5 +12,10 @@ export default defineConfig({
     strictPort: true,
     proxy: { '/api/v2': { target: 'http://127.0.0.1:4311', changeOrigin: false } },
   },
-  build: { outDir: 'dist', emptyOutDir: true },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    // The CSP allows fonts from 'self' only, so fonts ship as files, never data: URIs.
+    assetsInlineLimit: (file) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
+  },
 });
