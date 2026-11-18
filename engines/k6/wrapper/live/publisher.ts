@@ -1,3 +1,4 @@
+import type { LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import { gzipSync, constants } from 'node:zlib';
 import { MAILBOX_PAYLOAD_BYTES } from '@beetle/contracts/live-mailbox';
 import { captureLiveMetricSnapshot, encodeLiveMetricSnapshot, type LiveMetricSnapshot } from '@beetle/contracts/api';
@@ -162,13 +163,29 @@ export class Publisher implements LiveMetricPublisher {
       bytes = this.compress(base);
     }
     if (!bytes) return undefined;
+    return this.enrichArchive(base, bytes);
+  }
+  private enrichArchive(base: LiveMetricSnapshot, bytes: Uint8Array): Uint8Array {
     try {
       const archivePrefix = this.options.archivePrefix?.();
       if (!archivePrefix) return bytes;
-      const enriched = this.compress({ ...base, archivePrefix });
-      return enriched && this.fitsLifetimeBudget(enriched.length) ? enriched : bytes;
+      const prefix = this.withTargetPrefix(archivePrefix);
+      const enriched = this.compress({ ...base, archivePrefix: prefix });
+      if (enriched && this.fitsLifetimeBudget(enriched.length)) return enriched;
+      const metricOnly = prefix !== archivePrefix ? this.compress({ ...base, archivePrefix }) : undefined;
+      return metricOnly && this.fitsLifetimeBudget(metricOnly.length) ? metricOnly : bytes;
     } catch {
       return bytes;
+    }
+  }
+  private withTargetPrefix(archive: LiveMetricArchivePrefix): LiveMetricArchivePrefix {
+    try {
+      const source = this.options.target;
+      if (!source) return archive;
+      const target = source.archivePrefix?.();
+      return target && target.intervalMs === source.intervalMs ? { ...archive, target } : archive;
+    } catch {
+      return archive;
     }
   }
   private targetBlock(publishedAtMs: number): LiveMetricSnapshot['target'] {

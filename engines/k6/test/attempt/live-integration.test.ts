@@ -57,6 +57,10 @@ it('carries the running target sampler readings in live frames at the approved i
   expect(receipt.ok).toBe(true); expect(receipt.liveMetrics).toMatchObject({status: 'closed', quiescence: 'confirmed'});
   const frame = decodeLiveMetricSnapshot(gunzipSync(captureMailboxImage(file.bytes, hash).frame, {maxOutputLength: 65536}), hash);
   expect(frame.target).toMatchObject({scope: 'target-reported', intervalMs: 1000});
+  const targetArchive=frame.archivePrefix!.target!;
+  expect(targetArchive).toMatchObject({scope:receipt.scope,intervalMs:1000,samples:1});
+  const recorded=await readFile(join(f.outputRoot,targetArchive.data.relativePath));
+  expect(hash(recorded.subarray(0,targetArchive.data.bytes))).toBe(targetArchive.data.sha256);
   expect(frame.target!.samples[0]).toMatchObject({phase: 'before', status: 'ready', values: {rss: 1234, cpuPercent: 5, heapAlloc: null}});
   expect(frame.target!.samples.every(sample => sample.observedAtMs <= frame.publishedAtMs)).toBe(true);
 });

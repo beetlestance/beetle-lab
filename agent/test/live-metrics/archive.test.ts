@@ -33,3 +33,35 @@ it('does not lend retained prefix ordering state to callers that receive a frame
  f.set({ok:true,status:200,image:image(sample(2))});expect((await f.reader.read(f.operation())).ok).toBe(true);
  f.set({ok:true,status:200,image:image(sample(3,prefix()))});expect((await f.reader.read(f.operation())).ok).toBe(true);await f.reader.close();
 });
+
+function withTarget(){const value=prefix();value.target={scope:value.scope,samples:2,intervalMs:1000,
+ data:{artifactId:'00000000-0000-4000-8000-000000000007',relativePath:'target-samples.ndjson',bytes:2048,sha256:'c'.repeat(64)}};return value;}
+it('requires independent approval for target-prefix sampling even with no carried target samples',async()=>{
+ for(const interval of [null,2000,1000]){
+  const f=fixture(interval);f.clock(5000);f.set({ok:true,status:200,image:image(sample(1,withTarget()))});
+  const result=await f.reader.read(f.operation());
+  if(interval===1000)expect(result.ok).toBe(true);else expect(result).toEqual({ok:false,reason:'target'});
+  await f.reader.close();
+ }
+});
+it.each(['id','count','extent','hash','growth'] as const)('retains target prefix ordering after omitted enrichment and rejects %s',async kind=>{
+ const f=fixture(1000);f.clock(5000);f.set({ok:true,status:200,image:image(sample(1,withTarget()))});
+ const first=await f.reader.read(f.operation());expect(first.ok).toBe(true);
+ if(!first.ok)throw Error('Missing initial frame');
+ first.frame.archivePrefix!.target!.samples=1;first.frame.archivePrefix!.target!.data.sha256='d'.repeat(64);
+ f.set({ok:true,status:200,image:image(sample(2,prefix()))});expect((await f.reader.read(f.operation())).ok).toBe(true);
+ const next=withTarget();const target=next.target!;
+ if(kind==='id')target.data.artifactId='00000000-0000-4000-8000-000000000008';
+ if(kind==='count')target.samples--;if(kind==='extent')target.data.bytes--;if(kind==='hash')target.data.sha256='d'.repeat(64);
+ if(kind==='growth')target.samples++;
+ f.set({ok:true,status:200,image:image(sample(3,next))});
+ expect(await f.reader.read(f.operation())).toEqual({ok:false,reason:'ordering'});await f.reader.close();
+});
+it('accepts growing target evidence after a frame omits the whole archive prefix',async()=>{
+ const f=fixture(1000);f.clock(5000);f.set({ok:true,status:200,image:image(sample(1,withTarget()))});
+ expect((await f.reader.read(f.operation())).ok).toBe(true);
+ f.set({ok:true,status:200,image:image(sample(2))});expect((await f.reader.read(f.operation())).ok).toBe(true);
+ const next=withTarget();next.target!.samples++;next.target!.data.bytes++;next.target!.data.sha256='e'.repeat(64);
+ f.set({ok:true,status:200,image:image(sample(3,next))});expect((await f.reader.read(f.operation())).ok).toBe(true);
+ await f.reader.close();
+});

@@ -23,3 +23,7 @@ A failed/invalid read or decoded/compressed/write-budget overflow omits only thi
 field, preserving available target data and metric publication. Existing envelope,
 64 KiB and lifetime/cadence bounds remain. Matching release readers understand the
 optional schema extension; older closed-schema readers reject enriched frames.
+The metric prefix may carry a fixed target-samples.ndjson prefix from the same
+approved target source. Its interval must match even if recent readings fail.
+Invalid or unaffordable target enrichment falls back to the metric-only prefix;
+no extra publication slot, IO, cadence or frame allowance is introduced.

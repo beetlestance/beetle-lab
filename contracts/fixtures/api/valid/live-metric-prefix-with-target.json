@@ -1,0 +1,38 @@
+{
+  "scope": {
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002",
+    "attemptId": "00000000-0000-4000-8000-000000000003",
+    "generation": 1
+  },
+  "windows": 1,
+  "endTimeMs": 1000,
+  "data": {
+    "artifactId": "00000000-0000-4000-8000-000000000005",
+    "relativePath": "metric-windows.ndjson",
+    "bytes": 2048,
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "index": {
+    "artifactId": "00000000-0000-4000-8000-000000000006",
+    "relativePath": "metric-index.ndjson",
+    "bytes": 1024,
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "target": {
+    "scope": {
+      "organizationId": "00000000-0000-4000-8000-000000000001",
+      "workspaceId": "00000000-0000-4000-8000-000000000002",
+      "attemptId": "00000000-0000-4000-8000-000000000003",
+      "generation": 1
+    },
+    "samples": 1,
+    "intervalMs": 1000,
+    "data": {
+      "artifactId": "00000000-0000-4000-8000-000000000007",
+      "relativePath": "target-samples.ndjson",
+      "bytes": 2048,
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  }
+}

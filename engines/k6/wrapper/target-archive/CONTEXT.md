@@ -15,7 +15,8 @@ all retained handles; failed close remains failed. No per-sample sync, retry,
 unlink, background loop, retained sample corpus or authority over sealed reports.
 AppendFiles owns the same fixed-file native custody as the metric archive.
 AttemptTarget wires recording after the measured transition, carving 1 MiB from
-the admitted output/execute allowance. Public backfill and live-frame prefix
-transport remain unwired; final target-runtime.json is unchanged.
+the admitted output/execute allowance. Approved live frames may carry its prefix
+inside the metric archive hint. Native target backfill remains unwired; the final
+target-runtime.json format and sealed authority are unchanged.
 Focused checks: vitest run engines/k6/wrapper/target-archive
 and engines/k6/wrapper/target-sampling/recording.test.ts.

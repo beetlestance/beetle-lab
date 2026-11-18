@@ -98,7 +98,8 @@ function archiveMatch(value: LiveMetricSnapshot): boolean {
     liveMetricArchivePrefixMatches(prefix, value.scope) &&
     prefix.windows >= value.sourceSequence &&
     prefix.endTimeMs >= value.endTimeMs &&
-    prefix.endTimeMs <= value.publishedAtMs
+    prefix.endTimeMs <= value.publishedAtMs &&
+    (!prefix.target || !value.target || prefix.target.intervalMs === value.target.intervalMs)
   );
 }
 /** Hostile JSON boundary; the caller supplies its trusted synchronous SHA256 implementation. */
@@ -140,6 +141,18 @@ export function liveMetricArchivePrefixMatches(prefix: LiveMetricArchivePrefix, 
   return (
     liveMetricScopeMatches(prefix.scope, scope) &&
     prefix.data.artifactId.toLowerCase() !== prefix.index.artifactId.toLowerCase() &&
-    prefix.data.bytes + prefix.index.bytes <= 268435456
+    prefix.data.bytes + prefix.index.bytes <= 268435456 &&
+    targetArchiveMatches(prefix, scope)
+  );
+}
+
+function targetArchiveMatches(prefix: LiveMetricArchivePrefix, scope: LiveMetricScope): boolean {
+  const target = prefix.target;
+  return (
+    !target ||
+    (liveMetricScopeMatches(target.scope, scope) &&
+      [prefix.data.artifactId, prefix.index.artifactId].every(
+        (id) => id.toLowerCase() !== target.data.artifactId.toLowerCase(),
+      ))
   );
 }

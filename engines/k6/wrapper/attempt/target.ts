@@ -32,8 +32,12 @@ export class AttemptTarget {
   get started(): boolean {
     return this.input !== undefined;
   }
-  get source(): Pick<TargetSamplingOwner, 'recent'> | undefined {
-    return this.sampler;
+  private readonly view = {
+    recent: (limit: number) => this.sampler!.recent(limit),
+    archivePrefix: () => this.completedPrefix(),
+  };
+  get source() {
+    return this.sampler ? this.view : undefined;
   }
   get report(): TargetSamplingReport | undefined {
     return this.reportValue;

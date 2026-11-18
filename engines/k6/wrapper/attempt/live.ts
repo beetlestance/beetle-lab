@@ -27,7 +27,7 @@ interface Input {
   readonly signal: AbortSignal;
   readonly clock: ExecutionClock;
   /** Running target sampler; its interval is taken from the approval, not from this source. */
-  readonly target?: Pick<LiveTargetSource, 'recent'>;
+  readonly target?: Pick<LiveTargetSource, 'recent' | 'archivePrefix'>;
   readonly archivePrefix?: () => LiveMetricArchivePrefix | undefined;
 }
 const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
@@ -82,12 +82,10 @@ export class AttemptLive {
         maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,
       });
       const { targetIntervalMs, ...frame } = approval;
-      const target = input.target;
+      const target = targetSource(input.target, targetIntervalMs);
       this.publisher = createLiveMetricPublisher({
         ...frame,
-        ...(target && targetIntervalMs !== null
-          ? { target: { intervalMs: targetIntervalMs, recent: (limit: number) => target.recent(limit) } }
-          : {}),
+        ...(target ? { target } : {}),
         ...(input.archivePrefix ? { archivePrefix: input.archivePrefix } : {}),
         hash,
         timeoutMs: input.timeoutMs,
@@ -129,4 +127,13 @@ export class AttemptLive {
     }
     return this.state();
   }
+}
+
+function targetSource(target: Input['target'], intervalMs: number | null): LiveTargetSource | undefined {
+  if (!target || intervalMs === null) return undefined;
+  return {
+    intervalMs,
+    recent: target.recent.bind(target),
+    ...(target.archivePrefix ? { archivePrefix: target.archivePrefix.bind(target) } : {}),
+  };
 }

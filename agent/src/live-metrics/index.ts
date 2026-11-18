@@ -1,5 +1,5 @@
 import { performance } from 'node:perf_hooks';
-import { approvalSnapshot, frameSnapshot, frameRejection, sourceTime } from './frame.js';
+import { approvalSnapshot, frameSnapshot, frameRejection, sourceTime, rememberArchive } from './frame.js';
 import type { Position } from './frame.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { LiveMetricRead, LiveMetricReaderOptions, LiveMetricReadFailure } from './types.js';
@@ -109,7 +109,7 @@ export class LiveMetricReader {
       this.previous?.revision === snapshot.position.revision ? Math.min(this.staleAt, sourceExpiry) : sourceExpiry;
     const freshForMs = Math.floor(this.staleAt - this.lastMono);
     if (freshForMs <= 0 || freshForMs > 6000) return failed('stale');
-    const archivePrefix = snapshot.position.archivePrefix ?? this.previous?.archivePrefix;
+    const archivePrefix = rememberArchive(snapshot.position.archivePrefix, this.previous?.archivePrefix);
     this.previous = { ...snapshot.position, ...(archivePrefix ? { archivePrefix } : {}) };
     return { ok: true, frame: snapshot.frame, freshUntilMonotonicMs: this.staleAt };
   }

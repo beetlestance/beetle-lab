@@ -44,6 +44,8 @@ The response binds scope, producer epoch, subset digest and prefix identity.
 `contracts/src/api/live-history.ts` owns capture/encoding/decoding. The agent's
 private `/runner/v1/attempts/{id}/live-history` route shares this DTO and normal
 runner authentication. Latest-window reads retain their separate 5 s / 64 KiB limits.
+An optional nested target prefix is [approved metadata](target-recording.md#prefix-transport)
+only; this reader still verifies the metric pair and does not read target samples.
 
 ## Browser presentation
 

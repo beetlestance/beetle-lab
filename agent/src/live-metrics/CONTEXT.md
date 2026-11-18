@@ -24,3 +24,7 @@ Retained ordering captures an independent deeply immutable prefix; returned fram
 mutation cannot change it. IDs remain fixed, count/extents/end advance together,
 and equal counts retain exact hashes/extents. Omitted frames preserve the previous
 prefix baseline. Prefix evidence grants no sealed-output or public history access.
+Nested target hints also require the independently approved sampler interval.
+Their UUID/interval/count/extent/hash baseline is detached and survives nested or
+whole-prefix omission. Advancing counts require growing bytes; equal counts keep
+exact hashes. These hints do not yet authorize native target-file reads.

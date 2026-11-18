@@ -139,3 +139,32 @@ it.each(['scope','ids','bytes','count','end','future','path','hash'] as const)('
  if(kind==='path')Object.assign(p.data,{relativePath:'../metric-windows.ndjson'});if(kind==='hash')p.data.sha256='x'.repeat(64);
  expect(()=>captureLiveMetricSnapshot(f,hash)).toThrow(expect.objectContaining({code:'invalid_snapshot'}));
 });
+
+function withTargetPrefix() {
+ const value=fixture();value.archivePrefix=prefix(value);
+ value.archivePrefix.target={scope:value.scope,samples:2,intervalMs:1000,
+  data:{artifactId:'00000000-0000-4000-8000-000000000007',relativePath:'target-samples.ndjson',bytes:2048,sha256:'c'.repeat(64)}};
+ return value;
+}
+it('captures a bounded target prefix in the existing metric archive envelope',()=>{
+ const value=withTargetPrefix();const captured=decodeLiveMetricSnapshot(encodeLiveMetricSnapshot(value,hash),hash);
+ expect(captured.archivePrefix?.target).toEqual(value.archivePrefix!.target);
+ value.archivePrefix!.target!.data.bytes=9000;
+ expect(captured.archivePrefix!.target!.data.bytes).toBe(2048);
+ expect(encodeLiveMetricSnapshot(captured,hash).byteLength).toBeLessThanOrEqual(65536);
+});
+it.each(['scope','ids','count','bytes','interval','path','hash'] as const)('refuses target archive %s outside the fixed contract',kind=>{
+ const value=withTargetPrefix();const target=value.archivePrefix!.target!;
+ if(kind==='scope')target.scope={...target.scope,generation:2};
+ if(kind==='ids')target.data.artifactId=value.archivePrefix!.data.artifactId;
+ if(kind==='count')target.samples=257;if(kind==='bytes')target.data.bytes=1048577;
+ if(kind==='interval')target.intervalMs=999;if(kind==='path')Object.assign(target.data,{relativePath:'../target-samples.ndjson'});
+ if(kind==='hash')target.data.sha256='x'.repeat(64);
+ expect(()=>captureLiveMetricSnapshot(value,hash)).toThrow(expect.objectContaining({code:'invalid_snapshot'}));
+});
+it('refuses a target hint whose interval contradicts the carried target readings',()=>{
+ const value=targetFrame();value.archivePrefix=prefix(value);
+ value.archivePrefix.target=withTargetPrefix().archivePrefix!.target!;
+ value.archivePrefix.target.intervalMs=value.target!.intervalMs===1000?2000:1000;
+ expect(()=>captureLiveMetricSnapshot(value,hash)).toThrow(expect.objectContaining({code:'invalid_snapshot'}));
+});

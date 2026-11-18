@@ -898,5 +898,20 @@
     "path": "valid/latest-revision-export.json",
     "schema": "LatestRevisionExport",
     "valid": true
+  },
+  {
+    "path": "valid/live-metric-history.json",
+    "schema": "LiveMetricHistory",
+    "valid": true
+  },
+  {
+    "path": "valid/live-target-archive-prefix.json",
+    "schema": "LiveTargetArchivePrefix",
+    "valid": true
+  },
+  {
+    "path": "valid/live-metric-prefix-with-target.json",
+    "schema": "LiveMetricArchivePrefix",
+    "valid": true
   }
 ]

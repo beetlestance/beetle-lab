@@ -7,7 +7,7 @@ import {
   liveMetricScopeMatches,
   liveMetricSubsetText,
 } from '@beetle/contracts/api';
-import type { LiveMetricSnapshot, LiveMetricArchivePrefix } from '@beetle/contracts/api';
+import type { LiveMetricSnapshot, LiveMetricArchivePrefix, LiveTargetArchivePrefix } from '@beetle/contracts/api';
 import type { LiveMetricApproval, LiveMetricReadFailure } from './types.js';
 export const hash = (bytes: string | Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
 export interface Position {
@@ -79,7 +79,7 @@ export function frameRejection(input: {
   if (!liveMetricScopeMatches(frame.scope, approval.scope)) return 'scope';
   if (frame.producerEpoch !== approval.producerEpoch) return 'epoch';
   if (frame.subsetDigest !== approval.subsetDigest) return 'subset';
-  if (frame.target && frame.target.intervalMs !== approval.targetIntervalMs) return 'target';
+  if (!targetIntervalMatches(frame, approval.targetIntervalMs)) return 'target';
   if (wall < Math.max(frame.publishedAtMs, frame.capturedAtMs, frame.endTimeMs) || wall - sourceTime(frame) > 6000)
     return 'stale';
   if (previous && ordering(position, previous)) return 'ordering';
@@ -111,7 +111,7 @@ function archiveRegresses(
   const sameIds =
     next.data.artifactId.toLowerCase() === previous.data.artifactId.toLowerCase() &&
     next.index.artifactId.toLowerCase() === previous.index.artifactId.toLowerCase();
-  if (!sameIds || next.windows < previous.windows) return true;
+  if (!sameIds || next.windows < previous.windows || targetRegresses(next.target, previous.target)) return true;
   if (next.windows > previous.windows)
     return (
       next.endTimeMs <= previous.endTimeMs ||
@@ -127,6 +127,15 @@ function prefixPosition(prefix: LiveMetricArchivePrefix): LiveMetricArchivePrefi
     scope: Object.freeze({ ...prefix.scope }),
     data: Object.freeze({ ...prefix.data }),
     index: Object.freeze({ ...prefix.index }),
+    ...(prefix.target
+      ? {
+          target: Object.freeze({
+            ...prefix.target,
+            scope: Object.freeze({ ...prefix.target.scope }),
+            data: Object.freeze({ ...prefix.target.data }),
+          }),
+        }
+      : {}),
   });
 }
 
@@ -137,4 +146,32 @@ function sameArchivePosition(next: LiveMetricArchivePrefix, previous: LiveMetric
       (lane) => next[lane].bytes === previous[lane].bytes && next[lane].sha256 === previous[lane].sha256,
     )
   );
+}
+
+function targetRegresses(
+  next: LiveTargetArchivePrefix | undefined,
+  previous: LiveTargetArchivePrefix | undefined,
+): boolean {
+  if (!next || !previous) return false;
+  if (
+    next.intervalMs !== previous.intervalMs ||
+    next.data.artifactId.toLowerCase() !== previous.data.artifactId.toLowerCase() ||
+    next.samples < previous.samples
+  )
+    return true;
+  return next.samples > previous.samples
+    ? next.data.bytes <= previous.data.bytes
+    : next.data.bytes !== previous.data.bytes || next.data.sha256 !== previous.data.sha256;
+}
+/** Omitted enrichment never resets the private ordering baseline. */
+export function rememberArchive(
+  next: LiveMetricArchivePrefix | undefined,
+  previous: LiveMetricArchivePrefix | undefined,
+): LiveMetricArchivePrefix | undefined {
+  if (!next) return previous;
+  return next.target || !previous?.target ? next : Object.freeze({ ...next, target: previous.target });
+}
+
+function targetIntervalMatches(frame: LiveMetricSnapshot, interval: number | null): boolean {
+  return [frame.target, frame.archivePrefix?.target].every((target) => !target || target.intervalMs === interval);
 }

@@ -1,4 +1,10 @@
-import type { LiveMetricHash, LiveMetricScope, LiveMetricSubset, LiveMetricArchivePrefix } from '@beetle/contracts/api';
+import type {
+  LiveMetricHash,
+  LiveMetricScope,
+  LiveMetricSubset,
+  LiveMetricArchivePrefix,
+  LiveTargetArchivePrefix,
+} from '@beetle/contracts/api';
 import type { MetricWindow } from '@beetle/contracts/metrics';
 import type { TargetRuntimeSample } from '@beetle/contracts/target-runtime';
 
@@ -16,6 +22,8 @@ export interface LiveMetricClock {
 export interface LiveTargetSource {
   readonly intervalMs: number;
   recent(limit: number): readonly TargetRuntimeSample[];
+  /** Optional completed recording bytes; advisory and independently approved. */
+  archivePrefix?(): LiveTargetArchivePrefix | undefined;
 }
 export interface LiveMetricPublisherOptions {
   readonly scope: LiveMetricScope;

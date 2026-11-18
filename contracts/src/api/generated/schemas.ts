@@ -15,6 +15,7 @@ import { schema as ApiInputColumns } from './input-columns.js';
 import { schema as ApiInputRequests } from './input-requests.js';
 import { schema as ApiInput } from './input.js';
 import { schema as ApiInstallationStatus } from './installation-status.js';
+import { schema as LiveHistoryPrefix } from './live-history-prefix.js';
 import { schema as LiveHistory } from './live-history.js';
 import { schema as LiveMetrics } from './live-metrics.js';
 import { schema as ApiNamespaceRequests } from './namespace-requests.js';
@@ -40,7 +41,7 @@ import { schema as ApiSuiteListing } from './suite-listing.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -90,6 +91,8 @@ export const apiMessageSchemas = freezeSchema({
   InstallationStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/InstallationStatus' },
   RunSlotHolder: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/RunSlotHolder' },
   RunQueueStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/RunQueueStatus' },
+  LiveMetricArchivePrefix: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-history-prefix#/$defs/LiveMetricArchivePrefix' },
+  LiveTargetArchivePrefix: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-history-prefix#/$defs/LiveTargetArchivePrefix' },
   LiveMetricHistorySample: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-history#/$defs/LiveMetricHistorySample' },
   LiveMetricHistory: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-history#/$defs/LiveMetricHistory' },
   LiveMetricSelection: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSelection' },
@@ -100,7 +103,6 @@ export const apiMessageSchemas = freezeSchema({
   LiveTargetValues: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetValues' },
   LiveTargetSample: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetSample' },
   LiveTargetReadings: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveTargetReadings' },
-  LiveMetricArchivePrefix: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricArchivePrefix' },
   CreateOrganizationRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/CreateOrganizationRequest' },
   PatchOrganizationRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/PatchOrganizationRequest' },
   CreateWorkspaceRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/namespace-requests#/$defs/CreateWorkspaceRequest' },

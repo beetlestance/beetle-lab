@@ -57,7 +57,11 @@ function captureTarget(target: LiveMetricPublisherOptions['target']) {
   if (target === undefined) return undefined;
   const intervalMs = target.intervalMs;
   if (!Number.isInteger(intervalMs) || intervalMs < 1000 || intervalMs > 60000) throw new Error();
-  return Object.freeze({ intervalMs, recent: target.recent.bind(target) });
+  return Object.freeze({
+    intervalMs,
+    recent: target.recent.bind(target),
+    ...(target.archivePrefix ? { archivePrefix: target.archivePrefix.bind(target) } : {}),
+  });
 }
 function validateBudget(options: LiveMetricPublisherOptions): void {
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs < 1 || options.timeoutMs > 172800000) throw new Error();

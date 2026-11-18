@@ -41,7 +41,7 @@
       "type": "object",
       "properties": {
         "prefix": {
-          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricArchivePrefix"
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/live-history-prefix#/$defs/LiveMetricArchivePrefix"
         },
         "scope": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricScope"

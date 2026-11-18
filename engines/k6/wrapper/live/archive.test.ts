@@ -19,3 +19,43 @@ it('omits only archive evidence when it would exceed the remaining write budget'
  const f=fixture({maximumProducedBytes:budget,archivePrefix:()=>prefix(f.options.scope)});f.publisher.accept(window(1));await f.advance();
  expect(f.write).toHaveBeenCalledTimes(1);expect(f.frames[0]?.archivePrefix).toBeUndefined();expect(f.frames[0]?.series).toHaveLength(1);expect(f.publisher.state().reason).toBeNull();await f.publisher.close();
 });
+
+function targetPrefix(scope:LiveMetricScope){return {scope,samples:1,intervalMs:1000,
+ data:{artifactId:'00000000-0000-4000-8000-000000000007',relativePath:'target-samples.ndjson' as const,bytes:2048,sha256:'c'.repeat(64)}};}
+it('carries the target recording hint without another publication slot',async()=>{
+ const initial=fixture();const scope=initial.options.scope;await initial.publisher.close();
+ const target=targetPrefix(scope);
+ const f=fixture({archivePrefix:()=>prefix(scope),target:{intervalMs:1000,recent:()=>[],archivePrefix:()=>target}});
+ f.publisher.accept(window(1));await f.advance();expect(f.write).toHaveBeenCalledOnce();
+ expect(f.frames[0]?.archivePrefix?.target).toEqual(target);
+ target.data.bytes=4000;expect(f.frames[0]?.archivePrefix?.target?.data.bytes).toBe(2048);
+ await f.publisher.close();
+});
+it.each(['throws','invalid'] as const)('keeps metric prefix and readings when target recording %s',async kind=>{
+ const initial=fixture();const scope=initial.options.scope;await initial.publisher.close();
+ const f=fixture({archivePrefix:()=>prefix(scope),target:{intervalMs:1000,recent:()=>[],archivePrefix:()=>{
+  if(kind==='throws')throw Error('synthetic hint error');return {...targetPrefix(scope),samples:257};}}});
+ f.publisher.accept(window(1));await f.advance();expect(f.frames[0]?.archivePrefix).toEqual(prefix(scope));
+ expect(f.frames[0]?.target).toBeDefined();expect(f.frames[0]?.series).toHaveLength(1);
+ expect(f.publisher.state().reason).toBeNull();await f.publisher.close();
+});
+it('preserves the metric-only prefix when target enrichment exceeds the admitted write budget',async()=>{
+ const initial=fixture();const scope=initial.options.scope;await initial.publisher.close();
+ const plain=fixture({archivePrefix:()=>prefix(scope),target:{intervalMs:1000,recent:()=>[]}});
+ plain.publisher.accept(window(1));await plain.advance();const maximumProducedBytes=plain.write.mock.calls[0]![0].byteLength;
+ await plain.publisher.close();
+ const f=fixture({maximumProducedBytes,archivePrefix:()=>prefix(scope),target:{intervalMs:1000,recent:()=>[],archivePrefix:()=>targetPrefix(scope)}});
+ f.publisher.accept(window(1));await f.advance();expect(f.frames[0]?.archivePrefix).toEqual(prefix(scope));
+ expect(f.frames[0]?.target).toBeDefined();expect(f.write).toHaveBeenCalledOnce();await f.publisher.close();
+});
+
+it('drops a mismatched optional hint even when the target reading getter fails',async()=>{
+ const initial=fixture();const scope=initial.options.scope;await initial.publisher.close();
+ const f=fixture({archivePrefix:()=>prefix(scope),target:{intervalMs:1000,
+  recent:()=>{throw Error('synthetic target unavailable');},
+  archivePrefix:()=>({...targetPrefix(scope),intervalMs:2000})}});
+ f.publisher.accept(window(1));await f.advance();
+ expect(f.frames[0]?.target).toBeUndefined();expect(f.frames[0]?.archivePrefix).toEqual(prefix(scope));
+ expect(f.frames[0]?.series).toHaveLength(1);expect(f.publisher.state().reason).toBeNull();
+ await f.publisher.close();
+});

@@ -217,4 +217,4 @@ a failed revocation keeps ownership and rejects close.
 | `app/src/application/run-metrics/` | `4d172ed61554` |
 | `app/src/application/run-comparison/` | `cddffebb9dee` |
 | `contracts/src/k6-live/` | `324516855159` |
-| `agent/src/live-metrics/` | `8cea96298362` |
+| `agent/src/live-metrics/` | `feac352cffc7` |

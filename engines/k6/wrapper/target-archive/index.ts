@@ -15,13 +15,9 @@ export interface TargetArchiveOptions {
   readonly allowance: number;
   readonly check: () => void;
 }
-/** Completed advisory bytes only; never an adopted artifact or a durability receipt. */
-export interface TargetArchivePrefix {
-  readonly scope: JournalScope;
-  readonly samples: number;
-  readonly intervalMs: number;
-  readonly data: Readonly<{ artifactId: string; relativePath: 'target-samples.ndjson'; bytes: number; sha256: string }>;
-}
+/** Completed advisory bytes only, never adopted output or durability authority. */
+export type { LiveTargetArchivePrefix as TargetArchivePrefix } from '@beetle/contracts/api';
+import type { LiveTargetArchivePrefix as TargetArchivePrefix } from '@beetle/contracts/api';
 class ArchiveBusy extends AttemptError {
   readonly code = 'busy';
   constructor() {
