@@ -19,9 +19,16 @@ These levels are for organising work. They are not accounts or permissions.
 
 ## Finding your way in the app
 
-The app follows the same hierarchy. You start from your organisations, open one
-to see its workspaces, and open a workspace to reach its folders, suites, inputs
-and runs. Settings exist at each level: installation, organisation and workspace.
+The app follows the same hierarchy. The organization switcher next to the logo
+lists your organisations; **Create organization** adds one. An organisation's page
+lists its workspaces with their suites, runs in the last 24 hours, what is running
+right now and the last run, and **Create workspace** adds one.
+
+A workspace has five tabs: **Suites** (with its folders), **Runs**, **Inputs**,
+**Exports** and **Settings**. **Overview** in the header shows the current
+workspace at a glance: runs in progress, the last 24 hours, recent runs and the
+agent's status. **Settings** in the header holds the installation, organisation
+and workspace levels as tabs.
 
 ## Organisations
 
@@ -99,7 +106,9 @@ Overrides cannot escape the installation's limits:
 - A value out of range is refused. Nothing is silently clamped.
 
 The settings page shows each effective value together with the level it comes
-from. Removing an override makes the level inherit again.
+from, for example **Inherited from organization** or **Set here**. Choose
+**Inherit instead** to remove an override. Each level saves on its own, and a run
+keeps the values it started with.
 
 ### When settings apply
 
@@ -112,10 +121,11 @@ later never alters a run that is already queued or finished.
 | What | Rule |
 | --- | --- |
 | Organisation | Refused while any workspace is active; retired if all its workspaces are retired |
-| Folder | Only when it is empty; the root folder cannot be deleted |
+| Folder | Only when it is empty; the root folder cannot be deleted. Deleting never removes suites or inputs for you |
 | Workspace | Retired: hidden, with its data kept |
 
-Deleting a workspace **retires** it. A retired workspace disappears from lists and
+Deleting a workspace **retires** it: choose **Retire workspace…** at the bottom of
+the workspace's settings and type its name to confirm. A retired workspace disappears from lists and
 can no longer be opened, but its suites, runs and files stay on disk and still use
 their space. You can create a new workspace with the same name; the retired one
 never comes back. A workspace with an active run, export or unfinished upload

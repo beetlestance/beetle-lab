@@ -1,6 +1,6 @@
 ---
 title: Suites and inputs
-description: Write suites, keep revisions, upload datasets and request bodies, and use templates.
+description: Write suites, keep revisions, upload datasets and request bodies, add sample files, and use templates.
 sidebar:
   order: 1
 ---
@@ -12,14 +12,32 @@ immutable configuration; saving a change creates the next one. Runs, exports and
 comparisons always refer to a revision, so changing a suite never rewrites
 history. A configuration can be up to 1 MiB.
 
-The suite page shows a summary of the selected revision (target origin, up to
-eight scenarios with their executors and durations) and its latest run, with a
-link to the suite's full history.
+The workspace's **Suites** tab lists folders with their suites and the last run
+in each. Use **New folder** to group suites and **New suite** to write one; search
+finds suites in every folder. A suite's page has three tabs:
+
+| Tab | Shows |
+| --- | --- |
+| **Overview** | The load shape and its stages, the requests with their share, body and checks, the pass or fail rules, the data it reads, and recent runs |
+| **Edit** | The form editor, **Run setup** for scenarios and the request mix, and the complete configuration as JSON |
+| **Revisions** | Every revision with its message, who saved it and when, how many runs used it, and what changed since the one before |
+
+Saving from **Edit** creates the next revision, with an optional message that is
+shown on **Revisions**. The save panel lists any problem that stops the save; nothing
+is saved until all of them are fixed. If someone saved the suite elsewhere in the
+meantime, you are told instead of overwriting their revision.
+
+On **Revisions**, **View script** opens the k6 script generated from that
+revision, where you can compare it with another revision or
+[export it](/guides/export-scripts/). **Run this revision** opens **Start run**
+with that revision chosen.
 
 ## Inputs
 
 **Inputs** are files your suites read: datasets for parameterising requests and
-bodies to send. They belong to a workspace and are immutable once published.
+bodies to send. They belong to a workspace and are immutable once published. The
+workspace's **Inputs** tab lists each file with its folder, kind, status, the
+suites that use it, size and when it was added, with **Download** and **Delete**.
 
 | Limit | Value |
 | --- | --- |
@@ -27,14 +45,15 @@ bodies to send. They belong to a workspace and are immutable once published.
 | Uploaded in pieces of | 64 KiB |
 | Folder import | 128 files, 8 MiB each, 128 MiB in total, depth 8 |
 
-Upload goes through four visible steps: create, send bytes, seal, published. If
-the connection drops, the upload pauses; nothing retries on its own. Check the
+Choose **Upload files**, pick a file, a name and a destination folder. Upload goes
+through four visible steps: create, send bytes, seal, published. If the
+connection drops, the upload pauses; nothing retries on its own. Check the
 status, then resume from where the server stopped. Cancelling stops the upload but
 can leave a partial input on the server, which the page tells you about.
 
 An input that a revision uses is **pinned** and cannot be deleted until no
-revision needs it. Downloads are verified (size and SHA-256) before the browser
-offers the file.
+revision needs it; the delete dialog lists the saved revisions that use it. Downloads are
+verified (size and SHA-256) before the browser offers the file.
 
 ### Add a sample file
 

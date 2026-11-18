@@ -32,9 +32,15 @@ like other settings; see [Organisations and workspaces](/concepts/workspaces/). 
 is one setting, so a workspace override replaces the whole policy, not single
 rules.
 
+In the app, **Settings** edits the age rule as **Remove finished runs older
+than**, in days; empty means off. Count and storage rules are set through the
+[HTTP API](/reference/api/); when a policy has them, the settings page says so
+under the age rule.
+
 ## Preview, then apply
 
-Retention never runs on its own. In a workspace's settings:
+Retention never runs on its own. In the workspace's **Settings** tab, open the
+retention controls and preview:
 
 1. **Preview.** Beetle Lab captures a page of up to 100 candidate runs, each with
    its estimated size and the rule that selected it. It also lists how many runs
