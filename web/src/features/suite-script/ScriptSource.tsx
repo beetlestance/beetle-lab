@@ -2,7 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import './source.css';
 
 const lineHeight = 21;
-const inset = 16;
+const inset = 10;
 const maximumHeight = 640;
 
 /** Four index bytes per line under the verified 1 MiB source cap; no DOM node per newline. */

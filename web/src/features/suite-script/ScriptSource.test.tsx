@@ -21,5 +21,5 @@ it('shows exact short-script text with numbers hidden from assistive technology'
   expect(container.querySelectorAll('code')).toHaveLength(3);
   expect(container.querySelector('code')).toHaveTextContent('one');
   expect(container.querySelector('.script-line-number')).toHaveAttribute('aria-hidden', 'true');
-  expect(screen.getByRole('region')).toHaveStyle({ height: '95px' });
+  expect(screen.getByRole('region')).toHaveStyle({ height: '83px' });
 });

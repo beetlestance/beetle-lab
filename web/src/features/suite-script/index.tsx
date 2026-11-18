@@ -34,6 +34,11 @@ function savedLine(revision: SuiteRevision): string {
   return saved ? `Saved ${saved}.` : used;
 }
 
+function savedSeparator(message: string | null | undefined, saved: string) {
+  if (!message || !saved) return '';
+  return /[.!?。！？]$/.test(message.trimEnd()) ? ' ' : '. ';
+}
+
 /** The ready script's text, read once through the verified content route. */
 function useScriptText(revision: SuiteRevision, job: ExportJob | undefined) {
   const { organizationId, workspaceId } = revision.scope;
@@ -70,8 +75,6 @@ function ScriptHeader({
       <header className="script-header">
         <div>
           <h1>Script for revision {revision.ordinal}</h1>
-          {revision.message && <p className="script-message">{revision.message}</p>}
-          {saved && <p className="script-meta">{saved}</p>}
         </div>
         <div className="script-actions">
           {run}
@@ -83,6 +86,13 @@ function ScriptHeader({
           </Button>
         </div>
       </header>
+      {(revision.message || saved) && (
+        <p className="script-description">
+          {revision.message && <span>{revision.message}</span>}
+          {savedSeparator(revision.message, saved)}
+          {saved && <span>{saved}</span>}
+        </p>
+      )}
       {copied && (
         <p role="status" className="script-note">
           {copied}
