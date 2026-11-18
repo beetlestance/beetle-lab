@@ -15,8 +15,7 @@ function append(state: EncoderState, part: string): void {
 }
 function scalar(state: EncoderState, value: unknown): void {
   if (typeof value === 'string' && value.length > state.maximum) throw new Error('request_limit');
-  if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('invalid_json');
-  if (value !== null && !['boolean', 'number', 'string'].includes(typeof value)) throw new Error('invalid_json');
+  structureScalar(value);
   append(state, JSON.stringify(value));
 }
 function objectKeys(state: EncoderState, value: object): string[] {
@@ -129,4 +128,48 @@ export async function readJson(response: Response, maximumBytes: number, signal?
   } finally {
     reader.releaseLock();
   }
+}
+
+/** Structural counterpart to the encoder for owned parsed JSON; creates no serialized copy. */
+export function jsonNodeCount(input: unknown): number {
+  const state = { nodes: 0, ancestors: new Set<object>() };
+  structure(input, 0, state);
+  return state.nodes;
+}
+function structure(input: unknown, depth: number, state: { nodes: number; ancestors: Set<object> }): void {
+  if (depth > 64 || ++state.nodes > 65536) throw new Error('request_limit');
+  if (input === null || typeof input !== 'object') {
+    structureScalar(input);
+    return;
+  }
+  if (state.ancestors.has(input)) throw new Error('invalid_json');
+  state.ancestors.add(input);
+  if (Array.isArray(input)) structureArray(input, depth, state);
+  else structureObject(input, depth, state);
+  state.ancestors.delete(input);
+}
+function structureArray(input: unknown[], depth: number, state: { nodes: number; ancestors: Set<object> }): void {
+  if (input.length > 4096) throw new Error('request_limit');
+  for (let index = 0; index < input.length; index++) {
+    const value = Object.getOwnPropertyDescriptor(input, String(index));
+    if (!value || !('value' in value)) throw new Error('invalid_json');
+    structure(value.value, depth + 1, state);
+  }
+}
+function structureObject(input: object, depth: number, state: { nodes: number; ancestors: Set<object> }): void {
+  if (![Object.prototype, null].includes(Object.getPrototypeOf(input) as object | null))
+    throw new Error('invalid_json');
+  let count = 0;
+  for (const key in input) {
+    if (!Object.hasOwn(input, key)) continue;
+    if (++count > 4096) throw new Error('request_limit');
+    const value = Object.getOwnPropertyDescriptor(input, key);
+    if (!value || !('value' in value)) throw new Error('invalid_json');
+    structure(value.value, depth + 1, state);
+  }
+}
+
+function structureScalar(input: unknown): void {
+  if (typeof input === 'number' && !Number.isFinite(input)) throw new Error('invalid_json');
+  if (input !== null && !['string', 'number', 'boolean'].includes(typeof input)) throw new Error('invalid_json');
 }

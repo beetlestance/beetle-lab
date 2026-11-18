@@ -8,6 +8,7 @@ export class RequestWork {
   private readonly pending = new Set<Promise<unknown>>();
   private readonly sources = new Map<FastifyRequest, SourceWork>();
   private readonly telemetry = new Map<FastifyRequest, SourceWork>();
+  private readonly history = new Map<FastifyRequest, SourceWork>();
   private closed = false;
   private closing: Promise<void> | undefined;
   run<T>(operation: () => Promise<T>): Promise<T> {
@@ -25,6 +26,10 @@ export class RequestWork {
   }
   acquireLive(request: FastifyRequest, reply: FastifyReply): void {
     this.acquire(request, reply, this.telemetry, 5000);
+  }
+  acquireHistory(request: FastifyRequest, reply: FastifyReply): void {
+    if (this.history.size >= 1) throw new AgentHttpError(429, 'budget_unavailable', 'transport');
+    this.acquire(request, reply, this.history, 30000);
   }
   private acquire(
     request: FastifyRequest,
@@ -59,6 +64,9 @@ export class RequestWork {
   live<T>(request: FastifyRequest, operation: (budget: Operation) => Promise<T>): Promise<T> {
     return this.finite(this.telemetry, request, operation);
   }
+  liveHistory<T>(request: FastifyRequest, operation: (budget: Operation) => Promise<T>): Promise<T> {
+    return this.finite(this.history, request, operation);
+  }
   private finite<T>(
     owners: Map<FastifyRequest, SourceWork>,
     request: FastifyRequest,
@@ -69,12 +77,12 @@ export class RequestWork {
     return owner.run(operation);
   }
   responseFinished(request: FastifyRequest): void {
-    (this.sources.get(request) ?? this.telemetry.get(request))?.responseFinished();
+    (this.sources.get(request) ?? this.telemetry.get(request) ?? this.history.get(request))?.responseFinished();
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;
     this.closed = true;
-    for (const owner of [...this.sources.values(), ...this.telemetry.values()]) owner.close();
+    for (const owner of [...this.sources.values(), ...this.telemetry.values(), ...this.history.values()]) owner.close();
     this.closing = Promise.allSettled([...this.pending]).then(() => undefined);
     return this.closing;
   }

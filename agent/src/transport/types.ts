@@ -1,3 +1,4 @@
+import type { HistoryRead } from '../supervisor/index.js';
 import type { StorageSettlement } from '../storage-settlement/index.js';
 import type { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { Scope } from '../admission/index.js';
@@ -24,6 +25,7 @@ export interface AgentHttpOptions {
   >;
   readonly journal: Pick<Journal, 'get' | 'readEvents' | 'acknowledge'>;
   /** Source adapter is explicit; absent service returns a scoped unavailable error. */
+  readonly liveHistory?: (key: Scope, operation: Operation) => Promise<HistoryRead>;
   readonly liveMetrics?: (key: Scope, operation: Operation) => Promise<LiveMetricRead>;
   readonly outputs?: OutputSourceReader;
   /** Read-only durable closure capability; transport cannot create absence authority. */

@@ -244,6 +244,7 @@ class RuntimeOwner {
       installation: this.installation,
       health: () =>
         journal.storageStatus() === 'unavailable' ? 'unavailable' : this.closed ? 'closing' : journal.storageStatus(),
+      liveHistory: (key, operation) => supervisor.readLiveHistory(key, operation),
       liveMetrics: (key, operation) => supervisor.readLiveMetrics(key, operation),
       outputs: createOutputSourceReader({ journal, gate, readRange: readOutputRange }),
       absences: journal,

@@ -15,6 +15,7 @@ import { schema as ApiInputColumns } from './input-columns.js';
 import { schema as ApiInputRequests } from './input-requests.js';
 import { schema as ApiInput } from './input.js';
 import { schema as ApiInstallationStatus } from './installation-status.js';
+import { schema as LiveHistory } from './live-history.js';
 import { schema as LiveMetrics } from './live-metrics.js';
 import { schema as ApiNamespaceRequests } from './namespace-requests.js';
 import { schema as ApiNamespace } from './namespace.js';
@@ -39,7 +40,7 @@ import { schema as ApiSuiteListing } from './suite-listing.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunComparison, ApiRunEvents, ApiRunHistory, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -88,6 +89,8 @@ export const apiMessageSchemas = freezeSchema({
   InstallationStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/InstallationStatus' },
   RunSlotHolder: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/RunSlotHolder' },
   RunQueueStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/RunQueueStatus' },
+  LiveMetricHistorySample: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-history#/$defs/LiveMetricHistorySample' },
+  LiveMetricHistory: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-history#/$defs/LiveMetricHistory' },
   LiveMetricSelection: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSelection' },
   LiveMetricScope: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricScope' },
   LiveMetricSubset: { $ref: 'https://beetle-lab.dev/contracts/api/v2/live-metrics#/$defs/LiveMetricSubset' },

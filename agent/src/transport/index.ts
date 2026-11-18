@@ -1,3 +1,4 @@
+import { historyRoute, registerLiveHistory } from './live-history.js';
 import { registerStorageHealth } from './storage-health.js';
 import { registerSettlement, settlementRoute } from './settlement.js';
 import { registerRetirement, retirementRoute } from './retirement.js';
@@ -44,9 +45,10 @@ function query(request: FastifyRequest, cursor = false): number {
 function sourceOperationRoute(request: FastifyRequest): boolean {
   return sourceRoute(request) || retirementRoute(request) || settlementRoute(request);
 }
-function ingressRoute(request: FastifyRequest): 'source' | 'live' | 'offer' | undefined {
+function ingressRoute(request: FastifyRequest): 'source' | 'live' | 'history' | 'offer' | undefined {
   if (sourceOperationRoute(request)) return 'source';
   if (liveRoute(request)) return 'live';
+  if (historyRoute(request)) return 'history';
   if (
     (request.method === 'PUT' &&
       (request.routeOptions.url === '/runner/v1/attempts/:attemptId' ||
@@ -77,7 +79,7 @@ function ingress(
   });
   server.addHook('onRequest', async (request, reply) => {
     const kind = ingressRoute(request);
-    if (kind === 'source' || kind === 'live') reply.header('Connection', 'close');
+    if (kind && kind !== 'offer') reply.header('Connection', 'close');
     if (request.routeOptions.url === '/healthz') return;
     identity.capture(request);
     if (!kind) return;
@@ -90,6 +92,9 @@ function ingress(
         break;
       case 'live':
         operations.acquireLive(request, reply);
+        break;
+      case 'history':
+        operations.acquireHistory(request, reply);
         break;
       case 'offer':
         offers.acquire(request);
@@ -111,7 +116,12 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   ingress(server, identity, operations, offers);
   server.setErrorHandler((error, request, reply) => {
     try {
-      sendError(reply, error, identity.scope(request), sourceOperationRoute(request) || liveRoute(request));
+      sendError(
+        reply,
+        error,
+        identity.scope(request),
+        sourceOperationRoute(request) || liveRoute(request) || historyRoute(request),
+      );
     } catch {
       reply.code(500).send();
     }
@@ -159,6 +169,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
     sendJson(reply, 200, 'AckReceipt', await work(() => services.journal.acknowledge(body)), scope);
   });
   registerLiveMetrics(server, { identity, operations, read: options.liveMetrics });
+  registerLiveHistory(server, { identity, operations, read: options.liveHistory });
   registerSettlement(server, { settlement: options.settlement, identity, operations });
   registerRetirement(server, { cleanup: options.cleanup, identity, operations });
   registerSources(server, {

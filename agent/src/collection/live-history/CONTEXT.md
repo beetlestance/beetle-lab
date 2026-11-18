@@ -21,3 +21,6 @@ public HTTP history route exists merely because these native helpers are present
 
 Line assembly uses one 1 MiB data record buffer and one 1 KiB index/header buffer;
 partial reads allow at most 4 * ceil(prefixBytes / 64 KiB) + 1024 calls per file.
+
+Sample retention also respects the shared 65536 JSON-node budget; pressure removes
+selected interior windows, never averages values, and marks coverage sampled.

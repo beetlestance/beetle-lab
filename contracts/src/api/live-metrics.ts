@@ -2,7 +2,12 @@ import { encodeCanonicalJson } from '../json.js';
 import { metricSeriesIdentity } from '../metrics/index.js';
 import { metricDescriptorMatches } from './client/metric-values.js';
 import { validateApi } from './validate.js';
-import type { LiveMetricScope, LiveMetricSnapshot, LiveMetricSubset } from './generated/types.js';
+import type {
+  LiveMetricScope,
+  LiveMetricSnapshot,
+  LiveMetricSubset,
+  LiveMetricArchivePrefix,
+} from './generated/types.js';
 
 export const LIVE_METRIC_FRAME_BYTES = 65_536;
 /** Newest target samples carried per frame; older ones are the browser's to keep. */
@@ -52,7 +57,9 @@ export function liveMetricScopeMatches(actual: LiveMetricScope, expected: LiveMe
     actual.attemptId.toLowerCase() === expected.attemptId.toLowerCase()
   );
 }
-function seriesMatch(value: LiveMetricSnapshot): boolean {
+export function liveMetricSeriesMatch(
+  value: Pick<LiveMetricSnapshot, 'series' | 'subset' | 'startTimeMs' | 'endTimeMs'>,
+): boolean {
   const ordinals = new Set<number>();
   return value.series.every((row) => {
     const selected = value.subset.selected[row.ordinal];
@@ -88,9 +95,7 @@ function archiveMatch(value: LiveMetricSnapshot): boolean {
   const prefix = value.archivePrefix;
   if (!prefix) return true;
   return (
-    liveMetricScopeMatches(prefix.scope, value.scope) &&
-    prefix.data.artifactId.toLowerCase() !== prefix.index.artifactId.toLowerCase() &&
-    prefix.data.bytes + prefix.index.bytes <= 268435456 &&
+    liveMetricArchivePrefixMatches(prefix, value.scope) &&
     prefix.windows >= value.sourceSequence &&
     prefix.endTimeMs >= value.endTimeMs &&
     prefix.endTimeMs <= value.publishedAtMs
@@ -109,7 +114,7 @@ export function captureLiveMetricSnapshot(input: unknown, hash: LiveMetricHash):
         value.endTimeMs - value.startTimeMs === 1000 &&
         value.publishedAtMs >= value.capturedAtMs &&
         value.subsetDigest === hash(liveMetricSubsetText(subset)) &&
-        seriesMatch(value) &&
+        liveMetricSeriesMatch(value) &&
         targetMatch(value) &&
         archiveMatch(value),
       'invalid_snapshot',
@@ -129,4 +134,12 @@ export function decodeLiveMetricSnapshot(bytes: Uint8Array, hash: LiveMetricHash
   } catch {
     throw new LiveMetricError('invalid_snapshot');
   }
+}
+
+export function liveMetricArchivePrefixMatches(prefix: LiveMetricArchivePrefix, scope: LiveMetricScope): boolean {
+  return (
+    liveMetricScopeMatches(prefix.scope, scope) &&
+    prefix.data.artifactId.toLowerCase() !== prefix.index.artifactId.toLowerCase() &&
+    prefix.data.bytes + prefix.index.bytes <= 268435456
+  );
 }

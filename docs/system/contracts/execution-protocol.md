@@ -1,10 +1,9 @@
 # Execution protocol
 
-The backend (`app/`) offers attempts to the execution agent (`agent/`) over a private
-authenticated HTTP API; the agent admits, stages, launches and supervises one
-disposable engine container per attempt and returns journaled events and sealed
-outputs. Runner protocol 1.0 schemas in `contracts/runner/v1/` own every wire shape;
-engine-side rules are in [engines](engines.md).
+The backend (`app/`) offers attempts to the execution agent (`agent/`) over private authenticated HTTP.
+The agent admits, stages, launches and supervises one disposable container per attempt,
+returning journaled events and sealed outputs. Lifecycle wire shapes live in
+`contracts/runner/v1/`; advisory live/history DTOs in `contracts/api/v2/`. Engine rules: [engines](engines.md).
 
 ## Authority
 
@@ -46,6 +45,7 @@ carry a shell command, host path, mount option, environment map or Docker flag.
 | `POST /attempts/{id}/cancel-original`, `/export/cancel-original` | Cancels an original whose delivery is uncertain without enqueueing it |
 | `GET /attempts/{id}/events?after=N` | Ordered batch of at most 100 events / 256 KiB |
 | `POST /attempts/{id}/ack` | Confirms an application-durable cursor; never a test result |
+| `GET /attempts/{id}/live-metrics`, `/live-history` | Advisory window (64 KiB, 5 s) or verified sampled prefix (16 MiB, 65536 nodes, 30 s); neither grants output custody |
 | `source`, `source/chunk`, `source/absence`, `output-retirement`, `output-settlement` | Output custody routes; see [outputs collection](outputs-collection.md) and [retirement](retirement.md) |
 
 Paths are under `/runner/v1`. The initial Offer always uses generation 1; later
@@ -71,10 +71,10 @@ reasons and no exception text, configuration or URL. Only a schema-valid scoped
 | Limit | Agent server | Backend client |
 | --- | --- | --- |
 | Original Offer / cancel-original calls | 2, before body parsing | 2 |
-| Other original calls | 32 shared (source and live subsets of 2 each) | 8 shared across all facades |
+| Other original calls | 32 shared; source 2, live 2, history 1 | 8 shared across all facades |
 | Sockets / headers | 64 sockets; 16 KiB / 128 fields | 16 KiB / 32 fields |
 | Deadline | 30 s request and connection | 5000 ms logical; credit held until native close |
-| Responses | Encoded and validated before send | ≤ 1 MiB, ≤ 4096 fragments |
+| Responses | Encoded and validated; history ≤ 16 MiB / 65536 nodes | ≤ 1 MiB, ≤ 4096 fragments |
 
 Saturation is a typed failure without a queue (429 on the agent). Neither side retries, follows
 redirects, uses proxies, keep-alive or decompression. The client resolves DNS once (≤ 8
@@ -211,7 +211,7 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/` | `c0d5b65442f6` |
-| `agent/src/transport/` | `344e0327f0ca` |
+| `agent/src/transport/` | `d92dffa735c6` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |
 | `agent/src/supervisor/time.ts` | `9594485cfc76` |

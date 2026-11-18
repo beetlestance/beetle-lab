@@ -48,3 +48,5 @@ export {
   isExportResult,
   verifyExecutionResultSeal,
 } from './execution-result.js';
+
+export { jsonNodeCount } from './json.js';

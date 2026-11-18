@@ -110,3 +110,11 @@ export { encodeRevisionListCursor, revisionListPosition, revisionListPageMatches
 export type { RevisionListPosition } from './revision-list.js';
 
 export { latestRevisionExportMatches } from './export-latest.js';
+
+export {
+  LIVE_HISTORY_BYTES,
+  LiveHistoryError,
+  captureLiveMetricHistory,
+  encodeLiveMetricHistory,
+  decodeLiveMetricHistory,
+} from './live-history.js';

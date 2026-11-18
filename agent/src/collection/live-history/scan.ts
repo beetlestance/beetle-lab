@@ -1,26 +1,14 @@
-import { encodeCanonicalJson } from '@beetle/contracts';
+import { HistorySamples } from './samples.js';
 import { captureMetricWindow, metricSeriesIdentity, projectMetricSeries } from '@beetle/contracts/metrics';
 import { liveMetricScopeMatches, validateApi } from '@beetle/contracts/api';
-import type { LiveMetricSnapshot } from '@beetle/contracts/api';
+import type { LiveMetricHistory } from '@beetle/contracts/api';
 import { OutputFailure } from '../output/index.js';
 import type { OutputIO } from '../output/index.js';
 import type { CapturedOptions } from './options.js';
 import type { PrefixFiles } from './files.js';
 import { PrefixLines } from './lines.js';
-export interface HistorySample {
-  sequence: number;
-  startTimeMs: number;
-  endTimeMs: number;
-  series: LiveMetricSnapshot['series'];
-}
-export interface PrefixHistory {
-  prefix: CapturedOptions['prefix'];
-  scope: CapturedOptions['scope'];
-  producerEpoch: string;
-  subset: LiveMetricSnapshot['subset'];
-  sampled: boolean;
-  samples: HistorySample[];
-}
+export type PrefixHistory = LiveMetricHistory;
+
 function fields(input: unknown, names: readonly string[]): Record<string, unknown> {
   if (
     !input ||
@@ -62,13 +50,15 @@ export async function scan(files: PrefixFiles, options: CapturedOptions, owner: 
     scope: options.scope,
     producerEpoch: options.frame.producerEpoch,
     subset: options.frame.subset,
+    subsetDigest: options.frame.subsetDigest,
     sampled: options.prefix.windows > 900,
     samples: [],
   };
   const limit = Math.min(900, options.prefix.windows);
   let next = 1;
   let previousEnd = -1;
-  let bytes = 65536;
+  const samples = new HistorySamples(result);
+  let selectedCount = 0;
   for (let sequence = 1; sequence <= options.prefix.windows; sequence++) {
     owner.check();
     const row = await required(data, 1048576);
@@ -81,13 +71,12 @@ export async function scan(files: PrefixFiles, options: CapturedOptions, owner: 
         return ordinal === undefined ? [] : [projectMetricSeries(value, ordinal)];
       });
       const sample = { sequence, startTimeMs: window.startTimeMs, endTimeMs: window.endTimeMs, series };
-      bytes += Buffer.byteLength(encodeCanonicalJson(sample, 65536)) + 1;
-      if (bytes > 16777216) throw new OutputFailure('output_limit');
-      result.samples.push(sample);
+      samples.add(sample);
+      selectedCount++;
       next =
         limit === 1
           ? Number.POSITIVE_INFINITY
-          : 1 + Math.floor((result.samples.length * (options.prefix.windows - 1)) / (limit - 1));
+          : 1 + Math.floor((selectedCount * (options.prefix.windows - 1)) / (limit - 1));
     }
   }
   if (previousEnd !== options.prefix.endTimeMs || (await data.next(256)) || (await index.next(256)))
@@ -95,6 +84,8 @@ export async function scan(files: PrefixFiles, options: CapturedOptions, owner: 
   data.verify();
   index.verify();
   owner.check();
+  result.samples = samples.values();
+  result.sampled = result.samples.length < options.prefix.windows;
   return result;
 }
 

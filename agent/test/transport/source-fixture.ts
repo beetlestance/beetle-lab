@@ -24,7 +24,7 @@ export function sourceFixture() {
     await Promise.all(servers.splice(0).map(server => server.close()));
   });
   return {
-    async server(absent = false, liveMetrics?: AgentHttpOptions['liveMetrics']) {
+    async server(absent = false, liveMetrics?: AgentHttpOptions['liveMetrics'], liveHistory?: AgentHttpOptions['liveHistory']) {
       const stored = source(); const original = stored.manifest.binding;
       const key = { organizationId: original.organizationId, workspaceId: original.workspaceId,
         attemptId: original.attemptId, generation: 1 as const };
@@ -49,6 +49,7 @@ export function sourceFixture() {
       const server = createAgentServer({ credential: 'S'.repeat(64), journalAuthority: original.journalAuthority,
         installation: { cancelExportOriginal: unused, enqueueExport: unused, enqueue: unused, cancel: unused, cancelOriginal: unused },
         ...(liveMetrics ? {liveMetrics} : {}),
+        ...(liveHistory ? {liveHistory} : {}),
         journal: { get: unused, readEvents: unused, acknowledge: unused }, capabilities: cap,
         ...(absent ? {} : { outputs: { source: getSource, chunk: getChunk } }) });
       servers.push(server);

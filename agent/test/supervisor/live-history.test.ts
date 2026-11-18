@@ -17,7 +17,7 @@ async function setup(){
  const manager=new Supervisor({journal:e.journal,installationId,clock:e.time,backendFactory:()=>Object.assign(backend,{readMailbox}),liveMetricApproval:()=>({scope:value.scope,producerEpoch:value.producerEpoch,subset:value.subset}),liveHistoryReader:native});
  return {...e,manager,backend,readMailbox,native,value,operation:():Operation=>({deadline:e.time.monotonic()+30000})};
 }
-function history(options:PrefixReadOptions):PrefixHistory{return {prefix:options.frame.archivePrefix!,scope:options.scope,producerEpoch:options.frame.producerEpoch,subset:options.frame.subset,sampled:false,samples:[]};}
+function history(options:PrefixReadOptions):PrefixHistory{return {prefix:options.frame.archivePrefix!,scope:options.scope,producerEpoch:options.frame.producerEpoch,subset:options.frame.subset,subsetDigest:options.frame.subsetDigest,sampled:false,samples:[]};}
 it('uses only an existing running owner and its approved mailbox frame, without starting another execution',async()=>{
  const e=await setup();expect(await e.manager.readLiveHistory(e.input.key,e.operation())).toEqual({ok:false,reason:'unavailable'});expect(e.manager.size).toBe(0);
  const actor=e.manager.actor(e.input);await actor.launch();await actor.tick();
