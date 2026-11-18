@@ -169,6 +169,7 @@
 }
 .live-kpi dd {
   margin: 0;
+  font-family: var(--font-sans);
   font-size: var(--fs-5xl);
   line-height: var(--lh-tight);
   letter-spacing: var(--tracking-figure);
@@ -192,6 +193,10 @@
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   gap: var(--s-40);
   align-items: start;
+}
+/* No thresholds: the endpoint table takes the full width instead of shrink-wrapping. */
+.live-split > :only-child {
+  grid-column: 1 / -1;
 }
 .live-split h2 {
   margin-bottom: var(--s-16);

@@ -60,7 +60,7 @@ function CancelButton({ run, cancel, readOnly }: Pick<HeaderProps, 'run' | 'canc
   if (!cancel || terminal || readOnly || cancelRequested(run, cancel)) return null;
   return (
     <Button
-      variant="primary"
+      variant="inverse"
       loading={cancel.pending}
       loadingLabel="Cancelling…"
       disabled={cancel.unknown}
