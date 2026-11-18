@@ -11,7 +11,8 @@ import { createQueryClient } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { testClient, json, deferred, apiError } from '../../app/test-fixtures.js';
 import type { RequestRecord } from '../../app/test-fixtures.js';
-import { run as baseRun } from '../runs/test-fixtures.js';
+import { config as liveConfig } from '../runs/live/fixtures.js';
+import { revision as baseRevision, run as baseRun } from '../runs/test-fixtures.js';
 import { WorkspaceOverview } from './index.js';
 import valid from '../../../../contracts/fixtures/api/valid/workspace-overview.json';
 import status from '../../../../contracts/fixtures/api/valid/installation-status.json';
@@ -103,11 +104,7 @@ function input(state: InputRecord['state'], index: number): InputRecord {
   };
 }
 type Reads = { overview?: () => Snapshot; runs?: boolean; inputsMore?: boolean; status?: boolean };
-function handler(reads: Reads = {}) {
-  return (request: RequestRecord): Response => {
-    const path = request.path;
-    if (path.endsWith('/overview')) return json((reads.overview ?? busy)());
-    if (path.includes('/suites?')) return json({ scope, items: [suite()], nextCursor: null });
+function runReads(path: string, reads: Reads): Response | undefined {
     if (path.includes('/runs?')) {
       if (reads.runs === false) return json(apiError('storage_unavailable'), 503);
       const items = [
@@ -121,6 +118,19 @@ function handler(reads: Reads = {}) {
         nextCursor: null,
       });
     }
+    if (path.endsWith(`/runs/${liveId}`)) return reads.runs === false
+      ? json(apiError('storage_unavailable'), 503)
+      : json(runRow(liveId, 'active', new Date(Date.now() - 316_000).toISOString()));
+    if (path.includes('/revisions/')) return json({ ...baseRevision(), scope, suiteId, config: liveConfig });
+  return undefined;
+}
+function handler(reads: Reads = {}) {
+  return (request: RequestRecord): Response => {
+    const path = request.path;
+    if (path.endsWith('/overview')) return json((reads.overview ?? busy)());
+    if (path.includes('/suites?')) return json({ scope, items: [suite()], nextCursor: null });
+    const execution = runReads(path, reads);
+    if (execution) return execution;
     if (path.includes('/inputs?')) {
       const items = [input('published', 1), input('published', 2), input('staging', 3)];
       return json({ scope, items, nextCursor: reads.inputsMore ? items[2]!.id : null });
@@ -184,7 +194,7 @@ it('renders hero, live card, activity, recent runs and the agent from real field
     'href',
     routes.run(org, ws, liveId),
   );
-  expect(await within(live).findByText(/^05:1\d elapsed$/)).toBeVisible();
+  expect(await within(live).findByRole('region', { name: 'Progress' })).toHaveTextContent(/05:1\d elapsed/);
   expect(within(live).getByText('steady-1.2k')).toBeVisible();
 
   const recent = screen.getByRole('region', { name: 'Recent runs' });
@@ -199,7 +209,7 @@ it('renders hero, live card, activity, recent runs and the agent from real field
   expect(within(activity).getAllByRole('row')).toHaveLength(25);
   expect(within(activity).getByText('2 runs submitted in the last 24 hours, by hour')).toBeInTheDocument();
 
-  const agent = screen.getByRole('region', { name: 'Local agent' });
+  const agent = screen.getByRole('region', { name: 'Agent' });
   expect(await within(agent).findByText(/^Ready\. standard engine image verified at agent start\.$/)).toBeVisible();
   expect(within(agent).getByText('8 CPUs, use not measured')).toBeVisible();
   expect(within(agent).getByText('16 GiB, use not measured')).toBeVisible();
@@ -211,13 +221,13 @@ it('keeps unproven figures unknown when enrichment reads fail or the inventory i
   const f = testClient(handler({ runs: false, inputsMore: true, status: false }));
   mount(f);
   expect(await screen.findByText('2 runs submitted in the last 24 hours, 1 failed. 3 suites.')).toBeVisible();
-  const agent = screen.getByRole('region', { name: 'Local agent' });
+  const agent = screen.getByRole('region', { name: 'Agent' });
   expect(await within(agent).findByText('Agent status unavailable; host figures are unknown.')).toBeVisible();
   const recent = screen.getByRole('region', { name: 'Recent runs' });
   await waitFor(() => expect(within(recent).getAllByRole('listitem')[1]).toHaveTextContent('p95 unknown'));
-  const live = screen.getByRole('article', { name: `Running run ${liveId}` });
+  const live = await screen.findByRole('article', { name: `Status unknown run ${liveId}` });
   expect(within(live).queryByText(/elapsed/)).not.toBeInTheDocument();
-  expect(within(live).getByText(/^Requested/)).toBeVisible();
+  expect(within(live).getByText('Run status unavailable. Progress and live figures are unknown.')).toBeVisible();
   const reads = f.records.length;
   fireEvent.click(within(agent).getByRole('button', { name: 'Retry agent status' }));
   await waitFor(() => expect(f.records).toHaveLength(reads + 1));

@@ -104,7 +104,6 @@ function Overview({
               organizationId={organizationId}
               workspaceId={workspaceId}
               header={live}
-              run={runPage?.items.find((run) => run.id === live.id)}
               suiteName={suiteNames?.get(live.suiteId)}
             />
           )}

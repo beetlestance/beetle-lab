@@ -17,7 +17,7 @@ function agentLine(agent: Agent): string {
     case 'unreachable':
       return 'The agent is not responding.';
     case 'disabled':
-      return 'The local agent is turned off for this installation.';
+      return 'The agent is turned off for this installation.';
     case 'unknown':
       return 'Agent status is unknown.';
   }
@@ -61,13 +61,13 @@ function usedOf(label: string, total: number | null, free: number | null): Gauge
   return { label, text: `${gibibytes(used)} of ${gibibytes(total)} GiB`, share: used / total };
 }
 
-/** "Local agent": reachability, engine images and host gauges from the installation status read. */
+/** "Agent": reachability, engine images and host gauges from the installation status read. */
 export function AgentPanel() {
   const heading = useId();
   const query = useInstallationStatus();
   return (
     <section className="overview-agent" aria-labelledby={heading}>
-      <h2 id={heading}>Local agent</h2>
+      <h2 id={heading}>Agent</h2>
       {query.isPending && <p className="overview-muted">Checking the agent…</p>}
       {query.isError && (
         <div className="overview-agent-error">

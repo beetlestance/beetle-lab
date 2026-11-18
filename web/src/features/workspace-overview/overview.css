@@ -64,7 +64,8 @@
 }
 .overview-art {
   width: 100%;
-  max-width: 420px;
+  max-width: 432px;
+  height: auto;
   justify-self: center;
 }
 .overview-muted {
@@ -218,7 +219,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Local agent */
+/* Agent */
 .overview-agent {
   display: grid;
   gap: var(--s-16);
@@ -321,5 +322,56 @@
   }
   .overview-run-figure {
     grid-area: figure;
+  }
+}
+
+.overview-live .live-progress {
+  padding: 0;
+  gap: var(--s-16);
+}
+.overview-live .live-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.overview-live .live-stage {
+  min-width: 0;
+}
+.overview-live-unavailable {
+  display: grid;
+  gap: var(--s-8);
+  justify-items: start;
+  color: var(--mute);
+}
+@media (max-width: 760px) {
+  .overview-live .live-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s-16) var(--s-24);
+  }
+  .overview-live .live-kpi dd {
+    font-size: var(--fs-5xl);
+  }
+  .overview-activity .overview-section-head {
+    display: grid;
+    gap: var(--s-4);
+  }
+  .overview-live .live-stages {
+    position: relative;
+    padding-top: var(--s-32);
+  }
+  .overview-live .live-stage-label {
+    display: none;
+  }
+  .overview-live .live-stage.is-now .live-stage-label {
+    position: absolute;
+    inset: 0 0 auto;
+    display: flex;
+    gap: var(--s-4);
+    font-size: var(--fs-md);
+  }
+  .overview-live .live-stage.is-now .live-stage-label > span:not(.number) {
+    display: inline;
+  }
+  .overview-live .live-left {
+    display: block;
+    margin: var(--s-4) 0 0;
   }
 }

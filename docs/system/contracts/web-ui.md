@@ -55,11 +55,11 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 
 | Surface | Interval | Stops on |
 | --- | --- | --- |
-| Run result, run timeline (active run) | 2 s while visible | Terminal run (then one final refresh after any issued read settles), error |
+| Run result, run timeline, Overview featured run (active) | 2 s while visible | Terminal run (then one final refresh after any issued read settles), error |
 | Artifact publication (pending) | 2 s while visible | Ready, absent, error; terminal run alone does not mean ready |
 | Export jobs list / single job | 2 s / 1 s | All jobs terminal, error |
 | Retention batch (applied) | 2 s | Any other state |
-| Overviews, suite summaries, command search | Never | Manual refresh only |
+| Overview aggregates, suite summaries, command search | Never | Manual refresh only |
 
 Errors stop automatic polling; recovery is an explicit retry. A page with a next
 cursor is backlog to drain at the normal cadence, not a tight loop.

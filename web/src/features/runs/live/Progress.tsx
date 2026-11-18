@@ -98,7 +98,9 @@ function Kpis({
   figures,
   p95Limit,
   failedLimit,
+  compact,
 }: {
+  compact: boolean;
   figures: LiveFigures | null;
   p95Limit: number | null;
   failedLimit: number | null;
@@ -114,7 +116,7 @@ function Kpis({
       />
       <Kpi value={orNull(f.p95?.value, ms)} label={`p95 latency${slowest}${limitText(p95Limit, ms)}`} />
       <Kpi value={orNull(f.failedRatio, percent)} label={`failed${limitText(failedLimit, percent)}`} />
-      <Kpi value={orNull(f.vus, whole)} label={`virtual users busy${vusMax}`} />
+      {!compact && <Kpi value={orNull(f.vus, whole)} label={`virtual users busy${vusMax}`} />}
     </dl>
   );
 }
@@ -127,7 +129,9 @@ export function Progress({
   figures,
   p95Limit,
   failedLimit,
+  compact = false,
 }: {
+  compact?: boolean | undefined;
   plan: RunPlan;
   elapsedMs: number | null;
   originMs: number | null;
@@ -139,7 +143,7 @@ export function Progress({
     <section className="live-progress" aria-label="Progress">
       <Stages plan={plan} elapsedMs={elapsedMs} />
       <TimeLine totalMs={plan.totalMs} elapsedMs={elapsedMs} originMs={originMs} />
-      <Kpis figures={figures} p95Limit={p95Limit} failedLimit={failedLimit} />
+      <Kpis compact={compact} figures={figures} p95Limit={p95Limit} failedLimit={failedLimit} />
     </section>
   );
 }

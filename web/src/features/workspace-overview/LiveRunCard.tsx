@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { OverviewRun, Run } from '@beetle/contracts/api';
+import type { OverviewRun } from '@beetle/contracts/api';
 import { routes } from '../../app/routes.js';
 import { Status } from '../../components/Badge.js';
-import { buttonClass } from '../../components/Button.js';
-import { clockTime, elapsed, runStatus, shortId } from './format.js';
+import { Button, buttonClass } from '../../components/Button.js';
+import { clockTime, runStatus, shortId } from './format.js';
+
+import { LiveProgress } from './LiveProgress.js';
+import { useOverviewRun } from './reads.js';
 
 function useNow(enabled: boolean) {
   const [now, setNow] = useState(() => Date.now());
@@ -19,24 +22,26 @@ function useNow(enabled: boolean) {
 /**
  * The newest in-progress run of the snapshot. Start time comes from the run
  * record (`startedAt`); before the engine starts there is no elapsed time.
- * Live figures and the stage plan belong to the live run page.
+ * The featured run and its live window are refreshed independently of the aggregate snapshot.
  */
 export function LiveRunCard({
   organizationId,
   workspaceId,
   header,
-  run,
   suiteName,
 }: {
   organizationId: string;
   workspaceId: string;
   header: OverviewRun;
-  run: Run | undefined;
   suiteName: string | undefined;
 }) {
-  const startedAt = run?.startedAt ?? null;
-  const now = useNow(startedAt !== null);
-  const status = runStatus(header.state, header.outcome);
+  const query = useOverviewRun(organizationId, workspaceId, header.id);
+  const current = query.isError ? undefined : query.data;
+  const observed = current ?? header;
+  const now = useNow(current?.state === 'active');
+  const status = query.isError
+    ? { label: 'Status unknown', tone: 'neutral' as const }
+    : runStatus(observed.state, observed.outcome);
   const path = routes.run(organizationId, workspaceId, header.id);
   return (
     <article className="overview-live" aria-label={`${status.label} run ${header.id}`}>
@@ -49,25 +54,40 @@ export function LiveRunCard({
           </p>
         </div>
         <Link className={buttonClass('primary')} to={path}>
-          {header.state === 'active' ? 'Open live run' : 'Open run'}
+          {observed.state === 'active' ? 'Open live run' : 'Open run'}
         </Link>
       </div>
-      {startedAt ? (
-        <p className="overview-live-time">
-          <span>{elapsed((now - Date.parse(startedAt)) / 1000)} elapsed</span>
-          <span>
-            Started <time dateTime={startedAt}>{clockTime(startedAt)}</time>
-          </span>
-        </p>
-      ) : (
-        <p className="overview-live-time">
-          <span>
-            Requested <time dateTime={header.requestedAt}>{clockTime(header.requestedAt)}</time>
-            {run ? '; not started yet' : ''}
-          </span>
-        </p>
-      )}
-      <p className="overview-note">Requests a second, p95 latency and failures are on the live run page.</p>
+      <LiveCardBody query={query} header={header} now={now} />
     </article>
+  );
+}
+
+function LiveCardBody({
+  query,
+  header,
+  now,
+}: {
+  query: ReturnType<typeof useOverviewRun>;
+  header: OverviewRun;
+  now: number;
+}) {
+  const current = query.isError ? undefined : query.data;
+  const status = current ? runStatus(current.state, current.outcome).label : 'unknown';
+  if (query.isError)
+    return (
+      <div className="overview-live-unavailable" role="status">
+        <p>Run status unavailable. Progress and live figures are unknown.</p>
+        <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch({ cancelRefetch: false })}>
+          Retry run status
+        </Button>
+      </div>
+    );
+  if (current?.state === 'active') return <LiveProgress key={current.activeAttemptId} run={current} now={now} />;
+  if (current)
+    return <p className="overview-note">The run is {status.toLowerCase()}. Open it for its latest details.</p>;
+  return (
+    <p className="overview-live-time">
+      Requested <time dateTime={header.requestedAt}>{clockTime(header.requestedAt)}</time>. Checking run status…
+    </p>
   );
 }

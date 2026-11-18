@@ -1,3 +1,4 @@
+import { terminal } from '../runs/terminal.js';
 import { useQuery } from '@tanstack/react-query';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
@@ -51,5 +52,16 @@ export function useInstallationStatus() {
   return useQuery({
     queryKey: queryKeys.installationStatus,
     queryFn: ({ signal }) => readResult(api.getInstallationStatus({ signal })),
+  });
+}
+
+/** Only the featured run polls; the overview's aggregate snapshot stays manual. */
+export function useOverviewRun(organizationId: string, workspaceId: string, runId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: queryKeys.run(organizationId, workspaceId, runId),
+    queryFn: ({ signal }) => readResult(api.getRun({ params: { organizationId, workspaceId, runId }, signal })),
+    refetchInterval: (query) => (terminal(query.state.data) || query.state.status === 'error' ? false : 2000),
+    refetchIntervalInBackground: false,
   });
 }
