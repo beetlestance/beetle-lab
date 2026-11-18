@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Folder, Workspace } from '@beetle/contracts/api';
 import { queryKeys } from '../../app/queries.js';
@@ -26,28 +26,56 @@ export function NewFolderButton({ workspace, parentFolderId }: { workspace: Work
     </>
   );
 }
-/** Native disclosure keeps keyboard access without inventing an ARIA menu interaction model. */
+/** Native popovers escape table clipping and retain browser light-dismiss and Escape behavior. */
 export function FolderActions({ workspace, folder }: { workspace: Workspace; folder: Folder | undefined }) {
   const [mode, setMode] = useState<'rename' | 'move' | null>(null);
-  const details = useRef<HTMLDetailsElement>(null);
-  const summary = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = () => menu.current?.hidePopover();
+    window.addEventListener('resize', dismiss);
+    window.addEventListener('scroll', dismiss, true);
+    return () => {
+      window.removeEventListener('resize', dismiss);
+      window.removeEventListener('scroll', dismiss, true);
+    };
+  }, [open]);
   const client = useQueryClient();
   const { readOnly } = useSessionAccess();
   if (!folder || folder.id.toLowerCase() === workspace.rootFolderId.toLowerCase()) return null;
   function edit(next: 'rename' | 'move') {
-    summary.current?.focus();
-    if (details.current) details.current.open = false;
+    trigger.current?.focus();
+    menu.current?.hidePopover();
     setMode(next);
   }
   const refresh = () =>
     client.invalidateQueries({ queryKey: queryKeys.workspace(workspace.scope.organizationId, workspace.id) });
   return (
     <>
-      <details className="folder-row-actions" ref={details}>
-        <summary ref={summary} aria-label={`Actions for ${folder.name}`}>
+      <div className="folder-row-actions">
+        <button ref={trigger} popoverTarget={menuId} aria-label={`Actions for ${folder.name}`}>
           ⋯
-        </summary>
-        <div className="folder-action-list">
+        </button>
+        <div
+          id={menuId}
+          ref={menu}
+          popover="auto"
+          className="folder-action-list"
+          onToggle={(event) => {
+            const visible = event.newState === 'open';
+            setOpen(visible);
+            if (visible && trigger.current) positionActions(event.currentTarget, trigger.current);
+          }}
+          onClickCapture={(event) => {
+            if (event.target instanceof Node && event.currentTarget.contains(event.target)) {
+              trigger.current?.focus();
+              menu.current?.hidePopover();
+            }
+          }}
+        >
           <Button
             variant="text"
             disabled={readOnly}
@@ -61,8 +89,18 @@ export function FolderActions({ workspace, folder }: { workspace: Workspace; fol
           </Button>
           <DeleteNamespace target={{ kind: 'folder', entity: folder }} refresh={refresh} disabled={readOnly} />
         </div>
-      </details>
+      </div>
       {mode && <FolderDialog mode={mode} folder={folder} workspace={workspace} close={() => setMode(null)} />}
     </>
   );
+}
+
+/** Clamp the top-layer panel to the viewport rather than its scrollable table cell. */
+function positionActions(panel: HTMLDivElement, trigger: HTMLButtonElement): void {
+  const anchor = trigger.getBoundingClientRect();
+  const bounds = panel.getBoundingClientRect();
+  const below = anchor.bottom + 4;
+  const top = below + bounds.height <= window.innerHeight - 8 ? below : anchor.top - bounds.height - 4;
+  panel.style.top = `${Math.max(8, top)}px`;
+  panel.style.left = `${Math.max(8, Math.min(anchor.right - bounds.width, window.innerWidth - bounds.width - 8))}px`;
 }

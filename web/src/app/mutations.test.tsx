@@ -11,6 +11,17 @@ afterEach(cleanup);
 const field = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 const mutations = (records: RequestRecord[]) => records.filter(record => record.method !== 'GET');
+// JSDOM has no native popover methods or button activation. The isolated browser
+// checks that boundary; these tests exercise the real mutation controls inside it.
+function openFolderActions(name: string) {
+  const trigger = screen.getByLabelText(`Actions for ${name}`);
+  fireEvent.click(trigger);
+  const panel = document.getElementById(trigger.getAttribute('popovertarget')!)!;
+  panel.removeAttribute('popover');
+  panel.hidden = false;
+  panel.hidePopover = () => { panel.hidden = true; };
+}
+
 
 async function openCreateOrganization() {
   fireEvent.click(await screen.findByRole('button', { name: 'Create organization' }));
@@ -217,14 +228,14 @@ describe('mutation identity and draft ownership', () => {
     fireEvent.click(screen.getByRole('button', {name:'Create folder'}));
     await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(mutations(api.records)[0]?.body).toMatchObject({ scope: folder().scope, name: 'New folder', parentFolderId: ids.root });
-    fireEvent.click(screen.getByLabelText('Actions for Same folder'));
+    openFolderActions('Same folder');
     fireEvent.click(screen.getByRole('button', { name: 'Rename Same folder' }));
     field('Name', 'Renamed folder');
     fireEvent.click(screen.getByRole('button',{name:'Save folder'}));
     await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(mutations(api.records)[1]?.body).toMatchObject({ expectedVersion: 7, name: 'Renamed folder', scope: folder().scope });
     expect(mutations(api.records)[1]?.body).not.toHaveProperty('parentFolderId');
-    fireEvent.click(screen.getByLabelText('Actions for Same folder'));
+    openFolderActions('Same folder');
     fireEvent.click(screen.getByRole('button', { name: 'Move Same folder' }));
     fireEvent.change(screen.getByLabelText('Inside'),{target:{value:ids.parent}});
     fireEvent.click(screen.getByRole('button',{name:'Save folder'}));
@@ -258,7 +269,8 @@ describe('mutation identity and draft ownership', () => {
     const api = testClient(readNamespace);
     mount(api.client, routes.suites(ids.a,ids.workspace), {readOnly:true,restoredBackup:null});
     expect(await screen.findByRole('button',{name:'New folder'})).toBeDisabled();
-    fireEvent.click(await screen.findByLabelText('Actions for Same folder'));
+    await screen.findByLabelText('Actions for Same folder');
+    openFolderActions('Same folder');
     expect(screen.getByRole('button',{name:'Rename Same folder'})).toBeDisabled();
     expect(screen.getByRole('button',{name:'Move Same folder'})).toBeDisabled();
     expect(screen.getByRole('button',{name:'Delete Same folder'})).toBeDisabled();

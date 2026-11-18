@@ -29,21 +29,19 @@
 .folder-row-actions {
   position: relative;
 }
-.folder-row-actions summary {
+.folder-row-actions > button {
   cursor: pointer;
   list-style: none;
   padding: var(--s-8);
   border-radius: var(--r-sm);
 }
-.folder-row-actions summary::-webkit-details-marker {
-  display: none;
-}
 .folder-action-list {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  z-index: 10;
-  display: grid;
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
   padding: var(--s-8);
   background: var(--panel);
   border: 1px solid var(--line);
@@ -53,4 +51,8 @@
 }
 .folder-action-list .btn {
   justify-content: start;
+}
+
+.folder-action-list:popover-open {
+  display: grid;
 }
