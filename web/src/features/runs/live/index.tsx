@@ -1,4 +1,5 @@
 import { EarlyArt, EarlyMeter, EarlyMetricsSkeleton } from './EarlyState.js';
+import { RunResultView } from '../result/index.js';
 import { useHistoryBootstrap } from '../live-history/index.js';
 import type { BootstrapState } from '../live-history/index.js';
 import { Banner } from '../../../components/Banner.js';
@@ -48,6 +49,8 @@ export type LiveRunViewProps = RunSnapshotProps & {
  */
 export function LiveRunView(props: LiveRunViewProps) {
   const { scope, runId, run } = props;
+  const { readOnly } = useSessionAccess();
+  if (readOnly) return <RunResultView {...props} />;
   return (
     <RunReads key={`${scope.organizationId}/${scope.workspaceId}/${runId}/${run.activeAttemptId}`}>
       <LiveRun {...props} />

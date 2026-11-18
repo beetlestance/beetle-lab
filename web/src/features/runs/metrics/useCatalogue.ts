@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../../app/session.js';
 import type { ReadAdmission } from './admission.js';
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -6,6 +7,7 @@ import { readResult, useApi } from '../../../app/api.js';
 import { queryKeys } from '../../../app/queries.js';
 export function useCatalogue(run: Run, terminal: boolean, admission: ReadAdmission) {
   const api = useApi();
+  const { readOnly } = useSessionAccess();
   const client = useQueryClient();
   const { organizationId, workspaceId } = run.scope;
   const runId = run.id;
@@ -43,7 +45,7 @@ export function useCatalogue(run: Run, terminal: boolean, admission: ReadAdmissi
       }
     },
     refetchInterval: (query) =>
-      query.state.status !== 'error' && query.state.data?.availability === 'pending' ? 2000 : false,
+      !readOnly && query.state.status !== 'error' && query.state.data?.availability === 'pending' ? 2000 : false,
     refetchIntervalInBackground: false,
   });
   useEffect(() => {

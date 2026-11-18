@@ -1,3 +1,4 @@
+import { useSessionAccess } from '../../app/session.js';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ApiFailure, readResult, useApi } from '../../app/api.js';
@@ -21,14 +22,16 @@ const missing = (error: unknown) =>
 
 export function RunDetail(scope: RunScope & { runId: string }) {
   const api = useApi();
+  const { readOnly } = useSessionAccess();
   const cancellation = useCancellation(scope);
   const query = useQuery({
     queryKey: queryKeys.run(scope.organizationId, scope.workspaceId, scope.runId),
     queryFn: ({ signal }) => readResult(api.getRun({ params: scope, signal })),
-    refetchInterval: (query) => (terminal(query.state.data) || query.state.status === 'error' ? false : 2000),
+    refetchInterval: (query) =>
+      readOnly || terminal(query.state.data) || query.state.status === 'error' ? false : 2000,
     refetchIntervalInBackground: false,
   });
-  const refresh = { run: () => void query.refetch(), busy: query.isFetching };
+  const refresh = { run: () => void query.refetch({ cancelRefetch: false }), busy: query.isFetching };
   if (missing(query.error))
     return (
       <NotFound kind="run" back={{ to: routes.runs(scope.organizationId, scope.workspaceId), label: 'Back to runs' }} />
@@ -76,8 +79,9 @@ function RunView({
   refresh,
   ...props
 }: RunSnapshotProps & { cancel: ReturnType<typeof useCancellation>; refresh: RefreshControl }) {
-  const [phase, setPhase] = useState<'live' | 'result'>(() => (terminal(props.run) ? 'result' : 'live'));
-  return phase === 'result' ? (
+  const { readOnly } = useSessionAccess();
+  const [phase, setPhase] = useState<'live' | 'result'>(() => (readOnly || terminal(props.run) ? 'result' : 'live'));
+  return readOnly || phase === 'result' ? (
     <RunResultView {...props} refresh={refresh} />
   ) : (
     <LiveRunView {...props} cancel={cancel} showResult={() => setPhase('result')} />
