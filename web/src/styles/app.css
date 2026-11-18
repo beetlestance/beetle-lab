@@ -280,6 +280,11 @@ tbody tr:nth-child(even) {
   gap: var(--s-10);
   flex-wrap: wrap;
 }
+/* Row actions stay on one line; a narrow table scrolls instead of growing rows. */
+.data-table .actions {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
 .draft-banner {
   margin: 0 0 var(--s-32);
   padding: var(--s-14) var(--s-18);
