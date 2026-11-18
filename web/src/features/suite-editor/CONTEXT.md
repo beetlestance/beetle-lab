@@ -18,7 +18,9 @@ raw buffers only after canonical acceptance. Removed IDs/body modes retire their
 buffers; whole-editor discard clears them. Problem pointers follow current indexes.
 
 `validate` supplies friendly blockers; `serverProblems` maps API fields to DOM IDs.
-Every problem jumps to its view and field. `useInputCatalog` lists 100 published
+Context cards use actual draft IDs/paths. Current local/catalog blockers disable
+saving; server field refusals stay resubmittable. Every problem jumps to its field.
+`useInputCatalog` lists 100 published
 inputs and reads at most 64 referenced inputs, naming missing/deleted files.
 First-scenario stages stay on the main form; extra scenarios keep full controls.
 Run setup edits secret bindings and file/inline/range datasets. Seconds fields

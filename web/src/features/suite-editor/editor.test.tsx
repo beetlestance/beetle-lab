@@ -117,7 +117,7 @@ it('names a deleted input file and refuses to save until it is replaced', async 
   };
   const fixture = testClient(reader(config, [input(usersId, 'users.csv', 'deleted')]));
   mount(fixture.client, path);
-  await screen.findByText('Fix 1 thing before saving');
+  await screen.findByRole('heading', { name: 'Fix 1 thing to save' });
   fireEvent.click(screen.getByRole('button', { name: 'users.csv was deleted.' }));
   await waitFor(() =>
     expect(document.activeElement).toBe(screen.getByRole('combobox', { name: 'Dataset 1 rows from' })),

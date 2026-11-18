@@ -33,9 +33,12 @@ function collectProblems(
   attempted: boolean,
   missing: readonly Problem[],
   failure: ApiClientFailure | null,
-): Problem[] {
-  if (!config) return [...missing];
-  return [...(attempted ? validate(config) : []), ...missing, ...serverProblems(failure, config)];
+) {
+  const local = config && (attempted || missing.length > 0) ? validate(config) : [];
+  return {
+    problems: [...local, ...missing, ...(config ? serverProblems(failure, config) : [])],
+    blocked: local.length > 0 || missing.length > 0,
+  };
 }
 
 /** Draft text, revision message and the createSuiteRevision write behind "Suite / Edit". */
@@ -63,11 +66,8 @@ export function useRevisionDraft(
   const raw = useRawDrafts(config);
   const catalog = useInputCatalog(suite.scope, config ? inputReferences(config) : []);
   const messageError = messageProblem(message);
-  const problems = [
-    ...raw.problems,
-    ...metadata.problems,
-    ...collectProblems(config, attempted, catalog.problems, write.failure),
-  ];
+  const checked = collectProblems(config, attempted, catalog.problems, write.failure);
+  const problems = [...raw.problems, ...metadata.problems, ...checked.problems];
   const validity = useCallback((bad: boolean) => setInvalid(bad), []);
 
   function submit(version?: number) {
@@ -84,21 +84,15 @@ export function useRevisionDraft(
     saved.send({ text, config, message, metadata: normalizedMetadata(metadata.value), patch: metadata.patch }, version);
   }
   return {
+    config,
     text,
     setText,
     message,
     setMessage,
     messageError,
     metadata,
-    dirty: changedDraft({
-      fresh: initial === undefined,
-      text,
-      baseline,
-      message,
-      metadata: metadata.dirty,
-      raw: raw.dirty,
-    }),
-    blocked: invalid || !!messageError || metadata.problems.length > 0 || raw.dirty,
+    dirty: changedDraft(initial === undefined, text !== baseline, message, metadata.dirty || raw.dirty),
+    blocked: invalid || !!messageError || metadata.problems.length > 0 || raw.dirty || checked.blocked,
     raw,
     resetVersion,
     validity,
@@ -120,15 +114,8 @@ export function useRevisionDraft(
   };
 }
 
-function changedDraft(value: {
-  fresh: boolean;
-  text: string;
-  baseline: string;
-  message: string;
-  metadata: boolean;
-  raw: boolean;
-}) {
-  return value.fresh || value.text !== value.baseline || value.message !== '' || value.metadata || value.raw;
+function changedDraft(fresh: boolean, changed: boolean, message: string, other: boolean) {
+  return fresh || changed || message !== '' || other;
 }
 
 function useAcknowledgedDraft(

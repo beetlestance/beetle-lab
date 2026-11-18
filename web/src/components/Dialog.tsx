@@ -45,6 +45,7 @@ function restoreFocus(invoker: Element | null) {
 }
 
 export type DialogProps = {
+  className?: string;
   title: ReactNode;
   /** Called on Escape, backdrop press and by your own cancel button. */
   onClose: () => void;
@@ -66,6 +67,7 @@ export type DialogProps = {
  */
 export function Dialog({
   title,
+  className,
   onClose,
   description,
   children,
@@ -113,7 +115,7 @@ export function Dialog({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className="dialog"
+        className={['dialog', className].filter(Boolean).join(' ')}
         onKeyDown={onKeyDown}
       >
         <div className="dialog-handle" aria-hidden="true" />

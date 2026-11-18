@@ -4,6 +4,9 @@ import type { ApiClientFailure } from '@beetle/contracts/api';
 import { errorMessage } from '../../app/api.js';
 import { Button } from '../../components/Button.js';
 import { TextInput } from '../../components/Fields.js';
+import type { Config } from '../suites/draft.js';
+import { problemContext } from './problem-context.js';
+import './save-errors.css';
 import type { Problem } from './problems.js';
 
 export type SaveState = {
@@ -14,18 +17,36 @@ export type SaveState = {
   newIntent: () => void;
 };
 
-export function ProblemList({ problems, jump }: { problems: readonly Problem[]; jump: (path: string) => void }) {
+export function ProblemList({
+  problems,
+  jump,
+  config,
+  embedded = false,
+}: {
+  problems: readonly Problem[];
+  jump: (path: string) => void;
+  config?: Config | null;
+  embedded?: boolean;
+}) {
   if (!problems.length) return null;
   return (
     <div className="save-problems" role="alert">
-      <p className="save-problems-title">
-        Fix {problems.length} {problems.length === 1 ? 'thing' : 'things'} before saving
-      </p>
+      {!embedded && (
+        <p className="save-problems-title">
+          Fix {problems.length} {problems.length === 1 ? 'thing' : 'things'} before saving
+        </p>
+      )}
       <ul>
         {problems.map((problem, index) => (
           <li key={`${problem.path}-${index}`}>
-            <button type="button" className="problem-link" onClick={() => jump(problem.path)}>
-              {problem.message}
+            <button
+              type="button"
+              className="problem-link"
+              aria-label={problem.message}
+              onClick={() => jump(problem.path)}
+            >
+              {embedded && <span className="problem-context">{problemContext(problem.path, config ?? null)}</span>}
+              <span>{problem.message}</span>
             </button>
           </li>
         ))}
@@ -65,6 +86,22 @@ function SaveOutcome({ write, saved }: { write: SaveState; saved: number | null 
   );
 }
 
+type SavePanelProps = {
+  next: number;
+  message: string;
+  setMessage: (message: string) => void;
+  messageError: string;
+  dirty: boolean;
+  blocked: boolean;
+  problems: readonly Problem[];
+  config: Config | null;
+  write: SaveState;
+  saved: number | null;
+  save: () => void;
+  discard: () => void;
+  jump: (path: string) => void;
+};
+
 /** "Panel / Save revision" and its Errors state: message, save, discard, and every blocker with jump-to. */
 export function SavePanel({
   next,
@@ -74,59 +111,85 @@ export function SavePanel({
   dirty,
   blocked,
   problems,
+  config,
   write,
   saved,
   save,
   discard,
   jump,
-}: {
-  next: number;
-  message: string;
-  setMessage: (message: string) => void;
-  messageError: string;
-  dirty: boolean;
-  blocked: boolean;
-  problems: readonly Problem[];
-  write: SaveState;
-  saved: number | null;
-  save: () => void;
-  discard: () => void;
-  jump: (path: string) => void;
-}) {
+}: SavePanelProps) {
   const titleId = useId();
   const { readOnly } = useSessionAccess();
   const locked = readOnly || write.pending || write.unknown;
+  const errors = problems.length > 0 && !write.unknown && !write.pending;
   return (
-    <section className="save-panel" aria-labelledby={titleId}>
-      <h2 id={titleId}>Save as revision {next}</h2>
+    <section className={`save-panel ${errors ? 'save-panel-errors' : ''}`} aria-labelledby={titleId}>
+      <h2 id={titleId}>{saveHeading(errors, next, problems.length)}</h2>
       <p className="editor-note">
-        Revisions never change after saving. Past runs keep pointing at the revision they used.
+        {errors
+          ? 'Nothing is saved until all of these are fixed.'
+          : 'Revisions never change after saving. Past runs keep pointing at the revision they used.'}
       </p>
-      <ProblemList problems={problems} jump={jump} />
-      <TextInput
-        label="What changed"
-        placeholder="For example: raised the rate to 1,500"
-        maxLength={280}
-        value={message}
-        error={messageError || undefined}
-        disabled={locked}
-        onChange={(event) => setMessage(event.target.value)}
-      />
-      <div className="save-actions">
-        <Button
-          variant="primary"
-          loading={write.pending}
-          loadingLabel="Saving…"
-          disabled={blocked || locked || !dirty}
-          onClick={save}
-        >
-          Save revision
-        </Button>
-        <Button variant="text" disabled={!dirty || locked} onClick={discard}>
-          Discard changes
-        </Button>
-      </div>
+      <ProblemList problems={problems} jump={jump} config={config} embedded={errors} />
+      <SaveMessage {...{ errors, message, messageError, problems, locked, setMessage }} />
+      {errors && <p className="problem-jump-hint">Select one to jump to the field.</p>}
+      <SaveActions {...{ write, blocked, locked, dirty, save, discard }} />
       <SaveOutcome write={write} saved={saved} />
     </section>
+  );
+}
+
+function saveHeading(errors: boolean, next: number, count: number) {
+  return errors ? `Fix ${count} ${count === 1 ? 'thing' : 'things'} to save` : `Save as revision ${next}`;
+}
+
+function SaveMessage({
+  errors,
+  message,
+  messageError,
+  problems,
+  locked,
+  setMessage,
+}: Pick<SavePanelProps, 'message' | 'messageError' | 'problems' | 'setMessage'> & {
+  errors: boolean;
+  locked: boolean;
+}) {
+  if (errors && !message && !messageError && !problems.some((problem) => problem.path === '/message')) return null;
+  return (
+    <TextInput
+      label="What changed"
+      placeholder="For example: raised the rate to 1,500"
+      maxLength={280}
+      value={message}
+      error={messageError || undefined}
+      disabled={locked}
+      onChange={(event) => setMessage(event.target.value)}
+    />
+  );
+}
+
+function SaveActions({
+  write,
+  blocked,
+  locked,
+  dirty,
+  save,
+  discard,
+}: Pick<SavePanelProps, 'write' | 'blocked' | 'dirty' | 'save' | 'discard'> & { locked: boolean }) {
+  return (
+    <div className="save-actions">
+      <Button
+        variant="primary"
+        loading={write.pending}
+        loadingLabel="Saving…"
+        disabled={blocked || locked || !dirty}
+        onClick={save}
+      >
+        Save revision
+      </Button>
+      <Button variant="text" disabled={!dirty || locked} onClick={discard}>
+        Discard changes
+      </Button>
+    </div>
   );
 }

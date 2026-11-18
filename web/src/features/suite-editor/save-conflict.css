@@ -1,0 +1,27 @@
+.save-conflict-dialog .save-conflict-options {
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--field);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  line-height: 18px;
+}
+.save-conflict-options p {
+  margin: 0 0 8px;
+}
+.save-conflict-options ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 16px;
+}
+.save-conflict-dialog .dialog-description,
+.save-conflict-options {
+  margin-bottom: -4px;
+}
+.save-conflict-options p {
+  line-height: 17px;
+}
+.save-conflict-dialog .dialog-actions .btn {
+  min-height: 36px;
+}

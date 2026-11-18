@@ -107,6 +107,7 @@ export function RevisionEditor({
               dirty={draft.dirty}
               blocked={readOnly || draft.blocked}
               problems={draft.problems}
+              config={draft.config}
               write={draft.write}
               saved={draft.saved}
               save={draft.save}
@@ -141,6 +142,7 @@ function DraftConflict({ suite, draft }: { suite: Suite; draft: ReturnType<typeo
       }
       close={draft.closeConflict}
       saveOver={draft.saveOver}
+      blocked={draft.blocked || draft.write.locked}
     />
   );
 }

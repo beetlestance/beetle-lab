@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Suite } from '@beetle/contracts/api';
+import type { Suite, SuiteRevision } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { Button, buttonClass } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
+import './save-conflict.css';
 import { LoadingState } from '../../components/States.js';
 
 export function savedWhen(savedAt: string | null | undefined, savedBy: string | null | undefined, now = new Date()) {
@@ -53,7 +54,7 @@ function useLatest(suite: Suite) {
   return {
     version: fresh.data?.version,
     latest: revision.data,
-    ready: !!fresh.data && (!currentId || !!revision.data),
+    ready: !!fresh.data && !fresh.isError && !revision.isError && (!currentId || !!revision.data),
     failed: fresh.isError || revision.isError,
     retry: () => {
       void fresh.refetch();
@@ -68,6 +69,8 @@ function CopyButton({ draft, failed }: { draft: () => string; failed: (value: bo
     <Button
       variant="secondary"
       onClick={() => {
+        setDone(false);
+        failed(false);
         const clipboard = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
         if (!clipboard) return failed(true);
         let text: string;
@@ -96,23 +99,24 @@ export function ConflictDialog({
   draft,
   close,
   saveOver,
+  blocked,
 }: {
   suite: Suite;
   draft: () => string;
   close: () => void;
   saveOver: (version: number) => void;
+  blocked: boolean;
 }) {
   const { organizationId, workspaceId } = suite.scope;
   const { version, latest, ready, failed, retry } = useLatest(suite);
   const [copyFailed, setCopyFailed] = useState(false);
-  const title = latest
-    ? `Revision ${latest.ordinal} was saved ${savedWhen(latest.savedAt, latest.savedBy)}`.trim()
-    : 'Another revision was saved';
+  const title = latest ? `Revision ${latest.ordinal} was saved while you were editing` : 'Another revision was saved';
   return (
     <Dialog
       title={title}
+      className="save-conflict-dialog"
       onClose={close}
-      description="Your edits are still here and were not saved. Save them on top as the next revision, or copy them first and look at what changed."
+      description={conflictDescription(latest)}
       actions={
         <>
           <CopyButton draft={draft} failed={setCopyFailed} />
@@ -126,15 +130,17 @@ export function ConflictDialog({
               Open revision {latest.ordinal}
             </a>
           )}
-          <Button variant="primary" disabled={!ready} onClick={() => version !== undefined && saveOver(version)}>
+          <Button
+            variant="primary"
+            disabled={!ready || blocked}
+            onClick={() => version !== undefined && saveOver(version)}
+          >
             {latest ? `Save as revision ${latest.ordinal + 1}` : 'Save on top'}
           </Button>
         </>
       }
     >
-      <p className="editor-note">
-        The copy includes your configuration, suite details, revision message and any unfinished JSON text.
-      </p>
+      <ConflictOptions ordinal={latest?.ordinal} />
       {!ready && !failed && <LoadingState label="Reading the latest revision…" />}
       {failed && (
         <div role="alert">
@@ -150,5 +156,29 @@ export function ConflictDialog({
         </p>
       )}
     </Dialog>
+  );
+}
+
+function conflictDescription(latest: SuiteRevision | undefined) {
+  if (!latest) return 'The suite changed while you were editing, so nothing was saved. Your edits are still here.';
+  const when = savedWhen(latest.savedAt, latest.savedBy) || 'by another request';
+  return `It was saved ${when}. Saving now would replace the current revision, so nothing was saved.`;
+}
+
+function ConflictOptions({ ordinal }: { ordinal: number | undefined }) {
+  return (
+    <div className="save-conflict-options">
+      <p>Your edits are still on this page. You can:</p>
+      <ul>
+        <li>
+          Copy them as JSON, open {ordinal ? `revision ${ordinal}` : 'the current revision'} and paste what you need.
+        </li>
+        <li>
+          {ordinal
+            ? `Save yours as revision ${ordinal + 1}. It replaces revision ${ordinal} as the current one, whole; revision ${ordinal} stays in the history.`
+            : 'Save yours as the next revision. The previous revision stays in the history.'}
+        </li>
+      </ul>
+    </div>
   );
 }
