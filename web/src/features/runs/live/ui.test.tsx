@@ -49,7 +49,8 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(screen.getByRole('heading', { name: 'Target runtime' })).toBeVisible();
   expect(screen.getByRole('img', { name: /Heap and RSS: heap 399, RSS 570/ })).toBeVisible();
   // No report or metrics downloads while live.
-  expect(screen.queryByRole('button', { name: /download/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Download' })).toBeVisible();
+  expect(screen.queryByRole('button', { name: /download (report|metrics)/i })).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: /download/i })).not.toBeInTheDocument();
 });
 
@@ -143,7 +144,8 @@ it('keeps the compare action disabled with an explanation, and lists script vers
   const compare = screen.getByRole('button', { name: 'Compare' });
   expect(compare).toHaveAttribute('aria-disabled', 'true');
   expect(compare).toHaveAccessibleDescription(/once this one has finished/);
-  fireEvent.click(screen.getByRole('button', { name: 'Script' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Script for revision 4' }));
   const dialog = await screen.findByRole('dialog', { name: 'Script versions' });
   expect(await within(dialog).findByRole('link', { name: /Revision 4/ })).toHaveTextContent(
     /This run.*Latest.*3 runs · by Meera/,

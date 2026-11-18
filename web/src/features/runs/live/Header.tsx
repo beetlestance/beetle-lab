@@ -7,6 +7,9 @@ import { Status } from '../../../components/Badge.js';
 import type { StatusTone } from '../../../components/Badge.js';
 import { Button } from '../../../components/Button.js';
 import type { useCancellation } from '../useCancellation.js';
+import './header.css';
+import { HeaderIcon } from './HeaderIcon.js';
+import { LiveDownloads } from './Downloads.js';
 import { useLiveNamespace } from './data.js';
 import { shortId, wallTime } from './format.js';
 
@@ -69,8 +72,15 @@ function CompareButton() {
   const tip = useId();
   return (
     <span className="live-tip-anchor">
-      <Button size="sm" aria-disabled="true" aria-describedby={tip} onClick={() => undefined}>
-        Compare
+      <Button
+        className="live-icon-action"
+        aria-label="Compare"
+        title="Compare"
+        aria-disabled="true"
+        aria-describedby={tip}
+        onClick={() => undefined}
+      >
+        <HeaderIcon kind="compare" />
       </Button>
       <span role="tooltip" id={tip} className="live-tip">
         Compare with another run once this one has finished: comparisons read sealed results.
@@ -87,7 +97,7 @@ function CancelButton({ run, cancel, readOnly }: Pick<HeaderProps, 'run' | 'canc
     <Button
       variant="inverse"
       loading={cancel.pending}
-      loadingLabel="Cancelling…"
+      loadingLabel="Sending"
       disabled={cancel.unknown}
       onClick={() => void cancel.request()}
     >
@@ -119,7 +129,6 @@ export function LiveHeader(props: HeaderProps) {
       <div className="live-title-row">
         <div>
           <h1>{props.headline}</h1>
-          <p className="live-sentence">{props.sentence}</p>
         </div>
         <div className="live-side">
           <p className="live-status">
@@ -128,14 +137,13 @@ export function LiveHeader(props: HeaderProps) {
           </p>
           <div className="live-actions">
             <CompareButton />
-            <Button size="sm" onClick={props.onScript}>
-              Script
-            </Button>
+            <LiveDownloads ordinal={props.revisionOrdinal} onScript={props.onScript} />
             {stream && <Button onClick={stream.toggle}>{stream.paused ? 'Resume stream' : 'Pause stream'}</Button>}
             <CancelButton run={props.run} cancel={props.cancel} readOnly={props.readOnly} />
           </div>
         </div>
       </div>
+      <p className="live-sentence">{props.sentence}</p>
       <CancelAlert run={props.run} cancel={props.cancel} />
     </header>
   );

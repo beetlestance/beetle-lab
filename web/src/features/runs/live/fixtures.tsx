@@ -221,8 +221,11 @@ export function routesFor(current: () => Run, extra?: (request: RequestRecord) =
       return json({ scope: summary.scope, suiteId, items, nextCursor: null });
     }
     if (request.path.includes('/events?')) return json(emptyEvents(current()));
-    if (request.path.endsWith('/organizations/'+current().scope.organizationId) ||
-        request.path.endsWith('/workspaces/'+current().scope.workspaceId)) return readNamespace(request);
+    if (
+      request.path.endsWith('/organizations/' + current().scope.organizationId) ||
+      request.path.endsWith('/workspaces/' + current().scope.workspaceId)
+    )
+      return readNamespace(request);
     throw new Error(`Unexpected synthetic route ${request.path}`);
   });
 }

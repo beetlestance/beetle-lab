@@ -1,3 +1,4 @@
+import './progress.css';
 import type { PlanStage, RunPlan } from './plan.js';
 import type { LiveFigures } from './model.js';
 import { clock, ms, percent, wallTime, whole } from './format.js';
