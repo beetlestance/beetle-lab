@@ -8,6 +8,11 @@ sidebar:
 This walkthrough takes a fresh installation to a finished run. It assumes the app
 is open at <http://127.0.0.1:4567> and that you have an HTTP service to test.
 
+:::note[Matches this installation]
+The documentation at `/docs` on your installation ships in the same frontend
+image as the app, so it describes the version you are running and works offline.
+:::
+
 ## Find your way around
 
 The header is the same on every page: the organization switcher next to the logo,
