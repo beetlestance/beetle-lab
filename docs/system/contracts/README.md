@@ -33,6 +33,7 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Public `/api/v2` rules, authorisation, history and suites | [Public API](public-api.md) |
 | Suite descriptions, revision stamps, run notes and run times | [Authoring metadata](authoring.md) |
 | Folder summaries, suite filters, latest runs and revision run counts | [Suite listing](suite-listing.md) |
+| Immutable revision order, predecessor links and cursor bounds | [Revision history](revision-listing.md) |
 | Browser scope, polling, bounds and truthful state | [Web UI](web-ui.md) |
 
 Layout, owners and dependency edges: [architecture](../../engineering/architecture.md).

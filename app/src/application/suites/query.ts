@@ -1,5 +1,12 @@
 import { encodeJson } from '@beetle/contracts';
-import { normalizeSuiteListQuery, suiteListPageMatches, suiteListPosition, validateApi } from '@beetle/contracts/api';
+import {
+  normalizeSuiteListQuery,
+  suiteListPageMatches,
+  suiteListPosition,
+  revisionListPosition,
+  revisionListPageMatches,
+  validateApi,
+} from '@beetle/contracts/api';
 import type { ApiTypes } from '@beetle/contracts/api';
 import { immutableSnapshot, requireRule, sameScope, sameUuid } from '../../domain/namespaces/index.js';
 import type { SuiteKey, SuiteList, RevisionList, SuiteReader } from '../../ports/suites.js';
@@ -62,8 +69,15 @@ export async function listSuites(query: SuiteList, reader: SuiteReader) {
 }
 export async function listRevisions(query: RevisionList, reader: SuiteReader) {
   const expected = suiteSnapshot(query, 2048);
+  const { scope, suiteId, ...page } = expected;
+  try {
+    revisionListPosition(scope, suiteId, page);
+  } catch {
+    requireRule(false);
+  }
   const value = checkedSuiteValue('SuiteRevisionPage', await reader.listRevisions(suiteSnapshot(expected, 2048)));
   requireRule(sameUuid(value.suiteId, expected.suiteId), 'not_found');
   checkedPage(expected, value);
+  if (!revisionListPageMatches(value, scope, suiteId, page)) throw new Error('Invalid revision repository page');
   return value;
 }

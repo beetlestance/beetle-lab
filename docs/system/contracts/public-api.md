@@ -110,7 +110,7 @@ Routes: `GET`/`POST /suites`, `GET`/`PATCH /suites/{suiteId}`,
 
 - A suite starts at version 1 with `currentRevisionId: null`. PATCH changes name, folder
   (same workspace) or description with `expectedVersion`; names are unique per folder by
-  folded name. Authoring metadata: [Authoring](authoring.md); listing: [Suite listing](suite-listing.md).
+  folded name. See [authoring](authoring.md), [suite listing](suite-listing.md) and [revision history](revision-listing.md).
 - Creating a revision requires the current suite version, `engineId: k6`,
   `configVersion: 1` and a complete config ≤ 1 MiB. It atomically appends an
   immutable revision, increments the suite version and moves
@@ -212,8 +212,8 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `31c64e706260` |
-| `contracts/src/api/client/` | `c80830987b6a` |
+| `contracts/api/v2/` | `0be474f5e6a5` |
+| `contracts/src/api/client/` | `eec344e7e383` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `c82ce383315c` |
 | `app/src/adapters/inbound/http/session/` | `328af44f81f3` |

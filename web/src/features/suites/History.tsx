@@ -1,7 +1,7 @@
 import { useSessionAccess } from '../../app/session.js';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import type { Suite, SuiteRevisionPage, SuiteRevisionSummary } from '@beetle/contracts/api';
+import type { Suite, SuiteRevisionSummary } from '@beetle/contracts/api';
 import { useApi, readResult } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
@@ -44,13 +44,11 @@ export function History({ suite, run }: { suite: Suite; run: (revisionId: string
           ) : (
             <>
               <ol className="revision-list">
-                {[...data.items]
-                  .sort((a, b) => b.ordinal - a.ordinal)
-                  .map((revision) => (
-                    <RevisionItem key={revision.id} suite={suite} revision={revision} page={data} run={run} />
-                  ))}
+                {data.items.map((revision) => (
+                  <RevisionItem key={revision.id} suite={suite} revision={revision} run={run} />
+                ))}
               </ol>
-              {(page.hasBack || data.nextCursor) && <Pagination page={page} next={data.nextCursor} />}
+              {(page.hasBack || data.nextCursor) && <Pagination page={page} next={data.nextCursor} limit={8} />}
             </>
           )
         }
@@ -61,16 +59,14 @@ export function History({ suite, run }: { suite: Suite; run: (revisionId: string
 function RevisionItem({
   suite,
   revision,
-  page,
   run,
 }: {
   suite: Suite;
   revision: SuiteRevisionSummary;
-  page: SuiteRevisionPage;
   run: (revisionId: string) => void;
 }) {
   const { readOnly } = useSessionAccess();
-  const previous = page.items.find((item) => item.ordinal === revision.ordinal - 1);
+  const previous = revision.previousRevisionId;
   const latest = revision.id.toLowerCase() === suite.currentRevisionId?.toLowerCase();
   return (
     <li className="revision-item">
@@ -87,9 +83,9 @@ function RevisionItem({
             <li>First revision</li>
           </ul>
         ) : previous ? (
-          <Changes suite={suite} before={previous.id} after={revision.id} />
+          <Changes suite={suite} before={previous} after={revision.id} />
         ) : (
-          <p className="muted">Previous revision isn’t on this page.</p>
+          <p className="muted">No previous revision recorded.</p>
         )}
       </div>
       <div className="revision-actions">

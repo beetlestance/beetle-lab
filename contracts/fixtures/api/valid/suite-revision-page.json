@@ -18,7 +18,8 @@
       "engineId": "k6",
       "configVersion": 1,
       "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "preflightStatus": "passed"
+      "preflightStatus": "passed",
+      "previousRevisionId": null
     }
   ],
   "nextCursor": null

@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { encodeSuiteListCursor } from '@beetle/contracts/api';
+import { encodeSuiteListCursor, encodeRevisionListCursor } from '@beetle/contracts/api';
 import type { Folder, FolderPage, Suite, SuiteGroup, SuitePage, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { folder as baseFolder, ids, json, mount } from '../../app/test-fixtures.js';
 import { routes } from '../../app/routes.js';
@@ -43,7 +43,7 @@ const config = {
   selections: [{ scenarioId: 'main', entries: [{ requestId: 'cart', weight: 1, wait: { durationMs: 0, jitterMs: 0 } }] }],
 };
 const revision: SuiteRevision = { id: revisionId, scope, suiteId, ordinal: 4, engineId: 'k6', configVersion: 1, digest: 'a'.repeat(64), preflightStatus: 'passed', config, inputManifest: [], savedAt: today.toISOString(), savedBy: 'Meera', message: 'Sale-day rate', runCount: 3 };
-const summary = Object.fromEntries(Object.entries(revision).filter(([key]) => key !== 'config' && key !== 'inputManifest'));
+const summary = { ...Object.fromEntries(Object.entries(revision).filter(([key]) => key !== 'config' && key !== 'inputManifest')), previousRevisionId: null };
 function settings(): WorkspaceSettings {
   const base = baseSettings();
   const source = scope;
@@ -206,13 +206,37 @@ describe('Suite / Overview and Start run', () => {
     expect(screen.getByText('p95 under 250 ms')).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: `Passed run ${runIdLatest}` })).toHaveTextContent('rev 4,');
   });
+  it('reads exact predecessor configs across an eight-card page boundary and labels the actual page size', async () => {
+    const id = (ordinal: number) => `88888888-8888-4888-8888-${String(ordinal).padStart(12, '0')}`;
+    const rows = Array.from({ length: 9 }, (_, index) => ({ ...revision, id: id(9 - index), ordinal: 9 - index }));
+    const summaries = rows.map(row => ({ ...Object.fromEntries(Object.entries(row).filter(([key]) => !['config', 'inputManifest'].includes(key))), previousRevisionId: row.ordinal === 1 ? null : id(row.ordinal - 1) }));
+    const fixture = testClient(handler(request => {
+      const url = new URL(request.path, 'http://localhost');
+      if (url.pathname.endsWith('/suites/' + suiteId)) return json({ ...suite, version: 10, currentRevisionId: id(9) });
+      const found = rows.find(row => url.pathname.endsWith('/revisions/' + row.id));
+      if (found) return json(found);
+      if (!url.pathname.endsWith('/suites/' + suiteId + '/revisions')) return undefined;
+      const limit = Number(url.searchParams.get('limit'));
+      const items = url.searchParams.has('cursor') ? summaries.slice(8) : summaries.slice(0, limit);
+      const nextCursor = !url.searchParams.has('cursor') && limit === 8 ? encodeRevisionListCursor({ scope, suiteId, limit, ordinal: 2, id: id(2) }) : null;
+      return json({ scope, suiteId, items, nextCursor });
+    }));
+    mount(fixture.client, suitePath + '?tab=revisions');
+    expect(await screen.findByRole('list', { name: 'Changes in revision 2' })).toHaveTextContent('No configuration changes.');
+    expect(fixture.records.some(request => request.path.endsWith('/revisions/' + id(1)))).toBe(true);
+    expect(screen.getByText('Page 1 · up to 8 items per page')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText('First revision', { exact: true })).toBeVisible();
+    expect(screen.getByText('Page 2 · up to 8 items per page')).toBeVisible();
+    expect(fixture.records.every(request => request.method === 'GET')).toBe(true);
+  });
   it('shows immutable revision number, message and retained count separately', async () => {
     const fixture = testClient(handler());
     mount(fixture.client, suitePath + '?tab=revisions');
     const card = (await screen.findByRole('heading', { name: 'Revision 4 Latest' })).closest('li')!;
     expect(within(card).getByText('Sale-day rate')).toBeVisible();
     expect(card).toHaveTextContent(/by Meera\. 3 runs\./);
-    expect(within(card).getByText('Previous revision isn’t on this page.')).toBeVisible();
+    expect(within(card).getByText('No previous revision recorded.')).toBeVisible();
     const listed = fixture.records.filter(record => record.path.includes('/revisions?'));
     expect(listed.some(record => query(record).get('limit') === '8')).toBe(true);
     expect(fixture.records.every(record => record.method === 'GET')).toBe(true);

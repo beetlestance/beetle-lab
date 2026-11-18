@@ -7,3 +7,4 @@ Revision envelopes <=2 MiB; other mutations <=64 KiB; query authority <=2 KiB.
 listSuites: expectedSuiteList validates/normalizes SuiteListQuery and checks cursor binding;
 suiteListPageMatches checks items, summaries and cursor. Contract: docs/system/contracts/suite-listing.md.
 Test: npx vitest run app/test/application/suites.test.ts
+Revision listing validates ordinal cursor binding before reads and exact page/predecessor replies.

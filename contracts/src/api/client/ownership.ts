@@ -1,4 +1,6 @@
+import { revisionListPageMatches } from '../revision-list.js';
 import { parentRetentionMatches } from './retention-parent.js';
+import type { SuiteRevisionPage, PageQuery } from '../generated/types.js';
 import type { RetentionTraversalPage } from '../generated/types.js';
 import { retentionResponseMatches, retentionRequestMatches } from './retention-ownership.js';
 import { workspaceOverviewMatches, organizationOverviewMatches } from '../overview.js';
@@ -202,6 +204,13 @@ function ownedReply(operation: ApiOperation, input: PreparedInput, value: unknow
 /** Suite rows and folder summaries carry derived facts bound to the query and items. */
 function listingOwnership(operation: ApiOperation, input: PreparedInput, value: unknown): boolean {
   if (operation.response === 'FolderPage') return folderPageSummariesMatch(value as FolderPage);
+  if (operation.response === 'SuiteRevisionPage')
+    return revisionListPageMatches(
+      value as SuiteRevisionPage,
+      routeOwner(input) as WorkspaceScope,
+      input.params.suiteId!,
+      input.query as PageQuery,
+    );
   if (operation.response !== 'SuitePage') return true;
   const owner = routeOwner(input) as WorkspaceScope;
   return suiteListPageMatches(value as SuitePage, owner, input.query as unknown as SuiteListQuery);

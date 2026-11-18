@@ -150,7 +150,7 @@ it('appends history and reads an older immutable revision without writing a poin
   const older = revision();
   const newerId = '33333333-3333-4333-8333-333333333333';
   const newer = { ...older, id: newerId, ordinal: 2, config: { ...older.config, target: 'http://new.invalid' } };
-  const summaries = [older, newer].map(item => ({ id: item.id, scope: item.scope, suiteId: item.suiteId, ordinal: item.ordinal, engineId: item.engineId, configVersion: item.configVersion, digest: item.digest, preflightStatus: item.preflightStatus }));
+  const summaries = [newer, older].map(item => ({ previousRevisionId: item.ordinal === 1 ? null : older.id, id: item.id, scope: item.scope, suiteId: item.suiteId, ordinal: item.ordinal, engineId: item.engineId, configVersion: item.configVersion, digest: item.digest, preflightStatus: item.preflightStatus }));
   const fixture = testClient(request => {
     if (request.path.endsWith(`/suites/${suiteId}`)) return json({ ...suite(3), currentRevisionId: newerId });
     if (request.path.includes(`/suites/${suiteId}/revisions?`)) return json({ scope, suiteId, items: summaries, nextCursor: null });

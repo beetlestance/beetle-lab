@@ -127,7 +127,7 @@ statements and assert index use with no full scan.
 
 ## Related
 
-- [Public API](public-api.md), [Authoring metadata](authoring.md),
+- [Revision history](revision-listing.md), [Public API](public-api.md), [Authoring metadata](authoring.md),
   [Outputs settlement](outputs-settlement.md)
 - Decision [021: bounded history search](../../decisions/021-bounded-history-search.md)
 

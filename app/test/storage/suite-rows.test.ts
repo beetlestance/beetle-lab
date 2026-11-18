@@ -36,9 +36,12 @@ function row() {
     message: revision.message,
     saved_by: revision.savedBy,
     run_count: 0,
+    previous_revision_id: null,
   };
 }
 it('captures valid suite/revision rows with their existing wire values', () => {
+  const summary = Object.fromEntries(Object.entries(revision).filter(([key]) => !['config', 'inputManifest'].includes(key)));
+  expect(captureRevisionSummary(row(), scope, suite.id)).toEqual({ ...summary, previousRevisionId: null });
   expect(captureRevisionRow(row(), { scope, id: revision.id })).toEqual(revision);
   expect(
     captureSuiteRow(

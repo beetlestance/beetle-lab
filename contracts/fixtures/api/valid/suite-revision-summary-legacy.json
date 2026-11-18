@@ -13,5 +13,6 @@
   "preflightStatus": "passed",
   "savedAt": null,
   "message": null,
-  "savedBy": null
+  "savedBy": null,
+  "previousRevisionId": null
 }

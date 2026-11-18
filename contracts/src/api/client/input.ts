@@ -1,3 +1,4 @@
+import { revisionListPosition } from '../revision-list.js';
 import { normalizeRunListQuery, runListPosition } from '../run-list.js';
 import { normalizeSuiteListQuery, suiteListPosition } from '../suite-list.js';
 import { encodeJson } from '../../json.js';
@@ -79,6 +80,8 @@ function normalizeListQuery(operation: ApiOperation, prepared: PreparedInput): v
     organizationId: prepared.params.organizationId!,
     workspaceId: prepared.params.workspaceId!,
   };
+  if (operation.name === 'listSuiteRevisions')
+    revisionListPosition(owner, prepared.params.suiteId!, prepared.query as ApiTypes['PageQuery']);
   if (operation.name === 'listRuns') {
     prepared.query = normalizeRunListQuery(prepared.query as ApiTypes['RunListQuery']);
     runListPosition(owner, prepared.query);

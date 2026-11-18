@@ -1,3 +1,4 @@
+import { checkedSuiteOperation } from './suite-validation.js';
 import { captureNamespaceDeletionOperation } from './namespace-deletion/index.js';
 import { retentionOperation, captureRetentionOperation, retentionReplyLimit } from './retention-wire/index.js';
 import { settlementOperation, captureSettlementOperation } from './backend-settlement/index.js';
@@ -26,7 +27,6 @@ import { checkedExportConfiguration, checkedRunConfiguration } from '../executio
 import { checkedInputOperation } from './input-validation.js';
 import { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, checkedJournalAuthority } from './input-values.js';
 export { MAX_MESSAGE_BYTES, boundedCopy, checkedScope, uuid, sha256, lower, scopeKey } from './input-values.js';
-import { prepareSuiteCommand } from '../../../application/suites/index.js';
 import { validateApi } from '@beetle/contracts/api';
 import { prepareNamespaceCommand } from '../../../application/namespaces/index.js';
 import { prepareSettingsCommand } from '../../../application/settings/index.js';
@@ -142,35 +142,6 @@ function checkedSettings(operation: Extract<Operation, { kind: 'settings' }>): v
   } as const;
   requireRule(validateApi(names[command.request.scope.kind], command.request).ok);
   requireRule(prepareSettingsCommand({ ...command, digest: sha256 }).intentDigest === command.intentDigest);
-}
-function checkedSuiteList(operation: Extract<Operation, { kind: 'listSuites' | 'listRevisions' }>): void {
-  const { scope, ...page } = operation.query;
-  requireRule(validateApi('WorkspaceScope', scope).ok);
-  requireRule(Number.isSafeInteger(page.limit) && page.limit >= 1 && page.limit <= 100);
-  if (page.cursor !== undefined) requireRule(typeof page.cursor === 'string' && page.cursor.length <= 1024);
-  if (operation.kind === 'listRevisions') uuid(operation.query.suiteId);
-  else requireRule(validateApi('SuiteListQuery', page).ok);
-}
-function checkedSuiteOperation(operation: Operation): void {
-  switch (operation.kind) {
-    case 'suite': {
-      uuid(operation.command.id);
-      if (operation.command.kind === 'createSuiteRevision') uuid(operation.command.suiteId);
-      requireRule(prepareSuiteCommand(operation.command, sha256).intentDigest === operation.command.intentDigest);
-      break;
-    }
-    case 'getSuite':
-    case 'getRevision':
-      requireRule(validateApi('WorkspaceScope', operation.key.scope).ok);
-      uuid(operation.key.id);
-      break;
-    case 'listSuites':
-    case 'listRevisions':
-      checkedSuiteList(operation);
-      break;
-    default:
-      throw new StorageError('invalid_input');
-  }
 }
 function settingsRead(operation: Operation): boolean {
   if (operation.kind !== 'getSettings' && operation.kind !== 'getSettingsIdentity') return false;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Suite, SuiteRevision, SuiteRevisionSummary, WorkspaceSettings } from '@beetle/contracts/api';
+import type { Suite, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { Button } from '../../components/Button.js';
 import { Select, TextInput } from '../../components/Fields.js';
 import type { RunValues } from '../execution-request/index.js';
@@ -36,7 +36,7 @@ export function RevisionSelect({
   onChange,
 }: {
   suite: Suite;
-  options: readonly SuiteRevisionSummary[];
+  options: readonly Pick<SuiteRevision, 'id' | 'ordinal' | 'message'>[];
   value: string;
   onChange: (id: string) => void;
 }) {

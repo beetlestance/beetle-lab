@@ -75,9 +75,8 @@ export function captureSuiteRow(input: unknown, key: SuiteKey): Suite {
     throw new StorageError('unavailable');
   return parsed.value;
 }
-export function captureRevisionSummary(input: unknown, scope: WorkspaceScope, suiteId?: string): SuiteRevisionSummary {
-  const row = record(input);
-  const parsed = validateApi('SuiteRevisionSummary', {
+function revisionFacts(row: Record<string, unknown>) {
+  return {
     id: row.id,
     scope: owner(row),
     suiteId: row.suite_id,
@@ -90,6 +89,13 @@ export function captureRevisionSummary(input: unknown, scope: WorkspaceScope, su
     message: row.message,
     savedBy: row.saved_by,
     ...(row.run_count === undefined ? {} : { runCount: row.run_count }),
+  };
+}
+export function captureRevisionSummary(input: unknown, scope: WorkspaceScope, suiteId?: string): SuiteRevisionSummary {
+  const row = record(input);
+  const parsed = validateApi('SuiteRevisionSummary', {
+    ...revisionFacts(row),
+    previousRevisionId: row.previous_revision_id,
   });
   if (!parsed.ok || !sameScope(parsed.value.scope, scope)) throw new StorageError('unavailable');
   if (suiteId !== undefined && parsed.value.suiteId !== suiteId.toLowerCase()) throw new StorageError('unavailable');
@@ -120,14 +126,13 @@ function revisionContent(value: SuiteRevision): void {
 }
 export function captureRevisionRow(input: unknown, key: SuiteKey): SuiteRevision {
   const row = record(input);
-  const summary = captureRevisionSummary(row, key.scope);
-  if (summary.id !== key.id.toLowerCase()) throw new StorageError('unavailable');
   const parsed = validateApi('SuiteRevision', {
-    ...summary,
+    ...revisionFacts(row),
     config: json(row.config_json, 2097152),
     inputManifest: json(row.input_manifest_json, 65536),
   });
-  if (!parsed.ok) throw new StorageError('unavailable');
+  if (!parsed.ok || !sameScope(parsed.value.scope, key.scope) || parsed.value.id !== key.id.toLowerCase())
+    throw new StorageError('unavailable');
   revisionContent(parsed.value);
   return parsed.value;
 }

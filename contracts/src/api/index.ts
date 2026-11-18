@@ -105,3 +105,6 @@ export type { NormalizedSuiteListQuery, SuiteListPosition } from './suite-list.j
 export { suiteListPageMatches, folderPageSummariesMatch } from './suite-list-page.js';
 export { pendingRunHistorySummary, pendingRunHistoryMetrics, runHistorySummaryMatches } from './run-history-summary.js';
 export type { RunHistoryMetrics } from './run-history-summary.js';
+
+export { encodeRevisionListCursor, revisionListPosition, revisionListPageMatches } from './revision-list.js';
+export type { RevisionListPosition } from './revision-list.js';
