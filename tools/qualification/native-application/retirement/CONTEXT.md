@@ -18,3 +18,4 @@ entry uses umask0177; private parent700 is checked, avoiding shared-socket chmod
 No progress rewind or production guard alteration. Require missing ACK and retained
 charges at both failures, then same-plan/standard Root ACK recovery. Pure fault/Unix
 scope tests qualify harness mechanics; real native evidence remains separate.
+reconcile-smoke.ts: physical renumber, refused cleanup, one-off preview/apply, cleanup.

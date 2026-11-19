@@ -34,7 +34,7 @@ export async function fixture(docker: Docker, agentTag: string, engineTag: strin
   const budget = { cpuMillis: 1000, memoryBytes: 536870912, pids: 128, timeoutMs: 30000, outputBytes: 16777216 };
   const schema = createK6ConfigSchema(digest);
   const manifest = JSON.parse(await readFile(new URL('../../../contracts/fixtures/valid/manifest.json', import.meta.url), 'utf8')) as EngineManifest;
-  Object.assign(manifest, { engineVersion: '2.2.0', imageDigest: engineImage.Id, defaultBudget: budget,
+  Object.assign(manifest, { engineVersion: '2.4.0', imageDigest: engineImage.Id, defaultBudget: budget,
     minimumBudget: { ...budget, timeoutMs: 1, outputBytes: 1 }, entrypoint: { executable: 'node', arguments: ['/beetle/bootstrap/main.js'] } });
   manifest.schemas.config = schema.schemaId;
   for (const phase of manifest.phases) Object.assign(phase, { timeoutMs: 5000, outputBytes: 4194304 });

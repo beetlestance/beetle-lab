@@ -80,3 +80,20 @@ and refusal after removal leave2560 backend replay bytes plus the permanent512-b
 epoch; agent replay remains4096. Public workspace Apply HTTP is qualified separately.
 See [native retention evidence](https://github.com/beetlestance/beetle-lab/blob/4fabd9fa0db7c9de3fe6be8a749eeace83cfdddc/docs/verification/native-retention.md)
 for current payload images, platform limits and actual accounting.
+
+## Task folder reconciliation
+
+`reconcile-smoke.ts` takes the same four arguments with an agent image built from the
+current source. One real bounded k6 run finishes; with the agent stopped, its task
+folder is copied, removed and renamed as the agent's user, so every directory gets a
+new inode with unchanged owner, group and mode. The backend's cleanup then removes
+the published files, and the agent stores the retirement intent but no plan.
+
+With the agent removed, one-off containers named as the agent and given its recipe
+run `reconcile --bogus` (exit 2), `reconcile` (one candidate, nothing recorded),
+`reconcile --apply` (`reconciled`, immutable anchor) and `--apply` again (`current`).
+The recreated agent then finishes cleanup: cleaned ACK, unchanged charges, no files,
+runtime or volume, and only the installed staging marker.
+
+The qualification agent uses the user recipe, not the socket-group-drop entry; that
+recipe's command check is unit-tested. Stop signals are covered by composed tests.
