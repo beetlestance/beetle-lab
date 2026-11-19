@@ -6,6 +6,7 @@ import { comparisonWarnings, encodeRunMetricSeriesCursor } from '@beetle/contrac
 import type { RunMetricKey } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
 import { catalogue, json, mountComparison, runIds, sampleReply, scope, snapshot, testClient, apiError } from './fixtures.js';
+import { openComparisonExploration } from './fixtures.js';
 afterEach(cleanup);
 it('compares outcomes/provenance then sequences selected per-run charts by actual ordinal', async () => {
   let active = 0; let maximum = 0;
@@ -19,7 +20,7 @@ it('compares outcomes/provenance then sequences selected per-run charts by actua
     return json(catalogue());
   });
   mountComparison(fixture.client, true);
-  await screen.findByLabelText('Baseline metric');
+  await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   expect(screen.getAllByText('Actual contention is unknown.')).toHaveLength(2);
   expect(screen.getAllByText('Application state / outcome')).toHaveLength(2);
   fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
@@ -35,7 +36,7 @@ it('stops on failure and only refreshes manually', async () => {
   const fixture = testClient(request => failed ? json(apiError('storage_unavailable'), 503) : json(request.path.endsWith('/comparisons') ? snapshot() : catalogue()));
   mountComparison(fixture.client); await screen.findByRole('alert'); expect(fixture.records).toHaveLength(1);
   failed = false; fireEvent.click(screen.getByRole('button', {name: 'Refresh comparison'}));
-  await screen.findByLabelText('Baseline metric'); expect(fixture.records).toHaveLength(9);
+  await screen.findByLabelText('Baseline metric'); await openComparisonExploration(); expect(fixture.records).toHaveLength(9);
 });
 it('rejects invalid URL before issuing any client read', async () => {
   const fixture = testClient(() => {throw new Error('Unexpected read');});
@@ -48,7 +49,7 @@ it('replaces a bounded catalogue page without retaining old options', async () =
   const fixture = testClient(request => request.path.endsWith('/comparisons') ? json(snapshot()) : json(++calls === 1
     ? {...catalogue(), totalSeries: 2, nextCursor: cursor}
     : {...catalogue(), totalSeries: 2, items: [{...catalogue().items[0]!, ordinal: 1, metric: 'iterations'}]}));
-  mountComparison(fixture.client); await screen.findByLabelText('Baseline metric');
+  mountComparison(fixture.client); await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   fireEvent.click(screen.getByRole('button', {name: 'Next metric page'}));
   await screen.findByRole('option', {name: /iterations/}); expect(screen.queryByRole('option', {name: /http_reqs/})).not.toBeInTheDocument();
   expect(fixture.records.at(-1)?.path).toContain(`limit=100&cursor=${cursor}`);
@@ -63,7 +64,7 @@ it('renders four bounded independent charts and never fans out beyond selected r
     return json(sampleReply(ids.find(id => request.path.includes(id))!, ordinal, ids));
   });
   mountComparison(fixture.client, false, routes.comparison(scope.organizationId, scope.workspaceId, ids));
-  await screen.findByLabelText('Baseline metric'); fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
+  await screen.findByLabelText('Baseline metric'); await openComparisonExploration(); fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
   await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(4));
   expect(fixture.records).toHaveLength(19); expect(fixture.records.filter(record => record.path.includes('/samples?'))).toHaveLength(4);
 });
@@ -79,7 +80,7 @@ it('keeps missing peer measurements explicit without substituting zero or reques
     }
     return request.path.includes('/samples?') ? json(sampleReply(runIds[0]!, 2)) : json(catalogue());
   });
-  mountComparison(fixture.client); await screen.findByLabelText('Baseline metric');
+  mountComparison(fixture.client); await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
   await screen.findByRole('img'); expect(screen.getByText('Metric: missing (not_observed).')).toBeVisible();
   expect(screen.getAllByText(/Whole-run total:/)).toHaveLength(1);

@@ -83,11 +83,9 @@ Ready overviews supply their own complete figure set: p50/p95/p99 estimates,
 request/failure/check values and dropped iterations. Missing fields remain unknown;
 no history field fills a ready overview's null. Without a ready overview, existing
 accepted history scalars can remain, with a per-run error/availability note.
-Existing exact-ID history responses supply bound suite/revision metadata; settings uses the same suite name
-and saved revision ordinal;
-equal display labels never imply equal revision identities. Full digests stay in
-recorded fingerprints. Only the captured run/suite/revision match grants labels; missing
-or mismatched records remain unknown. All metadata shares the same scoped owner.
+Exact-ID history contexts label the captured suite and saved revision; full digests remain in fingerprints.
+Only matching run/suite/revision identities grant labels. Missing or mismatched metadata stays unknown.
+All metadata shares the same scoped owner. Equal display labels never imply equal revision identities.
 Colliding four-character IDs expand to prefix plus suffix, then the full UUID; labels never invent ordinals.
 Phone comparison tables keep readable row/column widths inside named keyboard-
 focusable scroll regions; header controls remain bound to their run.
@@ -159,10 +157,11 @@ A failed refresh retires mutable names; explicit retries refresh facts even whil
 a metric is selected. Pending retries cannot resurrect retired names.
 An empty selection resolves its breadcrumb with one history page (limit 1), never
 comparison or metric reads. Its illustration is the exported Penpot asset. Figures,
-thresholds, workload charts, target charts and configuration follow board order.
-The headline describes the same recorded p95 estimates as the table. Missing,
-zero-baseline and overflowing percentages stay explicit; subpercent differences
-are never called unchanged. It makes no statistical or native-verdict inference.
+thresholds, workload charts, target charts and configuration follow board order. Advanced
+per-series exploration and fingerprints use a disclosure; catalogue errors open it.
+Expansion survives reads and resets with the scoped selection; toggling adds no reads.
+The headline uses the table's recorded p95 estimates. Missing, zero-baseline and overflowing percentages stay explicit;
+subpercent differences are never called unchanged. It infers neither statistical confidence nor a native verdict.
 
 ## Ownership
 
@@ -196,7 +195,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
-| `web/src/features/runs/comparison/comparison.css` | `pending` |
+| `web/src/features/runs/comparison/comparison.css` | `79854448ac21` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `6f2604ca7c2a` |
@@ -217,4 +216,5 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
-| `web/src/features/runs/comparison/index.tsx` | `1c317f271c49` |
+| `web/src/features/runs/comparison/Advanced.tsx` | `76c8a8aa6442` |
+| `web/src/features/runs/comparison/index.tsx` | `eff581df8467` |

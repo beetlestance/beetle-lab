@@ -6,8 +6,7 @@ import { runStatus } from '../../run-results/format.js';
 import type { RunScope } from '../types.js';
 import { ComparisonDeltas } from './Deltas.js';
 import { WhatWasDifferent } from './SettingsTable.js';
-import { ComparisonFacts } from './Facts.js';
-import { ComparedMetric, MetricSelection } from './Metric.js';
+import { AdvancedComparison, useAdvancedExpansion } from './Advanced.js';
 import { comparisonRunIds } from './selection.js';
 import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
@@ -74,7 +73,8 @@ type Snapshot = NonNullable<ComparisonState['view']['snapshot']>;
 function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
   const state = useComparison(scope, ids);
   const snapshot = state.view.snapshot;
-  const { organizationId, workspaceId } = scope;
+  const identity = [scope.organizationId, scope.workspaceId, ...ids].join(':');
+  const [advancedOpen, setAdvancedOpen] = useAdvancedExpansion(identity, state.view.catalogueError);
   return (
     <section className="compare">
       <ComparisonBreadcrumb scope={scope} workspaceName={state.workspaceName} />
@@ -117,20 +117,14 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
             <h2 id="compare-different">What was different</h2>
             <WhatWasDifferent items={snapshot.items} contexts={state.contexts} />
           </section>
-          <MetricSection state={state} snapshot={snapshot} />
-          {snapshot.items.map((item, index) => (
-            <article key={item.run.id} className="compare-section">
-              <h2>
-                {index === 0 ? 'Baseline' : `Run ${index + 1}`}:{' '}
-                <Link to={routes.run(organizationId, workspaceId, item.run.id)}>{item.run.id}</Link>
-              </h2>
-              <ComparedMetric item={item} admission={state.admission} />
-              <details className="compare-evidence">
-                <summary>Recorded evidence and fingerprints</summary>
-                <ComparisonFacts item={item} />
-              </details>
-            </article>
-          ))}
+          <AdvancedComparison
+            key={'advanced:' + ids.join(',')}
+            scope={scope}
+            state={state}
+            snapshot={snapshot}
+            expanded={advancedOpen}
+            onExpandedChange={setAdvancedOpen}
+          />
         </>
       )}
     </section>
@@ -220,33 +214,6 @@ function RunColumn({
         </Link>
       )}
     </div>
-  );
-}
-
-function MetricSection({ state, snapshot }: { state: ComparisonState; snapshot: Snapshot }) {
-  return (
-    <section className="compare-section" aria-labelledby="compare-metric">
-      <h2 id="compare-metric">One metric, per run</h2>
-      {state.view.catalogueError && (
-        <p role="alert">Metric catalogue could not be loaded. The comparison remains available.</p>
-      )}
-      {state.view.page ? (
-        <MetricSelection page={state.view.page} busy={state.busy} select={state.select} next={state.page} />
-      ) : (
-        <Button size="sm" disabled={state.busy} onClick={() => state.page()}>
-          {state.view.catalogueError ? 'Retry metric catalogue' : 'Choose another metric'}
-        </Button>
-      )}
-      {snapshot.metricBinding && (
-        <p>
-          Logical request: {snapshot.metricBinding.requestId ?? 'aggregate'}; assertion:{' '}
-          {snapshot.metricBinding.assertionId ?? 'none'}.
-        </p>
-      )}
-      <p className="compare-muted">
-        Charts use each run’s own UTC source time and independent vertical scale; timelines are not aligned.
-      </p>
-    </section>
   );
 }
 
