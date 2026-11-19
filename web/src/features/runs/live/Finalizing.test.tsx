@@ -65,13 +65,20 @@ it('advances artifact collection and sampler closure only on recorded phase entr
   });
   view.rerender(<Finalizing {...props} plan={plan} />);
   expect(screen.getByText('Target sampler closed')).toBeVisible();
-  expect(screen.getByText('Artifact collection started')).toBeVisible();
+  expect(screen.getByText('Artifact collection started')).toHaveClass('is-active');
   expect(screen.getByText('Engine report written')).toBeVisible();
   expect(screen.queryByText(/Awaiting final confirmation/)).toBeNull();
 
   timeline.mockReturnValue({
+    isError: true,
+    data: { coverage: 'contiguous', rows: [{ kind: 'phase.started', phase: 'collect' }] },
+  });
+  view.rerender(<Finalizing {...props} plan={plan} />);
+  expect(screen.getByText('Artifact collection started')).not.toHaveClass('is-active');
+
+  timeline.mockReturnValue({
     isError: false,
-    data: { coverage: 'contiguous', rows: [{ kind: 'phase.started', phase: 'seal' }] },
+    data: { coverage: 'contiguous', rows: [{ kind: 'phase.finished', phase: 'collect' }] },
   });
   view.rerender(<Finalizing {...props} plan={plan} />);
   expect(screen.getByText('Target sampler closed')).toBeVisible();
