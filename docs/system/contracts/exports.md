@@ -127,7 +127,8 @@ The script embeds the revision's inline datasets and request bodies, so it is as
 sensitive as the suite itself.
 
 Fresh export submission retains live installation-capacity validation; run enqueue
-uses installed policy only. Export receipt replay still precedes that validation.
+uses installed policy only. A refusal from a lapsed observation waits up to 2 s for
+the next accepted one and is tried once more (settings reads and changes alike). Export receipt replay still precedes that validation.
 
 ## Metadata, accounting and publication
 

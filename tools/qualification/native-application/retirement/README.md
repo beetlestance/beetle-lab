@@ -112,7 +112,8 @@ organization, workspace, suite and revision were stored: the only time-dependent
 refusal there is settings resolution against the live runtime observation, which
 the metadata worker drops about 1 s after the agent sampled, while
 `waitForCapacity` checks only that the poller once published. Since commit
-acafc82d run creation no longer reads that observation; the run queues instead. The other was a raw
+acafc82d run creation no longer reads that observation; the run queues instead. Settings
+reads and changes and export creation now wait up to 2 s for the next observation. The other was a raw
 `StorageError not_found` after the run had finished and passed, surfaced by
 `app.close()` from a background owner; which owner is unknown, so the smoke now
 records `runtimeAtClose` (that owner's fixed reason).
