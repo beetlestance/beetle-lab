@@ -181,7 +181,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
-| `web/src/features/runs/result/Overview.tsx` | `eff6b5765c9b` |
+| `web/src/features/runs/result/Overview.tsx` | `db6adc16cee5` |
 | `web/src/features/runs/result/useResultReads.ts` | `38c36f18eee5` |
 | `app/src/application/run-metrics/chart-history.ts` | `8c4d276be252` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |

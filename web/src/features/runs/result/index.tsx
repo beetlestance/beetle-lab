@@ -101,7 +101,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         <RunNote run={run} readOnly={readOnly} />
       </PhoneDisclosure>
       {!phone && <ResultSectionNav onSelect={selectSection} />}
-      <ResultSummary reads={reads} charts={charts} ready={ready} />
+      <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} />
       <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} />
       <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
       <ResultEndpoints overview={ready} requests={plan.requests} phone={phone} />
@@ -286,10 +286,12 @@ function ResultSummary({
   reads,
   charts,
   ready,
+  phone,
 }: {
   reads: ResultReads;
   charts: ReturnType<typeof useRecordedCharts>;
   ready: RunMetricOverview | null;
+  phone: boolean;
 }) {
   return (
     <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
@@ -298,9 +300,9 @@ function ResultSummary({
       </h2>
       <OverviewStatus query={reads.overview} />
       {ready ? (
-        <MetricSummary overview={ready} history={charts.data} />
+        <MetricSummary overview={ready} history={charts.data} phone={phone} />
       ) : (
-        <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
+        <SummaryTiles summary={reads.summary} status={reads.summaryStatus} phone={phone} />
       )}
     </section>
   );
