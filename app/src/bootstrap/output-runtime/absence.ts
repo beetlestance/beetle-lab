@@ -31,7 +31,11 @@ async function proof(options: OutputRuntimeOptions, binding: EventBinding, signa
   requireValue(encodeCanonicalJson(state.closure, 2048) === encodeCanonicalJson(closure, 2048));
   return state;
 }
-async function refresh(options: OutputRuntimeOptions, binding: EventBinding, signal: AbortSignal): Promise<void> {
+export async function refreshOutputSnapshot(
+  options: OutputRuntimeOptions,
+  binding: EventBinding,
+  signal: AbortSignal,
+): Promise<void> {
   const client = options.gateway.attempt({ ...binding.key.attempt, journalAuthority: binding.journalAuthority });
   requireValue(typeof client.snapshot === 'function');
   const reply = await client.snapshot(signal);
@@ -77,7 +81,7 @@ export async function handoffAbsence(
   let request = { binding, proofDigest: state.proofDigest, expectedRunVersion: run.version };
   const result = await finalize(options, request, state, run);
   if (signal.aborted || result !== 'execution') return;
-  await refresh(options, binding, signal);
+  await refreshOutputSnapshot(options, binding, signal);
   if (signal.aborted) return;
   run = await getRun(runKey, options.runs);
   requireValue(run.activeAttemptId === identity.attemptId);

@@ -15,6 +15,7 @@ it('keeps first system reason and timestamp through racing user cancel and resta
   expect(system).toMatchObject({ cancelRequestedAt: 1000, cancelReason: 'output_limit', immediateStop: true });
   expect(user).toMatchObject({ cancelRequestedAt: 1000, cancelReason: 'output_limit' });
   await f.close(journal); journal = await f.open(path);
+  expect(await journal.get(f.key())).not.toHaveProperty('systemStopReason');
   expect(await journal.supervision({ key: f.key(), now: 2000, cancel: true, reason: 'timeout' }))
     .toMatchObject({ cancelRequestedAt: 1000, cancelReason: 'output_limit', clockFenced: false });
 });
@@ -27,6 +28,7 @@ it('does not relabel a user cancellation when a later system stop races it', asy
   ]);
   expect(user).toMatchObject({ cancelReason: 'cancelled', cancelRequestedAt: 1000 });
   expect(system).toMatchObject({ cancelReason: 'cancelled', cancelRequestedAt: 1000, immediateStop: true });
+  expect(await journal.get(f.key())).not.toHaveProperty('systemStopReason');
 });
 
 it.each([
@@ -48,6 +50,7 @@ it('migrates a v6 cancellation without inventing its missing historical cause or
   journal = await f.open(path);
   expect(await journal.supervision({ key: f.key(), now: 2000, cancel: true, reason: 'output_limit' }))
     .toMatchObject({ cancelRequested: true, cancelRequestedAt: before.cancelRequestedAt, cancelReason: null, clockFenced: true });
+  expect(await journal.get(f.key())).not.toHaveProperty('systemStopReason');
 });
 
 it('rolls reason, intent, queue retirement and clock back when clock persistence fails', async () => {

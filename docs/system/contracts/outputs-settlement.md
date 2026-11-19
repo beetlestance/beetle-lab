@@ -93,8 +93,8 @@ otherwise the current active attempt and expected version are required. Missing 
 pending; corrupt or contradictory evidence fails. It requires, in order:
 
 1. The sole adopted source, verified against the original Offer and generation 1 binding.
-2. `execution_charged` = 0 and a header with admission released/settled whose `lastSeq` ≤
-   `finalAgentSeq` (a higher header fails before any write).
+2. `execution_charged` = 0 and released/settled admission. The stop evidence must bind
+   exactly to `finalAgentSeq`; a higher header fails before any write.
 3. Exactly the manifest's artifact count (≤ 128), all published at declared bytes, identity set,
    writer null. Zero artifacts are valid only with a verified source.
 4. Contiguous events with count = durable = full ACK confirmation = `finalAgentSeq`, none above.
@@ -103,7 +103,7 @@ pending; corrupt or contradictory evidence fails. It requires, in order:
 | Evidence (first match wins) | Run state / outcome / reason |
 | --- | --- |
 | Wrapper OOM | errored / inconclusive / `memory_limit` |
-| Wrapper `timeout`, `output_limit`, `artifact_incomplete`, `clock_integrity` with known exit | errored / inconclusive / that cause (unknown exit stays pending) |
+| Durable system stop or explicit wrapper system reason with known exit | errored / inconclusive / that cause (unknown exit stays pending) |
 | Persisted user cancellation | cancelled / inconclusive |
 | Missing wrapper exit code or OOM flag | pending `exit_evidence` |
 | Cancelled wrapper or child, or a stop request, without persisted user intent | pending `exit_evidence` |
@@ -112,10 +112,10 @@ pending; corrupt or contradictory evidence fails. It requires, in order:
 | Sealed child error or lost | errored / inconclusive / its reason or `execution_lost` |
 | Exit 0, no OOM, no reason, completed child | finished / sealed passed, failed or inconclusive |
 
-Wrapper and child exit codes are never equated. Completed execution sets validation passed; a sealed
-`invalid_config` error sets failed; otherwise it stays pending. The receipt insert (migration 029
-holds the current projection) credits P − (C + M + A) once to `installation_storage_usage`, projects
-the Run, closes `event_pending` and then fences events, cursors, slots, snapshots and Run changes.
+A `stop_evidence` wait refreshes the scope-bound snapshot after the agent closes delivery.
+The first durable stop leaves the exit witness intact. Completed execution passes validation.
+Sealed `invalid_config` fails it. Migration 039 credits P − (C + M + A) once, projects the
+Run and closes `event_pending`, fencing events, cursors, slots and snapshots.
 
 ## Source-free closure
 
@@ -214,7 +214,7 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 | --- | --- |
 | `contracts/src/output-source/` | `dd6d7cd8f8e7` |
 | `agent/src/journal/output-delivery-protocol.ts` | `23234170ace9` |
-| `app/src/adapters/outbound/sqlite/output-finalization/` | `00bfd0136812` |
+| `app/src/adapters/outbound/sqlite/output-finalization/` | `fa47885187b8` |
 | `app/src/adapters/outbound/sqlite/output-absence/` | `0f2d925087dc` |
 | `app/src/adapters/outbound/sqlite/output-deletion/` | `9c4e8dc70ef4` |
 | `app/src/adapters/outbound/sqlite/backend-settlement/` | `7f81a1b56b08` |

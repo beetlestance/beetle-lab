@@ -1,5 +1,5 @@
 import type { OutputBinding } from '../../domain/output-owner/index.js';
-import { handoffAbsence } from './absence.js';
+import { handoffAbsence, refreshOutputSnapshot } from './absence.js';
 import { getRun } from '../../application/runs/index.js';
 import { createEventDiscovery } from '../../adapters/outbound/runner/index.js';
 import type { EventBinding } from '../../ports/events.js';
@@ -139,11 +139,16 @@ export class OutputScheduler implements OutputRuntime {
       return;
     }
     if (outcome?.kind !== 'published') return;
-    await this.finalizeSource(binding, outcome);
+    try {
+      await this.finalizeSource(binding, outcome, signal);
+    } catch (error) {
+      this.transferFailure(error);
+    }
   }
   private async finalizeSource(
     binding: EventBinding,
     outcome: Extract<OutputTransferOutcome, { kind: 'published' }>,
+    signal: AbortSignal,
   ): Promise<void> {
     const attempt = binding.key.attempt;
     const run = await getRun(
@@ -161,12 +166,14 @@ export class OutputScheduler implements OutputRuntime {
       manifestDigest: outcome.manifestDigest,
       expectedRunVersion: run.version,
     };
+    let value;
     try {
-      finalizationValue(await this.options.finalizations.finalize(request), request, run);
+      value = finalizationValue(await this.options.finalizations.finalize(request), request, run);
     } catch (error) {
       if (error instanceof Error && Object.getOwnPropertyDescriptor(error, 'code')?.value === 'conflict') return;
       throw error;
     }
+    if (value === 'refresh' && !signal.aborted) await refreshOutputSnapshot(this.options, binding, signal);
   }
   close(): Promise<void> {
     if (this.closing) return this.closing;

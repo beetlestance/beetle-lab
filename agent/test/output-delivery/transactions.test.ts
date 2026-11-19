@@ -87,3 +87,28 @@ it.each(['sequence', 'source', 'charge', 'marker', 'missing', 'oversized'] as co
   expect(() => new Store(broken).execute({ kind: 'outputDeliveryRead', key: e.key, id: 1 }))
     .toThrow(expect.objectContaining({ code: 'unavailable' }));
 });
+
+it('publishes the first system stop only after delivery closes and ignores later system requests', async () => {
+  const e = await f.ready();
+  const before = await e.journal.get(e.key);
+  expect(before).not.toHaveProperty('systemStopReason');
+  await e.journal.supervision({ key: e.key, now: Date.now(), cancel: true, reason: 'artifact_incomplete' });
+  expect(await e.journal.get(e.key)).not.toHaveProperty('systemStopReason');
+  const closure = await e.journal.closeOutputDelivery(e.receipt);
+  const closed = await e.journal.get(e.key);
+  expect(closed).toMatchObject({ systemStopReason: 'artifact_incomplete', lastSeq: closure.finalAgentSeq });
+  expect(closed.exitEvidence).toEqual(before.exitEvidence);
+  await e.journal.supervision({ key: e.key, now: 0, cancel: true, reason: 'clock_integrity' });
+  expect(await e.journal.get(e.key)).toEqual(closed);
+});
+
+it('keeps a closed clean snapshot clean when a system request arrives later', async () => {
+  const e = await f.ready();
+  const closure = await e.journal.closeOutputDelivery(e.receipt);
+  const closed = await e.journal.get(e.key);
+  expect(closed).toMatchObject({ systemStopReason: null, cancelRequested: false, lastSeq: closure.finalAgentSeq });
+  await e.journal.supervision({ key: e.key, now: Date.now(), cancel: true, reason: 'artifact_incomplete' });
+  expect(await e.journal.get(e.key)).toEqual(closed);
+  await e.journal.durableCancel(e.key);
+  expect(await e.journal.get(e.key)).toMatchObject({ systemStopReason: null, cancelRequested: true });
+});

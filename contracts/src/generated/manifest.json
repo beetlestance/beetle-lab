@@ -5,7 +5,7 @@
     "runner/v1/ack.schema.json": "8240195b820336b47e272e09717a766649732f17b385ff1804b17ec0c6be2d7f",
     "runner/v1/agent-event.schema.json": "063ad52fb49ddcb837e7c348d37350ddb00f44de3e5a7ff302d4657525f113d6",
     "runner/v1/attempt-admission.schema.json": "04cabdc2e5391d70758e0f031d22b04ad0b849a32f396d1a4ecccff46e447521",
-    "runner/v1/attempt-snapshot.schema.json": "6f889fbbaede518b441dacdb1f17391081065e0462c5c9bcdc0e5b0430402b57",
+    "runner/v1/attempt-snapshot.schema.json": "3a0a0fc97c757f49e17f06f29d4b12f98049e44ef56af8694dd08101071db90a",
     "runner/v1/cancellation.schema.json": "4eb66b6d93f50ab262db4f145f9c312660659a9e960b43593c1642ee81fd872d",
     "runner/v1/capabilities.schema.json": "bf9dc6ad9ea6c86cca69b778d8b2f7b7a0dddf4bfa8db035d78faebe276d5663",
     "runner/v1/capacity-observation.schema.json": "fe961718f2054398b314db24f4d2ecf367c7271eecb774cb9d78d8b0a84e3af8",

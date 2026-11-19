@@ -26,7 +26,10 @@ export interface OutputFinalizationReceipt {
 }
 export type OutputFinalizationReply =
   | { readonly kind: 'finalized'; readonly receipt: OutputFinalizationReceipt }
-  | { readonly kind: 'pending'; readonly reason: 'source' | 'execution' | 'events' | 'artifacts' | 'exit_evidence' };
+  | {
+      readonly kind: 'pending';
+      readonly reason: 'source' | 'execution' | 'events' | 'artifacts' | 'stop_evidence' | 'exit_evidence';
+    };
 /** One immediate metadata transaction. Matching committed receipts precede version
  * checks on retry. No file/network work, engine retry, source deletion or purge.
  */

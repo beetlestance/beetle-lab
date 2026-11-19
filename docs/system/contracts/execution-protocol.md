@@ -120,7 +120,8 @@ authority.
 Phases only advance; terminal and `stopping` states keep their state, but a later
 wrapper phase and engine or export result are still recorded. The first exit witness is immutable and confirmed exit facts survive later
 unknowns. A second, different engine result for one attempt rejects as a conflict.
-A wrapper seal never proves that the container exited.
+A wrapper seal never proves runtime exit. Once source delivery closes, the snapshot carries
+the first system stop cause or null. Closure fences later system stops and leaves the exit witness intact.
 
 ## Journal, idempotency and fencing
 
@@ -211,7 +212,7 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/runner/v1/` | `072a607aa7dd` |
+| `contracts/runner/v1/` | `5c71acd8a91f` |
 | `agent/src/transport/` | `ef7b3981fc9b` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |

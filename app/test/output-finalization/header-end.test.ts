@@ -7,7 +7,8 @@ const insert = `INSERT INTO execution_output_finalizations SELECT attempt_id,run
  FROM output_finalization_evidence WHERE attempt_id=?`;
 
 it('rejects header2 above verified end1 through the API and native insert with all durable facts unchanged', () => {
-  const f = finalizationFixture({ events: 1 }); f.ready();
+  const f = finalizationFixture({ events: 1 });
+  f.adopt(); f.release({ lastSeq: 2 }); f.ingest(); f.confirm();
   const before = f.facts(); const discovery = f.outputs.execute({ kind: 'outputScan', query: { limit: 32 } });
   expect(f.db.prepare('SELECT header_last_seq,final_agent_seq FROM output_finalization_evidence').get())
     .toEqual({ header_last_seq: 2, final_agent_seq: 1 });
@@ -31,9 +32,12 @@ it('rejects the contradiction before creating a zero cursor', () => {
   expect(f.facts()).toEqual(before);
 });
 
-it('accepts a valid older header2 below verified end3 after the exact event end is fully ACKed', () => {
-  const f = finalizationFixture({ events: 3 }); f.ready();
+it('refreshes an older header before finalizing at the exact acknowledged end', () => {
+  const f = finalizationFixture({ events: 3 });
+  f.adopt(); f.release({ lastSeq: 2, systemStopReason: undefined }); f.ingest(); f.confirm();
   expect(f.db.prepare('SELECT header_last_seq,final_agent_seq FROM output_finalization_evidence').get())
     .toEqual({ header_last_seq: 2, final_agent_seq: 3 });
+  expect(f.finalize()).toEqual({ kind: 'pending', reason: 'stop_evidence' });
+  f.release({ lastSeq: 3 });
   expect(f.finalize()).toMatchObject({ kind: 'finalized', receipt: { finalAgentSeq: 3, state: 'finished' } });
 });

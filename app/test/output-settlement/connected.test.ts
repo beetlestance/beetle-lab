@@ -31,6 +31,7 @@ it.each([false, true])('automatically publishes and durably settles with real me
   if (typeof header?.snapshot_json !== 'string') throw new Error('Missing synthetic retained header');
   const released = validate('AttemptSnapshot', { ...JSON.parse(header.snapshot_json), state: 'exited', lastSeq: 2,
     admission: { state: 'released', disposition: 'settled' },
+    systemStopReason: null,
     exitEvidence: { exitCode: 0, oomKilled: false, observedAt: '2026-01-01T00:01:00Z' } });
   if (!released.ok) throw new Error('Invalid synthetic release');
   f.db.prepare('VACUUM INTO ?').run(path); f.db.close();
