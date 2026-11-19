@@ -17,8 +17,8 @@ export function PhoneMeasurementTiles({
   requests: number | null;
 }) {
   const tiles = [
-    { label: 'a second on average', value: number(rate) },
-    { label: 'p95 latency, histogram estimate', value: ms(p95) },
+    { label: 'requests/s on average', value: number(rate) },
+    { label: 'p95 latency estimate', value: ms(p95) },
     { label: 'of requests failed', value: formatPercent(failed) },
     { label: 'requests in all', value: number(requests) },
   ];

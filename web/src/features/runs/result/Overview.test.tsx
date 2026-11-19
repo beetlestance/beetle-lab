@@ -71,7 +71,7 @@ it('uses four phone figures without losing checks, drops or latency detail', () 
  render(<MetricSummary overview={value} phone />);
  expect(document.querySelectorAll('.result-phone-tiles dd')).toHaveLength(4);
  expect(screen.getByText('requests in all').parentElement).toHaveTextContent('0');
- expect(screen.getByText('a second on average').parentElement).toHaveTextContent('0');
+ expect(screen.getByText('requests/s on average').parentElement).toHaveTextContent('0');
  expect(screen.getByText('of requests failed').parentElement).toHaveTextContent('0%');
  expect(screen.getByText('Checks passed')).not.toBeVisible();
  fireEvent.click(screen.getByText('More whole-run measurements'));

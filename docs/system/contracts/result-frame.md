@@ -31,13 +31,15 @@ survives collapse and resize, including unresolved identical-replay saves. Hashe
 open the addressed section. Phase comparison keeps its target and Back control
 visible. Phone endpoint columns put p95/failed first and keep them visible while other
 columns scroll in a named keyboard region. Desktop order, filters and exact
-source values survive resize; long paths wrap and nulls/zeros remain distinct.
+source values survive resize. Phone endpoint names stay on one line with ellipsis
+for long paths; the full name remains the row label. Nulls and zeros remain distinct.
 Phone summary leads with average rate, p95 estimate, failure ratio and total
 requests from one accepted source. Other measurements stay in expandable details;
 partial-coverage warnings remain visible. Legacy/pending history keeps four explicit
 unknown figures, never invented zeros. Desktop summary stays unchanged.
-Phone titles use 34 px tokens and compare/download precede Run again in action
-order. A compact whole-run chart names its selected metric, retains exact points,
+Phone titles use 34 px tokens and compare/download precede Run again and Pin.
+Refresh and permitted deletion remain reachable under More actions. Phone context
+uses a stored finish time when present. A compact whole-run chart names its selected metric, retains exact points,
 gaps, bounds and accessible labels, and shows its reading on hover. Sampling and
 coverage details remain expandable, with partial-source coverage in the summary.
 Advanced target details retain explicit Reload through the same bounded owner;
@@ -61,17 +63,17 @@ run-level pass or fail label.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `27ee4bb8ba4b` |
+| `web/src/features/runs/result/headline.ts` | `f5870937c29e` |
 | `web/src/features/runs/result/SectionNav.tsx` | `c6e30d9a0588` |
-| `web/src/features/runs/result/ResultHeader.tsx` | `eae4c3909114` |
+| `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `587774070696` |
-| `web/src/features/runs/result/phone.css` | `ba4a5771ad8d` |
+| `web/src/features/runs/result/phone.css` | `f97e25242a9e` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
-| `web/src/features/runs/result/EndpointTable.tsx` | `f7bd8fa29dec` |
-| `web/src/features/runs/result/overview.css` | `af298878404b` |
-| `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
+| `web/src/features/runs/result/EndpointTable.tsx` | `20fd4c27e821` |
+| `web/src/features/runs/result/overview.css` | `5d868a563f67` |
+| `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `d844434e5e36` |
+| `web/src/features/runs/result/index.tsx` | `6278ae56eb3c` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

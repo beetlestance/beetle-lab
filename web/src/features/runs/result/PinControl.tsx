@@ -8,33 +8,55 @@ import { usePin } from './usePin.js';
 import { terminal } from '../terminal.js';
 import { WriteError } from './WriteError.js';
 
-export function PinControl({ run, compact = false, label }: { run: Run; compact?: boolean; label?: string }) {
+export function PinControl({
+  run,
+  compact = false,
+  label,
+  shortLabel = false,
+}: {
+  run: Run;
+  compact?: boolean;
+  label?: string;
+  shortLabel?: boolean;
+}) {
   const pin = usePin(run);
   const { readOnly } = useSessionAccess();
   if (!terminal(run)) return null;
   if (readOnly) return run.pinned ? <Badge tone="strong">Pinned at backup</Badge> : null;
   return (
     <span className={compact ? 'history-pin' : 'result-action'}>
-      <PinButton pin={pin} compact={compact} label={label} />
+      <PinButton pin={pin} compact={compact} label={label} shortLabel={shortLabel} />
       <PinFeedback pin={pin} run={run} />
     </span>
   );
 }
 
 type Pin = ReturnType<typeof usePin>;
-function PinButton({ pin, compact, label }: { pin: Pin; compact: boolean; label: string | undefined }) {
+function PinButton({
+  pin,
+  compact,
+  label,
+  shortLabel,
+}: {
+  pin: Pin;
+  compact: boolean;
+  label: string | undefined;
+  shortLabel: boolean;
+}) {
   return (
     <Button
       size="sm"
-      variant={compact ? 'text' : 'secondary'}
-      aria-label={label ? `${pin.pinned ? 'Unpin' : 'Pin'} run ${label}` : undefined}
+      variant={compact ? 'text' : shortLabel ? 'inverse' : 'secondary'}
+      aria-label={
+        label ? `${pin.pinned ? 'Unpin' : 'Pin'} run ${label}` : shortLabel && !pin.pinned ? 'Pin this run' : undefined
+      }
       aria-pressed={pin.pinned}
       loading={pin.write.pending}
       loadingLabel={pin.pinned ? 'Unpinning…' : 'Pinning…'}
       disabled={pin.reason === 'cleanup_in_progress' || !!pin.write.error?.unknown}
       onClick={pin.toggle}
     >
-      <PinLabel compact={compact} pinned={pin.pinned} />
+      <PinLabel compact={compact} pinned={pin.pinned} shortLabel={shortLabel} />
     </Button>
   );
 }
@@ -66,7 +88,7 @@ function PinFeedback({ pin, run }: { pin: Pin; run: Run }) {
   );
 }
 
-function PinLabel({ compact, pinned }: { compact: boolean; pinned: boolean }) {
+function PinLabel({ compact, pinned, shortLabel }: { compact: boolean; pinned: boolean; shortLabel: boolean }) {
   return (
     <>
       {compact ? (
@@ -75,6 +97,8 @@ function PinLabel({ compact, pinned }: { compact: boolean; pinned: boolean }) {
         </>
       ) : pinned ? (
         '✓ Pinned'
+      ) : shortLabel ? (
+        'Pin'
       ) : (
         'Pin this run'
       )}
