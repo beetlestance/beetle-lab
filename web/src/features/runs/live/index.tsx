@@ -18,6 +18,7 @@ import type { QueueRead, PhaseReads } from './data.js';
 import { RestoredBanner, ScriptPicker } from './Extras.js';
 import { LiveFeed } from './Feed.js';
 import { clock, shortId } from './format.js';
+import { provisionalSnapshot } from './provisional-download.js';
 import { LiveHeader, LiveCancelButton } from './Header.js';
 import type { Cancellation } from './Header.js';
 import type { LiveHistory } from './history.js';
@@ -46,7 +47,7 @@ export type LiveRunViewProps = RunSnapshotProps & {
  * Live run view (Penpot "Live run" boards) for a nonterminal run: waiting,
  * starting, running, paused, reconnecting, cancelling and finalizing. A run that
  * ends while watched keeps its last live figures here with an "Open result"
- * hand-off. No report or metrics downloads are offered while live.
+ * hand-off. The live download menu offers provisional snapshots.
  */
 export function LiveRunView(props: LiveRunViewProps) {
   const { scope, runId, run } = props;
@@ -173,6 +174,7 @@ function RunHeader(props: {
       stream={stream.streaming && stream.latest ? { paused: stream.paused, toggle: stream.togglePause } : null}
       cancel={props.cancel}
       readOnly={session.readOnly}
+      snapshot={provisionalSnapshot(run.id, stream.latest, stream.history)}
       onScript={props.onScript}
     />
   );

@@ -171,6 +171,7 @@ function liveHeader(readOnly = false) {
     <>
       <ActiveRunBadge organizationId={ids.a} workspaceId={ids.workspace} />
       <LiveHeader
+        snapshot={null}
         run={run}
         suiteName="Bench"
         revisionOrdinal={4}
