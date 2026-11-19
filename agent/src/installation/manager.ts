@@ -30,7 +30,6 @@ import type {
   OfferAcceptance,
 } from './types.js';
 const owners = new WeakMap<InstallationOptions['journal'], Manager>();
-/** Installation lifetime, bounded operation custody and generation ownership. */
 export class Manager implements InstallationController {
   readonly options: InstallationOptions;
   private readonly entries = new Map<string, Entry>();
@@ -342,7 +341,8 @@ export class Manager implements InstallationController {
       await reconcileDelivery(this.options.journal, entry);
       this.entries.delete(identity(entry.key));
     } else {
-      const closed = await reconcileAbsence(this.options.journal, entry, () => this.retireReleased(entry, operation));
+      const retire = () => this.retireReleased(entry, operation);
+      const closed = await reconcileAbsence(this.options, entry, retire, operation);
       if (closed || !(await allocation(this.options.journal, entry.key))) this.entries.delete(identity(entry.key));
     }
   }

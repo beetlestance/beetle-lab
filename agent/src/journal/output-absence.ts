@@ -7,13 +7,18 @@ import { admissionSnapshot } from './admission-snapshot.js';
 import { readJournalAuthority } from './authority.js';
 import { readSourceState } from './output-source-context.js';
 import { sourceJson, sourceScope, sameSource } from './output-source-input.js';
+import { readStoppedObservation, storeStoppedObservation } from './stopped-history-store.js';
 import { OUTPUT_ABSENCE_ROW_ALLOWANCE } from './output-absence-protocol.js';
 import type { OutputAbsenceOperation } from './output-absence-protocol.js';
 import { Failure, owner, quotaUsed, transaction } from './sql.js';
 import type { Row } from './sql.js';
 
 export function outputAbsenceOperation(input: { kind: string }): input is OutputAbsenceOperation {
-  return input.kind === 'outputAbsenceClose' || input.kind === 'outputAbsenceRead';
+  return (
+    input.kind === 'outputAbsenceClose' ||
+    input.kind === 'outputAbsenceRead' ||
+    input.kind === 'outputStoppedHistoryRead'
+  );
 }
 function requireFact(value: unknown): asserts value {
   if (!value) throw new Failure('unavailable');
@@ -99,7 +104,7 @@ function closureReason(db: DatabaseSync, row: Row, admission: OutputAbsence['adm
   }
   return diagnostic(db, row, admission.disposition === 'never_started' ? 'setup_failed' : 'artifact_incomplete');
 }
-function closeAbsence(db: DatabaseSync, key: Scope): Owned<OutputAbsence> | null {
+function closeAbsence(db: DatabaseSync, key: Scope, stoppedHistory?: string): Owned<OutputAbsence> | null {
   const row = owner(db, key);
   const prior = stored(db, row);
   if (prior) return prior;
@@ -125,6 +130,8 @@ function closeAbsence(db: DatabaseSync, key: Scope): Owned<OutputAbsence> | null
     json,
     charge,
   );
+  if (stoppedHistory !== undefined)
+    storeStoppedObservation(db, key, { row, charge, admission: proof.admission }, stoppedHistory);
   return proof;
 }
 /** Caller owns the transaction; no closure or native fact is created. */
@@ -132,14 +139,18 @@ export function readOutputAbsenceAtomic(db: DatabaseSync, key: Scope): Owned<Out
   return stored(db, owner(db, key));
 }
 /** Trusted storage only: native retirement is established by the calling owner. */
-export function executeOutputAbsence(db: DatabaseSync, input: OutputAbsenceOperation): Owned<OutputAbsence> | null {
+export function executeOutputAbsence(db: DatabaseSync, input: OutputAbsenceOperation) {
   let key: Scope;
   try {
     key = sourceScope(input.key);
   } catch {
     throw new Failure('invalid_input');
   }
-  return transaction(db, () =>
-    input.kind === 'outputAbsenceClose' ? closeAbsence(db, key) : readOutputAbsenceAtomic(db, key),
-  );
+  return transaction(db, () => {
+    if (input.kind === 'outputAbsenceClose') return closeAbsence(db, key, input.stoppedHistory);
+    const absence = readOutputAbsenceAtomic(db, key);
+    if (input.kind === 'outputStoppedHistoryRead' && absence)
+      return { absence, observation: readStoppedObservation(db, key) };
+    return absence;
+  });
 }

@@ -1,9 +1,8 @@
 # Retain verified observations after a stopped run
 
 Status: Implementation in progress. The Result views can display accepted
-partial evidence. The k6 producer writes recovery checkpoints. A native agent
-reader can verify them. The controller and backend still need to transfer and
-serve them after a stop.
+partial evidence. After native retirement, the agent commits verified samples
+with the absence receipt. Backend transfer, storage and presentation remain open.
 
 ## Current behaviour
 
@@ -67,10 +66,10 @@ receipts unchanged. Metric recovery remains a separate step.
    peak extent and a 5 s cadence. It syncs complete archive prefixes on one
    advisory work slot, fences shutdown, and leaves the previous slot readable
    after an interrupted write. The wire and normal result formats stay unchanged.
-3. Native reader implemented. Extend agent collection and settlement to persist the recovery decision,
-   with an exact retry and restart path. Reuse existing admission and custody.
-   Establish the schema and migration ownership before changing journal or wire
-   state. Review producer, stop and removal boundaries together.
+3. Done. Agent schema 28 records optional observations in the absence transaction
+   after the existing native retirement barrier. The single recovery owner drains
+   actual reads, checks the prepared namespace and charges the record to the Offer
+   and journal quota. An exact scoped read pairs the record and absence after restart.
 4. Add backend adoption, verified reads and deletion accounting. Bind the record
    to the terminal attempt and enforce namespace and read-only restore rules.
    Extend the Results UI to show the available charts and their provenance.

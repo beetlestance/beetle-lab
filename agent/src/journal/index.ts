@@ -44,7 +44,7 @@ import type {
 } from './output-delivery-protocol.js';
 import { OUTPUT_DELIVERY_BYTES } from './output-delivery-protocol.js';
 import { deliveryReply } from './delivery-input.js';
-import { captureOutputAbsence } from '@beetle/contracts/output-source';
+import { absenceCommand, absenceReply, stoppedHistoryReply } from './output-absence-protocol.js';
 import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
 import type { JournalOutputAbsence, OutputAbsenceOperation } from './output-absence-protocol.js';
 import {
@@ -357,27 +357,26 @@ export class Journal
     );
   }
 
-  /** Trusted owner must retire native producers before requesting durable closure. */
-  closeOutputAbsence(key: Scope): Promise<Owned<OutputAbsence> | null> {
-    return this.absence('outputAbsenceClose', key);
+  closeOutputAbsence(key: Scope, stoppedHistory?: string): Promise<Owned<OutputAbsence> | null> {
+    return this.absence('outputAbsenceClose', key, stoppedHistory);
   }
 
   readOutputAbsence(key: Scope): Promise<Owned<OutputAbsence> | null> {
     return this.absence('outputAbsenceRead', key);
   }
 
-  private absence(kind: OutputAbsenceOperation['kind'], key: Scope): Promise<Owned<OutputAbsence> | null> {
+  private absence(kind: 'outputAbsenceClose' | 'outputAbsenceRead', key: Scope, stoppedHistory?: string) {
     let expected: Scope;
     return this.output(
-      () => ({ kind, key: (expected = sourceScope(key)) }),
-      (value) => {
-        if (value === null) return null;
-        const proof = captureOutputAbsence(value);
-        for (const field of ['organizationId', 'workspaceId', 'attemptId', 'generation'] as const) {
-          if (proof[field] !== expected[field]) throw new Error('Unexpected absence scope');
-        }
-        return proof;
-      },
+      () => absenceCommand(kind, (expected = sourceScope(key)), stoppedHistory),
+      (value) => absenceReply(expected, value),
+    );
+  }
+  readStoppedHistoryClosure(key: Scope) {
+    let expected: Scope;
+    return this.output(
+      () => ({ kind: 'outputStoppedHistoryRead', key: (expected = sourceScope(key)) }),
+      (value) => (value === null ? null : stoppedHistoryReply(expected, value)),
     );
   }
   private constructor(options: JournalOptions) {

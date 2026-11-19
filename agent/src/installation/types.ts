@@ -11,11 +11,17 @@ import type { Supervisor } from '../supervisor/index.js';
 import type { OutputGuard } from '../guard/index.js';
 import type { TimeoutGuard, TimeoutReason } from '../timeout/index.js';
 
+import type { K6LiveApproval } from '@beetle/contracts/k6-live';
+import type { Offer } from '@beetle/contracts';
+import type { LaunchInput } from '../supervisor/index.js';
+export type StoppedHistoryApproval = (offer: Offer, launch: LaunchInput) => K6LiveApproval | undefined;
+
 export interface InstallationOptions {
   readonly gate: ProducerGate;
   readonly journal: Journal;
   readonly catalog: Catalog;
   readonly supervisor: Supervisor;
+  readonly stoppedHistoryApproval?: StoppedHistoryApproval;
   readonly guard: Pick<OutputGuard, 'watch'>;
   readonly timeout: Pick<TimeoutGuard, 'watch'>;
   /** Trusted lookup of preconfigured, verified Stager services; never job-supplied paths/providers. */

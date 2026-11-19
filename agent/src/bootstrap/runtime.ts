@@ -188,9 +188,10 @@ class RuntimeOwner {
       namespaceIdentity: boundRootNamespace(root).namespaceIdentity,
     }));
     const transport = options.transport;
+    const liveApproval = installedLiveMetricApproval(options.catalog);
     const supervisor = (this.supervisor = new Supervisor({
       journal,
-      liveMetricApproval: installedLiveMetricApproval(options.catalog),
+      liveMetricApproval: liveApproval,
       liveHistoryReader: readLiveHistory,
       requireResourceTelemetry: true,
       installationId: options.installation.installationId,
@@ -211,6 +212,7 @@ class RuntimeOwner {
       supervisor,
       guard: this.output,
       timeout: this.timeout,
+      stoppedHistoryApproval: liveApproval,
       stagerFor: (engine) => {
         const stager = this.stagers.get(engine);
         if (!stager) throw new AgentRuntimeError('startup');

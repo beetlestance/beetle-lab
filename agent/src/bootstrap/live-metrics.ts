@@ -1,11 +1,15 @@
 import { createHash } from 'node:crypto';
 import { createK6LiveApproval } from '@beetle/contracts/k6-live';
+import type { Offer } from '@beetle/contracts';
+import type { K6LiveApproval } from '@beetle/contracts/k6-live';
 import type { K6MetricShape } from '@beetle/contracts/k6-metrics';
 import type { Catalog } from '../catalog/index.js';
-import type { LiveMetricApprovalFactory } from '../supervisor/index.js';
+import type { LaunchInput } from '../supervisor/index.js';
 
 /** Installed k6 policy selects approval; frames and image-supplied declarations cannot. */
-export function installedLiveMetricApproval(catalog: Catalog): LiveMetricApprovalFactory {
+export function installedLiveMetricApproval(
+  catalog: Catalog,
+): (offer: Offer, input: LaunchInput) => K6LiveApproval | undefined {
   return (offer, input) => {
     if (
       !input.plan.spec.HostConfig.Mounts.some(
