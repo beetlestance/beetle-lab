@@ -57,6 +57,7 @@ async function phase(name, run) {
   outcome.phase = name;
   const value = await run();
   outcome.completed.push(name);
+  console.log(JSON.stringify({ format: 'beetle-browser-phase', phase: name, status: 'passed' }));
   return value;
 }
 try {
