@@ -8,7 +8,11 @@ import type { PrivateFiles } from './files.js';
 import { jsonBytes, parse } from './receipt.js';
 import type { Receipt } from './receipt.js';
 
-/** Image identities an offline upgrade may move; nothing else in a configuration may differ. */
+/**
+ * Image identities an offline upgrade may move. The only other field that may move is the
+ * config schema digest of an installed identity whose manifest and profile stay the same
+ * (a compatible revision of the same schema `$id`, see `releaseIdentities`).
+ */
 export interface ImagePins {
   readonly agent: string;
   readonly engines: readonly { readonly profileId: string; readonly imageDigest: string }[];
@@ -94,12 +98,37 @@ export function imagePins(agentConfiguration: unknown): ImagePins {
     }),
   };
 }
+function sameIdentity(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  return ['manifestId', 'profileId', 'catalogVersion'].every((key) => a[key] !== undefined && a[key] === b[key]);
+}
+/**
+ * Copies the selected config schema digests into a derived configuration wherever the
+ * installed identity (manifest, profile, catalog version) is otherwise unchanged. A release
+ * that revises an engine's config schema under the same `$id` then reads as an upgrade, not
+ * as drift; the Journal step approves the new identities. Pure; returns a new value.
+ */
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+export function releaseIdentities(derived: unknown, selected: unknown): unknown {
+  if (Array.isArray(derived)) {
+    const items = Array.isArray(selected) ? selected : [];
+    return derived.map((item, index) => releaseIdentities(item, items[index]));
+  }
+  if (derived === null || typeof derived !== 'object') return derived;
+  const from = derived as Record<string, unknown>;
+  const to = asRecord(selected);
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(from)) out[key] = releaseIdentities(value, to[key]);
+  if (typeof to.schemaDigest === 'string' && typeof from.schemaDigest === 'string' && sameIdentity(from, to))
+    out.schemaDigest = to.schemaDigest;
+  return out;
+}
 export interface Evaluation {
   readonly selection: Selection;
   readonly expected: Record<string, unknown>;
   /** Selected configuration equals the configuration derived from fresh facts. */
   readonly current: boolean;
-  /** Selected configuration equals fresh facts with only image identities replaced. */
+  /** Selected configuration equals fresh facts with only image identities (and compatible schema digests) replaced. */
   readonly imagesMoved: boolean;
 }
 /** Derives the expected configuration; any derivation failure is recovery, never upgrade. */
@@ -108,11 +137,18 @@ export async function evaluate(c: Captured, files: PrivateFiles, receipt: Receip
     const chosen = await selection(c, files, receipt);
     const expected = configurations(chosen.active, receipt.installationId, facts);
     const current = matchesReceipt(receipt, expected);
+    const pinned = configurations(
+      chosen.active,
+      receipt.installationId,
+      pinnedFacts(facts, chosen.selected['agent.json']),
+    );
     const imagesMoved =
       !current &&
       matchesReceipt(
         receipt,
-        configurations(chosen.active, receipt.installationId, pinnedFacts(facts, chosen.selected['agent.json'])),
+        Object.fromEntries(
+          Object.entries(pinned).map(([name, value]) => [name, releaseIdentities(value, chosen.selected[name])]),
+        ),
       );
     return { selection: chosen, expected, current, imagesMoved };
   } catch (cause) {

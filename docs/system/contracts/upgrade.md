@@ -18,8 +18,10 @@ host command; normal startup never re-pins. Default action is `prepare`.
   current, with no nonterminal runs, exports, executions, dispatch outbox rows, input uploads,
   deletions, output sources or slots, attempt ownership, Journal reservations, admission
   queue, attempts, delivery or staging. Each blocker is named:
-  `upgrade_blocked engine_containers,runs`. Nothing else may differ from the request: a
-  non-image difference is `recovery_required`.
+  `upgrade_blocked engine_containers,runs`. Nothing else may differ from the request except the
+  config schema digest of an installed identity with the same manifest, profile and catalog
+  version (a compatible revision of the same schema `$id`; the Journal step approves it). Any
+  other difference is `recovery_required`.
 - Order: durable receipt `backing_up` (old and new image pins and schema versions) in
   `<home>/upgrade/receipt.json`; a cold copy of the whole root plus `bootstrap.sqlite`,
   sealed by the SHA-256 of its manifest (path, kind, mode, size, SHA-256 per entry), then
@@ -58,7 +60,7 @@ Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgra
 | Code | Reviewed |
 | --- | --- |
 | `tools/install/upgrade/` | `a90fdf13b8d1` |
-| `tools/install/src/selection.ts` | `d3bb125c3129` |
+| `tools/install/src/selection.ts` | `9567b14e41c3` |
 | `app/src/bootstrap/upgrade-fence.ts` | `347ef48487bc` |
 | `agent/src/journal/cold-inspection/` | `5a89d6d464a1` |
 | `app/src/adapters/outbound/sqlite/cold-inspection/` | `9cb07aa057fd` |

@@ -64,7 +64,7 @@ installation ID, `created`/`unchanged` and paths; never a credential.
   approved profiles; authority gate completed with that exact authority; all handles closed;
   receipt atomically becomes `ready`.
 - Replay of a `ready` root is `unchanged` only after receipt, configuration, authority and
-  image pins match the same request (moved images alone: `upgrade_required`). It never rotates
+  image pins match the same request (moved images: `upgrade_required`; [Upgrade](upgrade.md)). It never rotates
   tokens or rewrites settings and never inventories runtime data; a serving lease is `conflict`.
 - `inspectReadyConfiguration` validates receipt, configuration and pins without opening the
   Journal; it grants configuration readiness only.
@@ -212,7 +212,7 @@ request alias never becomes an environment variable name or file path
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/src/` | `8ba370378d9a` |
+| `tools/install/src/` | `3c5a00e5ccff` |
 | `tools/install/compose/` | `20a3f76728ad` |
 | `tools/install/starter/policy.ts` | `05f116398b2b` |
 | `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
