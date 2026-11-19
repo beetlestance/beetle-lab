@@ -99,8 +99,16 @@ export async function deleteRun(page, run) {
   // Native cleanup and transport backoff can outlast one 60-second browser wait.
   await expect(dialog.getByRole('heading', { name: 'Removed 1 run', exact: true })).toBeVisible({ timeout: 180000 });
   await dialog.getByRole('button', { name: 'Acknowledge completed batch', exact: true }).click();
+  const missing = page.waitForResponse(
+    (reply) => new URL(reply.url()).pathname === path.replace('/deletion-preview', '') && reply.request().method() === 'GET',
+  );
+  void missing.catch(() => undefined);
   await page.reload();
-  await expect(page.getByText('Resource not found', { exact: true })).toBeVisible();
+  assert.equal((await missing).status(), 404);
+  await expect(page.getByRole('heading', { name: "That run isn't here", exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to runs', exact: true })).toHaveAttribute(
+    'href', `/organizations/${key.organizationId}/workspaces/${key.workspaceId}/runs`,
+  );
 }
 
 /** Require an actual recorded figure, not merely the mounted loading view.
