@@ -98,6 +98,8 @@ function ArtifactList({ page }: { page: RunArtifactPage }) {
     <>
       <Table
         caption="Artifact descriptors"
+        className="artifact-inventory"
+        scrollLabel="Run artifacts table"
         columns={[
           { key: 'file', label: 'File' },
           { key: 'holds', label: 'What it holds' },

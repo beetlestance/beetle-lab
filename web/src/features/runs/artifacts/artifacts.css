@@ -57,3 +57,10 @@
   margin: 0 0 var(--s-8);
   color: var(--red);
 }
+
+.artifact-inventory {
+  min-width: 0;
+}
+.artifact-inventory .data-table {
+  min-width: 720px;
+}
