@@ -1,9 +1,26 @@
 import { createHash } from 'node:crypto';
 import { isAbsolute, normalize } from 'node:path';
 import { encodeCanonicalJson } from '@beetle/contracts';
-import { captureLiveMetricSnapshot, liveMetricScopeMatches, validateApi } from '@beetle/contracts/api';
+import {
+  captureLiveMetricSnapshot,
+  captureLiveMetricSubset,
+  liveMetricScopeMatches,
+  validateApi,
+} from '@beetle/contracts/api';
 import type { LiveMetricScope, LiveMetricSnapshot } from '@beetle/contracts/api';
 import { OutputFailure } from '../output/index.js';
+import { captureCollectionRootIdentity } from '../root/index.js';
+import type { CollectionRootIdentity } from '../root/index.js';
+import type { K6LiveApproval } from '@beetle/contracts/k6-live';
+
+export interface StoppedPrefixReadOptions {
+  readonly root: CollectionRootIdentity;
+  /** Internal caller must independently prove the producer stopped and derive this approval. */
+  readonly approval: K6LiveApproval;
+  readonly maximumBytes: number;
+  readonly deadline: number;
+  readonly signal?: AbortSignal;
+}
 export interface PrefixReadOptions {
   readonly directory: string;
   readonly uid: number;
@@ -39,8 +56,10 @@ export function captureOptions(input: PrefixReadOptions, now: number) {
       uid,
       deadline,
       scope: scope.value,
-      frame,
       prefix: frame.archivePrefix,
+      producerEpoch: frame.producerEpoch,
+      subset: frame.subset,
+      subsetDigest: frame.subsetDigest,
       ...(signal === undefined ? {} : { signal }),
     };
   } catch {
@@ -73,4 +92,42 @@ function deadlineValue(value: unknown, now: number): number {
 function signalValue(value: unknown): AbortSignal | undefined {
   if (value !== undefined && !(value instanceof AbortSignal)) throw Error();
   return value;
+}
+
+export function captureStoppedOptions(input: StoppedPrefixReadOptions, now: number) {
+  try {
+    const root = captureCollectionRootIdentity(own(input, 'root'));
+    const deadline = deadlineValue(own(input, 'deadline'), now);
+    const signal = signalValue(own(input, 'signal'));
+    const maximumBytes = own(input, 'maximumBytes');
+    if (typeof maximumBytes !== 'number' || !Number.isSafeInteger(maximumBytes) || maximumBytes < 1) throw Error();
+    const approval = captureApproval(detached(own(input, 'approval'), 16384));
+    return {
+      directory: directoryValue(root.directory),
+      uid: root.uid,
+      root,
+      approval,
+      maximumBytes,
+      deadline,
+      ...(signal === undefined ? {} : { signal }),
+    };
+  } catch {
+    throw new OutputFailure('invalid_options');
+  }
+}
+function captureApproval(input: unknown): K6LiveApproval {
+  const value = input as Partial<K6LiveApproval>;
+  const scope = validateApi('LiveMetricScope', value.scope);
+  const epoch = validateApi('Uuid', value.producerEpoch);
+  const interval = value.targetIntervalMs;
+  if (!scope.ok || !epoch.ok || !validTargetInterval(interval)) throw Error();
+  return {
+    scope: scope.value,
+    producerEpoch: epoch.value,
+    subset: captureLiveMetricSubset(value.subset),
+    targetIntervalMs: interval,
+  };
+}
+function validTargetInterval(value: unknown): value is number | null {
+  return value === null || (typeof value === 'number' && Number.isInteger(value) && value >= 1000 && value <= 60000);
 }
