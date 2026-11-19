@@ -124,7 +124,8 @@ export class NoTaskReceipt {
       namespaceIdentity: scope.root.namespaceIdentity,
       taskName: scope.name,
       daemonId: scope.daemonId,
-      root: scope.root.native,
+      // Durable record: the root as recorded with the namespace, as the journal expects.
+      root: scope.root.recordedNative,
       markerDigest: scope.root.marker.sha256,
     };
     const receipt = makeNoTaskReceipt(binding);

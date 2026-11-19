@@ -15,6 +15,7 @@ export type {
 export {
   captureInstalledRoot,
   installedRootDigest,
+  sameInstalledRoot,
   captureNamespaceIntent,
   namespaceMarkerBytes,
   captureNamespaceMarker,

@@ -15,7 +15,11 @@ it('commits one immutable root/marker binding and replays it exactly across reop
   const marker = syntheticMarker(intent); const anchor = await journal.stagingNamespace.commit({ intent, marker });
   expect(await journal.stagingNamespace.commit({ intent, marker })).toEqual(anchor);
   await expect(journal.stagingNamespace.commit({ intent, marker: syntheticMarker(intent, '9007199254740998') })).rejects.toMatchObject({ code: 'conflict' });
-  await expect(journal.stagingNamespace.begin({ ...rootFacts, native: { ...rootFacts.native, ino: '99' } })).rejects.toMatchObject({ code: 'recovery_required' });
+  // Device and inode numbers are per-start facts: a renumbered root resolves to the recorded intent.
+  expect(await journal.stagingNamespace.begin({ ...rootFacts, native: { ...rootFacts.native, dev: '98', ino: '99' } })).toEqual(intent);
+  for (const changed of [{ native: { ...rootFacts.native, uid: '10002' } }, { native: { ...rootFacts.native, mode: '16768' } },
+    { daemonId: 'other-daemon' }, { installationId: '00000000-0000-4000-8000-000000000011' }, { source: '/synthetic/other', target: '/synthetic/other' }])
+    await expect(journal.stagingNamespace.begin({ ...rootFacts, ...changed })).rejects.toMatchObject({ code: 'recovery_required' });
   await f.close(journal); journal = await f.open(path);
   expect(await journal.stagingNamespace.read()).toEqual({ state: 'bound', intent, anchor });
   expect(await journal.stagingNamespace.begin(rootFacts)).toEqual(intent);

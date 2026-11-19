@@ -4,6 +4,7 @@ import { encodeCanonicalJson } from '@beetle/contracts';
 import {
   captureInstalledRoot,
   installedRootDigest,
+  sameInstalledRoot,
   captureNamespaceIntent,
   captureNamespaceState,
   sealNamespaceAnchor,
@@ -34,7 +35,7 @@ export function beginInstalledNamespace(db: DatabaseSync, root: InstalledRootFac
     if (existing.state === 'preparing' && db.prepare('SELECT 1 FROM accepted_attempts LIMIT 1').get())
       throw new Failure('recovery_required');
     if (
-      existing.intent.rootDigest !== installedRootDigest(expected) ||
+      !sameInstalledRoot(existing.intent.root, expected) ||
       existing.intent.journalAuthority !== readJournalAuthority(db)
     )
       throw new Failure('recovery_required');

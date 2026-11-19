@@ -3,7 +3,8 @@ import { promisify } from 'node:util';
 import { expect, it } from 'vitest';
 import { chmod, lstat, mkdir, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { NamespaceBinding, verifyInstallation } from '../../src/staging/index.js';
+import { NamespaceBinding, retirementRoot, verifyInstallation } from '../../src/staging/index.js';
+import { renumberRoot } from '../staging/fixtures.js';
 import { namespaceCaps } from '../../src/staging-namespace/index.js';
 import { fixture, operation } from '../staging/fixtures.js';
 const f = fixture();
@@ -24,12 +25,11 @@ it('preserves exact installed marker/root identities across re-verification and 
   const after = await lstat(marker, { bigint: true }); expect(after.ino).toBe(before.ino); expect(after.dev).toBe(before.dev);
   expect(await readFile(marker)).toEqual(bytes); expect(await journal.stagingNamespace.read()).toEqual(first);
 });
-it.each(['missing', 'changed-content', 'replaced-inode', 'symlink', 'writable'])('refuses %s marker without rebinding native custody', async kind => {
+it.each(['missing', 'changed-content', 'symlink', 'writable'])('refuses %s marker without rebinding native custody', async kind => {
   const e = await f.environment(false); const marker = join(e.rootPath, namespaceCaps.markerName);
   const before = await e.owner.stagingNamespace.read(); const original = await readFile(marker);
   if (kind === 'missing') await rm(marker);
   if (kind === 'changed-content') { await chmod(marker, 0o600); await writeFile(marker, Buffer.alloc(original.length, 'x')); await chmod(marker, 0o400); }
-  if (kind === 'replaced-inode') { await rename(marker, marker + '.old'); await writeFile(marker, original, { mode: 0o400 }); }
   if (kind === 'symlink') { await rename(marker, marker + '.old'); await symlink(marker + '.old', marker); }
   if (kind === 'writable') await chmod(marker, 0o600);
   const binding = new NamespaceBinding({ root: await root(e), journal: e.owner.stagingNamespace,
@@ -37,6 +37,34 @@ it.each(['missing', 'changed-content', 'replaced-inode', 'symlink', 'writable'])
   try { await expect(binding.bind()).rejects.toMatchObject({ code: 'recovery_required' }); }
   finally { await binding.close(); }
   expect(await e.owner.stagingNamespace.read()).toEqual(before);
+});
+// Docker Desktop's file sharing renumbers inodes across restarts while the host directory is unchanged.
+it('rebinds a renumbered root and marker under the recorded identity, using live facts for physical checks', async () => {
+  const e = await f.environment(false); const marker = join(e.rootPath, namespaceCaps.markerName);
+  const state = await e.owner.stagingNamespace.read(); if (state?.state !== 'bound') throw new Error('Missing actual binding');
+  const oldRoot = await lstat(e.rootPath, { bigint: true }); await renumberRoot(e.rootPath);
+  const liveRoot = await lstat(e.rootPath, { bigint: true }); const liveMarker = await lstat(marker, { bigint: true });
+  expect(liveRoot.ino).not.toBe(oldRoot.ino);
+  const verified = await root(e);
+  const binding = new NamespaceBinding({ root: verified, journal: e.owner.stagingNamespace,
+    journalAuthority: await e.owner.journalAuthority(), operation: operation() });
+  try { expect(await binding.bind()).toEqual(state.anchor); } finally { await binding.close(); }
+  expect(await e.owner.stagingNamespace.read()).toEqual(state);
+  const facts = retirementRoot(verified);
+  expect(facts.namespaceIdentity).toBe(state.anchor.namespaceIdentity);
+  expect(facts.native.ino).toBe(String(liveRoot.ino)); expect(facts.marker.ino).toBe(String(liveMarker.ino));
+  expect(facts.marker.sha256).toBe(state.anchor.marker.sha256); expect(facts.recordedNative).toEqual(state.intent.root.native);
+});
+it.each(['foreign-marker', 'replaced-marker-content'])('refuses a renumbered root with a %s', async kind => {
+  const e = await f.environment(false); const marker = join(e.rootPath, namespaceCaps.markerName);
+  const state = await e.owner.stagingNamespace.read(); const bytes = await readFile(marker);
+  await renumberRoot(e.rootPath); await chmod(marker, 0o600);
+  const copy = Buffer.from(bytes); const at = kind === 'foreign-marker' ? copy.length - 3 : copy.indexOf('"nonce":"') + 9;
+  copy[at] = copy[at] === 0x30 ? 0x31 : 0x30; await writeFile(marker, copy); await chmod(marker, 0o400);
+  const binding = new NamespaceBinding({ root: await root(e), journal: e.owner.stagingNamespace,
+    journalAuthority: await e.owner.journalAuthority(), operation: operation() });
+  try { await expect(binding.bind()).rejects.toMatchObject({ code: 'recovery_required' }); } finally { await binding.close(); }
+  expect(await e.owner.stagingNamespace.read()).toEqual(state);
 });
 it('refuses a new empty root under the same path while preserving the retained original', async () => {
   const e = await f.environment(false); const retained = e.rootPath + '-retained';

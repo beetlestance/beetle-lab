@@ -54,6 +54,25 @@ export function captureInstalledRoot(input: unknown): InstalledRootFacts {
     native,
   };
 }
+/**
+ * Durable comparison of a recorded installed root with the facts observed at this start.
+ * The directory's device and inode numbers are per-start physical facts: Docker Desktop's
+ * file sharing renumbers them while the host directory is unchanged, so they are checked
+ * against the live directory for the life of one start and never compared across starts.
+ */
+export function sameInstalledRoot(recorded: InstalledRootFacts, current: InstalledRootFacts): boolean {
+  const left = captureInstalledRoot(recorded);
+  const right = captureInstalledRoot(current);
+  return (
+    left.installationId === right.installationId &&
+    left.daemonId === right.daemonId &&
+    left.source === right.source &&
+    left.target === right.target &&
+    left.native.uid === right.native.uid &&
+    left.native.gid === right.native.gid &&
+    left.native.mode === right.native.mode
+  );
+}
 export function installedRootDigest(root: InstalledRootFacts): string {
   return createHash('sha256')
     .update(encodeCanonicalJson(captureInstalledRoot(root), namespaceCaps.root))
@@ -99,9 +118,9 @@ export function captureNamespaceMarker(input: unknown, intent: NamespaceIntent):
   const native = captureNativeFile(value);
   const bytes = namespaceMarkerBytes(intent);
   const root = intent.root.native;
+  // Ownership is durable; the device is a per-start fact the binding checks against the live root.
   assert(
-    native.dev === root.dev &&
-      native.uid === root.uid &&
+    native.uid === root.uid &&
       native.gid === root.gid &&
       BigInt(native.mode) === 0o100400n &&
       native.bytes === String(bytes.byteLength),

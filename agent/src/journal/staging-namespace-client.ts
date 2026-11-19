@@ -1,7 +1,7 @@
 import { encodeJson, encodeCanonicalJson } from '@beetle/contracts';
 import {
   captureInstalledRoot,
-  installedRootDigest,
+  sameInstalledRoot,
   captureNamespaceIntent,
   captureNamespaceAnchor,
   captureNamespaceState,
@@ -54,7 +54,7 @@ function installationClient(options: ClientOptions): Pick<StagingNamespaceJourna
         })),
         (value) => {
           const intent = captureNamespaceIntent(value);
-          if (intent.rootDigest !== installedRootDigest(expected)) throw new Error('Namespace reply mismatch');
+          if (!sameInstalledRoot(intent.root, expected)) throw new Error('Namespace reply mismatch');
           return intent;
         },
       );

@@ -1,6 +1,6 @@
 import { gateFor } from '../producer-gate/fixtures.js';
 import { afterEach } from 'vitest';
-import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { cp, mkdtemp, realpath, rename, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -17,6 +17,13 @@ export const data = Buffer.from('🪲 café');
 export const hash = (value: Uint8Array): string => createHash('sha256').update(value).digest('hex');
 export const operation = (ms = 5000) => ({ deadline: performance.now() + ms });
 export async function* stream(value: Uint8Array = data): AsyncIterable<Uint8Array> { yield value; }
+/** Docker Desktop renumbering on a real filesystem: the same tree, modes and owner at new inodes. */
+export async function renumberRoot(rootPath: string): Promise<void> {
+  const retained = `${rootPath}-renumbering`; await rename(rootPath, retained);
+  try { await cp(retained, rootPath, { recursive: true, preserveTimestamps: true, verbatimSymlinks: true }); }
+  catch (error) { await rm(rootPath, { recursive: true, force: true }); await rename(retained, rootPath); throw error; }
+  await rm(retained, { recursive: true, force: true });
+}
 export class Inspection implements DockerTransport {
   readonly calls: DockerRequest[] = [];
   info: Record<string, unknown>;

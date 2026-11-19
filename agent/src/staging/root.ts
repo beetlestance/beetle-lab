@@ -1,4 +1,5 @@
-import type { InstalledNamespaceAnchor } from '../staging-namespace/index.js';
+import type { InstalledNamespaceAnchor, NamespaceMarker } from '../staging-namespace/index.js';
+import type { NativeDirectoryFact } from '../cleanup-control/index.js';
 import { constants } from 'node:fs';
 import { access, lstat, realpath } from 'node:fs/promises';
 import { isAbsolute, normalize, dirname } from 'node:path';
@@ -19,23 +20,40 @@ export interface RootIdentity {
 }
 export type { VerifiedRoot } from './types.js';
 const roots = new WeakMap<VerifiedRoot, RootIdentity>();
-const namespaces = new WeakMap<VerifiedRoot, InstalledNamespaceAnchor>();
+/**
+ * The durable anchor recorded in the journal, plus what this start observed: the marker's
+ * live file facts and the root facts recorded with the namespace. Physical checks use the
+ * live facts; durable records keep the recorded identity.
+ */
+export interface BoundNamespace {
+  readonly anchor: InstalledNamespaceAnchor;
+  readonly marker: NamespaceMarker;
+  readonly recordedRoot: NativeDirectoryFact;
+}
+const namespaces = new WeakMap<VerifiedRoot, BoundNamespace>();
+function boundNamespace(root: VerifiedRoot): BoundNamespace {
+  const bound = namespaces.get(root);
+  if (!bound) throw new StagingError('installation');
+  return bound;
+}
 export function boundRootNamespace(root: VerifiedRoot): InstalledNamespaceAnchor {
-  const anchor = namespaces.get(root);
-  if (!anchor) throw new StagingError('installation');
-  return anchor;
+  return boundNamespace(root).anchor;
 }
 /** Bound verified installation authority, never caller-provided daemon metadata. */
 export function verifiedDaemonIdentity(root: VerifiedRoot): string {
   boundRootNamespace(root);
   return rootIdentity(root).configuration.expectedDaemonId;
 }
-/** Exact verified installation facts for retirement; exposes no mutable configuration. */
+/**
+ * Exact verified installation facts for retirement; exposes no mutable configuration.
+ * `native` and `marker` are this start's live facts for opening and deleting files;
+ * `recordedNative` is the root as recorded with the namespace, for durable records.
+ */
 export function retirementRoot(root: VerifiedRoot) {
-  const namespace = boundRootNamespace(root);
+  const namespace = boundNamespace(root);
   const value = rootIdentity(root);
   return Object.freeze({
-    namespaceIdentity: namespace.namespaceIdentity,
+    namespaceIdentity: namespace.anchor.namespaceIdentity,
     installationId: value.configuration.installationId,
     directory: value.configuration.stagingRoot,
     native: Object.freeze({
@@ -46,13 +64,22 @@ export function retirementRoot(root: VerifiedRoot) {
       mode: value.mode.toString(),
     }),
     marker: Object.freeze({ ...namespace.marker }),
+    recordedNative: Object.freeze({ ...namespace.recordedRoot }),
   });
 }
-export function rememberRootNamespace(root: VerifiedRoot, anchor: InstalledNamespaceAnchor): void {
+export function rememberRootNamespace(root: VerifiedRoot, bound: BoundNamespace): void {
   rootIdentity(root);
   const existing = namespaces.get(root);
-  if (existing && existing.namespaceIdentity !== anchor.namespaceIdentity) throw new StagingError('installation');
-  namespaces.set(root, anchor);
+  if (existing && existing.anchor.namespaceIdentity !== bound.anchor.namespaceIdentity)
+    throw new StagingError('installation');
+  namespaces.set(
+    root,
+    Object.freeze({
+      anchor: bound.anchor,
+      marker: Object.freeze({ ...bound.marker }),
+      recordedRoot: Object.freeze({ ...bound.recordedRoot }),
+    }),
+  );
 }
 export function rootIdentity(root: VerifiedRoot): RootIdentity {
   const data = roots.get(root);

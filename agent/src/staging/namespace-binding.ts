@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
   captureInstalledRoot,
-  installedRootDigest,
+  sameInstalledRoot,
   captureNamespaceIntent,
   captureNamespaceState,
   namespaceMarkerBytes,
@@ -84,7 +84,10 @@ export class NamespaceBinding {
       await this.files.namespaceAncestors();
       const state = captureNamespaceState(await this.boundary.wait(() => this.options.journal.read()));
       const intent = await this.intent(state);
-      const marker = await this.marker(state, intent);
+      const observed = await this.marker(state, intent);
+      // A bound namespace keeps its recorded anchor; the live marker proves continuity by its
+      // exact bytes (which carry the namespace nonce), not by its per-start inode numbers.
+      const marker = state?.state === 'bound' ? state.anchor.marker : observed;
       await this.files.syncDirectories();
       await this.files.close();
       await this.verifyMarker();
@@ -97,7 +100,7 @@ export class NamespaceBinding {
       await checkRoot(rootIdentity(this.options.root), this.boundary);
       await this.verifyMarker();
       this.boundary.check();
-      rememberRootNamespace(this.options.root, anchor);
+      rememberRootNamespace(this.options.root, { anchor, marker: observed, recordedRoot: intent.root.native });
       return anchor;
     } catch (error) {
       if (error instanceof NamespaceBindingError) throw error;
@@ -121,16 +124,24 @@ export class NamespaceBinding {
     if (!state) assert((await this.files.namespaceEntries()).length === 0);
     const intent = captureNamespaceIntent(await this.boundary.wait(() => this.options.journal.begin(this.root)));
     if (state) assert(state.intent.namespaceId === intent.namespaceId && state.intent.nonce === intent.nonce);
-    assert(
-      intent.rootDigest === installedRootDigest(this.root) && intent.journalAuthority === this.options.journalAuthority,
-    );
+    assert(sameInstalledRoot(intent.root, this.root) && intent.journalAuthority === this.options.journalAuthority);
     return intent;
   }
   private async marker(state: InstalledNamespaceState | null, intent: NamespaceIntent): Promise<NamespaceMarker> {
     if (state?.state !== 'bound') await this.ensureMarker(intent);
     const marker = await this.readMarker(intent);
-    if (state?.state === 'bound')
-      assert(sealNamespaceAnchor({ intent, marker }).namespaceIdentity === state.anchor.namespaceIdentity);
+    // The live marker must sit on the live root: same device and ownership as this start's root.
+    const root = this.root.native;
+    assert(marker.dev === root.dev && marker.uid === root.uid && marker.gid === root.gid);
+    if (state?.state === 'bound') {
+      const recorded = state.anchor.marker;
+      assert(
+        marker.sha256 === recorded.sha256 &&
+          marker.bytes === recorded.bytes &&
+          marker.mode === recorded.mode &&
+          marker.links === recorded.links,
+      );
+    }
     return marker;
   }
   private async ensureMarker(intent: NamespaceIntent): Promise<void> {

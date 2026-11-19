@@ -200,13 +200,13 @@ reports held count (≤ 4096) and output, staging, replay and cleanup bytes. Adm
 candidate + retained disk; only active work counts for CPU, RAM, PIDs and isolation. A full hold count
 defers with `retention_capacity`, disk pressure with `budget_unavailable`.
 
-The staging namespace (`agent/src/staging-namespace`, Journal 016) binds root identity and a nonce
-marker (change requires recovery); task directories are committed before any provider writes.
+The staging namespace (`agent/src/staging-namespace`, Journal 016) binds durable root facts and exact nonce-marker bytes; device/inode
+numbers are per-start checks only ([decision 029](../../decisions/029-durable-staging-identity.md)). Task directories commit before provider writes.
 
 ## Related
 
 - [Output settlement](outputs-settlement.md) and [retirement](retirement.md)
-- Decisions [006](../../decisions/006-agent-staging.md), [009](../../decisions/009-result-seal.md), [027 collection recovery](../../decisions/027-conservative-collection-recovery.md), [028 native diagnostics](../../decisions/028-enum-only-native-diagnostics.md)
+- Decisions [006](../../decisions/006-agent-staging.md), [009](../../decisions/009-result-seal.md), [027 collection recovery](../../decisions/027-conservative-collection-recovery.md), [028 native diagnostics](../../decisions/028-enum-only-native-diagnostics.md), [029 staging identity](../../decisions/029-durable-staging-identity.md)
 
 ## Anchors
 
