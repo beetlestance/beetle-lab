@@ -24,3 +24,7 @@ phase/reason rows, scope label, reload/reconnect and absence of thermal fields.
 It leaves functional/interaction/reference defaults unchanged and needs explicit
 private evidence output. Backend artifact/hash contract has separate native proof.
 `network.mjs`/`network-checks.mjs`: decision 032 TLS-proxy profile and its refusals.
+
+`target-comparison.mjs` owns a separate bounded two-run sampler fixture, declared
+unit/zero/unknown overlays and explicit comparison refresh. No target-runtime
+fixture limits or default functional phases are changed.

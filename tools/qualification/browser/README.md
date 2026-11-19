@@ -142,3 +142,22 @@ explicit evidence. It checks the real scoped preview contains exactly that run
 before applying, then waits for authoritative cleanup, acknowledges the batch and
 confirms the run is gone after reload. Its pass covers deletion only; it does not
 replace the run-results or full functional profiles.
+
+`BEETLE_BROWSER_PROFILE=target-comparison` requires its own evidence directory.
+It authors a declared-unit sampler revision, executes two 40-request runs and
+opens their history comparison. Both target curves must retain heap zeroes as
+MB and event-loop p99 as milliseconds; absent CPU/activity metrics stay unplotted.
+The same assertions run after explicit Refresh comparison. Target counts must
+stay at two readiness requests, 80 work requests and 12–64 sampler observations,
+with no unexpected requests. This is six-phase functional coverage, not full
+visual acceptance, variable-value/hover proof or target failure qualification.
+
+Local ARM64 target evidence at six matching `322d2851` images:
+
+| Profile | Harness | Completed | Duration | Cleanup |
+| --- | --- | --- | --- | --- |
+| `target-runtime` | `91c7f853` | 4 phases | 44.47 s | Installation and browser verified |
+| `target-comparison` | `f94e79ae` | 6 phases | 67.51 s | Installation and browser verified |
+
+These are private synthetic-fixture observations, not hosted evidence. They do
+not qualify visual matching, target-failure comparison or another architecture.

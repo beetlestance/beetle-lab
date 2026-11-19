@@ -18,12 +18,24 @@ import { keyboard, themesAndViewports } from './interactions.mjs';
 import { crossScope } from './scope.mjs';
 import { reference } from './reference.mjs';
 import { targetRuntime } from './target-runtime.mjs';
+import { comparisonConfiguration, configureComparisonTarget, targetComparison } from './target-comparison.mjs';
 import { prepareNetwork } from './network.mjs';
 import { connectBrowser, proxyTransport, refusals, secureContext } from './network-checks.mjs';
 import { configuration as targetConfiguration } from '../native-application/target-runtime/config.ts';
 import { target as configureTarget, targetCounts } from '../native-application/target-runtime/target.ts';
 const profile = process.env.BEETLE_BROWSER_PROFILE ?? 'functional';
-if (!['functional', 'run-results', 'run-deletion', 'interaction', 'reference', 'target-runtime', 'network'].includes(profile))
+if (
+  ![
+    'functional',
+    'run-results',
+    'run-deletion',
+    'interaction',
+    'reference',
+    'target-runtime',
+    'target-comparison',
+    'network',
+  ].includes(profile)
+)
   throw Error('Unsupported browser profile');
 const evidence = process.env.BEETLE_BROWSER_EVIDENCE;
 if (profile !== 'functional' && !evidence) throw Error('Selected profile requires an explicit evidence directory');
@@ -74,6 +86,7 @@ try {
   entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime') await configureTarget(f);
+  if (profile === 'target-comparison') await configureComparisonTarget(f);
   const network = profile === 'network' ? await prepareNetwork(f) : undefined;
   const origin = network?.origin ?? f.origin;
   f.compose('up', '-d', '--no-build');
@@ -172,6 +185,23 @@ try {
     Object.assign(result, { contentStatuses });
     if (evidence)
       await writeFile(join(evidence, 'target-view-outcome.json'), JSON.stringify(result), { flag: 'wx', mode: 0o600 });
+  } else if (profile === 'target-comparison') {
+    await phase('target-suite-revision', () => revision(appPage, comparisonConfiguration(), 2));
+    const run = await phase('target-run-execution', () => execute(appPage));
+    await phase('target-history-comparison', () => historyComparison(appPage, authored, run));
+    const before = targetCounts(f);
+    assert.deepEqual({ ...before, runtime: 0 }, { ready: 2, work: 80, runtime: 0, unexpected: 0 });
+    assert(Number.isSafeInteger(before.runtime) && before.runtime >= 12 && before.runtime <= 64);
+    await phase('declared-target-overlays', () => targetComparison(appPage));
+    const refreshed = appPage.waitForResponse(
+      (reply) => new URL(reply.url()).pathname.endsWith('/comparisons') && reply.request().method() === 'POST',
+    );
+    void refreshed.catch(() => undefined);
+    await appPage.getByRole('button', { name: 'Refresh comparison', exact: true }).click();
+    assert.equal((await refreshed).status(), 200);
+    await phase('target-comparison-refresh', () => targetComparison(appPage));
+    assert.deepEqual(targetCounts(f), before);
+    await writeFile(join(f.root, 'target-comparison-counts.json'), JSON.stringify(before), { mode: 0o600 });
   } else if (profile === 'run-deletion') {
     const run = await phase('run-execution', () => execute(appPage));
     await phase('run-deletion', () => deleteRun(appPage, run));
