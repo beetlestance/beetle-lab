@@ -37,7 +37,8 @@ export async function start(page) {
 export async function execute(page) {
   const submitted = await start(page);
   const open = page.getByRole('button', { name: 'Open result', exact: true });
-  const ready = page.getByRole('button', { name: 'Refresh run', exact: true });
+  // The loading page also offers Refresh run; only the result owner proves this handoff.
+  const ready = page.locator('.result-head');
   await expect(open.or(ready)).toBeVisible({ timeout: 60000 });
   if (await open.isVisible()) await open.click();
   await expect(page.locator('.result-head').getByText('Passed', { exact: true })).toBeVisible({ timeout: 60000 });
