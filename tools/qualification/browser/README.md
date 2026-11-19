@@ -109,3 +109,11 @@ npm run check:a11y -- app http://127.0.0.1:4567    # a running installation, sam
 
 Set `BEETLE_BROWSER_CHANNEL=chrome` to use an installed Chrome when Playwright's bundled
 Chromium is not installed. Any violation exits 1.
+
+`BEETLE_BROWSER_PROFILE=run-results` requires an explicit evidence directory and
+covers authoring, a real run, report/metric verification and downloads, history
+comparison, durable-result reconnect, active-metric reconnect/cancellation and
+run deletion. It reports its own profile and seven completed phases. It does not
+cover input/directory imports, folder deletion, settings or standalone exports;
+a pass is never a full functional-profile pass. The default twelve-phase profile
+continues to require those flows and preserves its own failures.
