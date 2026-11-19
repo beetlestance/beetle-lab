@@ -2,6 +2,7 @@ import { encodeJson } from '../../json.js';
 import type { RunComparisonRequest, RunComparisonSnapshot, RunComparisonItem } from '../generated/types.js';
 import { RUN_COMPARISON_BYTES } from '../limits.js';
 import { comparisonFields, comparisonWarnings, comparisonResultMatches } from './comparison-facts.js';
+import { comparisonScenarioIntentsMatch } from './comparison-plan.js';
 import { comparisonBindingMatches, comparisonKeyText, comparisonMetricMatches } from './comparison-metric.js';
 export { comparisonFields, comparisonWarnings } from './comparison-facts.js';
 const id = (value: string) => value.toLowerCase();
@@ -61,6 +62,7 @@ function itemMatches(
   return (
     itemIdentity(item, request, index) &&
     comparisonResultMatches(item) &&
+    comparisonScenarioIntentsMatch(item.scenarioIntents) &&
     paths(item) &&
     resultSource(item) &&
     itemPresentation(item, baseline, index) &&

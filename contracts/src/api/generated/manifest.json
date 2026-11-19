@@ -30,7 +30,7 @@
     "api/v2/retention.schema.json": "c87ee28dbf6af3218dbca12c07bc151de906624bea8072c36ea5e7702dde4b90",
     "api/v2/run-artifacts.schema.json": "093708ae3c917b759125fc08a3dffc31c0978bb122472b824a67d59f4554a59e",
     "api/v2/run-chart-history.schema.json": "87f1727c0243876ca74edfb7b41d66a9e877f655f4cd630a55ec19f8f644d116",
-    "api/v2/run-comparison.schema.json": "9f00a093149c8b9903bee1f6d67bdac37e417108d2a534c142785a7b30f693ca",
+    "api/v2/run-comparison.schema.json": "f7035b38f9df512ea10df9010513de4eabe2ffd3eaeabeeca80b2e59eecad238",
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
     "api/v2/run-history.schema.json": "82d784f10985ba7e92ad9966d9867ed2b01a660d4554839f8b11c9bdca90a526",
     "api/v2/run-metric-overview.schema.json": "2a8ccfe648cb5bb8b6dcdc078755fd64ad3e7c73025544fb4d5d9dcc9bdd2d0e",

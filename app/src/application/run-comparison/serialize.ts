@@ -8,11 +8,13 @@ export function encodeComparison(value: RunComparisonSnapshot): string {
   } catch (error) {
     if (!(error instanceof Error) || error.message !== 'request_limit') throw error;
     const items = value.items.map((item) => {
-      if (!item.result) return item;
+      const { scenarioIntents, ...mandatory } = item;
+      void scenarioIntents;
+      if (!item.result) return mandatory;
       const { firstFailedSlo, slos, ...result } = item.result;
       void firstFailedSlo;
       void slos;
-      return { ...item, result };
+      return { ...mandatory, result };
     });
     return encodeJson({ ...value, items }, RUN_COMPARISON_BYTES);
   }

@@ -113,3 +113,16 @@ it('binds optional native SLO rows to counts, unique IDs, metric identity and fi
  item.result!.failedSloCount=1;item.result!.outcome='failed';item.run.outcome='failed';expect(runComparisonSnapshotMatches(snapshot,request)).toBe(true);
  item.result!.firstFailedSlo={id:'other',reading:null,limit:null};expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);
 });
+
+it('checks projection coherence without turning rejected intent into admission',async()=>{
+ const {snapshot,request}=await pair();const item=snapshot.items[0]!;item.scenarioIntents=[{id:'main',executor:'constant-arrival-rate',arrivalRate:{initial:1200,maximum:1200,timeUnit:'2s'},vus:{initial:20,maximum:10}}];
+ expect(runComparisonSnapshotMatches(snapshot,request)).toBe(true);
+ item.scenarioIntents[0]!.arrivalRate=null;expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);
+ item.scenarioIntents[0]!.executor='constant-vus';expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);
+ item.scenarioIntents[0]!.vus.maximum=20;item.scenarioIntents.push({...item.scenarioIntents[0]!});expect(runComparisonSnapshotMatches(snapshot,request)).toBe(true);
+});
+
+it('rejects impossible ramping-arrival maxima but retains explicit contradictory ramp-until intent',async()=>{
+ const {snapshot,request}=await pair();const item=snapshot.items[0]!;item.scenarioIntents=[{id:'main',executor:'ramping-arrival-rate',arrivalRate:{initial:100,maximum:50,timeUnit:'1s'},vus:{initial:20,maximum:10}}];
+ expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);item.scenarioIntents[0]!.executor='ramp-until';expect(runComparisonSnapshotMatches(snapshot,request)).toBe(true);
+});

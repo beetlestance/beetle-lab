@@ -1,7 +1,7 @@
 # Suite overview context
 Overview, LoadShape and StartRun render an already-loaded saved revision. `plan.ts`,
 `details.ts` and `changes.ts` are bounded literal projections of the k6 config: no
-compiler, secrets or request bodies. The target shows its origin only, and input names
+compiler, secrets or request bodies. Executor labels share lib/k6-executors.ts. The target shows its origin only, and input names
 come from at most 16 cached getInput reads.
 RecentRuns makes one indexed suite-filtered listRuns read (limit 5). Errors stay unknown
 and nothing polls. StartRun reads workspace settings and submits createRun through

@@ -9,14 +9,14 @@ Layout: run strip (status, short ID, Baseline badge or Make baseline, which only
 reorders the URL), whole-run figures with labelled client deltas from the
 baseline (Deltas.tsx: relative %, percentage points, duration; "same" when equal,
 nothing when either side is unknown), What was different (revision, profile,
-limits, policy, note), paged native SLOs, one metric per run and recorded evidence.
+configured load/budgets/policy/note), paged native SLOs and recorded evidence.
 Generated compareRuns owns request/response semantics. Whole-run summaries come
 from one exact-ID listRuns row per run (limit 1), read inside the comparison
 admission after the catalogue on first catalogue loads only; each run then gets
 one getRunMetricOverview and getRunChartHistory. Failures stay explicit gaps.
 One catalogue page (<=100 entries); selection uses RunMetricKey, never an ordinal.
 Unknown conditions and limited
-configuration path differences are explicit. No configs or secret values.
+configuration path differences are explicit. Compact intent only; no raw configs or secrets.
 One module-lifetime ReadAdmission sequences comparison, summaries, catalogue and
 every chart across route/session remounts. Render leases hide old snapshots at
 once; cleanup retires/aborts tokens and cancels queued waits. API originals keep

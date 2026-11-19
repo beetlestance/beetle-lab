@@ -140,9 +140,93 @@
       "required": ["availability", "reason", "series", "manifestDigest", "measurementSourceTimeMs", "coverage"],
       "additionalProperties": false
     },
+    "RunComparisonScenarioIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]{0,63}$"
+        },
+        "executor": {
+          "enum": [
+            "constant-arrival-rate",
+            "ramping-arrival-rate",
+            "ramping-vus",
+            "constant-vus",
+            "shared-iterations",
+            "per-vu-iterations",
+            "ramp-until"
+          ]
+        },
+        "arrivalRate": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "initial": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
+                },
+                "maximum": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
+                },
+                "timeUnit": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 12,
+                  "pattern": "^(0|[1-9][0-9]{0,8})(ms|s|m|h)$"
+                }
+              },
+              "required": [
+                "initial",
+                "maximum",
+                "timeUnit"
+              ]
+            }
+          ]
+        },
+        "vus": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "initial": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "maximum": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            }
+          },
+          "required": [
+            "initial",
+            "maximum"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "executor",
+        "arrivalRate",
+        "vus"
+      ]
+    },
     "RunComparisonItem": {
       "type": "object",
       "properties": {
+        "scenarioIntents": {"type":"array", "minItems":1, "maxItems":64, "items":{"$ref":"https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonScenarioIntent"}},
         "run": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/Run"},
         "result": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonResult"}, {"type": "null"}]},
         "environment": {"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonEnvironment"},

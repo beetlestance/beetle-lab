@@ -2,6 +2,7 @@ import type { RunComparisonItem } from '@beetle/contracts/api';
 import { Table, Td, Th } from '../../../components/Table.js';
 import { formatBytes, formatDuration, formatNumber, formatPercent } from '../../run-results/format.js';
 import { comparisonRunLabels } from './run-labels.js';
+import { scenarioFact } from './scenario-intent.js';
 import { comparisonFigures } from './figures.js';
 import type { ComparisonFigures } from './figures.js';
 import type { Summaries, Overviews, ComparisonHistories, ComparisonContexts } from './useComparison.js';
@@ -233,6 +234,9 @@ export function WhatWasDifferent({
         return context ? `${context.suiteName} rev ${context.revisionOrdinal}` : 'Revision unknown';
       },
     ],
+    ['Configured executor', (item) => scenarioFact(item, 'executor')],
+    ['Configured arrivals', (item) => scenarioFact(item, 'arrival')],
+    ['Configured VUs', (item) => scenarioFact(item, 'vus')],
     ['Engine profile', (item) => `${item.run.engine.id} / ${item.run.engine.profileId}`],
     ['Memory limit', (item) => formatBytes(item.run.budget.memoryBytes) ?? '—'],
     ['Time limit', (item) => formatDuration(item.run.budget.timeoutMs) ?? '—'],

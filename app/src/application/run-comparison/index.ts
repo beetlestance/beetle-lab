@@ -10,6 +10,7 @@ import { loadSources, reconcile } from './source.js';
 import { environment, summary } from './environment.js';
 import { revisionDifferences } from './diff.js';
 import { baselineBinding, peerKey } from './logical.js';
+import { scenarioIntents } from './scenario-intent.js';
 import { encodeComparison } from './serialize.js';
 import { emptyMetric, readMetric } from './metrics.js';
 /** One read-only admitted comparison; its promise retains actual originals through cleanup. */
@@ -69,6 +70,7 @@ async function executeComparison(
     owner.check();
     const item: RunComparisonItem = {
       run: source.run,
+      scenarioIntents: scenarioIntents(source.config.loadPlan.scenarios),
       result: summary(source),
       environment: environment(source, options.digest),
       differences: { fields: [], configChanges: [], limited: false },

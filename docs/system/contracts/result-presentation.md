@@ -137,6 +137,20 @@ raw units and different runtime metrics never mix. Zeros/nulls/source positions
 remain exact. Links expose individual-run evidence when an overlay is unavailable.
 No polling or new API contract; errors and limited/missed collection stay explicit.
 
+## Configured scenario intent
+
+The existing pinned-config capture supplies optional compact intents for at most
+64 scenarios: executor, source-unit initial/maximum arrivals, initial/maximum VUs.
+Each staged maximum includes its declared start; no time-unit rescaling or sum
+across scenarios is made. Native stage reads stay bounded to 128 per scenario.
+This is submitted intent, including rejected allocations, not engine admission,
+observed traffic, reservation or concurrent VUs. Client checks reject impossible
+projection shapes but preserve explicit contradictory ramp-until limits/allocations.
+Only these primitive fields leave the capture; names, targets, data and secrets do
+not. The existing two-attempt 256 KiB serializer omits all optional projections on
+overflow, including for runs without a native result. Missing legacy intent stays
+unknown; the UI never fills it from observed or installed values. No new reads.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -167,15 +181,15 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
 | `web/src/features/runs/comparison/useComparison.ts` | `3b122992b6fc` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `3643df66d465` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `8668f89aa562` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `fe6f0666d203` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
 | `app/src/application/run-comparison/failed-slo.ts` | `6e0a7894448f` |
-| `app/src/application/run-comparison/serialize.ts` | `36ead5a588ac` |
-| `contracts/api/v2/run-comparison.schema.json` | `d77c0b7ba01f` |
+| `app/src/application/run-comparison/serialize.ts` | `0afc9d598903` |
+| `contracts/api/v2/run-comparison.schema.json` | `894f2795a40b` |
 | `contracts/src/api/client/comparison-facts.ts` | `3aced93caa5b` |
 | `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
 | `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
@@ -183,3 +197,6 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/TargetRuntime.tsx` | `091438037277` |
 | `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
 | `web/src/features/runs/comparison/Slos.tsx` | `b4f57fb7171b` |
+| `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
+| `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
+| `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |

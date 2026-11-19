@@ -169,6 +169,7 @@ export const apiMessageSchemas = freezeSchema({
   RunComparisonConfigChange: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonConfigChange' },
   RunComparisonDifferences: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonDifferences' },
   RunComparisonMetricRead: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonMetricRead' },
+  RunComparisonScenarioIntent: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonScenarioIntent' },
   RunComparisonItem: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonItem' },
   RunComparisonSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonSnapshot' },
   RunEventPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-events#/$defs/RunEventPage' },

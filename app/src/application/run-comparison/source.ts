@@ -13,9 +13,44 @@ import type { RunComparisonOptions } from '../../ports/run-comparison.js';
 import { ComparisonError } from '../../ports/run-comparison.js';
 import type { MetricReadOperation } from '../metric-read-lifetime/index.js';
 import { captureApi } from './capture.js';
+/** Read-only fields touched after the full shared closed schema validates the config. */
+export type ComparisonScenario = { readonly id: string } & (
+  | {
+      readonly executor: 'constant-arrival-rate';
+      readonly rate: number;
+      readonly timeUnit: string;
+      readonly preAllocatedVUs: number;
+      readonly maxVUs: number;
+    }
+  | {
+      readonly executor: 'ramping-arrival-rate';
+      readonly startRate: number;
+      readonly stages: readonly { readonly target: number }[];
+      readonly timeUnit: string;
+      readonly preAllocatedVUs: number;
+      readonly maxVUs: number;
+    }
+  | {
+      readonly executor: 'ramp-until';
+      readonly startRate: number;
+      readonly maxRate: number;
+      readonly timeUnit: string;
+      readonly preAllocatedVUs: number;
+      readonly maxVUs: number;
+    }
+  | {
+      readonly executor: 'ramping-vus';
+      readonly startVUs: number;
+      readonly stages: readonly { readonly target: number }[];
+    }
+  | { readonly executor: 'constant-vus' | 'per-vu-iterations' | 'shared-iterations'; readonly vus: number }
+);
 /** Read subset only after the shared closed suite schema accepts the full config. */
 export interface ComparisonConfig extends K6MetricShape {
-  readonly loadPlan: { readonly slos: readonly (RunComparisonSloLimit & { readonly id: string })[] };
+  readonly loadPlan: {
+    readonly slos: readonly (RunComparisonSloLimit & { readonly id: string })[];
+    readonly scenarios: readonly ComparisonScenario[];
+  };
   readonly target: string;
   readonly datasets: readonly unknown[];
   readonly secrets: readonly {

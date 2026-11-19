@@ -5,7 +5,7 @@ HTTP owns its fast cancellation race and retains that promise through settlement
 One active comparison, no queue/cache, whole 30 s context. Close fences and drains.
 Capture2..4 distinct canonical terminal runs, immutable config pins and sealed
 result scopes. Reconcile full Run, full revision and result-seal identity after IO.
-Configs remain transient <=1 MiB each; only the matched SLO limit may leave.
+Configs remain transient <=1 MiB; only matched SLO limits and compact scenario intent leave.
 Optional SLO rows (<=256) and firstFailedSlo use native facts and unique rule matches;
 metric/stat mismatches keep the limit unknown. No extra IO or native regrading.
 The unchanged 262144-byte cap can omit optional detail to preserve required data.

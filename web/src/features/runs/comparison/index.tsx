@@ -74,6 +74,9 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
           />
           <section className="compare-section" aria-labelledby="compare-different">
             <h2 id="compare-different">What was different</h2>
+            <p className="compare-muted">
+              Saved configuration intent, per scenario; not observed traffic, engine admission or combined concurrency.
+            </p>
             <WhatWasDifferent items={snapshot.items} contexts={state.contexts} />
           </section>
           <ComparisonSlos key={ids.join(',')} items={snapshot.items} />

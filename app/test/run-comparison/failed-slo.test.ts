@@ -30,10 +30,11 @@ it('preserves mandatory encoding at the unchanged cap by omitting optional detai
  const checked=validateApi('RunComparisonSnapshot',comparisonData);if(!checked.ok)throw Error('Invalid comparison fixture');const value=structuredClone(checked.value);
  const result=value.items[0]!.result!;result.firstFailedSlo={id:'tail',reading:{source:'native-summary',metric:'m'.repeat(128),stat:'p99',value:322},limit:null};
  result.slos=Array.from({length:256},(_,i)=>({id:'s'+i,passed:true,reading:result.firstFailedSlo!.reading,limit:null}));
+ value.items[0]!.scenarioIntents=[{id:'main',executor:'constant-vus',arrivalRate:null,vus:{initial:1,maximum:1}}];
  // Encoder-only boundary fixture; public run-note/schema validation is tested separately.
  const base=JSON.stringify(value);value.items[0]!.run.note='x'.repeat(RUN_COMPARISON_BYTES-Buffer.byteLength(base)+80);
  const encoded=encodeComparison(value);expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(RUN_COMPARISON_BYTES);
- const restored=JSON.parse(encoded);expect(restored.items[0].result.firstFailedSlo).toBeUndefined();expect(restored.items[0].result.slos).toBeUndefined();expect(restored.items[0].result.failedSloCount).toBe(result.failedSloCount);
+ const restored=JSON.parse(encoded);expect(restored.items[0].result.firstFailedSlo).toBeUndefined();expect(restored.items[0].result.slos).toBeUndefined();expect(restored.items[0].scenarioIntents).toBeUndefined();expect(restored.items[0].result.failedSloCount).toBe(result.failedSloCount);
 });
 
 it('projects passed native SLO facts without changing their verdict or adding reads',async()=>{

@@ -1,3 +1,5 @@
+import { executorText } from '../../lib/k6-executors.js';
+export { executorText } from '../../lib/k6-executors.js';
 /**
  * Client projection of a saved k6 configuration into what the Suite boards show:
  * executor, load shape, stage list, total length, request mix, thresholds and data.
@@ -35,38 +37,6 @@ export function spoken(ms: number): string {
   return rest ? `${Math.floor(minutes / 60)} h ${rest} min` : `${minutes / 60} h`;
 }
 export const figure = (value: number) => value.toLocaleString('en-US');
-
-export const executorText: Record<string, { label: string; blurb: string }> = {
-  'constant-arrival-rate': {
-    label: 'Constant arrival rate',
-    blurb: 'Starts requests at a fixed rate, however slow the target gets.',
-  },
-  'ramping-arrival-rate': {
-    label: 'Ramping arrival rate',
-    blurb:
-      'Starts requests at a rate that changes stage by stage, however slow the target gets. Best for capacity and sale-day checks.',
-  },
-  'ramping-vus': {
-    label: 'Ramping virtual users',
-    blurb: 'Changes the number of virtual users stage by stage; each sends its next request when a reply arrives.',
-  },
-  'constant-vus': {
-    label: 'Constant virtual users',
-    blurb: 'A fixed number of virtual users, each sending its next request when a reply arrives.',
-  },
-  'shared-iterations': {
-    label: 'Shared iterations',
-    blurb: 'Virtual users share a fixed number of iterations and stop when they are done.',
-  },
-  'per-vu-iterations': {
-    label: 'Iterations per virtual user',
-    blurb: 'Each virtual user runs a fixed number of iterations.',
-  },
-  'ramp-until': {
-    label: 'Ramp until break',
-    blurb: 'Raises the rate step by step until the stop rule trips or the maximum rate is reached.',
-  },
-};
 
 export type Stage = { kind: 'ramp' | 'steady' | 'drain'; label: string; ms: number; from: number; to: number };
 export type Shape = {
