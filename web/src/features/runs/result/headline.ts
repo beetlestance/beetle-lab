@@ -102,7 +102,7 @@ const headlines: Record<Variant, (context: Context) => Headline> = {
   'output-full': ({ run, name, covered }) => ({
     title: `${name} filled its output`,
     sentence: join(
-      `The run reached its ${formatBytes(run.budget.outputBytes)} output limit and was stopped at once.`,
+      `The run was stopped after reaching an output limit. Its configured output budget was ${formatBytes(run.budget.outputBytes)}.`,
       covered ? `The recorded test duration was ${covered}.` : null,
     ),
   }),

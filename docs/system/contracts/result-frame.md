@@ -84,7 +84,7 @@ their retry controls.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `f82605f66e42` |
+| `web/src/features/runs/result/headline.ts` | `bc75915cb159` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |

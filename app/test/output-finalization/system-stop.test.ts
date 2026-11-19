@@ -1,3 +1,4 @@
+import { K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import {expect,it} from 'vitest';
 import {finalizationFixture} from './fixture.js';
 import {absenceFixture} from '../output-absence/fixture.js';
@@ -96,4 +97,20 @@ it('rejects stop evidence before settled release and preserves explicit null at 
   f.ingest();
   f.confirm();
   expect(f.finalize()).toMatchObject({ kind: 'finalized', receipt: { state: 'finished' } });
+});
+
+it.each([null, 'timeout'] as const)('preserves the sealed wrapper output failure with a racing cancel and %s system stop', (systemStopReason) => {
+  const f = finalizationFixture();
+  f.adopt();
+  f.release({
+    cancelRequested: true,
+    systemStopReason,
+    exitEvidence: { exitCode: K6_WRAPPER_OUTPUT_LIMIT_EXIT, oomKilled: false, reason: 'output_limit', observedAt: '2026-01-01T00:01:00Z' },
+  });
+  f.ingest();
+  f.confirm();
+  f.db.exec('UPDATE runs SET cancellation_requested=1,version=version+1');
+  expect(f.finalize()).toMatchObject({
+    kind: 'finalized', receipt: { state: 'errored', reason: systemStopReason ?? 'output_limit' },
+  });
 });

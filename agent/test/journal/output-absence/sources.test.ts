@@ -1,3 +1,4 @@
+import { K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import { expect, it } from 'vitest';
 import { OUTPUT_REJECTION_REASONS } from '@beetle/contracts/output-source';
 import { sourceFixture, json } from '../../source-journal/fixtures.js';
@@ -91,4 +92,23 @@ it('independently rejects wrong physical release binding, unknown settlement and
     e.db.prepare('UPDATE reservations SET reservation_json=?').run(original);
   }
   expect(e.store.execute({ id: 3, kind: 'outputAbsenceClose', key: e.key })).toEqual(proof);
+});
+
+it.each([
+  { exitCode: K6_WRAPPER_OUTPUT_LIMIT_EXIT, stop: 'cancelled', reason: 'output_limit' },
+  { exitCode: K6_WRAPPER_OUTPUT_LIMIT_EXIT, stop: 'timeout', reason: 'timeout' },
+  { exitCode: 1, stop: 'cancelled', reason: 'cancelled' },
+] as const)('keeps consistent closure precedence for exit $exitCode and durable $stop', async ({ exitCode, stop, reason }) => {
+  const e = await f.seed();
+  const at = new Date(now + 3).toISOString();
+  await e.journal.appendSupervisor({ sourceOrdinal: 2, event: {
+    version: '1.0', ...e.key, source: 'agent', phase: 'execute', kind: 'runtime.exited', observedAt: at,
+    payload: { exitCode, oomKilled: false, observedAt: at, reason: 'output_limit' },
+  } });
+  await e.journal.beginOutputCollection(e.intent);
+  await e.journal.failOutputCollection(e.failed);
+  await e.journal.supervision({ key: e.key, now: now + 6, cancel: true, reason: stop });
+  const closed = await e.journal.closeOutputAbsence(e.key);
+  expect(closed).toMatchObject({ reason, admission: { state: 'released', disposition: 'settled' } });
+  expect(await e.journal.closeOutputAbsence(e.key)).toEqual(closed);
 });

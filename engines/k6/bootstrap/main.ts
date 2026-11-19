@@ -1,5 +1,6 @@
 import { stdoutEvents } from './event-output.js';
 import { encodeJson } from '@beetle/contracts';
+import { K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import { runStagedK6 } from '../wrapper/attempt/index.js';
 import { imageOptions } from './profile.js';
 
@@ -18,7 +19,7 @@ async function main(): Promise<void> {
   process.once('SIGTERM', stop);
   try {
     const receipt = await runStagedK6({ ...imageOptions(cancel.signal), onEvent: (event) => output.send(event) });
-    process.exitCode = receipt.ok ? 0 : 1;
+    process.exitCode = receipt.ok ? 0 : receipt.reason === 'output_limit' ? K6_WRAPPER_OUTPUT_LIMIT_EXIT : 1;
     if (!receipt.ok) process.stderr.write(encodeJson({ kind: 'wrapper.error', reason: receipt.reason }, 1024) + '\n');
   } finally {
     process.removeListener('SIGINT', stop);

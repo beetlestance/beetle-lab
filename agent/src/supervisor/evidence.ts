@@ -1,3 +1,4 @@
+import { K6_EXIT_PROTOCOL_IMAGE_ENV, K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import type { ResourceSummary } from '../telemetry/index.js';
 import type { Observation } from '../backends/docker/index.js';
 import type { Scope } from '../admission/index.js';
@@ -20,6 +21,7 @@ export class RuntimeEvidence {
   constructor(
     private readonly journal: JournalPort,
     private readonly key: Scope,
+    private readonly imageEnvironment: readonly string[] = [],
   ) {}
   get hasPending(): boolean {
     return Boolean(this.pending.length || this.resource || this.issued || this.flushing);
@@ -101,8 +103,9 @@ export class RuntimeEvidence {
       payload: { requestedAt: new Date(requestedAt).toISOString() },
     });
   }
-  observe(observation: Observation, now: number, cause: LaunchState['cancellation']): void {
-    const event = this.event(observation, now, cause);
+  observe(observation: Observation, now: number, cause: LaunchState['cancellation'], engineId?: string): void {
+    const usesK6ExitProtocol = engineId === 'k6' && this.imageEnvironment.includes(K6_EXIT_PROTOCOL_IMAGE_ENV);
+    const event = this.event(observation, now, cause, usesK6ExitProtocol);
     if (event) this.capture(event);
   }
   private base(now: number) {
@@ -118,6 +121,7 @@ export class RuntimeEvidence {
     observation: Observation,
     now: number,
     cause: LaunchState['cancellation'],
+    usesK6ExitProtocol: boolean,
   ): Extract<Draft, { kind: LifecycleKind }> | undefined {
     const base = this.base(now);
     if (observation.state === 'missing')
@@ -130,6 +134,7 @@ export class RuntimeEvidence {
     if (observation.state === 'running')
       return { ...base, kind: 'runtime.started', payload: { runtimeId: observation.id } };
     if (observation.state !== 'exited') return undefined;
+    const reason = this.exitCause(observation, cause, usesK6ExitProtocol);
     return {
       ...base,
       kind: 'runtime.exited',
@@ -137,14 +142,22 @@ export class RuntimeEvidence {
         exitCode: observation.exitCode,
         oomKilled: observation.oomKilled,
         observedAt: base.observedAt,
-        ...(observation.oomKilled ? { reason: 'memory_limit' as const } : this.exitCause(cause)),
+        ...(reason === undefined ? {} : { reason }),
       },
     };
   }
-  private exitCause(cause: LaunchState['cancellation']) {
+  private exitCause(
+    observation: Extract<Observation, { id: string }>,
+    cause: LaunchState['cancellation'],
+    usesK6ExitProtocol: boolean,
+  ) {
+    if (observation.oomKilled) return 'memory_limit' as const;
+    // Replay the same physical wrapper exit after restart, even if a stop
+    // request arrived in the meantime. Closure applies the durable stop policy.
+    if (usesK6ExitProtocol && observation.exitCode === K6_WRAPPER_OUTPUT_LIMIT_EXIT) return 'output_limit' as const;
+    if (usesK6ExitProtocol && observation.exitCode === null) return undefined;
     if (cause === 'cancelled' || cause === 'timeout' || cause === 'output_limit' || cause === 'artifact_incomplete')
-      return { reason: cause };
-    // The wire has no clock_integrity reason. The actor reports it separately.
-    return {};
+      return cause;
+    return undefined;
   }
 }
