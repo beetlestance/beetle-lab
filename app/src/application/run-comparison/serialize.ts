@@ -9,8 +9,9 @@ export function encodeComparison(value: RunComparisonSnapshot): string {
     if (!(error instanceof Error) || error.message !== 'request_limit') throw error;
     const items = value.items.map((item) => {
       if (!item.result) return item;
-      const { firstFailedSlo, ...result } = item.result;
+      const { firstFailedSlo, slos, ...result } = item.result;
       void firstFailedSlo;
+      void slos;
       return { ...item, result };
     });
     return encodeJson({ ...value, items }, RUN_COMPARISON_BYTES);

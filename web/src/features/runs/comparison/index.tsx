@@ -12,6 +12,7 @@ import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
 import { RecordedComparisonCharts } from './RecordedCharts.js';
 import { ComparisonTargetRuntime } from './TargetRuntime.js';
+import { ComparisonSlos } from './Slos.js';
 import { ComparisonFailedSlos } from './FailedSlos.js';
 import './comparison.css';
 
@@ -75,6 +76,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
             <h2 id="compare-different">What was different</h2>
             <WhatWasDifferent items={snapshot.items} contexts={state.contexts} />
           </section>
+          <ComparisonSlos key={ids.join(',')} items={snapshot.items} />
           <RecordedComparisonCharts
             key={ids.join(',')}
             items={snapshot.items}

@@ -6,7 +6,7 @@ One active comparison, no queue/cache, whole 30 s context. Close fences and drai
 Capture2..4 distinct canonical terminal runs, immutable config pins and sealed
 result scopes. Reconcile full Run, full revision and result-seal identity after IO.
 Configs remain transient <=1 MiB each; only the matched SLO limit may leave.
-Optional firstFailedSlo uses a native SLO failure and unique pinned rule match;
+Optional SLO rows (<=256) and firstFailedSlo use native facts and unique rule matches;
 metric/stat mismatches keep the limit unknown. No extra IO or native regrading.
 The unchanged 262144-byte cap can omit optional detail to preserve required data.
 Shared k6 schema/layout maps baseline aliases through stable request/assertion IDs;

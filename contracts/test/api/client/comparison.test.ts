@@ -102,3 +102,14 @@ it('rejects missing-result/source contradictions in both directions', async () =
   item.result!.firstFailedSlo.limit!.stat = 'p95';
   expect(await createApiClient({baseUrl, fetch: reply(snapshot)}).compareRuns({params, body: request})).toMatchObject({ok: false, error: {kind: 'response'}});
  });
+
+it('binds optional native SLO rows to counts, unique IDs, metric identity and first failure',async()=>{
+ const {request,snapshot}=await pair();const item=snapshot.items[0]!;
+ item.result!.slos=[{id:'latency',passed:true,reading:{source:'native-summary',metric:'http_req_duration',stat:'p99',value:400},limit:{metric:'http_req_duration',stat:'p99',operator:'<',value:300}}];
+ expect(runComparisonSnapshotMatches(snapshot,request)).toBe(true);
+ item.result!.slos.push({...item.result!.slos[0]!});expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);item.result!.slos.pop();
+ item.result!.slos[0]!.limit!.stat='p95';expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);item.result!.slos[0]!.limit!.stat='p99';
+ item.result!.slos[0]!.passed=false;expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);
+ item.result!.failedSloCount=1;item.result!.outcome='failed';item.run.outcome='failed';expect(runComparisonSnapshotMatches(snapshot,request)).toBe(true);
+ item.result!.firstFailedSlo={id:'other',reading:null,limit:null};expect(runComparisonSnapshotMatches(snapshot,request)).toBe(false);
+});

@@ -9,7 +9,7 @@ Layout: run strip (status, short ID, Baseline badge or Make baseline, which only
 reorders the URL), whole-run figures with labelled client deltas from the
 baseline (Deltas.tsx: relative %, percentage points, duration; "same" when equal,
 nothing when either side is unknown), What was different (revision, profile,
-limits, policy, note), one chosen metric per run, recorded evidence in details.
+limits, policy, note), paged native SLOs, one metric per run and recorded evidence.
 Generated compareRuns owns request/response semantics. Whole-run summaries come
 from one exact-ID listRuns row per run (limit 1), read inside the comparison
 admission after the catalogue on first catalogue loads only; each run then gets

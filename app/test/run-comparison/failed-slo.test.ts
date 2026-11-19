@@ -19,6 +19,7 @@ function failed(reading=true,mismatch=false) {
 it('projects the first native failed SLO and uniquely matched pinned limit without extra IO or config values',async()=>{
  const f=failed();f.config(0).requests[0]!.headers['X-Canary']='PRIVATE_VALUE_NOT_DISCLOSED';f.repin(0);
  const value=await f.service().compare(f.request,context());expect(value.items[0]!.result!.firstFailedSlo).toEqual({id:'tail',reading:{source:'native-summary',metric:'http_req_duration',stat:'p99',value:322},limit:{metric:'http_req_duration',stat:'p99',operator:'<',value:300}});
+ expect(value.items[0]!.result!.slos).toEqual([{passed:false,...value.items[0]!.result!.firstFailedSlo}]);
  expect(JSON.stringify(value)).not.toContain('PRIVATE_VALUE_NOT_DISCLOSED');expect(f.calls.filter(call=>call.startsWith('revision:'))).toHaveLength(4);
 });
 it('keeps a legacy missing native reading explicit and refuses a mismatched reading limit',async()=>{
@@ -28,8 +29,16 @@ it('keeps a legacy missing native reading explicit and refuses a mismatched read
 it('preserves mandatory encoding at the unchanged cap by omitting optional detail, with at most two bounded attempts',()=>{
  const checked=validateApi('RunComparisonSnapshot',comparisonData);if(!checked.ok)throw Error('Invalid comparison fixture');const value=structuredClone(checked.value);
  const result=value.items[0]!.result!;result.firstFailedSlo={id:'tail',reading:{source:'native-summary',metric:'m'.repeat(128),stat:'p99',value:322},limit:null};
+ result.slos=Array.from({length:256},(_,i)=>({id:'s'+i,passed:true,reading:result.firstFailedSlo!.reading,limit:null}));
  // Encoder-only boundary fixture; public run-note/schema validation is tested separately.
  const base=JSON.stringify(value);value.items[0]!.run.note='x'.repeat(RUN_COMPARISON_BYTES-Buffer.byteLength(base)+80);
  const encoded=encodeComparison(value);expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(RUN_COMPARISON_BYTES);
- const restored=JSON.parse(encoded);expect(restored.items[0].result.firstFailedSlo).toBeUndefined();expect(restored.items[0].result.failedSloCount).toBe(result.failedSloCount);
+ const restored=JSON.parse(encoded);expect(restored.items[0].result.firstFailedSlo).toBeUndefined();expect(restored.items[0].result.slos).toBeUndefined();expect(restored.items[0].result.failedSloCount).toBe(result.failedSloCount);
+});
+
+it('projects passed native SLO facts without changing their verdict or adding reads',async()=>{
+ const f=fixture();const source=[...f.results.values()][0]!.result!;
+ const value=await f.service().compare(f.request,context());
+ expect(value.items[0]!.result!.slos?.map(s=>({id:s.id,passed:s.passed,reading:s.reading}))).toEqual(source.thresholds.filter(s=>s.purpose==='slo').map(s=>({id:s.id,passed:s.passed,reading:s.reading??null})));
+ expect(f.calls.filter(c=>c.startsWith('revision:'))).toHaveLength(4);
 });

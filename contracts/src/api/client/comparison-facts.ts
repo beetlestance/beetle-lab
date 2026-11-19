@@ -1,3 +1,4 @@
+import { comparisonSlosMatch } from './comparison-slos.js';
 import { encodeCanonicalJson } from '../../json.js';
 import type { RunComparisonItem } from '../generated/types.js';
 type Field = RunComparisonItem['differences']['fields'][number];
@@ -43,7 +44,7 @@ export function comparisonResultMatches(item: RunComparisonItem): boolean {
   const r = item.result;
   if (!r) return item.run.outcome !== 'passed';
   if (item.run.outcome === 'passed' && r.outcome !== 'passed') return false;
-  if (!failureDetailMatches(r)) return false;
+  if (!failureDetailMatches(r) || !comparisonSlosMatch(r)) return false;
   const a = r.requiredAssertions;
   if (!Number.isSafeInteger(a.passed + a.failed + a.unknown) || a.required !== a.passed + a.failed + a.unknown)
     return false;

@@ -2,7 +2,7 @@ import { encodeCanonicalJson } from '@beetle/contracts';
 import type { ResultDigest } from '@beetle/contracts';
 import type { RunComparisonEnvironment, RunComparisonResult } from '@beetle/contracts/api';
 import type { Source } from './source.js';
-import { firstFailedSlo } from './failed-slo.js';
+import { firstFailedSlo, comparisonSlos } from './failed-slo.js';
 import { ComparisonError } from '../../ports/run-comparison.js';
 function fingerprint(value: unknown, purpose: 'target' | 'inputs' | 'secret-bindings', digest: ResultDigest): string {
   const hash = digest(
@@ -30,12 +30,14 @@ export function environment(source: Source, digest: ResultDigest): RunComparison
 export function summary(source: Source): RunComparisonResult | null {
   const r = source.result;
   if (!r) return null;
+  const slos = comparisonSlos(source);
   return {
     outcome: r.outcome,
     completeness: r.completeness,
     execution: r.execution,
     requiredAssertions: r.requiredAssertions,
-    firstFailedSlo: firstFailedSlo(source),
+    firstFailedSlo: firstFailedSlo(slos),
+    slos,
     failedSloCount: r.thresholds.filter((rule) => rule.purpose === 'slo' && !rule.passed).length,
     discoveryReached: r.mode === 'discovery' ? r.expectedAbort.reached : null,
   };

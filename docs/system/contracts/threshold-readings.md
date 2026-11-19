@@ -25,7 +25,7 @@ and statistic. Missing or ambiguous matches retain the threshold ID. Display tex
 describes the native verdict; it does not reevaluate the rule from the reading.
 
 Comparison uses the same native-verdict sentence and limit formatter. Optional
-compact comparison detail obeys the [comparison contract](result-presentation.md#native-comparison-failures).
+compact comparison detail obeys the [comparison contract](result-presentation.md#native-slo-comparison).
 
 The current compiler does not admit a `checks` rate threshold. A design example
 with a 99% checks SLO needs separate engine support; no threshold is fabricated.

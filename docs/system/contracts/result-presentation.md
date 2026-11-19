@@ -93,15 +93,20 @@ focusable scroll regions, while run cards wrap their controls.
 Rates stay labelled whole-run averages; no peak is invented from the configured
 load. Differences describe scalar observations, not statistical confidence.
 
-## Native comparison failures
+## Native SLO comparison
 
-The optional first failed SLO detail reuses captured sealed results and the pinned,
+Optional SLO rows (at most 256 per run) and first failure detail reuse captured
+sealed results and the pinned,
 validated revision. It includes its native reading and a uniquely matched saved
 limit, never the full config or secret values. Missing readings and mismatched
 metric/statistic limits remain explicit. Discovery triggers are not SLO failures.
 The client rejects detail with zero failed count or contradictory reading/limit
-identity. Display never reevaluates the native verdict. The unchanged 256 KiB
-reply cap may omit this optional detail; no additional reads or polling are added.
+identity. Full rows also bind unique IDs, failed count and any first-failure detail.
+Display never reevaluates the native verdict. The unchanged 256 KiB reply cap may
+omit both optional projections together; no additional reads or polling are added.
+The UI bounds the union to 1,024 IDs and renders 32 rows per local page. Each cell
+keeps its own recorded verdict/metric/value/limit; unavailable legacy evidence and
+a rule absent from a recorded set differ. Equal display labels grant no verdict.
 
 ## Recorded comparison overlays
 
@@ -168,11 +173,13 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
-| `app/src/application/run-comparison/failed-slo.ts` | `97247eae9563` |
-| `app/src/application/run-comparison/serialize.ts` | `39be8f46032f` |
-| `contracts/api/v2/run-comparison.schema.json` | `6cc1977118f0` |
-| `contracts/src/api/client/comparison-facts.ts` | `b555242c9534` |
+| `app/src/application/run-comparison/failed-slo.ts` | `6e0a7894448f` |
+| `app/src/application/run-comparison/serialize.ts` | `36ead5a588ac` |
+| `contracts/api/v2/run-comparison.schema.json` | `d77c0b7ba01f` |
+| `contracts/src/api/client/comparison-facts.ts` | `3aced93caa5b` |
 | `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
 | `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
 | `web/src/features/runs/comparison/target-model.ts` | `fcd94018f94f` |
 | `web/src/features/runs/comparison/TargetRuntime.tsx` | `091438037277` |
+| `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
+| `web/src/features/runs/comparison/Slos.tsx` | `b4f57fb7171b` |
