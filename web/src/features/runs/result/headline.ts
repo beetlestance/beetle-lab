@@ -1,3 +1,5 @@
+import type { PlanRule } from '../live/plan.js';
+import { thresholdSentence } from './threshold-sentence.js';
 import { terminal } from '../terminal.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunHistorySummary } from '@beetle/contracts/api';
@@ -61,16 +63,6 @@ function traffic(summary: RunHistorySummary | null): string[] {
   return [heldSentence(summary), qualitySentence(summary)].filter((sentence): sentence is string => !!sentence);
 }
 
-function thresholdLine(result: EngineResult | null): string | null {
-  if (!result || result.thresholds.length === 0) return null;
-  const failed = result.thresholds.filter((threshold) => !threshold.passed);
-  if (failed.length === 0) return 'Every threshold passed.';
-  const names = failed.map((threshold) => threshold.id);
-  return names.length === 1
-    ? `Threshold ${names[0]} failed.`
-    : `${names.length} thresholds failed: ${names.slice(0, 3).join(', ')}${names.length > 3 ? '…' : ''}.`;
-}
-
 type Context = {
   run: Run;
   name: string;
@@ -78,13 +70,17 @@ type Context = {
   covered: string | null;
   held: string[];
   result: EngineResult | null;
+  rules: readonly PlanRule[];
 };
 type Headline = { title: string; sentence: string };
 const join = (...parts: (string | null | undefined)[]) => parts.filter(Boolean).join(' ');
 
 const headlines: Record<Variant, (context: Context) => Headline> = {
-  passed: ({ name, held, result }) => ({ title: `${name} passed`, sentence: join(...held, thresholdLine(result)) }),
-  failed: ({ name, held, result }) => ({ title: `${name} failed`, sentence: join(...held, thresholdLine(result)) }),
+  passed: ({ name, held, result }) => ({ title: `${name} passed`, sentence: join(...held, thresholdSentence(result)) }),
+  failed: ({ name, held, result, rules }) => ({
+    title: `${name} failed`,
+    sentence: join(...held, thresholdSentence(result, rules)),
+  }),
   'not-judged': ({ name, held }) => ({
     title: `${name} was not judged`,
     sentence: join(...held, 'The engine did not reach a verdict.'),
@@ -127,9 +123,9 @@ export function headline(
   suiteName: string | undefined,
   summary: RunHistorySummary | null,
   result: EngineResult | null,
-  readOnly = false,
+  context: { readOnly?: boolean; rules?: readonly PlanRule[] } = {},
 ): Headline {
-  if (readOnly && !terminal(run))
+  if (context.readOnly && !terminal(run))
     return {
       title: `${suiteName ?? 'This run'} was ${run.state} at backup`,
       sentence: 'This unfinished run is recorded history. Restoring a backup does not resume it.',
@@ -141,5 +137,6 @@ export function headline(
     covered: spokenLength(summary?.testDurationMs ?? null),
     held: traffic(summary),
     result,
+    rules: context.rules ?? [],
   });
 }

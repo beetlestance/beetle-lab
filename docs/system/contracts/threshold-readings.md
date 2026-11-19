@@ -18,6 +18,12 @@ statistic as the native reading. A mismatch has no meter; legacy missing values
 stay explicit. The meter is decorative, finite and clamped, never a new verdict.
 Discovery inverse false is labelled trigger reached rather than failed SLO.
 
+Headlines count only SLO verdicts; an inverted discovery trigger never becomes a
+failed SLO or a claim that SLOs passed when none exist. A single failed SLO can show
+its native reading and pinned limit only when one saved rule matches ID, metric
+and statistic. Missing or ambiguous matches retain the threshold ID. Display text
+describes the native verdict; it does not reevaluate the rule from the reading.
+
 The current compiler does not admit a `checks` rate threshold. A design example
 with a 99% checks SLO needs separate engine support; no threshold is fabricated.
 
@@ -30,3 +36,4 @@ with a 99% checks SLO needs separate engine support; no threshold is fabricated.
 | `engines/k6/wrapper/result/` | `97fe9b2a9759` |
 | `web/src/features/runs/run-revision.ts` | `d57756f98b8a` |
 | `web/src/features/runs/result/ThresholdReading.tsx` | `08971f65c4f9` |
+| `web/src/features/runs/result/threshold-sentence.ts` | `0d4c20ba0491` |

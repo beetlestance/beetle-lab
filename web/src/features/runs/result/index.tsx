@@ -58,7 +58,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
   const engine = view.status === 'ready' ? view.result : null;
-  const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, readOnly);
+  const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, { readOnly, rules: plan.rules });
   return (
     <div className={className}>
       {restored && (
