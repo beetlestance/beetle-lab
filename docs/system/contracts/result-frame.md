@@ -15,7 +15,7 @@ keeps real hash anchors, follows external/native hash changes, marks its selecte
 location and calls the existing lower report-tab selector when required. It adds
 no reading or mutation ownership.
 
-Run notes live below the title group, outside the pooled summary/chart flow.
+Desktop notes live below the title; phone notes join the lower disclosures.
 A missing writable note offers Add a note; restored history offers no writes.
 The run-note classes are distinct from the engine-result panel's diagnostic note
 styles. Note edit stamps and explicit conflict choices follow
@@ -23,7 +23,12 @@ styles. Note edit stamps and explicit conflict choices follow
 Legacy timestamps remain unrecorded; restored views have no note controls.
 
 Source browser checks do not prove packaged/native delivery or whole-family
-visual acceptance. Full result/phone disclosure matching remains in the goal.
+visual acceptance. Phone disclosures now cover What happened, Target runtime,
+Artifacts, Notes and Diagnostics, plus retained Report/charts/script access. They
+mount readers on first open and retain visited children; the single Notes owner
+survives collapse and resize, including unresolved identical-replay saves. Hashes
+open the addressed section. Phase comparison keeps its target and Back control
+visible. Header, summary, chart and endpoint phone board matching remains open.
 
 ## Anchors
 
@@ -33,4 +38,7 @@ visual acceptance. Full result/phone disclosure matching remains in the goal.
 | `web/src/features/runs/result/SectionNav.tsx` | `2781bcc519ff` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `23f6b9adf58a` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
-| `web/src/features/runs/result/index.tsx` | `143a0fd991a7` |
+| `web/src/features/runs/result/PhoneDisclosure.tsx` | `587774070696` |
+| `web/src/features/runs/result/phone.css` | `ba4a5771ad8d` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
+| `web/src/features/runs/result/index.tsx` | `0072e7ccce8c` |

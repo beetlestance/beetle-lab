@@ -13,8 +13,9 @@ import type { PlanRequest } from '../live/plan.js';
 import { ExecutionActivity } from '../timeline/index.js';
 import { RunWarnings } from '../warnings/index.js';
 
+import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
+
 export type ReportTab = 'report' | 'activity' | 'artifacts' | 'diagnostics';
-const phoneQuery = '(max-width: 759px)';
 function tabFromHash(hash: string): ReportTab | null {
   if (hash === '#result-artifacts') return 'artifacts';
   if (hash === '#result-diagnostics') return 'diagnostics';
@@ -34,20 +35,6 @@ export function useReportTab() {
     return () => window.removeEventListener('hashchange', changed);
   }, [hash]);
   return [tab, setTab] as const;
-}
-
-/** True under the 760px phone breakpoint; jsdom and old browsers report false. */
-function usePhone() {
-  const media =
-    typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(phoneQuery) : null;
-  const [phone, setPhone] = useState(media?.matches ?? false);
-  useEffect(() => {
-    if (!media) return;
-    const change = () => setPhone(media.matches);
-    media.addEventListener('change', change);
-    return () => media.removeEventListener('change', change);
-  }, [media]);
-  return phone;
 }
 
 function paramsOf(run: Run) {
@@ -95,7 +82,7 @@ function Unready({ status, what }: { status: 'loading' | 'unavailable' | 'error'
 
 /**
  * Report tabs of the Run result board: Report, What happened, Artifacts, Diagnostics.
- * Under 760px (Phone / Run result) the tabs become a plain section list.
+ * Under 760px (Phone / Run result) the panels become lazy native disclosures; visited panels keep their state.
  */
 export function ReportTabs({
   run,
@@ -104,6 +91,8 @@ export function ReportTabs({
   onSelect,
   requests = [],
   origin,
+  phoneTarget,
+  phoneExtras,
 }: {
   run: Run;
   view: ResultView;
@@ -111,9 +100,11 @@ export function ReportTabs({
   onSelect: (tab: ReportTab) => void;
   requests?: readonly PlanRequest[];
   origin?: RiseOrigin | undefined;
+  phoneTarget?: ReactNode;
+  phoneExtras?: ReactNode;
 }) {
   const idBase = useId();
-  const phone = usePhone();
+  const phone = useResultPhone();
   const count = view.status === 'ready' ? view.result.artifacts.length : undefined;
   const panels: Record<ReportTab, { label: string; body: ReactNode }> = {
     report: { label: 'Report', body: <Report view={view} /> },
@@ -133,12 +124,20 @@ export function ReportTabs({
   if (phone)
     return (
       <div className="result-sections">
-        {order.map((id) => (
-          <section key={id} id={`result-${id}`} className="result-section" aria-label={panels[id].label}>
-            {id !== 'artifacts' && <h2 className="result-section-title">{panels[id].label}</h2>}
-            {panels[id].body}
-          </section>
-        ))}
+        <PhoneDisclosure id="result-activity" title="What happened" description="Timeline of stages and events">
+          {panels.activity.body}
+        </PhoneDisclosure>
+        {phoneTarget}
+        <PhoneDisclosure id="result-artifacts" title="Artifacts" description="Summary, metrics and logs to download">
+          {panels.artifacts.body}
+        </PhoneDisclosure>
+        <PhoneDisclosure id="result-diagnostics" title="Diagnostics" description="Engine and agent details">
+          {panels.diagnostics.body}
+        </PhoneDisclosure>
+        <PhoneDisclosure id="result-report" title="Report" description="Published performance analysis">
+          {panels.report.body}
+        </PhoneDisclosure>
+        {phoneExtras}
       </div>
     );
   return (

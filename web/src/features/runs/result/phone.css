@@ -1,0 +1,79 @@
+.result-note-disclosure > summary {
+  display: none;
+}
+.result-note-disclosure > .result-phone-content {
+  padding: 0;
+}
+@media (max-width: 759px) {
+  .result-sections {
+    display: contents;
+  }
+  .result-phone-section {
+    background: var(--panel);
+    border-radius: 0;
+    border-bottom: 1px solid var(--line);
+    margin-top: calc(-1 * var(--s-24));
+  }
+  .result-phone-section > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-12);
+    padding: var(--s-16);
+    list-style: none;
+    cursor: pointer;
+    font-size: var(--fs-md);
+  }
+  .result-phone-section > summary::-webkit-details-marker {
+    display: none;
+  }
+  .result-phone-section > summary small {
+    display: block;
+    margin-top: var(--s-4);
+    color: var(--mute);
+    font-size: var(--fs-sm);
+  }
+  .result-phone-section[open] > summary > span:last-child {
+    transform: rotate(90deg);
+  }
+  .result-phone-content {
+    display: grid;
+    gap: var(--s-16);
+    padding: 0 var(--s-16) var(--s-16);
+    min-width: 0;
+  }
+  .result-note-disclosure > summary {
+    display: flex;
+  }
+  .result-note-disclosure > .result-phone-content {
+    padding: 0 var(--s-16) var(--s-16);
+  }
+  #result-activity {
+    margin-top: 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    order: 10;
+  }
+  #result-target-details {
+    order: 20;
+  }
+  #result-artifacts {
+    order: 30;
+  }
+  #result-notes {
+    order: 40;
+  }
+  #result-diagnostics {
+    order: 50;
+  }
+  #result-report {
+    order: 60;
+  }
+  #result-chart-details {
+    order: 70;
+  }
+  #result-script {
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+    border-bottom: 0;
+    order: 80;
+  }
+}

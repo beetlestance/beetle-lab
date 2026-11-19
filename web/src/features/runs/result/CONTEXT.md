@@ -29,12 +29,12 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
   pinned limits (no histogram substitution), native verdicts and script version.
 - What happened: recorded milestones and source-bound native rise; source clocks stay separate.
 - ReportTabs: one selected desktop tab shared with top section links; permanent
-  anchors target Report/Artifacts/Diagnostics. Under 760px, separate sections.
+  anchors target Report/Artifacts/Diagnostics. Phone panels defer first mount, then retain
+  visited state; stable Notes survives resize. Phase mode keeps target/Back visible.
 - DeleteRun: RetentionControls dialog; a pinned run offers Unpin first.
-RecordedCharts reads workload history once; peak binds to the summary source.
-ResultTargetReport shares one verified report across four cards and lazy details.
+RecordedCharts reads history once; peak binds to summary. ResultTargetReport shares
+one verified report across four cards and lazy details.
 Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
 exact; only safe native chronology shares hover. ?target=phases keeps the same
 reader for observed phase comparisons; missing phase GC maxima stay unavailable.
 ResultCompare: 20 candidates/page, suite/all, verified names/ordinals, no row reads; chosen candidate is baseline.
-Checks: vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx
