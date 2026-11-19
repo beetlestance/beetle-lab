@@ -86,6 +86,8 @@ Only the captured run/suite/revision match can grant a comparison label; missing
 or mismatched records remain unknown. All metadata shares the same scoped owner.
 Selected IDs with colliding four-character prefixes expand to prefix plus suffix,
 then the complete source UUID if needed; labels never invent a run ordinal.
+Phone comparison tables keep readable row/column widths inside named keyboard-
+focusable scroll regions, while run cards wrap their controls.
 Rates stay labelled whole-run averages; no peak is invented from the configured
 load. Differences describe scalar observations, not statistical confidence.
 
@@ -144,14 +146,14 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
 | `web/src/features/runs/comparison/useComparison.ts` | `812decb44ba1` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `76d6f109e5c2` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `3d3b4ae2f47c` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `ecfb3bf7212d` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `b3a951dbbbb0` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
-| `app/src/application/run-comparison/failed-slo.ts` | `pending` |
-| `app/src/application/run-comparison/serialize.ts` | `pending` |
-| `contracts/api/v2/run-comparison.schema.json` | `pending` |
-| `contracts/src/api/client/comparison-facts.ts` | `pending` |
-| `web/src/features/runs/comparison/FailedSlos.tsx` | `pending` |
+| `app/src/application/run-comparison/failed-slo.ts` | `97247eae9563` |
+| `app/src/application/run-comparison/serialize.ts` | `39be8f46032f` |
+| `contracts/api/v2/run-comparison.schema.json` | `6cc1977118f0` |
+| `contracts/src/api/client/comparison-facts.ts` | `b555242c9534` |
+| `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |

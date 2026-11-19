@@ -1,5 +1,4 @@
 # Run comparison (Penpot Compare and Compare / Empty)
-
 Public entry: RunComparison({organizationId,workspaceId}), routed with one runs
 query parameter containing two through four distinct ordered UUIDs. First run is
 baseline. Same-page history contexts supply suite/revision labels only when
@@ -36,5 +35,6 @@ When it is unavailable, only the existing accepted history scalars can fall back
 Average rate stays average; overflowed relative deltas stay unknown.
 Optional firstFailedSlo shows native failure/reading with a matched saved limit;
 legacy missing details stay explicit. No regrading, new reads or polling.
+Named focusable table regions retain readable widths on phones; run cards wrap.
 Remaining: target runtime overlay and full board acceptance.
 Focused checks: compare, selection, history, integration and lifecycle tests here.

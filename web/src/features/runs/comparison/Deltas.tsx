@@ -128,6 +128,7 @@ function FiguresTable({
     <Table
       caption="Whole-run figures, with each run's difference from the baseline"
       className="compare-deltas"
+      scrollLabel="Whole-run figures"
       columns={[
         { key: 'metric', label: 'Measure' },
         ...items.map((item, index) => ({
@@ -230,6 +231,7 @@ export function WhatWasDifferent({ items }: { items: readonly RunComparisonItem[
     <Table
       caption="What was different between the runs"
       className="compare-different"
+      scrollLabel="Run settings differences"
       columns={[
         { key: 'fact', label: 'Setting' },
         ...items.map((item) => ({ key: item.run.id, label: labels.get(item.run.id.toLowerCase())! })),

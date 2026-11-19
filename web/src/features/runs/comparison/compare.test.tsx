@@ -46,6 +46,8 @@ it('labels client deltas from the baseline, offers Make baseline and lists what 
   });
   mountComparison(f.client);
   const table = await screen.findByRole('table', { name: /difference from the baseline/ });
+  expect(screen.getByRole('region', {name: 'Whole-run figures'})).toHaveAttribute('tabindex', '0');
+  expect(screen.getByRole('region', {name: 'Run settings differences'})).toHaveAttribute('tabindex', '0');
   const rate = within(table).getByRole('rowheader', { name: 'Requests a second' }).closest('tr')!;
   expect(rate).toHaveTextContent('100');
   expect(rate).toHaveTextContent('110+10%');

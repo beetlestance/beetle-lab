@@ -77,3 +77,16 @@
 .compare h1 { overflow-wrap: anywhere; }
 
 .compare-native-failures { margin: 0; padding-left: var(--s-20); color: var(--error); overflow-wrap: anywhere; }
+
+/* Preserve readable row labels; wide comparisons scroll within their own region. */
+.compare .data-table-scroll { min-width: 0; max-width: 100%; }
+.compare .data-table-scroll:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+.compare-deltas th:first-child, .compare-different th:first-child { min-width: 190px; }
+.compare-deltas th.numeric { min-width: 145px; }
+.compare-different td { min-width: 160px; max-width: 320px; overflow-wrap: anywhere; }
+@media (max-width: 759px) {
+  .compare-run { display: flex; flex-wrap: wrap; width: 100%; min-width: 0; }
+  .compare-run > a:not(.btn) { flex: 1 1 120px; }
+  .compare-run > .compare-muted { flex-shrink: 0; margin-top: 0; }
+  .compare-run > .btn { margin-left: auto; }
+}

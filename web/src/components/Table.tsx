@@ -20,15 +20,23 @@ export function Table({
   children,
   captionVisible = false,
   className,
+  scrollLabel,
 }: {
   caption: string;
   columns: readonly TableColumn[];
   children: ReactNode;
   captionVisible?: boolean | undefined;
   className?: string | undefined;
+  /** Names a keyboard-focusable horizontal scroll region when the table is wide. */
+  scrollLabel?: string | undefined;
 }) {
   return (
-    <div className={['data-table-scroll', className].filter(Boolean).join(' ')}>
+    <div
+      className={['data-table-scroll', className].filter(Boolean).join(' ')}
+      role={scrollLabel ? 'region' : undefined}
+      aria-label={scrollLabel}
+      tabIndex={scrollLabel ? 0 : undefined}
+    >
       <table className="data-table">
         <caption className={captionVisible ? undefined : 'sr-only'}>{caption}</caption>
         <thead>

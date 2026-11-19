@@ -1,5 +1,4 @@
 # Shared primitives
-
 Penpot "States / Controls" source of truth; styles in primitives.css, tokens in
 styles/tokens.css (`--s-*` spacing, `--r-*` radii, `--fs-*` type, motion zeroed
 under reduced motion). Legacy aliases (`--surface`, `--space-*`) remain for
@@ -21,7 +20,8 @@ unconverted features; new code uses the new tokens. Optional props accept undefi
 - Dialog: title, onClose, description, actions, initialFocus, role, dismissible.
   Mount to open; traps Tab, inerts the page, Escape/backdrop close, focus returns.
 - Table: caption, columns {key,label,numeric,sort}, captionVisible; Th/Td numeric
-  right-aligns tabular figures, Td muted.
+  right-aligns tabular figures, Td muted. Optional scrollLabel names and focuses
+  the existing scroll container for keyboard navigation; default tables unchanged.
 - EmptyState: title, actions, note, art, compact, headingLevel. LoadingState: label,
   variant inline|page|table|cards, rows. QueryState wraps both plus Retry.
 - NotFound: kind page|organization|workspace|suite|script|run|input, back {to,label},
