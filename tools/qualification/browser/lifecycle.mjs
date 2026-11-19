@@ -21,14 +21,16 @@ export async function historyComparison(page, authored, first) {
     await row.getByRole('checkbox', { name: /^Compare run / }).check();
   }
   await page.getByRole('link', { name: 'Compare 2', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /^2 runs, baseline Synthetic k6 suite / })).toBeVisible();
-  await expect(page.getByText('Loading comparison…', { exact: true })).toHaveCount(0);
-  if (
-    await page
-      .getByText('Comparison could not be loaded. Use Refresh comparison to retry.', { exact: true })
-      .isVisible()
-  )
+  const ready = page.getByRole('heading', { name: /^2 runs, baseline Synthetic k6 suite / });
+  const failed = page.getByText('Comparison could not be loaded. Use Refresh comparison to retry.', { exact: true });
+  // The service owns 30 s; allow the existing 5 s browser admission before expecting its outcome.
+  await expect(ready.or(failed)).toBeVisible({ timeout: 35000 });
+  if (await failed.isVisible()) {
+    console.log(JSON.stringify({ format: 'beetle-browser-read-recovery', read: 'comparison', explicitRetry: true }));
     await page.getByRole('button', { name: 'Refresh comparison', exact: true }).click();
+  }
+  await expect(ready).toBeVisible({ timeout: 35000 });
+  await expect(page.getByText('Loading comparison…', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: `Baseline: ${ids[0]}`, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Run 2: ${ids[1]}`, exact: true })).toBeVisible();
   const catalogue = page.getByRole('combobox', { name: /^Baseline metric\b/ });
