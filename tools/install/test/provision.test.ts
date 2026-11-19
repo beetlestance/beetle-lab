@@ -43,7 +43,7 @@ it('creates coherent private files with actual read-only facts, Journal configur
     expect(engine.profile.maximumBudget).toEqual(e.request.installationValues.perRunCeilings);
     const backend = await loadBackendConfiguration({ BEETLE_CONFIG_FILE: result.paths.installation,
       BEETLE_AGENT_CONFIG_FILE: result.paths.backendAgent, BEETLE_DATA_DIR: result.paths.backendData,
-      BEETLE_EXTERNAL_ORIGIN: e.request.externalOrigin }, f.worker());
+      BEETLE_EXTERNAL_ORIGIN: e.request.externalOrigin, BEETLE_ACCESS: 'network' }, f.worker());
     expect(backend.application.agent?.connection?.configuration.profiles[0]?.installedIdentity).toEqual(engine.installedIdentity);
     const gate = openServingState(installationStatePath(loaded.runtime.journal.path));
     const journal = await openJournal(loaded.runtime.journal);

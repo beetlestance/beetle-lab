@@ -27,8 +27,8 @@ a host security sandbox. Setup starts as root to prepare an empty installation;
 the agent bootstrap drops to UID/GID 1000 with no retained Linux capabilities.
 A compromised agent can still control the Docker host through its socket. Use an
 installation only with administrators and code you trust. No constrained Docker
-broker or rootless-daemon guarantee is shipped. The UI port is loopback-only;
-backend and agent ports are private.
+broker or rootless-daemon guarantee is shipped. The UI port is loopback-only unless network
+access is chosen; backend and agent ports are private.
 For targets running on the Docker Desktop host, use `http://host.docker.internal:PORT`.
 
 ## Run on a VPS
@@ -43,8 +43,10 @@ Open http://127.0.0.1:4567 in your browser. The installation and engines run on 
 VPS; only the browser runs on your computer. No application IAM is needed for
 this single-administrator installation.
 
-Current browser-origin validation requires a loopback URL. Direct access through
-a server IP/domain or public reverse proxy needs additional origin/access support.
+One administrator on a private network (VPN, tailnet, LAN) can instead open it at an
+`https://` address through a TLS reverse proxy with `BEETLE_ACCESS=network`; see
+[decision 032](docs/decisions/032-private-network-access.md) and the self-hosting guide.
+There is no password, so never expose it to the internet.
 
 ## Images and releases
 

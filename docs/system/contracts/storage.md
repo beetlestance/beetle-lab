@@ -130,7 +130,7 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 | Persisted record | ≤ 1 KiB; requests and replies ≤ 2 KiB; one pending write, no queue |
 | Historical view | `readOnly: true` plus `restoredBackup` from the sealed manifest ([recovery](recovery.md)); serving sessions refuse both |
 
-- Request guard order: exact loopback Host, then Origin, then session, before
+- Request guard order: exact configured Host, then Origin, then session, before
   body parsing. Forwarded headers are ignored; duplicates reject;
   `Sec-Fetch-Site: cross-site` is `403 forbidden`. Mutations need exact Origin and
   `X-Beetle-CSRF`. No CORS.
@@ -166,4 +166,4 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 | `app/src/adapters/outbound/sqlite/mutation-receipts.ts` | `afeddcda3d25` |
 | `app/src/domain/attempt-observation/sequence.ts` | `a8b4b42df321` |
 | `app/src/bootstrap/private-roots.ts` | `f20ea87eecc9` |
-| `app/src/adapters/inbound/http/session/` | `328af44f81f3` |
+| `app/src/adapters/inbound/http/session/` | `902456a694b1` |

@@ -51,9 +51,13 @@ ssh -N -L 4567:127.0.0.1:4567 user@your-server
 ```
 
 Open <http://127.0.0.1:4567> locally. Tests and engines run on the server; only the
-browser runs on your computer. The UI only accepts loopback addresses today, so
-opening the server's IP or a domain directly, or putting a public reverse proxy
-in front, is not supported yet.
+browser runs on your computer.
+
+If you are the only user and reach the server over a VPN or another private
+network, you can instead open it at an `https://` address through a reverse proxy.
+Decide before the first start; see
+[Open it over a private network](/guides/private-network/).
+Do not expose it to the internet: there is no password.
 
 ## Launcher for a separate directory
 
@@ -74,7 +78,7 @@ Docker socket, for example `$HOME/.docker/run/docker.sock` on Docker Desktop.
 
 | Container | Role | Reachable from |
 | --- | --- | --- |
-| Frontend | Serves the UI and forwards API calls | Your browser, on loopback only |
+| Frontend | Serves the UI and forwards API calls | Your browser, on loopback unless you turn on network access |
 | Backend | API, metadata, results and reports | The frontend only |
 | Agent | Admits runs and controls engine containers | The backend only |
 | k6 engine | One disposable container per run | Your test targets only |

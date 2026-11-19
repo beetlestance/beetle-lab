@@ -3,7 +3,8 @@
 Public entry: createLocalSession and captureLocalExternalOrigin in index.ts.
 Contract: docs/system/contracts/storage.md. Programmatic default is paired;
 normal executable selects automatic through bootstrap/local-access.
-Exact canonical loopback Host/Origin, no forwarded trust/CORS; mutations require
+Exact canonical loopback Host/Origin, or one HTTPS origin with network access
+(decision 032; history stays loopback), no forwarded trust/CORS; mutations require
 CSRF except fixed JSON/custom-header pair/local exchanges. GET never grants access.
 HttpOnly/SameSite Strict cookie,8h absolute session,5 exchanges/minute; bounded
 headers/cookies/replies. Credentials never enter URLs/localStorage/public metadata.

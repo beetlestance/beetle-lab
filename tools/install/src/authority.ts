@@ -12,7 +12,7 @@ import {
 import type { InitializingState, ServingState } from '../../../agent/src/installation-state/index.js';
 import { openJournal } from '../../../agent/src/journal/index.js';
 import type { Journal } from '../../../agent/src/journal/index.js';
-import { loadBackendConfiguration } from '../../../app/src/bootstrap/configuration.js';
+import { loadBackendConfiguration, originAccessFor } from '../../../app/src/bootstrap/configuration.js';
 import type { Captured } from './capture.js';
 import { check, canonical } from './capture.js';
 import { paths } from './configuration.js';
@@ -53,6 +53,7 @@ async function validateBackend(c: Captured, installationId: string, baseline: bo
       BEETLE_AGENT_CONFIG_FILE: p.backendAgent,
       BEETLE_DATA_DIR: p.backendData,
       BEETLE_EXTERNAL_ORIGIN: c.request.externalOrigin,
+      BEETLE_ACCESS: originAccessFor(c.request.externalOrigin),
     },
     c.context.backendWorkerUrl,
     baseline ? { baseline: true, receipt } : undefined,

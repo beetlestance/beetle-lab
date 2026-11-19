@@ -26,12 +26,17 @@ export function setupAction(args: readonly string[]): UpgradeAction | undefined 
 }
 const bindingHint =
   'Setup values differ from the installation: use its original BEETLE_INSTANCE and BEETLE_HOME, or set up a new installation in another folder.\n';
+const originHint =
+  'This installation keeps the address it was set up with: unset BEETLE_ORIGIN, or set up a new installation in another folder.\n';
+const networkHint =
+  'An address or bind on another host needs BEETLE_ACCESS=network and an https:// BEETLE_ORIGIN. See the self-hosting guide.\n';
 function report(error: unknown): void {
   if (error instanceof UpgradeBlockedError) process.stderr.write(`upgrade_blocked ${error.items.join(',')}\n`);
   else if (error instanceof BindingChangedError) {
     process.stderr.write(`binding_changed ${error.items.join(',')}\n`);
-    process.stderr.write(bindingHint);
+    process.stderr.write(error.items.includes('external_origin') ? originHint : bindingHint);
   } else process.stderr.write((error instanceof ProvisionError ? error.code : 'invalid_input') + '\n');
+  if (error instanceof ProvisionError && error.code === 'network_access_required') process.stderr.write(networkHint);
   if (error instanceof ProvisionError && error.code === 'upgrade_required')
     process.stderr.write('Images moved: stop services, then run `docker compose run --rm setup upgrade`.\n');
 }
@@ -65,7 +70,7 @@ export async function runComposeSetup(
       backendWorkerUrl: new URL('./backend-worker.js', import.meta.url),
     };
     const starter = createStarterRequest(captured.options);
-    const request = fresh ? starter : await installedRequest(starter, context);
+    const request = fresh ? starter : await installedRequest(starter, context, captured.loopbackDefault);
     gate = new ComposeGate(home, { uid: 1000, gid: 1000 });
     await gate.open(fresh, digest(canonical(request)));
     result = action

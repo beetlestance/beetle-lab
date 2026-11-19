@@ -43,8 +43,9 @@ Without `BEETLE_HOME`, Compose looks under `.beetle/` in the checkout instead.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `BEETLE_HOME` | `.beetle` in the checkout | Installation directory |
-| `BEETLE_PORT` | `4567` | UI port, published on the server's loopback only |
+| `BEETLE_PORT` | `4567` | UI port |
 | `BEETLE_INSTANCE` | `lab` | Compose project name; use another for a second installation |
+| `BEETLE_ACCESS`, `BEETLE_ORIGIN`, `BEETLE_BIND` | loopback | [Private network access](/guides/private-network/) |
 
 ## Start it
 
@@ -73,9 +74,14 @@ automatically as the administrator.
 - Use the **same port** on both sides and the address `127.0.0.1`. The backend
   checks that the browser's address matches the configured one exactly, and
   refuses anything else.
-- Opening the server's IP address or a domain name, or putting a public reverse
-  proxy in front, is not supported. The UI accepts loopback addresses only.
 - Anyone who can open the tunnel can use the UI, so limit who has SSH access.
+
+## Or open it over a private network
+
+If you are the only user and reach the server over a VPN, a tailnet or your home
+LAN, you can open the UI at an `https://` address through a reverse proxy instead
+of a tunnel. Decide before the first start; see
+[Open it over a private network](/guides/private-network/).
 
 ## Or use the launcher
 
@@ -126,8 +132,8 @@ upgraded, and downgrading is not supported.
 
 An installation keeps the settings and resource limits it was set up with. When
 a newer release ships different defaults, only new installations get them. Its
-instance name and folder are fixed too: starting it under another
-`BEETLE_INSTANCE` stops setup with `binding_changed`.
+instance name, folder and address are fixed too: starting it under another
+`BEETLE_INSTANCE` or `BEETLE_ORIGIN` stops setup with `binding_changed`.
 
 With the launcher, a rebuild needs the same source revision the installation was
 created from, and the upgrade command does not cover launcher installations.

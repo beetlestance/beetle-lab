@@ -20,7 +20,7 @@ it('installs the exact offline catalogue/profile mapping and checks ready config
   const engines=loaded.runtime.catalog.engines;expect(engines).toHaveLength(2);expect(engines[1]!.manifest.imageDigest).toBe(image);
   expect(engines[1]!.profile.network).toEqual({profile:'none',name:'none'});expect(engines[1]!.profile.liveMetricMailbox).toBeUndefined();
   const backend=await loadBackendConfiguration({BEETLE_CONFIG_FILE:result.paths.installation,BEETLE_AGENT_CONFIG_FILE:result.paths.backendAgent,
-   BEETLE_DATA_DIR:result.paths.backendData,BEETLE_EXTERNAL_ORIGIN:request.externalOrigin},f.worker());
+   BEETLE_DATA_DIR:result.paths.backendData,BEETLE_EXTERNAL_ORIGIN:request.externalOrigin,BEETLE_ACCESS:'network'},f.worker());
   expect(backend.application.agent?.connection.configuration.exportProfiles).toEqual([{sourceProfileId:request.engine.profileId,profile:{
    engine:{id:'k6',imageDigest:image,configVersion:1,profileId:'k6-export-local'},installedIdentity:engines[1]!.installedIdentity,requiredCapabilities:['standalone-export-v1']}}]);
   const authority=await journal.journalAuthority();gate.assertJournalAuthority(authority);

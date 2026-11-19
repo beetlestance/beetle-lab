@@ -51,6 +51,18 @@ it('requires absolute installation paths and explicit origin instead of ambient 
     await expect(loadBackendConfiguration(environment, worker)).rejects.toThrow('Backend startup failed');
   }
 });
+it('requires explicit network access for an origin on another host and HTTPS for it (decision 032)', async () => {
+  const value = await fixture();
+  expect((await loadBackendConfiguration(value.environment, worker)).application.access).toBe('local');
+  const remote = { ...value.environment, BEETLE_EXTERNAL_ORIGIN: 'https://beetle.test:8443' };
+  await expect(loadBackendConfiguration(remote, worker)).rejects.toMatchObject({ code: 'configuration' });
+  const loaded = await loadBackendConfiguration({ ...remote, BEETLE_ACCESS: 'network' }, worker);
+  expect(loaded.application).toMatchObject({ externalOrigin: 'https://beetle.test:8443', access: 'network' });
+  for (const environment of [{ ...remote, BEETLE_ACCESS: 'network', BEETLE_EXTERNAL_ORIGIN: 'http://beetle.test:8443' },
+    { ...remote, BEETLE_ACCESS: 'public' }, { ...value.environment, BEETLE_ACCESS: 'Network' }]) {
+    await expect(loadBackendConfiguration(environment, worker)).rejects.toMatchObject({ code: 'configuration' });
+  }
+});
 it('rejects unsafe file types, permissions, oversize and invalid UTF8 without raw diagnostics', async () => {
   const value = await fixture(); const target = join(value.root, 'link.json'); await symlink(value.config, target);
   await expect(loadBackendConfiguration({ ...value.environment, BEETLE_CONFIG_FILE: target }, worker)).rejects.toMatchObject({ code: 'configuration' });

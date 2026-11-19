@@ -18,7 +18,7 @@ routes.
 
 ## Sign in
 
-The API accepts only a browser-style session from a loopback address.
+The API accepts only a browser-style session from the installation's own address.
 
 - `POST /api/v2/auth/local` signs in on a default installation. On a paired
   installation, `POST /api/v2/auth/pair` exchanges the one-time startup token,
@@ -26,7 +26,8 @@ The API accepts only a browser-style session from a loopback address.
 - Either one sets an HttpOnly cookie that lasts at most 8 hours. Sign-in
   exchanges are limited to 5 a minute.
 - Every change needs the CSRF check, and the `Host` and `Origin` must be the
-  installation's own loopback address. There is no CORS.
+  installation's own address: loopback, or its `https://` address with network
+  access. There is no CORS.
 
 The [automation client](/guides/automation/) handles all of this for you.
 

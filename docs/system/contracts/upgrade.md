@@ -60,7 +60,7 @@ Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgra
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/upgrade/` | `a90fdf13b8d1` |
+| `tools/install/upgrade/` | `8e1460ad6012` |
 | `tools/install/src/selection.ts` | `9567b14e41c3` |
 | `app/src/bootstrap/upgrade-fence.ts` | `347ef48487bc` |
 | `agent/src/journal/cold-inspection/` | `5a89d6d464a1` |

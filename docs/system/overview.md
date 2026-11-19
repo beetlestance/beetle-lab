@@ -27,7 +27,7 @@ interference. Users running the target on the same machine must see contention.
 | Artifact store | Staging, checksum, publication, paged/range reads and deletion | Test outcome inference |
 
 Frontend, backend and agent ship as separate images. Only the frontend publishes
-a loopback host port; it proxies `/api/` and SSE to the private backend. The agent
+a host port, loopback unless network access is chosen (decision 032); it proxies `/api/` and SSE to the private backend. The agent
 has narrowly scoped Docker access and a private authenticated API. Each attempt
 uses a disposable engine container. All heavy engine-specific parsing and
 report generation stay inside that attempt's budget before container teardown.
@@ -147,8 +147,8 @@ Built-in plugins are installed manifests plus immutable engine image digests.
 Adding an engine requires conformance tests, schemas, resource profile, exit/result
 mapping and documentation. No runtime marketplace or automatic plugin download.
 
-Single-host: frontend + backend + agent, SQLite/files; only frontend loopback
-ingress. Users can build from source or pull matched versioned images via Compose.
+Single-host: frontend + backend + agent, SQLite/files; only frontend ingress,
+loopback by default. Users can build from source or pull matched versioned images via Compose.
 CI starts backend + agent without frontend and uses the same HTTP contract through
 a container-run client; no host app installation. Reports export on completion.
 Shared deployments need an addendum for identity, tenancy, ownership leases,
