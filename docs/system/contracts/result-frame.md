@@ -45,7 +45,8 @@ a failed reload hides previous charts. Whole-family and packaged proof remain op
 
 Result-detail failures offer an explicit read-only retry, separate from Refresh run.
 Its pending control stays disabled; reads never retry automatically. Suite and
-revision metadata share the existing one-original/four-waiter read admission.
+revision metadata share one original/four-waiter admission, separate from the same
+bounded metrics lane so archive reads cannot hold up lightweight details.
 
 ## Anchors
 

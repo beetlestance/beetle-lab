@@ -255,9 +255,13 @@ function metricRoutes(
       };
     },
   });
-  const index = openHistoryIndex(store, historical ? undefined : agent?.publishedBytes, async (problem) => {
-    server.log.error({ code: 'history_summary_index_failure', problem }, 'History summary indexing failed');
-  });
+  const index = openHistoryIndex(
+    store,
+    !historical && agent?.publishedBytes ? historyService : undefined,
+    async (problem) => {
+      server.log.error({ code: 'history_summary_index_failure', problem }, 'History summary indexing failed');
+    },
+  );
   const history = registerRunMetricRoutes(server, { authorize, service: historyService });
   const comparisons = registerRunComparisonRoutes(server, {
     authorize,
