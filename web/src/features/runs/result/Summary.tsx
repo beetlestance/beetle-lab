@@ -49,10 +49,17 @@ function NativeSummary({ evidence }: { evidence: NonNullable<EngineResult['nativ
     [evidence.p99Ms, 'p99'],
   ] as const;
   const recordedTail = latency.flatMap(([value, percentile]) => (value === null ? [] : [`${percentile} ${ms(value)}`]));
+  const requests = formatNumber(evidence.requests, 'integer');
+  const rate = formatNumber(k6RequestsPerSecond(evidence.requests, evidence.durationMs), 'integer');
   const tiles = [
     {
-      value: formatNumber(k6RequestsPerSecond(evidence.requests, evidence.durationMs), 'integer'),
-      label: 'requests a second on average',
+      value: rate ?? requests,
+      label:
+        rate === null
+          ? 'HTTP requests in all'
+          : requests
+            ? `a second on average · ${requests} HTTP requests`
+            : 'a second on average',
     },
     ...(evidence.p95Ms === null
       ? latency.map(([value, percentile]) => ({ value: ms(value), label: `${percentile} latency` }))
@@ -60,12 +67,11 @@ function NativeSummary({ evidence }: { evidence: NonNullable<EngineResult['nativ
     { value: formatPercent(evidence.failureRatio), label: 'of HTTP samples failed' },
     { value: formatPercent(evidence.checkPassRatio), label: 'of k6 checks passed' },
     { value: formatNumber(evidence.droppedIterations, 'integer'), label: 'iterations dropped' },
-    { value: formatNumber(evidence.requests, 'integer'), label: 'HTTP requests in all' },
   ].filter((tile) => tile.value !== null);
   return (
     <>
       <p className="result-muted">Figures from the verified k6 summary.</p>
-      <dl className="result-tiles" aria-label="Verified k6 summary">
+      <dl className="result-tiles result-native-tiles" aria-label="Verified k6 summary">
         {tiles.map((tile) => (
           <div key={tile.label}>
             <dt>{tile.label}</dt>

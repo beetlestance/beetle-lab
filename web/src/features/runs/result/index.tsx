@@ -20,7 +20,7 @@ import type { Variant } from './headline.js';
 import { ReportTabs, useReportTab } from './ReportTabs.js';
 import type { ReportTab } from './ReportTabs.js';
 import { ResultHeader } from './ResultHeader.js';
-import { RunNote } from './RunNote.js';
+import { resultLayout } from './result-layout.js';
 import { ScriptVersion, Thresholds } from './Sections.js';
 import { ResultEndpoints, readyOverview } from './Overview.js';
 import type { RunPlan } from '../live/plan.js';
@@ -71,10 +71,18 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const archiveMissing = incompleteArchiveMissing(run, reads, engine);
   const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
+  const { showTarget, nativeLayout, beforeNote, afterNote } = resultLayout({
+    run,
+    engine,
+    phone,
+    readOnly,
+    phaseView,
+    samplingIntervalMs: plan.samplingIntervalMs,
+  });
   const context = { readOnly, rules: plan.rules, measurements: ready, phone };
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, context);
   return (
-    <div className={className}>
+    <div className={className} data-native-summary={nativeLayout}>
       {restored && (
         <div className="result-restored">
           <RestoredBanner createdAt={restored.createdAt} />
@@ -91,16 +99,8 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         refresh={refresh}
       />
       <ResultReadProblem read={reads.result} />
-      <PhoneDisclosure
-        id="result-notes"
-        title="Notes"
-        description="One note per run"
-        expanded={!phone}
-        className="result-note-disclosure"
-      >
-        <RunNote run={run} readOnly={readOnly} />
-      </PhoneDisclosure>
-      {!phone && <ResultSectionNav onSelect={selectSection} archiveMissing={archiveMissing} />}
+      {beforeNote}
+      {!phone && <ResultSectionNav onSelect={selectSection} archiveMissing={archiveMissing} hideTarget={!showTarget} />}
       <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} archiveMissing={archiveMissing} />
       <ResultMeasurements
         reads={reads}
@@ -119,8 +119,10 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         phone={phone}
         archiveMissing={archiveMissing}
         tab={tab}
+        showTarget={showTarget}
         onSelect={setTab}
       />
+      {afterNote}
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
   );
@@ -271,6 +273,7 @@ function SupplementaryResult({
   phone,
   archiveMissing,
   tab,
+  showTarget,
   onSelect,
 }: {
   target: Parameters<typeof TargetRuntime>[0];
@@ -279,6 +282,7 @@ function SupplementaryResult({
   phone: boolean;
   archiveMissing: boolean;
   tab: ReportTab;
+  showTarget: boolean;
   onSelect: (tab: ReportTab) => void;
 }) {
   const { run, charts, plan } = target;
@@ -292,7 +296,7 @@ function SupplementaryResult({
               <AdvancedMetrics run={run} />
             </>
           )}
-          <TargetRuntime {...target} />
+          {showTarget && <TargetRuntime {...target} />}
         </>
       )}
       <ReportTabs
@@ -303,15 +307,17 @@ function SupplementaryResult({
         requests={plan.requests}
         origin={measurementOrigin(overview)}
         phoneTarget={
-          <PhoneDisclosure
-            id="result-target-details"
-            expanded={target.phaseView}
-            hashId="result-target"
-            title="Target runtime"
-            description="Heap, RSS, CPU and event-loop delay by phase"
-          >
-            <TargetRuntime {...target} />
-          </PhoneDisclosure>
+          showTarget && (
+            <PhoneDisclosure
+              id="result-target-details"
+              expanded={target.phaseView}
+              hashId="result-target"
+              title="Target runtime"
+              description="Heap, RSS, CPU and event-loop delay by phase"
+            >
+              <TargetRuntime {...target} />
+            </PhoneDisclosure>
+          )
         }
         phoneExtras={<PhoneExtras target={target} reads={reads} archiveMissing={archiveMissing} />}
       />

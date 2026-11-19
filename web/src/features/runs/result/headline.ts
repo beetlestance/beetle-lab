@@ -105,12 +105,9 @@ const headlines: Record<Variant, (context: Context) => Headline> = {
       covered ? `Figures cover the first ${covered}.` : null,
     ),
   }),
-  incomplete: ({ name, held }) => ({
+  incomplete: ({ name, held, result }) => ({
     title: `${name} results are incomplete`,
-    sentence: join(
-      ...held,
-      'The results archive could not be verified, so charts and endpoint detail may be unavailable.',
-    ),
+    sentence: incompleteSentence(held, result),
   }),
   errored: ({ run, name, held }) => ({
     title: `${name} errored`,
@@ -118,6 +115,20 @@ const headlines: Record<Variant, (context: Context) => Headline> = {
   }),
   pending: ({ name }) => ({ title: `${name} is being finalized`, sentence: 'The outcome is pending.' }),
 };
+
+function incompleteSentence(held: readonly string[], result: EngineResult | null): string {
+  const native = result?.nativeOverview;
+  if (!native)
+    return join(
+      ...held,
+      'The results archive could not be verified, so charts and endpoint detail may be unavailable.',
+    );
+  const duration = spokenLength(native.durationMs);
+  return join(
+    duration ? `k6 recorded measurements for ${duration}.` : null,
+    'The archive could not be verified. Charts and endpoint detail are unavailable.',
+  );
+}
 
 export function headline(
   run: Run,

@@ -61,8 +61,8 @@ run-level pass or fail label.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `6c8e558e75b9` |
-| `web/src/features/runs/result/SectionNav.tsx` | `0abf45a07b51` |
+| `web/src/features/runs/result/headline.ts` | `27ee4bb8ba4b` |
+| `web/src/features/runs/result/SectionNav.tsx` | `c6e30d9a0588` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `eae4c3909114` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `587774070696` |
@@ -73,5 +73,5 @@ run-level pass or fail label.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `56b61015a624` |
+| `web/src/features/runs/result/index.tsx` | `d844434e5e36` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |
