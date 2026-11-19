@@ -21,7 +21,7 @@ import { targetRuntime } from './target-runtime.mjs';
 import { configuration as targetConfiguration } from '../native-application/target-runtime/config.ts';
 import { target as configureTarget, targetCounts } from '../native-application/target-runtime/target.ts';
 const profile = process.env.BEETLE_BROWSER_PROFILE ?? 'functional';
-if (!['functional', 'interaction', 'reference', 'target-runtime'].includes(profile))
+if (!['functional', 'run-results', 'interaction', 'reference', 'target-runtime'].includes(profile))
   throw Error('Unsupported browser profile');
 const evidence = process.env.BEETLE_BROWSER_EVIDENCE;
 if (profile !== 'functional' && !evidence) throw Error('Selected profile requires an explicit evidence directory');
@@ -161,11 +161,13 @@ try {
     const run = await phase('run-execution', () => execute(appPage));
     await phase('report-metrics-and-download', () => results(appPage, f.root));
     await phase('history-comparison', () => historyComparison(appPage, authored, run));
-    await phase('input-roundtrip', () => inputs(appPage, authored.workspace, f.root));
-    await phase('directory-import', () => directoryImport(appPage, authored.workspace, f.root));
-    await phase('empty-folder-deletion', () => emptyFolder(appPage, authored.workspace));
-    await phase('settings-persistence', () => settings(appPage));
-    await phase('offline-export', () => offlineExport(appPage, authored.suite, f.root));
+    if (profile === 'functional') {
+      await phase('input-roundtrip', () => inputs(appPage, authored.workspace, f.root));
+      await phase('directory-import', () => directoryImport(appPage, authored.workspace, f.root));
+      await phase('empty-folder-deletion', () => emptyFolder(appPage, authored.workspace));
+      await phase('settings-persistence', () => settings(appPage));
+      await phase('offline-export', () => offlineExport(appPage, authored.suite, f.root));
+    }
     await phase('durable-run-reconnect', async () => {
       await appPage.goto(run);
       await results(appPage, f.root);

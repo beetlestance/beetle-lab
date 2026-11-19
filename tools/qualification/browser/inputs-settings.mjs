@@ -61,7 +61,7 @@ export async function emptyFolder(page, workspace) {
   await create.getByRole('button', { name: 'Create folder', exact: true }).click();
   await page.getByRole('button', { name: 'Actions for Disposable folder', exact: true }).click();
   await page.getByRole('button', { name: 'Delete Disposable folder', exact: true }).click();
-  const confirmation = page.getByRole('dialog', { name: 'Delete Disposable folder?', exact: true });
+  const confirmation = page.getByRole('alertdialog', { name: 'Delete Disposable folder?', exact: true });
   await confirmation.getByLabel('Type Disposable folder to confirm', { exact: true }).fill('Disposable folder');
   await confirmation.getByRole('button', { name: 'Delete Disposable folder', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Actions for Disposable folder', exact: true })).toHaveCount(0);
