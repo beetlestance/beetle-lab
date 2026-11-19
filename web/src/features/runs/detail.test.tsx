@@ -50,7 +50,7 @@ it.each(['finished', 'cancelled', 'errored'] as const)(
     );
     const view = mount(fixture.client, path);
     await screen.findByText(/No engine result was published, so thresholds are unavailable/);
-    // Run, result, own summary row, suite and revision: each read once, none polls; no session read.
+    // Terminal metadata, recorded metrics and namespace reads settle once; no session read.
     const reads = () =>
       fixture.records.filter(
         (record) =>
@@ -58,9 +58,11 @@ it.each(['finished', 'cancelled', 'errored'] as const)(
           !record.path.includes('/artifacts?') &&
           !record.path.includes('/metrics?'),
       );
-    await waitFor(() => expect(reads()).toHaveLength(5));
+    await waitFor(() => expect(reads()).toHaveLength(8));
+    const settledPaths = reads().map(record => record.path);
+    expect(new Set(settledPaths).size).toBe(settledPaths.length);
     await act(() => vi.advanceTimersByTimeAsync(6000));
-    expect(reads()).toHaveLength(5);
+    expect(reads().map(record => record.path)).toEqual(settledPaths);
     expect(fixture.records.some((record) => record.path.endsWith('/auth/session'))).toBe(false);
     view.unmount();
   },
