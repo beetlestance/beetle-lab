@@ -1,13 +1,15 @@
-import type { RunComparisonItem, RunHistorySummary } from '@beetle/contracts/api';
+import type { RunComparisonItem } from '@beetle/contracts/api';
 import { Table, Td, Th } from '../../../components/Table.js';
 import { formatBytes, formatDuration, formatNumber, formatPercent, shortId } from '../../run-results/format.js';
-import type { Summaries } from './useComparison.js';
+import { comparisonFigures } from './figures.js';
+import type { ComparisonFigures } from './figures.js';
+import type { Summaries, Overviews } from './useComparison.js';
 
 type Row = {
   label: string;
-  value(summary: RunHistorySummary): number | null;
+  value(summary: ComparisonFigures): number | null;
   show(value: number): string | null;
-  delta: 'relative' | 'points' | 'duration';
+  delta: 'relative' | 'points' | 'duration' | 'absolute';
 };
 const rows: readonly Row[] = [
   {
@@ -17,19 +19,38 @@ const rows: readonly Row[] = [
     delta: 'relative',
   },
   {
-    label: 'p95, histogram estimate',
-    value: (s) => s.httpP95?.estimate ?? null,
+    label: 'p50, histogram estimate',
+    value: (s) => s.p50,
     show: (v) => `${formatNumber(v, 'integer')} ms`,
     delta: 'relative',
   },
-  { label: 'Failed requests', value: (s) => s.httpFailureRatio, show: (v) => formatPercent(v), delta: 'points' },
+  {
+    label: 'p95, histogram estimate',
+    value: (s) => s.p95,
+    show: (v) => `${formatNumber(v, 'integer')} ms`,
+    delta: 'relative',
+  },
+  {
+    label: 'p99, histogram estimate',
+    value: (s) => s.p99,
+    show: (v) => `${formatNumber(v, 'integer')} ms`,
+    delta: 'relative',
+  },
+  { label: 'Failed requests', value: (s) => s.failureRatio, show: (v) => formatPercent(v), delta: 'points' },
+  { label: 'Checks passed', value: (s) => s.checksRatio, show: (v) => formatPercent(v), delta: 'points' },
+  {
+    label: 'Dropped iterations',
+    value: (s) => s.droppedIterations,
+    show: (v) => formatNumber(v, 'integer'),
+    delta: 'absolute',
+  },
   { label: 'Requests', value: (s) => s.requestCount, show: (v) => formatNumber(v, 'integer'), delta: 'relative' },
   { label: 'Length', value: (s) => s.testDurationMs, show: (v) => formatDuration(v), delta: 'duration' },
 ];
 
 /** Client-side difference from the baseline, labelled; nothing when either side is unknown. */
 export function delta(kind: Row['delta'], base: number | null, value: number | null): string | null {
-  if (base === null || value === null) return null;
+  if (base === null || value === null || !Number.isFinite(base) || !Number.isFinite(value)) return null;
   if (value === base) return 'same';
   return deltaOf[kind](base, value);
 }
@@ -37,6 +58,9 @@ export function delta(kind: Row['delta'], base: number | null, value: number | n
 const sign = (difference: number) => (difference > 0 ? '+' : '−');
 
 const deltaOf: Record<Row['delta'], (base: number, value: number) => string | null> = {
+  absolute(base, value) {
+    return `${sign(value - base)}${formatNumber(Math.abs(value - base), 'integer')}`;
+  },
   points(base, value) {
     const points = Math.round((value - base) * 10000) / 100;
     return points === 0 ? 'same' : `${sign(points)}${Math.abs(points)} pp`;
@@ -47,28 +71,45 @@ const deltaOf: Record<Row['delta'], (base: number, value: number) => string | nu
   },
   relative(base, value) {
     if (base === 0) return null;
-    const percent = Math.round(((value - base) / base) * 100);
+    const change = ((value - base) / base) * 100;
+    if (!Number.isFinite(change)) return null;
+    const percent = Math.round(change);
     return percent === 0 ? 'same' : `${sign(percent)}${Math.abs(percent)}%`;
   },
 };
-
-function summaryOf(summaries: Summaries | undefined, item: RunComparisonItem) {
-  const value = summaries?.get(item.run.id.toLowerCase());
-  return value && value.availability === 'ready' ? value : null;
-}
 
 /** Whole-run figures per run with differences from the first (baseline) run. */
 export function ComparisonDeltas({
   items,
   summaries,
+  overviews,
 }: {
   items: readonly RunComparisonItem[];
   summaries: Summaries | undefined;
+  overviews: Overviews | undefined;
 }) {
-  const values = items.map((item) => summaryOf(summaries, item));
+  const values = items.map((item) =>
+    comparisonFigures(summaries?.get(item.run.id.toLowerCase()), overviews?.get(item.run.id.toLowerCase())),
+  );
   if (summaries === undefined) return <p role="status">Loading whole-run figures…</p>;
-  if (values.every((value) => value === null))
-    return <p className="compare-muted">No whole-run figures were recorded for these runs.</p>;
+  return (
+    <>
+      <ComparisonReadNotes items={items} overviews={overviews} />
+      {values.every((value) => value === null) ? (
+        <p className="compare-muted">Whole-run figures are unavailable for these runs.</p>
+      ) : (
+        <FiguresTable items={items} values={values} />
+      )}
+    </>
+  );
+}
+function FiguresTable({
+  items,
+  values,
+}: {
+  items: readonly RunComparisonItem[];
+  values: readonly (ComparisonFigures | null)[];
+}) {
   return (
     <Table
       caption="Whole-run figures, with each run's difference from the baseline"
@@ -121,6 +162,41 @@ export function ComparisonDeltas({
         ))}
       </tr>
     </Table>
+  );
+}
+
+function ComparisonReadNotes({
+  items,
+  overviews,
+}: {
+  items: readonly RunComparisonItem[];
+  overviews: Overviews | undefined;
+}) {
+  return (
+    <div className="compare-muted">
+      <p>Request rates are whole-run averages; latency values are histogram estimates.</p>
+      {items.map((item) => {
+        const read = overviews?.get(item.run.id.toLowerCase());
+        if (!read) return null;
+        if (read.status === 'error')
+          return (
+            <p role="alert" key={item.run.id}>
+              {shortId(item.run.id)}: detailed measurements could not be loaded. Available saved history figures remain
+              below.
+            </p>
+          );
+        if (read.value.availability !== 'ready')
+          return (
+            <p key={item.run.id}>
+              {shortId(item.run.id)}: detailed measurements {read.value.availability.replaceAll('_', ' ')}. Unknown
+              fields stay missing.
+            </p>
+          );
+        return read.value.source?.coverage.complete === false ? (
+          <p key={item.run.id}>{shortId(item.run.id)}: partial window coverage.</p>
+        ) : null;
+      })}
+    </div>
   );
 }
 

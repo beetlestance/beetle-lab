@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type {
   RunComparisonSnapshot,
   RunHistorySummary,
+  RunMetricOverview,
   RunMetricKey,
   RunMetricSeriesPage,
 } from '@beetle/contracts/api';
@@ -19,6 +20,9 @@ interface View {
   error: boolean;
   busy: boolean;
 }
+export type OverviewRead =
+  { readonly status: 'error' } | { readonly status: 'loaded'; readonly value: RunMetricOverview };
+export type Overviews = ReadonlyMap<string, OverviewRead>;
 export type Summaries = ReadonlyMap<string, RunHistorySummary | null>;
 // Physical admission outlives routes and sessions; it retains no result cache.
 const comparisonAdmission = new ReadAdmission();
@@ -65,11 +69,14 @@ function readCatalogue({ api, params, signal }: ReadContext, snapshot: RunCompar
 /** Sequential; stops as soon as the read is no longer wanted, and the caller then discards it. */
 async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapshot) {
   const read = new Map<string, RunHistorySummary | null>();
+  const overviews = new Map<string, OverviewRead>();
   for (const item of snapshot.items) {
     if (!context.alive()) break;
     read.set(item.run.id.toLowerCase(), await summaryOf(context, item.run));
+    if (!context.alive()) break;
+    overviews.set(item.run.id.toLowerCase(), await overviewOf(context, item.run));
   }
-  return read;
+  return { summaries: read, overviews };
 }
 
 /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
@@ -81,6 +88,18 @@ async function summaryOf({ api, params, signal }: ReadContext, run: ComparedRun)
     return value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
   } catch {
     return null;
+  }
+}
+
+/** A bounded projection per run, sequenced within the same original admission. */
+async function overviewOf({ api, params, signal }: ReadContext, run: ComparedRun): Promise<OverviewRead> {
+  try {
+    const value = await readResult(
+      api.getRunMetricOverview({ params: { ...params, runId: run.id, attemptId: run.activeAttemptId }, signal }),
+    );
+    return { status: 'loaded', value };
+  } catch {
+    return { status: 'error' };
   }
 }
 
@@ -96,7 +115,10 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   const [busy, setBusy] = useState(admission.busy);
   const view = saved?.lease === lease ? saved.view : empty;
   // Whole-run summaries are read with the first catalogue load and kept per selection.
-  const [summaries, setSummaries] = useState<{ owner: object; value: Summaries }>();
+  const [summaries, setSummaries] = useState<{
+    owner: object;
+    value: { summaries: Summaries; overviews: Overviews };
+  }>();
   useEffect(() => admission.subscribe(() => setBusy(admission.busy)), [admission]);
   useEffect(() => {
     const controller = new AbortController();
@@ -139,6 +161,15 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   function retry() {
     setChoice({ owner, command: { ...command } });
   }
-  const summary = summaries?.owner === owner ? summaries.value : undefined;
-  return { view, summaries: summary, admission, busy: busy || view.busy, select, page, retry };
+  const recorded = summaries?.owner === owner ? summaries.value : undefined;
+  return {
+    view,
+    summaries: recorded?.summaries,
+    overviews: recorded?.overviews,
+    admission,
+    busy: busy || view.busy,
+    select,
+    page,
+    retry,
+  };
 }

@@ -71,6 +71,19 @@ Phone views retain separate report sections and their actual anchors. Navigation
 adds no reader of its own; selected feature owners retain their existing admission,
 publication, retry and retirement rules.
 
+## Comparison figures
+
+Comparison reads one bounded overview per selected terminal run (two to four),
+sequentially with the existing exact-ID history reads under the same original
+admission. Retirement hides the old view and prevents peer work; an ignored abort
+never refunds physical admission before the API original settles. No polling.
+Ready overviews supply their own complete figure set: p50/p95/p99 estimates,
+request/failure/check values and dropped iterations. Missing fields remain unknown;
+no history field fills a ready overview's null. Without a ready overview, existing
+accepted history scalars can remain, with a per-run error/availability note.
+Rates stay labelled whole-run averages; no peak is invented from the configured
+load. Differences describe scalar observations, not statistical confidence.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -99,3 +112,6 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
+| `web/src/features/runs/comparison/useComparison.ts` | `5b319d2227bd` |
+| `web/src/features/runs/comparison/figures.ts` | `453533dcc6d5` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `5ef9d85ae2fa` |

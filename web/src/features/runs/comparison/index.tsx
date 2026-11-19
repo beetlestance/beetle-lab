@@ -60,7 +60,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
       {snapshot && (
         <>
           <RunStrip scope={scope} ids={ids} snapshot={snapshot} />
-          <ComparisonDeltas items={snapshot.items} summaries={state.summaries} />
+          <ComparisonDeltas items={snapshot.items} summaries={state.summaries} overviews={state.overviews} />
           <section className="compare-section" aria-labelledby="compare-different">
             <h2 id="compare-different">What was different</h2>
             <WhatWasDifferent items={snapshot.items} />

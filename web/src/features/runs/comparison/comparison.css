@@ -68,3 +68,5 @@
     flex-direction: column;
   }
 }
+
+.compare-deltas .numeric { white-space: nowrap; }
