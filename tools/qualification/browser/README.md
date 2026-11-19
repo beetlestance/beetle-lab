@@ -86,6 +86,11 @@ This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile
 continues to require the original twelve functional phases.
 
+The `live-reconnect` profile runs only authoring and the bounded live lifecycle.
+It pauses and resumes the feed, interrupts only the active metrics read, and
+checks that the last figures stay visible until Retry now restores a real read.
+It captures both states before reconnecting after reload and cancelling the run.
+
 The optional `BEETLE_BROWSER_PROFILE=reference` requires its own evidence directory
 and checks visible filtering/operation/schema navigation, all four browser downloads
 against exact shipped frontend file hashes/sizes, HEAD MIME/length/nosniff, missing
