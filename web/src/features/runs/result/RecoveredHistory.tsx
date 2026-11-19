@@ -20,6 +20,18 @@ export function recoveredHistoryState(reads: ResultReads) {
   if (query.isError || query.isFetching || query.data) return query;
 }
 
+export function stoppedMeasurementsAbsent(reads: ResultReads): boolean {
+  return (
+    reads.result.status === 'unavailable' &&
+    reads.overview.isSuccess &&
+    reads.overview.data.availability === 'not_recorded' &&
+    reads.chartHistory.isSuccess &&
+    reads.chartHistory.data.reason === 'not_recorded' &&
+    reads.stoppedHistory.isSuccess &&
+    reads.stoppedHistory.data === null
+  );
+}
+
 export function resultSections(reads: ResultReads, showTarget: boolean) {
   const recovered = recoveredHistoryState(reads);
   const target = recovered?.isSuccess && Boolean(recovered.data?.targetSamples?.length);

@@ -4,7 +4,7 @@ import { k6RequestsPerSecond } from '@beetle/contracts/k6-history';
 import type { useRecordedCharts } from './RecordedCharts.js';
 import type { ResultReads } from './useResultReads.js';
 import { MetricSummary, OverviewStatus } from './Overview.js';
-import { recoveredHistoryState } from './RecoveredHistory.js';
+import { recoveredHistoryState, stoppedMeasurementsAbsent } from './RecoveredHistory.js';
 import { SummaryTiles } from './Sections.js';
 import { formatNumber, formatPercent } from '../../run-results/format.js';
 
@@ -35,6 +35,8 @@ function SummaryContent({ reads, charts, ready, phone, archiveMissing }: Paramet
   const view = reads.result.view;
   const native = archiveMissing && view.status === 'ready' ? view.result.nativeOverview : undefined;
   if (native) return <NativeSummary evidence={native} />;
+  if (stoppedMeasurementsAbsent(reads) && reads.summary?.availability === 'not_recorded')
+    return <p className="result-muted">No whole-run figures were recorded.</p>;
   if (onlyRecoveredMeasurements(reads))
     return <p className="result-muted">Only sampled charts were recovered. Whole-run figures are unavailable.</p>;
   return (

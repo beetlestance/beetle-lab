@@ -75,6 +75,9 @@ The charts label the time origin and coverage. They display retained metric
 windows and target readings, with gaps and unavailable values preserved. The
 overview switches between p95 latency and request rate for the same windows.
 They carry no whole-run totals, threshold verdict, endpoint summary or archive.
+When a stopped attempt has neither an archive nor retained observations, Results
+explains the missing measurements directly. Pending reads and errors retain
+their retry controls.
 
 ## Anchors
 
@@ -90,7 +93,7 @@ They carry no whole-run totals, threshold verdict, endpoint summary or archive.
 | `web/src/features/runs/result/EndpointTable.tsx` | `20fd4c27e821` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
-| `web/src/features/runs/result/RecordedCharts.tsx` | `3132a7e59811` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `1444e90c48da` |
+| `web/src/features/runs/result/index.tsx` | `fcf5470ed7bc` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |
