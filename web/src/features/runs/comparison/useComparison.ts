@@ -23,6 +23,7 @@ interface View {
   snapshot?: RunComparisonSnapshot;
   page?: RunMetricSeriesPage;
   error: boolean;
+  catalogueError: boolean;
   busy: boolean;
 }
 export type OverviewRead =
@@ -50,7 +51,7 @@ function ownedReads(saved: SavedReads | undefined, owner: object): CapturedReads
 // Physical admission outlives routes and sessions; it retains no result cache.
 const comparisonAdmission = new ReadAdmission();
 const initial: Command = { metric: null, catalogue: true };
-const empty: View = { error: false, busy: true };
+const empty: View = { error: false, catalogueError: false, busy: true };
 type ComparedRun = RunComparisonSnapshot['items'][number]['run'];
 /** One admitted read: its client, scope, abort signal, and whether its result is still wanted. */
 interface ReadContext {
@@ -73,10 +74,21 @@ async function readComparison(context: ReadContext, ids: readonly string[], comm
     }),
   );
   if (!alive()) return undefined;
-  const page = command.catalogue ? await readCatalogue(context, snapshot, command.cursor) : undefined;
+  const catalogue = command.catalogue
+    ? await captureCatalogue(context, snapshot, command.cursor)
+    : { page: undefined, catalogueError: false };
   const firstLoad = command.refreshFacts === true || (command.catalogue && !command.cursor);
   const read = firstLoad ? await readSummaries(context, snapshot) : undefined;
-  return { snapshot, page, read };
+  return { snapshot, ...catalogue, read };
+}
+
+/** Catalogue capacity failures do not erase an already accepted comparison. */
+async function captureCatalogue(context: ReadContext, snapshot: RunComparisonSnapshot, cursor?: string) {
+  try {
+    return { page: await readCatalogue(context, snapshot, cursor), catalogueError: false };
+  } catch {
+    return { page: undefined, catalogueError: true };
+  }
 }
 
 function readCatalogue({ api, params, signal }: ReadContext, snapshot: RunComparisonSnapshot, cursor?: string) {
@@ -188,10 +200,16 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
         const result = await readComparison({ api, params, signal: owned.signal, alive }, ids, command);
         if (!result || !alive()) return;
         if (result.read) setCaptured({ owner: lease.owner, value: result.read });
-        const { snapshot, page } = result;
+        const { snapshot, page, catalogueError } = result;
         setSaved({
           lease,
-          view: { ...(snapshot ? { snapshot } : {}), ...(page ? { page } : {}), error: false, busy: false },
+          view: {
+            ...(snapshot ? { snapshot } : {}),
+            ...(page ? { page } : {}),
+            catalogueError,
+            error: false,
+            busy: false,
+          },
         });
       });
       if (!action) throw new Error('Comparison read busy');
@@ -205,7 +223,7 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
             ? { ...saved, value: { ...saved.value, contexts: new Map(), workspaceName: null } }
             : saved,
         );
-        setSaved({ lease, view: { error: true, busy: false } });
+        setSaved({ lease, view: { error: true, catalogueError: false, busy: false } });
       }
     });
     return () => {
@@ -242,7 +260,7 @@ async function workspaceOnly({ api, params, signal, alive }: ReadContext) {
     histories: new Map(),
     targets: new Map(),
   };
-  return { snapshot: undefined, page: undefined, read };
+  return { snapshot: undefined, page: undefined, catalogueError: false, read };
 }
 
 /** Failed reads retire mutable names while preserving immutable captured evidence. */
