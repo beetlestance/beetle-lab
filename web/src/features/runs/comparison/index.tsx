@@ -103,6 +103,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
           />
           <RecordedComparisonCharts
             key={'workload:' + ids.join(',')}
+            summaries={state.summaries}
             items={snapshot.items}
             histories={state.histories}
             overviews={state.overviews}

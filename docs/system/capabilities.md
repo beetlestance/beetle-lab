@@ -13,7 +13,7 @@ measurements live in [evidence](../evidence/README.md).
   discovery supplies the request value palette.
 - Run/cancel, persisted results, metric history, comparison, reports and exports.
 - A scoped result-metric overview supplies pooled latency, checks and bounded endpoint totals; the result UI renders these tiles and filtered endpoints.
-- A source-bound recorded-chart read supplies sampled actual windows and observed peak traffic; the result UI plots it with shared hover.
+- A source-bound recorded-chart read supplies sampled actual windows, observed peak traffic and recorded native-window VU means; the result UI plots it with shared hover.
 - Scoped overviews include exact hourly submission counts and current outcomes.
 - Public HTTP API, generated schemas and downloadable AI-agent instructions under
   `/reference`. An MCP server is not shipped.
@@ -35,4 +35,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `7cf0f2c30f70` |
+| `contracts/api/v2/` | `52efe0d82132` |

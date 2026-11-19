@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {chartSampleOrdinals,runChartHistoryMatches,validateApi,createApiClient} from '../../src/api/index.js';
+import {chartSampleOrdinals,runChartHistoryMatches,validateApi,createApiClient,recordedValueMean} from '../../src/api/index.js';
 import type {RunChartHistory} from '../../src/api/index.js';
 import fixture from '../../fixtures/api/valid/run-chart-history.json' with {type:'json'};
 const value=()=>structuredClone(fixture) as RunChartHistory;
@@ -34,4 +34,17 @@ it('enforces route identity through the generated client',async()=>{
 it('requires the exact peak when every known source window is represented',()=>{
  const item=value();item.observedPeakRequestsPerSecond=1000;
  expect(runChartHistoryMatches(item,key)).toBe(false);
+});
+
+it('keeps recorded means finite, preserves zero and refuses missing precision or negative inputs',()=>{
+ expect(recordedValueMean([])).toBeNull();expect(recordedValueMean([0,0])).toBe(0);
+ expect(recordedValueMean([0,1,2])).toBe(1);expect(recordedValueMean([Number.MAX_VALUE,Number.MAX_VALUE])).toBe(Number.MAX_VALUE);
+ for(const points of [[0,Number.MIN_VALUE],[Number.MIN_VALUE,0],[-1],[Infinity],[NaN],[-0]])expect(recordedValueMean(points)).toBeNull();
+});
+it('rejects forged means/counts and does not make partial coverage or gaps into whole-source averages',()=>{
+ const wrongs=[value(),value(),value(),value()];wrongs[0]!.meanVus=999;wrongs[1]!.knownVusWindows=0;
+ wrongs[2]!.source!.coverage={complete:false,latePoints:1,markerDelayDroppedBuckets:0};
+ wrongs[3]!.points.slice(1).forEach(point=>{point.startTimeMs+=1000;point.endTimeMs+=1000;});wrongs[3]!.points[1]!.gapBefore=true;
+ for(const item of wrongs)expect(runChartHistoryMatches(item,key)).toBe(false);
+ for(const item of wrongs.slice(2)){item.meanVus=null;expect(runChartHistoryMatches(item,key)).toBe(true);}
 });

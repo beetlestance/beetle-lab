@@ -29,7 +29,7 @@
     "api/v2/retention-traversal.schema.json": "05fcec431cf1dd9348105c36da8cdfbef98e2b9a62d13c67ecb08777169aa65a",
     "api/v2/retention.schema.json": "c87ee28dbf6af3218dbca12c07bc151de906624bea8072c36ea5e7702dde4b90",
     "api/v2/run-artifacts.schema.json": "093708ae3c917b759125fc08a3dffc31c0978bb122472b824a67d59f4554a59e",
-    "api/v2/run-chart-history.schema.json": "87f1727c0243876ca74edfb7b41d66a9e877f655f4cd630a55ec19f8f644d116",
+    "api/v2/run-chart-history.schema.json": "273ffacfec86801bd01bda3ee518f9dbbc044291cddd8415be7a14a340eb9b53",
     "api/v2/run-comparison.schema.json": "f7035b38f9df512ea10df9010513de4eabe2ffd3eaeabeeca80b2e59eecad238",
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
     "api/v2/run-history-counts.schema.json": "a6c3f2fb81c49ba149a1995620576392b73a2d2ec25db49ba372a0091160245f",

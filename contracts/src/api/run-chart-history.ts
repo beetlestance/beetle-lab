@@ -9,6 +9,42 @@ export function chartSampleOrdinals(windows: number): number[] {
   if (count <= 1) return count ? [1] : [];
   return Array.from({ length: count }, (_, i) => 1 + Math.floor((i * (windows - 1)) / (count - 1)));
 }
+/** Arithmetic mean of bounded recorded nonnegative values; never invent a zero on underflow. */
+export function recordedValueMean(values: readonly number[]): number | null {
+  if (!values.length) return null;
+  let result = 0;
+  for (const [index, value] of values.entries()) {
+    if (!Number.isFinite(value) || value < 0 || Object.is(value, -0)) return null;
+    const difference = value - result;
+    const step = difference / (index + 1);
+    if (difference !== 0 && step === 0) return null;
+    result += step;
+  }
+  return Number.isFinite(result) ? result : null;
+}
+function vusMeanMatches(value: RunChartHistory): boolean {
+  if (value.knownVusWindows > value.windows) return false;
+  const known = value.points.filter((point) => point.vus !== null);
+  if (
+    known.length > value.knownVusWindows ||
+    value.points.length - known.length > value.windows - value.knownVusWindows
+  )
+    return false;
+  const eligible = vusMeanEligible(value);
+  if (!eligible) return value.meanVus === null;
+  return value.sampled || value.meanVus === recordedValueMean(known.map((point) => point.vus!));
+}
+function vusMeanEligible(value: RunChartHistory): boolean {
+  const first = value.points[0],
+    last = value.points.at(-1);
+  return (
+    value.source?.coverage.complete === true &&
+    value.knownVusWindows === value.windows &&
+    !!first &&
+    !!last &&
+    last.endTimeMs - first.startTimeMs === value.windows * 1000
+  );
+}
 function pointValues(point: RunChartPoint): boolean {
   if (point.endTimeMs - point.startTimeMs !== 1000) return false;
   if (point.httpFailures === null || point.httpSamples === null) {
@@ -59,7 +95,7 @@ function contents(value: RunChartHistory): boolean {
     source.coverage.complete !== (source.coverage.latePoints === 0 && source.coverage.markerDelayDroppedBuckets === 0)
   )
     return false;
-  return pointsMatch(value);
+  return pointsMatch(value) && vusMeanMatches(value);
 }
 /** Schema validation precedes this ownership, source, sampling and reply-budget check. */
 export function runChartHistoryMatches(value: RunChartHistory, key: Key): boolean {
@@ -79,7 +115,14 @@ export function runChartHistoryMatches(value: RunChartHistory, key: Key): boolea
 }
 
 function unavailableMatches(value: RunChartHistory): boolean {
-  if (value.points.length || value.sampled || value.knownRequestWindows || value.observedPeakRequestsPerSecond !== null)
+  if (
+    value.points.length ||
+    value.sampled ||
+    value.knownRequestWindows ||
+    value.observedPeakRequestsPerSecond !== null ||
+    value.knownVusWindows !== 0 ||
+    value.meanVus !== null
+  )
     return false;
   return value.reason === 'too_large' ? value.source !== null : value.source === null && value.windows === 0;
 }

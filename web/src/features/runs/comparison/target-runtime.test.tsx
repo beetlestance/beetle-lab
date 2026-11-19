@@ -73,3 +73,18 @@ it('does not show empty source details when no compatible target source exists',
  expect(screen.queryByText('Recorded source details',{selector:'summary'})).not.toBeInTheDocument();
  expect(screen.getAllByText(/target report unavailable/)).toHaveLength(2);
 });
+
+it('uses declared recorded during means at rest while retaining distinct before/after plot values',()=>{
+ const f=measured();f.r.samples[2]!.values.usedHeapSize=9_000_000;
+ const cards=comparisonTargetCards(comparisonTargetSources(f.items,f.targets,f.histories));
+ expect(cards[0]!.series[0]!.values).toEqual([0,2,9]);expect(cards[0]!.series[0]!.restingValue).toBe(2);
+ f.r.missed=1;expect(comparisonTargetCards(comparisonTargetSources(f.items,f.targets,f.histories))[0]!.series[0]!.restingValue).toBeNull();
+});
+it('keeps an unknown during reading unknown instead of replacing it with the final observation',()=>{
+ const f=measured();
+ const nextReport={...f.r,samples:f.r.samples.map(sample=>sample.phase==='during'?{...sample,values:{...sample.values,cpuPercent:null}}:sample)};
+ const targets=new Map([...f.targets].map(([id,read])=>[id,{...read,report:nextReport}]));
+ const changed=comparisonTargetSources(f.items,targets,f.histories);
+ const cards=comparisonTargetCards(changed);expect(cards[1]!.series[0]!.values).toEqual([50,null,50]);
+ expect(cards[1]!.series[0]!.restingValue).toBeNull();
+});

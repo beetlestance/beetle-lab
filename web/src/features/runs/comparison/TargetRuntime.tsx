@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import type { RunComparisonItem } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
 import { LiveChart } from '../live/LiveChart.js';
-import { reading } from '../live/format.js';
+import { comparisonNumber } from './resting-values.js';
 import type { ComparisonHistories } from './useComparison.js';
 import type { ComparisonTargets, ComparisonTargetRead } from './target-read.js';
 import { comparisonTargetSources, comparisonTargetCards } from './target-model.js';
@@ -26,7 +26,7 @@ export function ComparisonTargetRuntime({
       <header className="compare-chart-heading">
         <h2>Target runtime</h2>
         <p className="compare-muted">
-          Target-reported observations, relative to each run’s native marker. Only matching metrics with declared
+          Resting legends use recorded during-phase means; hover shows observations. Only matching metrics with declared
           compatible units share a scale. No phase alignment or gap filling.
         </p>
       </header>
@@ -46,7 +46,7 @@ export function ComparisonTargetRuntime({
                 strictHoverRange
                 hoverT={hoverT}
                 onHover={onHover}
-                format={(value) => `${reading(value)} ${card.unit}`}
+                format={(value) => `${comparisonNumber(value)} ${card.unit}`}
               />
               {card.series.length < items.length && (
                 <p className="compare-muted">

@@ -12,7 +12,7 @@ export function comparisonPeak(overview: OverviewRead | undefined, history: Char
     return null;
   return matchingRecordedSource(overview.value, history.value) ? history.value.observedPeakRequestsPerSecond : null;
 }
-function matchingRecordedSource(overview: RunMetricOverview, history: RunChartHistory): boolean {
+export function matchingRecordedSource(overview: Pick<RunMetricOverview, 'source'>, history: RunChartHistory): boolean {
   const a = overview.source,
     b = history.source;
   return (

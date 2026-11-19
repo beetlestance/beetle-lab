@@ -1,3 +1,4 @@
+import { recordedValueMean } from '@beetle/contracts/api';
 import type { Artifact } from '@beetle/contracts';
 import type { RunComparisonItem, RunChartHistory } from '@beetle/contracts/api';
 import { targetReading, targetUnitProjection, projectTargetReading } from '@beetle/contracts/target-runtime';
@@ -94,6 +95,7 @@ export function comparisonTargetCards(sources: readonly Source[]): readonly Targ
         unit = projection.label;
         series.push({
           key: source.id,
+          restingValue: targetDuringMean(source, metric, projection),
           label: source.label,
           tone: source.tone,
           xs: source.plot.points.map((p) => p.t),
@@ -103,4 +105,18 @@ export function comparisonTargetCards(sources: readonly Source[]): readonly Targ
       }
     return { id: d.id, title: d.title, metric, unit, series, domain, ticks };
   });
+}
+
+/** A recorded during-phase mean requires complete, known compatible observations. */
+function targetDuringMean(
+  source: Source,
+  metric: TargetMetricName,
+  projection: ReturnType<typeof targetUnitProjection>,
+): number | null {
+  if (source.report.missed > 0 || source.report.limited || source.plot.points.some((point) => point.gap)) return null;
+  const values = source.report.samples
+    .filter((sample) => sample.phase === 'during')
+    .map((sample) => targetReading(sample, metric));
+  if (values.some((value) => value === null)) return null;
+  return projectTargetReading(recordedValueMean(values as number[]), projection);
 }

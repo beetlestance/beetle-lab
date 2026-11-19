@@ -7,6 +7,8 @@ export interface ChartSeries {
   readonly label: string;
   readonly tone: SeriesTone;
   readonly values: readonly (number | null)[];
+  /** Optional recorded aggregate at rest; explicit null remains unknown. Hover always uses source points. */
+  readonly restingValue?: number | null;
   /** Optional independent recorded source coordinates; absent keeps the shared timeline. */
   readonly xs?: readonly number[] | undefined;
   readonly breaks?: readonly boolean[] | undefined;
@@ -21,6 +23,8 @@ export interface ChartTick {
 }
 export interface ChartProps {
   readonly title: ReactNode;
+  /** Explicit empty-plot explanation; known resting aggregates remain in the caption. */
+  readonly emptyMessage?: ReactNode;
   readonly xs: readonly number[];
   /** Index i starts a new line segment (a gap in the readings before it). */
   readonly breaks?: readonly boolean[] | undefined;
@@ -181,7 +185,13 @@ function legendOf(props: ChartProps): { entries: LegendEntry[]; index: number } 
       s.xs === undefined && s.breaks === undefined
         ? index
         : readingIndex(props, s.xs ?? props.xs, s.breaks ?? props.breaks);
-    return { s, value: position >= 0 ? (s.values[position] ?? null) : null };
+    const value =
+      props.hoverT == null && s.restingValue !== undefined
+        ? s.restingValue
+        : position >= 0
+          ? (s.values[position] ?? null)
+          : null;
+    return { s, value };
   });
   return { entries, index };
 }
@@ -196,7 +206,7 @@ function cursorAt(props: ChartProps, index: number, scale: Scale): number | null
 /**
  * Line chart for live readings over a fixed run timeline. Missing values break
  * the line; nothing is interpolated across a gap. The legend shows the latest
- * reading, or the reading at the pointed-at second when a chart is hovered.
+ * reading (or an explicit recorded aggregate), then the pointed-at source reading on hover.
  */
 export function LiveChart(props: ChartProps) {
   const { format } = props;
@@ -205,26 +215,34 @@ export function LiveChart(props: ChartProps) {
   const label = entries.map(({ s, value }) => `${s.label} ${value === null ? 'no reading' : format(value)}`).join(', ');
   const title = typeof props.title === 'string' ? props.title : 'Chart';
   const cursor = cursorAt(props, index, scale);
+  const empty =
+    props.emptyMessage != null && !props.series.some((series) => series.values.some((value) => value !== null));
   return (
     <figure className={['live-chart', props.className].filter(Boolean).join(' ')}>
       <figcaption className="live-chart-head">
         <span className="live-chart-title">{props.title}</span>
         <Legend entries={entries} format={format} />
       </figcaption>
-      <span className="live-chart-max">{format(scale.yMax)}</span>
-      <svg
-        viewBox={`0 0 ${W} ${scale.H}`}
-        preserveAspectRatio="none"
-        role="img"
-        aria-label={`${title}: ${label}`}
-        {...hoverHandlers(props)}
-        style={{ height: `var(--live-plot-height, ${scale.H}px)` }}
-      >
-        <Guides props={props} scale={scale} />
-        <SeriesPaths props={props} scale={scale} />
-        {cursor !== null && <line className="live-cursor" x1={cursor} x2={cursor} y1={0} y2={scale.H} />}
-      </svg>
-      <Ticks props={props} scale={scale} />
+      {empty ? (
+        <p className="live-chart-empty">{props.emptyMessage}</p>
+      ) : (
+        <>
+          <span className="live-chart-max">{format(scale.yMax)}</span>
+          <svg
+            viewBox={`0 0 ${W} ${scale.H}`}
+            preserveAspectRatio="none"
+            role="img"
+            aria-label={`${title}: ${label}`}
+            {...hoverHandlers(props)}
+            style={{ height: `var(--live-plot-height, ${scale.H}px)` }}
+          >
+            <Guides props={props} scale={scale} />
+            <SeriesPaths props={props} scale={scale} />
+            {cursor !== null && <line className="live-cursor" x1={cursor} x2={cursor} y1={0} y2={scale.H} />}
+          </svg>
+          <Ticks props={props} scale={scale} />
+        </>
+      )}
     </figure>
   );
 }

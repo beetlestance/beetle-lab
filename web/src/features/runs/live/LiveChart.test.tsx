@@ -106,3 +106,28 @@ it('preserves independent recorded source coordinates without union-grid fill or
  const cursor=view.container.querySelector('.live-cursor');expect(cursor).toHaveAttribute('x1','300');
  view.rerender(<LiveChart {...props} hoverT={5000}/>);expect(view.getByRole('img')).toHaveAttribute('aria-label','Independent recordings: a no reading, b no reading');
 });
+
+it('uses an explicit aggregate only at rest and preserves source/gap behavior on hover',()=>{
+ const base={key:'a',label:'run',tone:'amber' as const,values:[2,8]};
+ const props={title:'Recorded VUs',xs:[1000,3000],domain:[0,4000] as const,breaks:[false,true],strictHoverRange:true,format:String};
+ const view=render(<LiveChart {...props} series={[{...base,restingValue:5}]}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Recorded VUs: run 5');
+ view.rerender(<LiveChart {...props} series={[{...base,restingValue:5}]} hoverT={1000}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Recorded VUs: run 2');
+ view.rerender(<LiveChart {...props} series={[{...base,restingValue:5}]} hoverT={2000}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Recorded VUs: run no reading');
+ view.rerender(<LiveChart {...props} series={[{...base,restingValue:null}]}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Recorded VUs: run no reading');
+ view.rerender(<LiveChart {...props} series={[{...base,restingValue:0}]}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Recorded VUs: run 0');
+ view.rerender(<LiveChart {...props} series={[base]}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Recorded VUs: run 8');
+});
+
+it('retains a known aggregate without inventing axes when no plot samples exist',()=>{
+ const props={title:'Recorded request rate',xs:[1000,2000],domain:[0,3000] as const,
+  series:[{key:'a',label:'run',tone:'amber' as const,values:[null,null],restingValue:4}],format:String,emptyMessage:'No sampled window readings.'};
+ const view=render(<LiveChart {...props}/>);expect(view.getByText('4')).toBeVisible();
+ expect(view.getByText('No sampled window readings.')).toBeVisible();expect(view.queryByRole('img')).toBeNull();
+ expect(view.container.querySelector('.live-chart-max')).toBeNull();expect(view.container.querySelector('.live-ticks')).toBeNull();
+});

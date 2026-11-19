@@ -37,7 +37,7 @@ export function recordedPlot(value: RunChartHistory): RecordedPlot | null {
   return { points, domain: [first, last], ticks };
 }
 /** Never attach a peak from another manifest or numeric original to the summary. */
-export function sameChartSource(overview: RunMetricOverview, history: RunChartHistory): boolean {
+export function sameChartSource(overview: Pick<RunMetricOverview, 'source'>, history: RunChartHistory): boolean {
   const a = overview.source,
     b = history.source;
   return (

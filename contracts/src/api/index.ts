@@ -121,4 +121,4 @@ export {
 
 export { runMetricOverviewMatches } from './metric-overview.js';
 
-export { chartSampleOrdinals, runChartHistoryMatches } from './run-chart-history.js';
+export { chartSampleOrdinals, runChartHistoryMatches, recordedValueMean } from './run-chart-history.js';

@@ -22,9 +22,9 @@ Native threshold values/limits: [reading contract](threshold-readings.md).
 lane. It returns at most 900 actual source windows, evenly selected with both
 endpoints preserved, pooled HTTP percentile estimates, request/failure counts and
 actual VU gauges. Missing readings remain null; gaps remain explicit.
-Observed peak request rate and known-request-window count use every scanned
-window, including windows omitted from the plot. This is recorded one-second
-traffic, not a configured rate or an instantaneous peak guarantee.
+Peak rates and known-window counts scan every source window, including those omitted from the plot.
+`meanVus` averages all one-second latest native VU readings, not continuous busy time.
+Gaps, missing VUs, partial coverage or unsafe arithmetic leave the mean null; peaks never represent configured load.
 Limits stay 3,600 windows, 32 MiB data and 64 request labels; larger sources return
 `too_large` with no points. Replies are at most 1 MiB / 65,536 JSON nodes.
 Scope/attempt/source, deterministic ordinals, chronology, gap flags and peak bounds
@@ -108,31 +108,10 @@ The UI bounds the union to 1,024 IDs and renders 32 rows per local page. Each ce
 keeps its own recorded verdict/metric/value/limit; unavailable legacy evidence and
 a rule absent from a recorded set differ. Equal display labels grant no verdict.
 
-## Recorded comparison overlays
+## Comparison overlays
 
-One existing chart-history read per selected run shares comparison admission and
-retirement. Each reply remains bounded to 900 actual points / 1 MiB; the backend
-retains its 3,600-window / 32 MiB archive ceiling. No metric-per-endpoint fanout.
-P95, requests, failures and measured active-VU curves keep independent native-marker-relative
-coordinates on a common scale; they never fill a union grid, stretch phases or align wall clocks.
-Comparison plots are 120 px high; source coordinates, gap flags and default renderer behavior stay unchanged.
-Legends use each series' nearest source sample, hide readings outside coverage/across gaps and retain zero.
-An overlay cursor denotes requested time, not a new sample.
-Peaks require matching numeric generation/version/manifest/artifact/hash/native marker; missing/error/incompatible sources stay unknown.
-Downsampling, partial coverage and missing peak/source notes stay visible; healthy window counts use source details.
-
-## Target comparison overlays
-
-Configured sampling adds one scoped sealed-result read and one sole target report
-per run, sequentially within the existing comparison original. Disabled sampling
-adds neither. The existing shared two-original byte reader verifies exact length,
-SHA-256 and the 1 MiB / 256-sample codec; retirement retains unsettled originals.
-The native marker must belong to the exact numeric artifact ID/hash in that sealed
-result. Unsafe chronology, duplicate target timestamps or missing timing cannot
-enter an overlay. Same metric keys and compatible declared units share a scale;
-raw units and different runtime metrics never mix. Zeros/nulls/source positions
-remain exact. Links expose individual-run evidence when an overlay is unavailable.
-No polling or new API contract; errors and limited/missed collection stay visible. Healthy source identities use details.
+[Comparison charts](comparison-charts.md) owns common-scale recorded overlays,
+resting legends, target-phase means and source/hover safeguards.
 
 ## Configured scenario intent
 
@@ -179,12 +158,12 @@ Numeric hash and manifest bind ready source identity; restored history reads it 
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `db6adc16cee5` |
 | `web/src/features/runs/result/useResultReads.ts` | `38c36f18eee5` |
-| `app/src/application/run-metrics/chart-history.ts` | `8c4d276be252` |
+| `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
-| `contracts/api/v2/run-chart-history.schema.json` | `a6611d151c82` |
-| `contracts/src/api/run-chart-history.ts` | `760adceea5f8` |
+| `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |
+| `contracts/src/api/run-chart-history.ts` | `2dd377350a07` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
-| `web/src/features/runs/result/chart-model.ts` | `1887a2817681` |
+| `web/src/features/runs/result/chart-model.ts` | `334c3b9b8c24` |
 | `web/src/features/runs/charts/` | `7df1caa86595` |
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
@@ -198,18 +177,18 @@ Numeric hash and manifest bind ready source identity; restored history reads it 
 | `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/SourceNotes.tsx` | `0c63fd55d953` |
-| `web/src/features/runs/comparison/RecordedCharts.tsx` | `f6d13f3d74a3` |
+| `web/src/features/runs/comparison/RecordedCharts.tsx` | `3bf347e8f56f` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
-| `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
-| `web/src/features/runs/live/LiveChart.tsx` | `651a2449b402` |
+| `web/src/features/runs/comparison/recorded-source.ts` | `04e94c1c9f79` |
+| `web/src/features/runs/live/LiveChart.tsx` | `e3144875cff1` |
 | `app/src/application/run-comparison/failed-slo.ts` | `6e0a7894448f` |
 | `app/src/application/run-comparison/serialize.ts` | `0afc9d598903` |
 | `contracts/api/v2/run-comparison.schema.json` | `894f2795a40b` |
 | `contracts/src/api/client/comparison-facts.ts` | `3aced93caa5b` |
 | `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
 | `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
-| `web/src/features/runs/comparison/target-model.ts` | `fcd94018f94f` |
-| `web/src/features/runs/comparison/TargetRuntime.tsx` | `689024e21952` |
+| `web/src/features/runs/comparison/target-model.ts` | `69929b3e4eda` |
+| `web/src/features/runs/comparison/TargetRuntime.tsx` | `3d842b27be6c` |
 | `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
 | `web/src/features/runs/comparison/Slos.tsx` | `e66be0ef3b34` |
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
@@ -217,4 +196,4 @@ Numeric hash and manifest bind ready source identity; restored history reads it 
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
 | `web/src/features/runs/comparison/Advanced.tsx` | `76c8a8aa6442` |
-| `web/src/features/runs/comparison/index.tsx` | `eff581df8467` |
+| `web/src/features/runs/comparison/index.tsx` | `f4f9cd0de831` |
