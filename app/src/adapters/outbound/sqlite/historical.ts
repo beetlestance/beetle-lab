@@ -23,6 +23,7 @@ const reads = new Set<Operation['kind']>([
   'getRunExecution',
   'listRunArtifacts',
   'getRunArtifact',
+  'getRunStoppedHistory',
   'getSuite',
   'getRevision',
   'listSuites',

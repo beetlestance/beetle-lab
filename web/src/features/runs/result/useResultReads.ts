@@ -1,8 +1,10 @@
 import { verifiedRunRevision } from '../run-revision.js';
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Run } from '@beetle/contracts/api';
-import { readResult, useApi } from '../../../app/api.js';
+import type { UseQueryResult } from '@tanstack/react-query';
+import { liveMetricScopeMatches } from '@beetle/contracts/api';
+import type { Run, RunChartHistory } from '@beetle/contracts/api';
+import { ApiFailure, readResult, useApi } from '../../../app/api.js';
 import { queryKeys } from '../../../app/queries.js';
 import { resultView } from '../../run-results/index.js';
 
@@ -48,6 +50,7 @@ export function useResultReads(run: Run) {
         api.getRunChartHistory({ params: { ...params, runId: run.id, attemptId: run.activeAttemptId }, signal }),
       ),
   });
+  const stoppedHistory = useStoppedHistory(run, chartHistory);
   const suite = useQuery({
     queryKey: [...key, 'suite', run.suiteId.toLowerCase()],
     queryFn: ({ signal }) => readResult(api.getSuite({ params: { ...params, suiteId: run.suiteId }, signal })),
@@ -60,7 +63,7 @@ export function useResultReads(run: Run) {
   });
   useEffect(
     () => () => {
-      for (const part of ['result', 'summary', 'suite', 'revision', 'overview', 'chart-history']) {
+      for (const part of ['result', 'summary', 'suite', 'revision', 'overview', 'chart-history', 'stopped-history']) {
         const queryKey = [...queryKeys.run(organizationId, workspaceId, run.id), part];
         void client.cancelQueries({ queryKey });
         client.removeQueries({ queryKey });
@@ -76,6 +79,7 @@ export function useResultReads(run: Run) {
     result: { query: result, status, view },
     overview,
     chartHistory,
+    stoppedHistory,
     summary: summary.data ?? null,
     summaryStatus: summary.isPending ? 'loading' : summary.isError ? 'error' : 'ready',
     suite: available(suite),
@@ -83,6 +87,35 @@ export function useResultReads(run: Run) {
     revisionQuery: revision,
   } as const;
 }
+function useStoppedHistory(run: Run, chartHistory: UseQueryResult<RunChartHistory>) {
+  const api = useApi();
+  const { organizationId, workspaceId } = run.scope;
+  const params = { organizationId, workspaceId };
+  const attempt = run.activeAttemptId.toLowerCase();
+  return useQuery({
+    queryKey: [...queryKeys.run(organizationId, workspaceId, run.id), 'stopped-history', attempt],
+    enabled:
+      (run.state === 'cancelled' || run.state === 'errored') &&
+      chartHistory.isSuccess &&
+      chartHistory.data.reason === 'not_recorded',
+    refetchOnReconnect: false,
+    queryFn: async ({ signal }) => {
+      const reply = await api.getRunStoppedHistory({
+        params: { ...params, runId: run.id, attemptId: run.activeAttemptId },
+        signal,
+      });
+      if (reply.ok) {
+        if (!liveMetricScopeMatches(reply.value.scope, { ...params, attemptId: attempt, generation: 1 }))
+          throw new ApiFailure({ kind: 'response' });
+        return reply.value;
+      }
+      if (reply.error.kind === 'protocol' && reply.error.status === 404 && reply.error.protocol?.code === 'not_found')
+        return null;
+      throw new ApiFailure(reply.error);
+    },
+  });
+}
+
 export type ResultReads = ReturnType<typeof useResultReads>;
 
 /** A failed refresh cannot continue granting a current name or revision label. */

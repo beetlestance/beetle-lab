@@ -1,18 +1,27 @@
-import { validateApi, runArtifactPageMatches, captureRunArtifactCursor } from '@beetle/contracts/api';
-import type { RunArtifactPage } from '@beetle/contracts/api';
+import {
+  captureLiveMetricHistory,
+  liveMetricScopeMatches,
+  validateApi,
+  runArtifactPageMatches,
+  captureRunArtifactCursor,
+} from '@beetle/contracts/api';
+import type { LiveMetricHistory, RunArtifactPage } from '@beetle/contracts/api';
 import type { OutputFileRecord } from '../../../../ports/output-bytes.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import { decodeArtifact } from '../output-custody/index.js';
-import { boundedCopy, lower } from '../input-values.js';
+import { boundedCopy, lower, sha256 } from '../input-values.js';
 import type { PublishedArtifactRead, RunArtifactKey, RunArtifactListQuery } from '../../../../ports/run-artifacts.js';
 import type { EventBinding } from '../../../../ports/events.js';
 import type { Operation } from '../protocol.js';
-export type ArtifactReadOperation = Extract<Operation, { kind: 'listRunArtifacts' | 'getRunArtifact' }>;
+export type ArtifactReadOperation = Extract<
+  Operation,
+  { kind: 'listRunArtifacts' | 'getRunArtifact' | 'getRunStoppedHistory' }
+>;
 export function artifactReadOperation(input: unknown): input is ArtifactReadOperation {
   const kind =
     input && typeof input === 'object' ? (Object.getOwnPropertyDescriptor(input, 'kind')?.value as unknown) : undefined;
-  return kind === 'listRunArtifacts' || kind === 'getRunArtifact';
+  return kind === 'listRunArtifacts' || kind === 'getRunArtifact' || kind === 'getRunStoppedHistory';
 }
 export function captureArtifactReadOperation(input: unknown): ArtifactReadOperation {
   const copy = boundedCopy(input, 4096) as ArtifactReadOperation & { messageId?: number };
@@ -20,7 +29,8 @@ export function captureArtifactReadOperation(input: unknown): ArtifactReadOperat
   const list = copy.kind === 'listRunArtifacts';
   const key = list ? copy.query : copy.key;
   captureHeader(copy);
-  const keys = list ? ['scope', 'id', 'attemptId', 'limit', 'cursor'] : ['scope', 'id', 'attemptId', 'artifactId'];
+  const keys = list ? ['scope', 'id', 'attemptId', 'limit', 'cursor'] : ['scope', 'id', 'attemptId'];
+  if (copy.kind === 'getRunArtifact') keys.push('artifactId');
   requireRule(key !== null && typeof key === 'object' && Object.keys(key).every((k) => keys.includes(k)));
   requireRule(
     validateApi('WorkspaceScope', key.scope).ok &&
@@ -40,6 +50,7 @@ export function captureArtifactReadOperation(input: unknown): ArtifactReadOperat
     requireRule(validateApi('Uuid', copy.key.artifactId).ok);
     return { kind: copy.kind, key: { ...base, artifactId: lower(copy.key.artifactId) } };
   }
+  if (copy.kind === 'getRunStoppedHistory') return { kind: copy.kind, key: base };
   return { kind: copy.kind, query: captureList(base, copy.query) };
 }
 function captureList(base: Omit<RunArtifactListQuery, 'limit'>, query: RunArtifactListQuery): RunArtifactListQuery {
@@ -51,12 +62,23 @@ function captureList(base: Omit<RunArtifactListQuery, 'limit'>, query: RunArtifa
 export function captureArtifactReadReply(
   operation: ArtifactReadOperation,
   input: unknown,
-): RunArtifactPage | PublishedArtifactRead {
+): RunArtifactPage | PublishedArtifactRead | LiveMetricHistory {
   if (operation.kind === 'listRunArtifacts') {
     const checked = validateApi('RunArtifactPage', boundedCopy(input, 73728));
     requireRule(checked.ok);
     requireRule(runArtifactPageMatches(checked.value, operation.query));
     return checked.value;
+  }
+  if (operation.kind === 'getRunStoppedHistory') {
+    const value = captureLiveMetricHistory(input, sha256);
+    requireRule(
+      liveMetricScopeMatches(value.scope, {
+        ...operation.key.scope,
+        attemptId: operation.key.attemptId,
+        generation: 1,
+      }),
+    );
+    return value;
   }
   const value = boundedCopy(input, 4096) as PublishedArtifactRead;
   requireRule(

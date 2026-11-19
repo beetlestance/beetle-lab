@@ -264,7 +264,11 @@ function metricRoutes(
       server.log.error({ code: 'history_summary_index_failure', problem }, 'History summary indexing failed');
     },
   );
-  const history = registerRunMetricRoutes(server, { authorize, service: historyService });
+  const history = registerRunMetricRoutes(server, {
+    authorize,
+    service: historyService,
+    stoppedHistory: store.stoppedHistory,
+  });
   const comparisons = registerRunComparisonRoutes(server, {
     authorize,
     service: createRunComparisonService({

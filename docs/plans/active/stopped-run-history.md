@@ -4,7 +4,8 @@ Status: Implementation in progress. The Result views can display accepted
 partial evidence. After native retirement, the agent commits verified samples
 with the absence receipt. The authenticated runner can return the paired
 carrier. Backend finalisation retains it within the remaining output budget.
-Terminal reads and Results presentation remain open.
+The scoped terminal read and Results charts are in source. Packaged fault
+acceptance remains open.
 
 ## Current behaviour
 
@@ -72,7 +73,7 @@ receipts unchanged. Metric recovery remains a separate step.
    after the existing native retirement barrier. The single recovery owner drains
    actual reads, checks the prepared namespace and charges the record to the Offer
    and journal quota. An exact scoped read pairs the record and absence after restart.
-4. Add backend adoption, verified reads and deletion accounting. Bind the record
+4. Done in source. Backend adoption, verified reads and deletion accounting. Bind the record
    to the terminal attempt and enforce namespace and read-only restore rules.
    Extend the Results UI to show the available charts and their provenance.
 5. Run the exact packaged fault cases on a synthetic installation. Cancel, OOM

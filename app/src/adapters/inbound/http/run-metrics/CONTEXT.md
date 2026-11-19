@@ -5,4 +5,5 @@ schema compilers and Host/Origin/session authorization. One request lifetime own
 original service reads, deadline/cancellation and final response. close fences
 requests and closes/drains service before shared metadata/native adapters close.
 Routes: listRunMetricSeries, getRunMetricSamples, getRunLatencyAttribution.
-No public file paths or unsealed/live transport. Focused checks: app/test/http/run-metrics.
+The stopped-history read serves only scoped, finalized checkpoint observations.
+No public file paths or live transport. Focused checks: app/test/http/run-metrics.

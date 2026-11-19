@@ -17,7 +17,12 @@ import type { ExportConfiguration } from '../../../ports/exports.js';
 import type { LocalSessionOperation, LocalSessionRecord } from '../../../ports/local-session.js';
 import type { OutputDeletionOperation, OutputDeletionValue } from '../../../ports/output-deletion-metadata.js';
 import type { RunExecutionSnapshot } from '../../../ports/run-live-metrics.js';
-import type { PublishedArtifactRead, RunArtifactListQuery, RunArtifactKey } from '../../../ports/run-artifacts.js';
+import type {
+  PublishedArtifactRead,
+  RunArtifactListQuery,
+  RunAttemptReadKey,
+  RunArtifactKey,
+} from '../../../ports/run-artifacts.js';
 import type { RunEventsQuery } from '../../../ports/run-events.js';
 import type { AbsenceOperation } from './output-absence/operations.js';
 import type { OutputAbsenceState, OutputAbsenceFinalizationReply } from '../../../ports/output-absence.js';
@@ -55,7 +60,14 @@ import type {
   DispatchClaim,
   DispatchObservation,
 } from '../../../ports/dispatch.js';
-import type { Run, RunPage, RunResultSnapshot, RunEventPage, RunArtifactPage } from '@beetle/contracts/api';
+import type {
+  Run,
+  RunPage,
+  RunResultSnapshot,
+  RunEventPage,
+  RunArtifactPage,
+  LiveMetricHistory,
+} from '@beetle/contracts/api';
 import type {
   InputCommand,
   InputAdvance,
@@ -159,6 +171,7 @@ export type Operation =
   | StatusOperation
   | { kind: 'listRunArtifacts'; query: RunArtifactListQuery }
   | { kind: 'getRunArtifact'; key: RunArtifactKey }
+  | { kind: 'getRunStoppedHistory'; key: RunAttemptReadKey }
   | { kind: 'listRuns'; query: RunList }
   | { kind: 'input'; command: InputCommand }
   | { kind: 'advanceInput'; command: InputAdvance }
@@ -217,6 +230,7 @@ export type Value =
   | PoolUsageFacts
   | RunQueueFacts
   | RunArtifactPage
+  | LiveMetricHistory
   | InputRecord
   | InputReceipt
   | InputPage

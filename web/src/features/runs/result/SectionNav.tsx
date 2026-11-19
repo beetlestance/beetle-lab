@@ -17,10 +17,12 @@ export function ResultSectionNav({
   onSelect,
   archiveMissing,
   hideTarget,
+  recoveredCharts,
 }: {
   onSelect(section: Section): void;
   archiveMissing?: boolean;
   hideTarget?: boolean;
+  recoveredCharts?: boolean;
 }) {
   const { hash } = useLocation();
   const [selected, setSelected] = useState<Section>(() => sectionFromHash(hash) ?? 'summary');
@@ -31,7 +33,7 @@ export function ResultSectionNav({
     return () => window.removeEventListener('hashchange', changed);
   }, [hash]);
   const available = sections.filter(([id]) => {
-    if (archiveMissing && (id === 'charts' || id === 'endpoints')) return false;
+    if (archiveMissing && (id === 'endpoints' || (id === 'charts' && !recoveredCharts))) return false;
     return !hideTarget || id !== 'target';
   });
   const active = available.some(([id]) => id === selected) ? selected : 'summary';

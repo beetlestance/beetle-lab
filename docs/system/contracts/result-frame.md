@@ -56,19 +56,31 @@ shows one explanation in place of chart and endpoint sections. The report,
 diagnostics and artifact tabs retain their usual publication checks.
 
 An incomplete result can display whole-run figures from the verified native k6
-summary. They carry native provenance, with the chart and endpoint section absent
-when no verified archive exists. Threshold readings remain visible without a
+summary. They carry native provenance, with endpoints absent when no verified archive exists. Charts may use
+recovered observations when available. Threshold readings remain visible without a
 run-level pass or fail label.
 For a stopped run, accepted partial threshold measurements use Not judged.
 Missing figures stay unavailable and the recorded test duration is shown only
 when provided by the accepted source.
+
+## Recovered observations
+
+For a cancelled or errored run without a published chart archive, Results calls
+`getRunStoppedHistory`. One metadata transaction checks the workspace, current
+attempt, deletion status and final absence receipt. It returns at most 2 MiB of
+verified checkpoint observations. The same read works in a restored viewer.
+Missing evidence returns `not_found`. Other read failures offer a retry.
+
+The charts label the time origin and coverage. They display retained metric
+windows and target readings, with gaps and unavailable values preserved.
+They carry no whole-run totals, threshold verdict, endpoint summary or archive.
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
 | `web/src/features/runs/result/headline.ts` | `f82605f66e42` |
-| `web/src/features/runs/result/SectionNav.tsx` | `c6e30d9a0588` |
+| `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
@@ -79,5 +91,5 @@ when provided by the accepted source.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `3132a7e59811` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `9e68369f8587` |
+| `web/src/features/runs/result/index.tsx` | `fbcae03f5852` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

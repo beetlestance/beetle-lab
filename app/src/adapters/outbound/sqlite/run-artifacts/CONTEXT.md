@@ -9,5 +9,7 @@ filename. Native OutputFileRecord stays unchanged and has no presentation field.
 Only matched finalization and complete published custody grants ready; matched absence grants absent.
 No writer, ACK, accounting, publication, cleanup or native file effect occurs here.
 Invalid requests fail invalid_input; foreign ownership fails not_found; contradictory evidence fails closed.
+The stopped-history read verifies the final absence receipt and observation digest
+within the same transaction, including on a restored store.
 The worker retains original ownership through reply validation and bounded serialization.
 Focused checks: app/test/run-artifacts/metadata.test.ts, absence.test.ts and native.test.ts.
