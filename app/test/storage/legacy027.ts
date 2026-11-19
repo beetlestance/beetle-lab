@@ -16,12 +16,14 @@ import {migration032} from '../../src/adapters/outbound/sqlite/migration032.js';
 import {migration033} from '../../src/adapters/outbound/sqlite/migration033.js';
 import {asSchema30} from './legacy030.js';
 import {migration035} from '../../src/adapters/outbound/sqlite/migration035.js';
+import {migration037} from '../../src/adapters/outbound/sqlite/migration037.js';
+import {migration038} from '../../src/adapters/outbound/sqlite/migration038.js';
 import {migration036} from '../../src/adapters/outbound/sqlite/migration036.js';
 import {migration034} from '../../src/adapters/outbound/sqlite/migration034.js';
 function graph(db:DatabaseSync){
  return db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_schema WHERE sql IS NOT NULL ORDER BY type,name").all();
 }
-function shipped(version:number):DatabaseSync{
+export function shipped(version:number):DatabaseSync{
  const reference=prior023(':memory:');registerBackendSettlement(reference);registerRetentionAccounting(reference);
  transaction(reference,()=>reference.exec(migration024));transaction(reference,()=>migrate025(reference));
  const later=[migration026,migration027,migration028,migration029,migration030,migration031,migration032,migration033].slice(0,Math.min(version,33)-25);
@@ -29,6 +31,8 @@ function shipped(version:number):DatabaseSync{
  if(version>=34)transaction(reference,()=>reference.exec(migration034));
  if(version>=35)transaction(reference,()=>reference.exec(migration035));
  if(version>=36)transaction(reference,()=>reference.exec(migration036));
+ if(version>=37)transaction(reference,()=>reference.exec(migration037));
+ if(version>=38)transaction(reference,()=>reference.exec(migration038));
  return reference;
 }
 /** Unknown schema refuses before asSchema30 mutates anything. */
@@ -39,7 +43,7 @@ function assertShipped(db:DatabaseSync,version:number):void{
 /** Test-only projection of an exact shipped synthetic schema; no retired identity may be rewound. */
 export function asSchema27(db:DatabaseSync):void{
  const initial=Number(db.prepare('PRAGMA user_version').get()?.user_version);if(initial===27)return;
- assert([28,29,30,31,32,33,34,35,36].includes(initial),'Cannot project fixture to schema27');
+ assert([28,29,30,31,32,33,34,35,36,37,38].includes(initial),'Cannot project fixture to schema27');
  assert(!db.prepare('SELECT 1 FROM workspaces WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired workspace data');
  if(initial>=30)assert(!db.prepare('SELECT 1 FROM organizations WHERE retired!=0 LIMIT 1').get(),'Cannot project fixture with retired organization data');
  if(initial>=31){assertShipped(db,initial);asSchema30(db);}

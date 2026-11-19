@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import type { DatabaseSync } from 'node:sqlite';
+import { migration025 } from '../../src/adapters/outbound/sqlite/migration025.js';
 import { migration031 } from '../../src/adapters/outbound/sqlite/migration031.js';
 import { migration032 } from '../../src/adapters/outbound/sqlite/migration032.js';
 import { migration033 } from '../../src/adapters/outbound/sqlite/migration033.js';
@@ -54,15 +55,16 @@ function assertNoInputMetadata(db: DatabaseSync): void {
   );
   assert(!db.prepare('SELECT 1 FROM input_shapes LIMIT 1').get(), 'Cannot project fixture with input shapes');
 }
-/** Test-only projection of synthetic schema34-37 fixtures to schema33; refuse recorded newer facts. */
+/** Test-only projection of synthetic schema34-38 fixtures to schema33; refuse recorded newer facts. */
 export function asSchema33(db: DatabaseSync): void {
   const initial = version(db);
-  assert([34, 35, 36, 37].includes(initial), 'Cannot project fixture to schema33');
+  assert([34, 35, 36, 37, 38].includes(initial), 'Cannot project fixture to schema33');
   if (initial >= 36) assert(!db.prepare('SELECT 1 FROM export_jobs WHERE last_agent_report_at IS NOT NULL LIMIT 1').get(),
     'Cannot project recorded agent report time');
   if (initial >= 37) assert(!db.prepare('SELECT 1 FROM run_notes WHERE updated_at IS NOT NULL LIMIT 1').get(),
     'Cannot project recorded note edit time');
   transaction(db, () => {
+    if (initial >= 38) restoreRetentionTrigger(db);
     if (initial >= 37) db.exec('ALTER TABLE run_notes DROP COLUMN updated_at');
     if (initial >= 36) db.exec('ALTER TABLE export_jobs DROP COLUMN last_agent_report_at');
     if (initial >= 35) db.exec('DROP INDEX exports_revision_latest');
@@ -72,7 +74,7 @@ export function asSchema33(db: DatabaseSync): void {
   });
 }
 /**
- * Test-only projection of a synthetic schema31-37 fixture to schema30, peeling 036 (only without report times), 035, 034, 033, 032
+ * Test-only projection of a synthetic schema31-38 fixture to schema30, peeling 036 (only without report times), 035, 034, 033, 032
  * then 031. Derived 034 listing state is dropped; run pins, authored
  * notes, descriptions, messages and input facts can never be rewound; server-stamped
  * savedAt/savedBy did not exist before 031, so they are dropped with their columns.
@@ -81,7 +83,7 @@ export function asSchema33(db: DatabaseSync): void {
 export function asSchema30(db: DatabaseSync): void {
   const initial = version(db);
   if (initial === 30) return;
-  assert([31, 32, 33, 34, 35, 36, 37].includes(initial), 'Cannot project fixture to schema30');
+  assert([31, 32, 33, 34, 35, 36, 37, 38].includes(initial), 'Cannot project fixture to schema30');
   if (initial >= 33) assert(!db.prepare('SELECT 1 FROM run_pins LIMIT 1').get(), 'Cannot project fixture with run pins');
   assert(!db.prepare('SELECT 1 FROM run_notes LIMIT 1').get(), 'Cannot project fixture with run notes');
   assert(!db.prepare('SELECT 1 FROM suites WHERE description IS NOT NULL LIMIT 1').get(), 'Cannot project descriptions');
@@ -89,6 +91,7 @@ export function asSchema30(db: DatabaseSync): void {
   if (initial >= 32) assertNoInputMetadata(db);
   if (initial >= 36) assert(!db.prepare('SELECT 1 FROM export_jobs WHERE last_agent_report_at IS NOT NULL LIMIT 1').get(), 'Cannot project recorded agent report time');
   transaction(db, () => {
+    if (initial >= 38) restoreRetentionTrigger(db);
     if (initial >= 36) db.exec('ALTER TABLE export_jobs DROP COLUMN last_agent_report_at');
     if (initial >= 35) db.exec('DROP INDEX exports_revision_latest');
     if (initial >= 34) dropListing(db);
@@ -134,4 +137,11 @@ export function withCurrentWrites<T>(db: DatabaseSync, seed: () => T): T {
   });
   assert.deepEqual(graph(db), before, 'Predecessor schema changed while seeding');
   return result;
+}
+
+/** Migration 038 changes only this trigger; restore the exact shipped predecessor. */
+function restoreRetentionTrigger(db: DatabaseSync): void {
+  const old = /CREATE TRIGGER retention_run_update[\s\S]*?END;/.exec(migration025);
+  assert(old, 'Missing shipped retention trigger');
+  db.exec('DROP TRIGGER retention_run_update;' + old[0]);
 }
