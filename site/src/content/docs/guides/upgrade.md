@@ -19,6 +19,7 @@ has changed yet. The offline upgrade moves the installation to the new images in
 deliberate steps: back up, migrate, check, then activate or roll back.
 
 :::caution[What is not built yet]
+
 - Only the previous release can be upgraded (N−1). An installation older than
   that refuses with `recovery_required`; skipping releases is not supported.
 - Nothing checks the new version for you or rolls back on its own. You check it
@@ -26,7 +27,7 @@ deliberate steps: back up, migrate, check, then activate or roll back.
 - There is no free-space check. The backup is a full copy of the installation,
   so make sure the disk holds that much again before you start.
 - There is no upgrade screen in the app yet; everything happens on the host.
-:::
+  :::
 
 ## Before you start
 
@@ -38,15 +39,15 @@ progress. If something is, it refuses and names each kind of blocker:
 upgrade_blocked engine_containers,runs
 ```
 
-| Blocker | What to do |
-| --- | --- |
-| `runs`, `executions`, `dispatch_outbox` | A run has not ended. Start the services, wait for it or cancel it |
-| `exports` | An export has not ended. Wait for it or cancel it |
-| `input_uploads` | An input upload or input deletion has not finished. Finish or delete the upload, or wait for the deletion |
-| `output_deletions`, `output_sources`, `output_slots` | Run output is still being collected or deleted. Start the services and let it settle |
-| `attempt_ownership`, names starting `journal_` | The agent still holds work. Start the services and let it settle |
-| `engine_containers`, `agent_container` | A container is still running. Stop the services and wait for engine containers to exit |
-| `docker_daemon` | This is not the Docker daemon the installation was set up on |
+| Blocker                                              | What to do                                                                                                |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `runs`, `executions`, `dispatch_outbox`              | A run has not ended. Start the services, wait for it or cancel it                                         |
+| `exports`                                            | An export has not ended. Wait for it or cancel it                                                         |
+| `input_uploads`                                      | An input upload or input deletion has not finished. Finish or delete the upload, or wait for the deletion |
+| `output_deletions`, `output_sources`, `output_slots` | Run output is still being collected or deleted. Start the services and let it settle                      |
+| `attempt_ownership`, names starting `journal_`       | The agent still holds work. Start the services and let it settle                                          |
+| `engine_containers`, `agent_container`               | A container is still running. Stop the services and wait for engine containers to exit                    |
+| `docker_daemon`                                      | This is not the Docker daemon the installation was set up on                                              |
 
 A refusal with `conflict` means a service still holds the installation: stop it
 and run the command again. `recovery_required` means something other than the
@@ -98,12 +99,12 @@ If the images did not move, it reports `unchanged`.
 Start the services with `docker compose up -d`. The app serves the new version
 behind the fence: you can look at everything, but it accepts no new work.
 
-| While fenced | Allowed |
-| --- | --- |
-| Reading suites, runs, results, inputs, exports and settings | Yes |
-| Signing in, cancelling runs and exports, comparing runs, retention and deletion previews | Yes |
-| Starting runs or exports, saving suites, uploads, settings, pins, notes, deleting | Refused |
-| Changing capacity with the host command | Refused with `upgrade_blocked` |
+| While fenced                                                                             | Allowed                        |
+| ---------------------------------------------------------------------------------------- | ------------------------------ |
+| Reading suites, runs, results, inputs, exports and settings                              | Yes                            |
+| Signing in, cancelling runs and exports, comparing runs, retention and deletion previews | Yes                            |
+| Starting runs or exports, saving suites, uploads, settings, pins, notes, deleting        | Refused                        |
+| Changing capacity with the host command                                                  | Refused with `upgrade_blocked` |
 
 A refused action currently shows as `503 capacity_unavailable`, the same retryable
 error as a full installation. There is no dedicated upgrade error code yet.
@@ -128,8 +129,18 @@ After activation, rollback is refused with `upgrade_blocked activated`.
 
 Rollback restores the data and the old image pins, not the old images. Startup
 with the new images reports `upgrade_required` again until the images the
-installation is pinned to are back. `status` lists the pinned image IDs under
-`from`.
+installation is pinned to are back. To bring them back:
+
+1. Run `docker compose run --rm setup upgrade status` and note the image IDs
+   under `from`.
+2. Check that Docker still has each one: `docker image inspect <id>`.
+3. Point each image tag at its old ID, for example
+   `docker tag <id> beetle-lab-backend:rewrite`, then start with
+   `docker compose up -d` and no `--build`.
+
+A rebuild from the old checkout usually produces different image IDs, so it does
+not satisfy the pins. If Docker no longer has an old image, rollback cannot be
+completed; prepare the upgrade again with the new images instead.
 
 ## Interrupted or refused
 
