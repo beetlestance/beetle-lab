@@ -129,11 +129,11 @@ a committed source, pending intent, unknown launch or release, or timeout. Closu
 unsupported, unapproved or unavailable controls → `unsupported_capability` and minimum, ceiling or
 impossible request → `budget_unavailable`. A never-started original reports its durable stop reason, else
 `setup_failed`; a settled one with failed collection its typed stop or exit reason, else
-`artifact_incomplete`. Outcomes are cancelled or errored/inconclusive, never finished: a system cause
-wins, then persisted user cancellation. A proof whose only reason is `cancelled` (a runner stop, not user
-intent) waits for the backend's persisted cancellation. The backend (`app/src/ports/output-absence.ts`,
-≤ 4096 bytes) adopts one canonical proof only if no source, manifest or slot exists, then finalises with
-header `lastSeq` = `finalAgentSeq` and full ACK, crediting P − (C + R) once.
+`artifact_incomplete`. Outcomes are cancelled or errored/inconclusive, never finished. An exact exited header with a
+settled admission and a positive final sequence gives verified OOM priority over the proof's cause and
+user cancellation. Without OOM, a system cause wins, and a `cancelled` proof requires persisted intent.
+The backend (`app/src/ports/output-absence.ts`, ≤ 4096 bytes) adopts one canonical proof only without
+source, manifest or slot. Finalisation requires header `lastSeq` = `finalAgentSeq` and full ACK. It credits P − (C + R) once.
 
 ## Deletion
 
