@@ -19,8 +19,7 @@ the process owner/journal; another runtime cannot hide uncertain ownership.
 Executable still owns listening and transport lifetime; no artifact deletion ACK.
 
 Contract: docs/system/contracts/execution-protocol.md.
-Checks: npx --no-install vitest run agent/test/bootstrap --maxWorkers=1;
-npx --no-install eslint agent/src/bootstrap agent/test/bootstrap.
+Checks: npx --no-install vitest run agent/test/bootstrap --maxWorkers=1; eslint the same paths.
 
 Installed live approval selects k6 only from validated catalogue configuration
 and an opted-in profile with the assigned mailbox mount. It shares producer
@@ -36,5 +35,6 @@ UUID before opening the journal; then start guards, the publisher, then the
 scheduler. Ready to admit only after the publisher commits an observation. At most
 one failed runtime owner is kept.
 
-`main.js` (via container.js) serves or runs `reconcile [--apply]` (decision 030; stop-signal.ts first): same
+container-entry.ts (built as container.js) records early stops (early-stop.ts), then loads main.
+`main.js` serves or runs `reconcile [--apply]` (decision 030; stop-signal.ts first): same
 owner, startup checks, then only shared RetirementServices; no configure, guard, scheduler or server.

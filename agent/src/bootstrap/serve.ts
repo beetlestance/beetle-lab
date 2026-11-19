@@ -1,3 +1,4 @@
+import { releaseEarlyStop } from './early-stop.js';
 import { createStorageFailureExit } from './storage-failure.js';
 import { reportFailure } from './failure.js';
 import { openAgentRuntime } from './index.js';
@@ -31,6 +32,8 @@ function signal(): void {
 }
 process.once('SIGINT', signal);
 process.once('SIGTERM', signal);
+// A stop caught by the container entry before this bundle was parsed.
+if (releaseEarlyStop()) signal();
 const loading = Promise.resolve().then(async () => {
   const loaded = await loadAgentConfiguration(process.env, new URL('./worker.js', import.meta.url), abort.signal);
   providerClose = loaded.close;
