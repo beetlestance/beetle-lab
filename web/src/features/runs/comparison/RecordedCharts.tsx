@@ -10,10 +10,10 @@ import { comparisonRunLabels } from './run-labels.js';
 import '../live/live.css';
 
 const metrics = {
-  requests: { title: 'Recorded requests per one-second window', unavailable: 'Request', format: whole },
-  p95: { title: 'Recorded p95 latency, histogram estimates', unavailable: 'Latency', format: ms },
-  failures: { title: 'Recorded failed requests per one-second window', unavailable: 'Failed request', format: whole },
-  vus: { title: 'Recorded active virtual users', unavailable: 'Active virtual user', format: whole },
+  requests: { title: 'Requests a second', unavailable: 'Request', format: whole },
+  p95: { title: 'Latency (p95)', unavailable: 'Latency', format: ms },
+  failures: { title: 'Failed requests a second', unavailable: 'Failed request', format: whole },
+  vus: { title: 'Active virtual users (busy)', unavailable: 'Active virtual user', format: whole },
 } as const;
 
 export function RecordedComparisonCharts({
@@ -29,12 +29,14 @@ export function RecordedComparisonCharts({
   const [hoverT, onHover] = useState<number | null>(null);
   if (histories === undefined) return <p role="status">Reading recorded comparison windows…</p>;
   return (
-    <section className="compare-section" aria-labelledby="recorded-comparison-title">
-      <h2 id="recorded-comparison-title">Recorded runs over time</h2>
-      <p className="compare-muted">
-        Time is relative to each run’s native measurement marker. Plans and phases are not stretched to align. Point at
-        any chart for the nearest recorded windows; gaps and times outside coverage stay unknown.
-      </p>
+    <section className="compare-section compare-chart-section" aria-labelledby="recorded-comparison-title">
+      <header className="compare-chart-heading">
+        <h2 id="recorded-comparison-title">Requests and virtual users</h2>
+        <p className="compare-muted">
+          Time is relative to each run’s native measurement marker. Plans and phases are not stretched to align. Point
+          at any chart for the nearest recorded windows; gaps and times outside coverage stay unknown.
+        </p>
+      </header>
       <RecordedNotes items={items} histories={histories} overviews={overviews} />
       <div className="live-charts">
         {(Object.keys(metrics) as (keyof typeof metrics)[]).map((metric) => (
@@ -74,7 +76,6 @@ function OverlayChart({
       ticks={plot.ticks}
       series={series}
       strictHoverRange
-      tall
       hoverT={hoverT}
       onHover={onHover}
       format={definition.format}

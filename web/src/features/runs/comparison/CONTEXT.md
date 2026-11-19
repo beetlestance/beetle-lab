@@ -36,5 +36,5 @@ legacy missing details stay explicit. No regrading, new reads or polling.
 Named table scroll regions wrap on phones. Failed refresh retires mutable names.
 Configured target reads bind sole sealed descriptors and numeric ID/hash timing.
 Shared verified byte admission, same metric/declared units; no raw-unit overlay.
-Strict target time and original retirement; full board acceptance remains. Checks:
-comparison, target-runtime, history and lifecycle tests.
+Comparison plots use 120px frames; source timing/gaps stay exact. Full family acceptance
+remains open. Checks: comparison, target-runtime, history and lifecycle tests.

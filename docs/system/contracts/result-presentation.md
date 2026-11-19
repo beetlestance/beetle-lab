@@ -117,10 +117,10 @@ retirement. Each reply remains bounded to 900 actual points / 1 MiB; the backend
 retains its 3,600-window / 32 MiB archive ceiling. No metric-per-endpoint fanout.
 P95, requests, failures and measured active-VU curves keep independent native-marker-relative
 coordinates on a common scale; they never fill a union grid, stretch phases or align wall clocks.
-The renderer accepts optional per-series coordinates/gap flags; its default shared timeline stays unchanged; CSS height affects only presentation. Recorded legends use each series' own nearest source position, hide values outside coverage/across gaps,
-and retain known zero. An overlay cursor denotes requested time, not a new sample.
-Observed peaks require matching overview numeric generation, version, manifest,
-artifact/hash and native marker. Missing/error/incompatible sources leave unknowns.
+Comparison plots are 120 px high; source coordinates, gap flags and default renderer behavior stay unchanged.
+Legends use each series' nearest source sample, hide readings outside coverage/across gaps and retain zero.
+An overlay cursor denotes requested time, not a new sample.
+Peaks require matching numeric generation/version/manifest/artifact/hash/native marker; missing/error/incompatible sources stay unknown.
 The chart notes preserve downsampling and partial-coverage context.
 
 ## Target comparison overlays
@@ -199,7 +199,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/comparison.css` | `pending` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
-| `web/src/features/runs/comparison/RecordedCharts.tsx` | `fe6f0666d203` |
+| `web/src/features/runs/comparison/RecordedCharts.tsx` | `6f2604ca7c2a` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `651a2449b402` |
@@ -210,7 +210,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
 | `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
 | `web/src/features/runs/comparison/target-model.ts` | `fcd94018f94f` |
-| `web/src/features/runs/comparison/TargetRuntime.tsx` | `091438037277` |
+| `web/src/features/runs/comparison/TargetRuntime.tsx` | `2a1bbffdcca9` |
 | `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
 | `web/src/features/runs/comparison/Slos.tsx` | `e66be0ef3b34` |
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
