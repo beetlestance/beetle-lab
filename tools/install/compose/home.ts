@@ -146,10 +146,11 @@ export class ComposeHome {
     }
     await this.assertPins(true);
     if (!this.fresh) {
-      // `upgrade` holds offline upgrade receipts and sealed backups beside the installation.
-      const names = await entries(this.path, 3);
+      // `upgrade` holds offline upgrade receipts and sealed backups beside the installation;
+      // `origin` holds the origin-change records.
+      const names = await entries(this.path, 4);
       safe(names.includes('data') && names.includes('bootstrap.sqlite'));
-      safe(names.length === 2 || (names.length === 3 && names.includes('upgrade')));
+      safe(names.every((name) => ['data', 'bootstrap.sqlite', 'upgrade', 'origin'].includes(name)));
     }
     return this.fresh;
   }

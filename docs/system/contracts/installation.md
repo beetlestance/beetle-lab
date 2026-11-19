@@ -39,7 +39,7 @@ agent, because the daemon resolves engine bind sources. Staging is an exact priv
 | `config/backend-agent.json` | provisioner | agent origin, token path, installation UUID, profile pins, storage ceilings |
 | `config/agent.json` | provisioner | closed agent configuration with inspected daemon/image facts |
 | `config/agent-token` | provisioner | 43–128 character base64url credential, never printed |
-| `config/configuration-state.json` | capacity change, offline upgrade | mutable selector ([resources](resources.md#offline-capacity-change)); while an upgrade awaits activation it also carries `upgradeFence` |
+| `config/configuration-state.json` | capacity change, offline upgrade, origin change | mutable selector ([resources](resources.md#offline-capacity-change)); `upgradeFence` while an upgrade awaits activation; `origin` after an [origin change](origin-change.md) |
 | `backend/` | backend | `metadata.sqlite`, `inputs/{staging,published}`, `outputs/` |
 | `agent/journal/journal.sqlite` | agent | journal and its authority UUID |
 | `agent/staging/` | agent | per-attempt staging |
@@ -67,11 +67,11 @@ installation ID, `created`/`unchanged` and paths; never a credential.
   image pins match the same request (moved images: `upgrade_required`; [Upgrade](upgrade.md)). It never rotates
   tokens or rewrites settings and never inventories runtime data; a serving lease is `conflict`.
 - Existing Compose roots keep baseline `installationValues` and `agentPolicy` ([decision 031](../../decisions/031-installed-defaults.md));
-  changed recorded bindings, and a changed origin (`external_origin`, decision 032), refuse
-  with `binding_changed`; other differences (such as the engine template) stay `recovery_required`.
+  changed recorded bindings, and an origin other than the one served (`external_origin`; [origin change](origin-change.md)),
+  refuse with `binding_changed`; other differences (such as the engine template) stay `recovery_required`.
 - `inspectReadyConfiguration` checks receipt, configuration and pins without the Journal.
 - Failure codes: `invalid_input`, `inspection`, `unsafe_root`, `conflict`, `recovery_required`,
-  `upgrade_required`, `upgrade_blocked`, `binding_changed`, `network_access_required`,
+  `upgrade_required`, `upgrade_blocked`, `origin_blocked`, `binding_changed`, `network_access_required`,
   `cancelled`, `deadline`, `io`, `cleanup`. CLI exit 2 for argument errors, else 1, with fixed text; partial roots are kept.
 - The installer may import only public entrypoints of agent bootstrap, installation-state,
   journal, catalog, admission, Docker backend and backend configuration; runtime services
@@ -94,7 +94,7 @@ is `$PWD/.beetle`, with the installation in its `data` child.
   only `SETUID`/`SETGID`.
 - Fresh data delegates to the offline provisioner. A ready root is checked with
   `inspectReadyConfiguration`; serving never opens the offline authority owner. A second `up`
-  keeps credentials, settings, history and pins; only [`setup upgrade`](upgrade.md) re-pins.
+  keeps credentials, settings, history and pins; only [`setup upgrade`](upgrade.md) re-pins and [`setup origin`](origin-change.md) changes the origin.
 
 ## Starter policy
 
@@ -212,8 +212,8 @@ request alias never becomes an environment variable name or file path
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/src/` | `a2dd1180e617` |
-| `tools/install/compose/` | `b987567ea229` |
+| `tools/install/src/` | `b822ea245dd8` |
+| `tools/install/compose/` | `36edeeed0a02` |
 | `tools/install/starter/policy.ts` | `c6d6ef3e6999` |
 | `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
 | `agent/src/installation-state/` | `0beedc07f9a0` |

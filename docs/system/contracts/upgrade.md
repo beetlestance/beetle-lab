@@ -18,7 +18,8 @@ host command; normal startup never re-pins. Default action is `prepare`.
   current, with no nonterminal runs, exports, executions, dispatch outbox rows, input uploads,
   deletions, output sources or slots, attempt ownership, Journal reservations, admission
   queue, attempts, delivery or staging. Each blocker is named:
-  `upgrade_blocked engine_containers,runs`. The request keeps the installation's baseline settings
+  `upgrade_blocked engine_containers,runs`. A pending [origin change](origin-change.md) is
+  `upgrade_blocked origin_change`; the selector's `origin` field is carried unchanged. The request keeps the installation's baseline settings
   and policy ([decision 031](../../decisions/031-installed-defaults.md)). Nothing else may differ from it except the
   config schema digest of an installed identity with the same manifest, profile and catalog
   version (a compatible revision of the same schema `$id`; the Journal step approves it). Any
@@ -60,7 +61,7 @@ Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgra
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/upgrade/` | `8e1460ad6012` |
+| `tools/install/upgrade/` | `38551fa22bcd` |
 | `tools/install/src/selection.ts` | `9567b14e41c3` |
 | `app/src/bootstrap/upgrade-fence.ts` | `347ef48487bc` |
 | `agent/src/journal/cold-inspection/` | `5a89d6d464a1` |

@@ -1,6 +1,6 @@
 import { settleSetup } from './settlement.js';
 import type { ProvisionRequest, ProvisionContext } from '../types.js';
-import { BindingChangedError, UpgradeBlockedError } from '../types.js';
+import { BindingChangedError, OriginBlockedError, UpgradeBlockedError } from '../types.js';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { join, resolve } from 'node:path';
@@ -15,10 +15,12 @@ import { ComposeGate } from './gate.js';
 import { composeOptions } from './options.js';
 import { createStarterRequest } from '../starter.js';
 import { installedRequest } from '../src/installed-request.js';
+import { changeOrigin, originArguments } from './origin.js';
+import type { OriginArguments } from './origin.js';
 const UPGRADE_DEADLINE_MS = 30 * 60_000;
-/** `[]` is ordinary setup; `['upgrade', action?]` is the explicit offline upgrade command. */
+/** `[]` is ordinary setup; `['upgrade', action?]` is the offline upgrade; `['origin', …]` see origin.ts. */
 export function setupAction(args: readonly string[]): UpgradeAction | undefined {
-  if (args.length === 0) return undefined;
+  if (args.length === 0 || args[0] === 'origin') return undefined;
   const actions: readonly UpgradeAction[] = ['prepare', 'status', 'activate', 'rollback'];
   const action = (args[1] ?? 'prepare') as UpgradeAction;
   if (args[0] !== 'upgrade' || args.length > 2 || !actions.includes(action)) throw new ProvisionError('invalid_input');
@@ -27,11 +29,12 @@ export function setupAction(args: readonly string[]): UpgradeAction | undefined 
 const bindingHint =
   'Setup values differ from the installation: use its original BEETLE_INSTANCE and BEETLE_HOME, or set up a new installation in another folder.\n';
 const originHint =
-  'This installation keeps the address it was set up with: unset BEETLE_ORIGIN, or set up a new installation in another folder.\n';
+  'BEETLE_ORIGIN differs from the address this installation serves. Use that address, or change it with `setup origin` (see the private-network guide).\n';
 const networkHint =
   'An address or bind on another host needs BEETLE_ACCESS=network and an https:// BEETLE_ORIGIN. See the self-hosting guide.\n';
 function report(error: unknown): void {
   if (error instanceof UpgradeBlockedError) process.stderr.write(`upgrade_blocked ${error.items.join(',')}\n`);
+  else if (error instanceof OriginBlockedError) process.stderr.write(`origin_blocked ${error.items.join(',')}\n`);
   else if (error instanceof BindingChangedError) {
     process.stderr.write(`binding_changed ${error.items.join(',')}\n`);
     process.stderr.write(error.items.includes('external_origin') ? originHint : bindingHint);
@@ -57,6 +60,7 @@ export async function runComposeSetup(
   let operation = { signal: controller.signal, deadline: performance.now() + 30000 };
   try {
     const action = setupAction(args);
+    const origin = originArguments(args);
     if (action) operation = { ...operation, deadline: performance.now() + UPGRADE_DEADLINE_MS };
     const captured = composeOptions(environment);
     home = new ComposeHome(captured.home, { uid: 1000, gid: 1000 }, operation);
@@ -69,13 +73,15 @@ export async function runComposeSetup(
       agentWorkerUrl: new URL('./agent-worker.js', import.meta.url),
       backendWorkerUrl: new URL('./backend-worker.js', import.meta.url),
     };
-    const starter = createStarterRequest(captured.options);
-    const request = fresh ? starter : await installedRequest(starter, context, captured.loopbackDefault);
+    const request = await composeRequest(fresh, captured, context, origin);
     gate = new ComposeGate(home, { uid: 1000, gid: 1000 });
     await gate.open(fresh, digest(canonical(request)));
-    result = action
-      ? await upgrade({ fresh, home: captured.home, gate, request, context, action })
-      : await initialize({ fresh, home, gate, request, context });
+    const input = { fresh, home, gate, request, context };
+    result = origin
+      ? await changeOrigin({ ...input, home: captured.home, origin, to: captured.options.externalOrigin })
+      : action
+        ? await upgrade({ ...input, home: captured.home, action })
+        : await initialize(input);
     check(operation);
     await gate.assertPin();
     success = true;
@@ -95,6 +101,22 @@ export async function runComposeSetup(
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url)
   process.exitCode = await runComposeSetup(process.env, process.argv.slice(2));
 
+/**
+ * The request this run proves. For `setup origin` the target is BEETLE_ORIGIN, already held to
+ * the access and bind rules; the installation is resolved with the origin it was recorded with.
+ */
+async function composeRequest(
+  fresh: boolean,
+  captured: ReturnType<typeof composeOptions>,
+  context: ProvisionContext,
+  origin: OriginArguments | undefined,
+): Promise<ProvisionRequest> {
+  if (origin && fresh) throw new ProvisionError('invalid_input');
+  const starter = createStarterRequest(captured.options);
+  if (fresh) return starter;
+  const candidates = origin ? [origin.from, captured.options.externalOrigin] : undefined;
+  return installedRequest(starter, context, captured.loopbackDefault, candidates);
+}
 async function initialize(input: {
   fresh: boolean;
   home: ComposeHome;
@@ -131,6 +153,7 @@ async function upgrade(input: {
       action: input.action,
       upgradeDirectory: join(input.home, 'upgrade'),
       extras: [{ name: 'bootstrap.sqlite', path: join(input.home, 'bootstrap.sqlite') }],
+      originDirectory: join(input.home, 'origin'),
     },
     input.context,
   );

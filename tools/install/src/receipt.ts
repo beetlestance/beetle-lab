@@ -7,6 +7,8 @@ import type { Captured } from './capture.js';
 import type { PrivateFiles } from './files.js';
 import { configNames, configurationStatePath } from './configuration.js';
 import { join } from 'node:path';
+import { captureOriginSelector } from './origin-selector.js';
+import type { OriginSelector } from './origin-selector.js';
 
 export interface Receipt {
   version: 1;
@@ -19,6 +21,8 @@ export interface Receipt {
   generation?: ConfigurationGeneration;
   /** Offline upgrade operation awaiting activation; only the selector carries it. */
   upgradeFence?: string;
+  /** Changed serving origin (decision 032 amendment); only the selector carries it. */
+  origin?: OriginSelector;
 }
 const optional = (value: unknown, name: string): string[] =>
   value !== null && typeof value === 'object' && Object.hasOwn(value, name) ? [name] : [];
@@ -40,6 +44,7 @@ export function captureReceipt(value: unknown, c: Captured): Receipt {
     'configDigests',
     ...optional(value, 'generation'),
     ...optional(value, 'upgradeFence'),
+    ...optional(value, 'origin'),
   ]);
   valid(value.version === 1 && value.phase === 'ready');
   if (Object.hasOwn(value, 'upgradeFence'))
@@ -53,6 +58,7 @@ export function captureReceipt(value: unknown, c: Captured): Receipt {
   fields(value.configDigests, configNames);
   for (const hash of Object.values(value.configDigests))
     valid(typeof hash === 'string' && /^[a-f0-9]{64}$/u.test(hash));
+  if (Object.hasOwn(value, 'origin')) captureOriginSelector(value.origin);
   if (Object.hasOwn(value, 'generation'))
     captureGeneration(value.generation, String(value.installationId), c.requestDigest, digest);
   return value as unknown as Receipt;
@@ -70,6 +76,7 @@ export async function readReceipt(c: Captured, files: PrivateFiles): Promise<Rec
     for (const key of ['installationId', 'operationId', 'requestDigest', 'authority', 'configDigests'] as const) {
       valid(canonical(baseline[key]) === canonical(selected[key]));
     }
+    valid(baseline.origin === undefined);
     return selected;
   } catch (cause) {
     if (cause instanceof ProvisionError && cause.code === 'cleanup') throw cause;

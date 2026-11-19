@@ -5,7 +5,8 @@ One operation per process; services must be stopped. Normal replay never re-pins
 `src/selection.ts` reports `upgrade_required` when only image identities moved.
 
 `apply.ts` prepares: both startup leases (`quiescence.ts`), named offline blockers
-(Docker containers, metadata and Journal cold inspection for predecessor schemas),
+(Docker containers, metadata and Journal cold inspection for predecessor schemas; a pending
+origin change, `origin_change`, read from `originDirectory`),
 receipt `backing_up`, sealed copy (`backup.ts`), then recorded steps in `steps.ts`:
 one atomic selector commit of new pins plus `upgradeFence`, Journal profile
 approval, metadata migration, `awaiting_activation`. Until the selector commit the

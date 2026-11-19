@@ -56,6 +56,7 @@ export type ProvisionErrorCode =
   | 'recovery_required'
   | 'upgrade_required'
   | 'upgrade_blocked'
+  | 'origin_blocked'
   | 'binding_changed'
   | 'network_access_required'
   | 'cancelled'
@@ -83,5 +84,12 @@ export class BindingChangedError extends ProvisionError {
   constructor(readonly items: readonly string[]) {
     super('binding_changed');
     this.name = 'BindingChangedError';
+  }
+}
+/** Origin-change refusal naming each fixed blocking category; names never carry user data. */
+export class OriginBlockedError extends ProvisionError {
+  constructor(readonly items: readonly string[]) {
+    super('origin_blocked');
+    this.name = 'OriginBlockedError';
   }
 }
