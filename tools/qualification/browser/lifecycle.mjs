@@ -14,8 +14,10 @@ export async function historyComparison(page, authored, first) {
   const second = await execute(page);
   const ids = [first, second].map((url) => new URL(url).pathname.split('/').at(-1));
   await page.goto(authored.workspace);
-  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
-  await page.getByRole('link', { name: 'Runs', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Workspace sections' })
+    .getByRole('link', { name: 'Runs', exact: true })
+    .click();
   await page.getByRole('radio', { name: /^Passed\b/ }).click();
   for (const url of [first, second]) {
     const path = new URL(url).pathname;
@@ -104,14 +106,16 @@ export async function deleteRun(page, run) {
   await expect(dialog.getByRole('heading', { name: 'Removed 1 run', exact: true })).toBeVisible({ timeout: 180000 });
   await dialog.getByRole('button', { name: 'Acknowledge completed batch', exact: true }).click();
   const missing = page.waitForResponse(
-    (reply) => new URL(reply.url()).pathname === path.replace('/deletion-preview', '') && reply.request().method() === 'GET',
+    (reply) =>
+      new URL(reply.url()).pathname === path.replace('/deletion-preview', '') && reply.request().method() === 'GET',
   );
   void missing.catch(() => undefined);
   await page.reload();
   assert.equal((await missing).status(), 404);
   await expect(page.getByRole('heading', { name: "That run isn't here", exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to runs', exact: true })).toHaveAttribute(
-    'href', `/organizations/${key.organizationId}/workspaces/${key.workspaceId}/runs`,
+    'href',
+    `/organizations/${key.organizationId}/workspaces/${key.workspaceId}/runs`,
   );
 }
 
