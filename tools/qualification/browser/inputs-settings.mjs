@@ -8,6 +8,7 @@ import { expect } from '@playwright/test';
  */
 export async function inputs(page, workspace, root) {
   await page.goto(workspace);
+  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('link', { name: 'Inputs', exact: true }).click();
   await page.getByRole('button', { name: 'Upload files', exact: true }).click();
   const payload = Buffer.from('name,value\nsynthetic,42\n');
@@ -52,6 +53,7 @@ export async function settings(page) {
  */
 export async function emptyFolder(page, workspace) {
   await page.goto(workspace);
+  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('link', { name: 'Suites', exact: true }).click();
   await page.getByRole('button', { name: 'New folder', exact: true }).click();
   const create = page.getByRole('dialog', { name: /^New folder in / });
@@ -76,6 +78,7 @@ export async function directoryImport(page, workspace, root) {
   await writeFile(join(directory, 'alpha.csv'), 'alpha,1\n', { mode: 0o600 });
   await writeFile(join(directory, 'nested', 'beta.csv'), 'beta,2\n', { mode: 0o600 });
   await page.goto(workspace);
+  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('link', { name: 'Inputs', exact: true }).click();
   await page.getByRole('button', { name: 'Import a folder', exact: true }).click();
   await page.getByLabel('Input directory', { exact: true }).setInputFiles(directory);
@@ -87,6 +90,7 @@ export async function directoryImport(page, workspace, root) {
   await expect(page.getByRole('rowheader', { name: 'alpha.csv', exact: true })).toBeVisible();
   await expect(page.getByRole('rowheader', { name: 'beta.csv', exact: true })).toBeVisible();
   await page.goto(workspace);
+  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('link', { name: 'Suites', exact: true }).click();
   await page.getByRole('link', { name: /^directory-input/ }).click();
   await expect(page.getByRole('link', { name: 'nested', exact: true })).toBeVisible();

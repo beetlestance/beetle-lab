@@ -8,7 +8,7 @@ import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import type { Run, RunHistorySummary } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
 import { suite } from '../history-fixtures.js';
-import { apiError, ids, json, mount, resultSnapshot, revision, run, runId, testClient } from '../test-fixtures.js';
+import { apiError, deferred, ids, json, mount, resultSnapshot, revision, run, runId, testClient } from '../test-fixtures.js';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const path = routes.run(ids.a, ids.workspace, runId);
@@ -43,7 +43,7 @@ function summary(current: Run): RunHistorySummary {
   };
 }
 /** Routes the result view's bounded reads; `extra` answers writes and overrides. */
-function fixture(current: Run, extra: (request: Request) => Response | undefined = () => undefined) {
+function fixture(current: Run, extra: (request: Request) => Response | Promise<Response> | undefined = () => undefined) {
   let latest = current;
   const client = testClient((request) => {
     const answer = extra(request);
@@ -273,4 +273,24 @@ it('shows the compact phone chart and measured-average title, with unchanged cha
  const coverage=document.querySelector('.result-chart-coverage') as HTMLDetailsElement;
  expect(coverage).not.toHaveAttribute('open');coverage.open=true;fireEvent(coverage,new Event('toggle'));
  expect(within(coverage).getByText(/The axis follows the native measurement marker/)).toBeVisible();
+});
+
+it('retries failed result details explicitly without refreshing the run or losing the pending control', async () => {
+  let attempts = 0; const pending = deferred<Response>();
+  const f = fixture(finished(), request => {
+    if (!request.path.endsWith('/result')) return undefined;
+    attempts++;
+    return attempts === 1 ? json(apiError('storage_unavailable'), 503) : pending.promise;
+  });
+  mount(f.client, path);
+  const retry = await screen.findByRole('button', { name: 'Retry result details' });
+  expect(attempts).toBe(1);
+  const runReads = f.records.filter(record => record.path.endsWith('/runs/' + runId)).length;
+  fireEvent.click(retry);
+  await waitFor(() => expect(attempts).toBe(2));
+  expect(retry).toBeDisabled();
+  pending.resolve(json(resultSnapshot(finished())));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Retry result details' })).not.toBeInTheDocument());
+  expect(f.records.filter(record => record.path.endsWith('/runs/' + runId))).toHaveLength(runReads);
+  expect(attempts).toBe(2);
 });

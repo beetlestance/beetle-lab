@@ -3,9 +3,9 @@ Public entry: `RunResultView({run, scope, runId})`, chosen once by RunDetail for
 terminal/restored record; owns RunReads admission. Restored unfinished state stays labelled at backup; no current-work owners mount,
 and run/artifact/metric/timeline polling stops. Stored state and outcome stay exact.
 Reads (useResultReads), each under the scoped run key and removed on unmount:
-engine result for the active attempt, the run's own history summary (one listRuns
-row by exact ID, limit 1), suite, saved revision and getRunMetricOverview. The
-overview shares read admission and never polls; errors retire cached figures.
+active-attempt result, own exact-ID history summary (listRuns, limit 1), suite, saved revision and getRunMetricOverview.
+The overview shares admission, never polls and retires cached figures after errors.
+ResultReadProblem explicitly retries result details; pending retry keeps its disabled control.
 Read-only/restored state comes from useSessionAccess, never a new session read.
 - headline.ts: variant (passed, failed, not judged, cancelled, out of memory,
   output full, incomplete, errored, pending) and the title and sentence. Sentence

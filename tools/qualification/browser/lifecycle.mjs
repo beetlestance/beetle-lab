@@ -12,6 +12,7 @@ export async function historyComparison(page, authored, first) {
   const second = await execute(page);
   const ids = [first, second].map((url) => new URL(url).pathname.split('/').at(-1));
   await page.goto(authored.workspace);
+  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('link', { name: 'Runs', exact: true }).click();
   await page.getByRole('radio', { name: /^Passed\b/ }).click();
   for (const url of [first, second]) {

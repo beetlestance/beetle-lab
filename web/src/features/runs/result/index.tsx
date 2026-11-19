@@ -26,6 +26,7 @@ import { MetricSummary, ResultEndpoints, OverviewStatus, readyOverview } from '.
 import type { RunPlan } from '../live/plan.js';
 import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
+import { ResultReadProblem } from './ResultReadProblem.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
 import './phone.css';
@@ -91,6 +92,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         onDelete={() => setDeleting(true)}
         refresh={refresh}
       />
+      <ResultReadProblem read={reads.result} />
       <PhoneDisclosure
         id="result-notes"
         title="Notes"

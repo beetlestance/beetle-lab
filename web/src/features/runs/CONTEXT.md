@@ -33,7 +33,7 @@ retirement, useful progress and terminal drain behavior.
 RunArtifacts (artifacts/index: bounded inventory, UUID-only downloads) and RunMetrics
 (metrics/index: one catalogue, bounded charts) document their reads in their own
 CONTEXT.md; result declarations alone still grant no links.
-RunReads admits one original detail read plus at most four waiting intents. Waiting
+RunReads serializes suite/revision and run detail reads: one original plus four waiting intents. Waiting
 expires after five seconds or caller abort; retirement rejects queued intents.
 Original completion releases admission. Storage bounds and explicit HTTP errors
 remain unchanged; there are no automatic retries or mutation admission changes.

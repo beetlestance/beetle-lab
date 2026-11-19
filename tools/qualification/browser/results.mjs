@@ -28,7 +28,7 @@ export async function start(page) {
   assert.equal(reply.status(), 202);
   const submitted = submittedRun(await reply.json(), suite, revisionId);
   assert.equal(submitted.outputBytes, 8388608);
-  await expect(page.getByRole('button', { name: 'Refresh run', exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page).toHaveURL(submitted.origin + submitted.path);
   return submitted;
 }
 /**
@@ -36,6 +36,11 @@ export async function start(page) {
  */
 export async function execute(page) {
   const submitted = await start(page);
+  const open = page.getByRole('button', { name: 'Open result', exact: true });
+  // The loading page also offers Refresh run; only the result owner proves this handoff.
+  const ready = page.locator('.result-head');
+  await expect(open.or(ready)).toBeVisible({ timeout: 60000 });
+  if (await open.isVisible()) await open.click();
   await expect(page.locator('.result-head').getByText('Passed', { exact: true })).toBeVisible({ timeout: 60000 });
   await assertRunState(page, { state: 'finished', outcome: 'passed' }, submitted);
   return page.url();

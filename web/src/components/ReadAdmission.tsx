@@ -22,6 +22,14 @@ export function ReadAdmission({ children }: { children: ReactNode }) {
         owner.gate.run(request.signal, () => api.getWorkspaceRetentionPreview(request)),
       getWorkspaceRetentionStatus: (request: Parameters<typeof api.getWorkspaceRetentionStatus>[0]) =>
         owner.gate.run(request.signal, () => api.getWorkspaceRetentionStatus(request)),
+      getSuite: (request: Parameters<typeof api.getSuite>[0]) =>
+        owner.gate.run(request.signal, () => api.getSuite(request)),
+      getSuiteRevision: (request: Parameters<typeof api.getSuiteRevision>[0]) =>
+        owner.gate.run(request.signal, () => api.getSuiteRevision(request)),
+      listSuites: (request: Parameters<typeof api.listSuites>[0]) =>
+        owner.gate.run(request.signal, () => api.listSuites(request)),
+      listSuiteRevisions: (request: Parameters<typeof api.listSuiteRevisions>[0]) =>
+        owner.gate.run(request.signal, () => api.listSuiteRevisions(request)),
       getRunResult: (request: Parameters<typeof api.getRunResult>[0]) =>
         owner.gate.run(request.signal, () => api.getRunResult(request)),
       listRunEvents: (request: Parameters<typeof api.listRunEvents>[0]) =>
