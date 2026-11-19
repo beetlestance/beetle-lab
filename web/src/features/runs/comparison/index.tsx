@@ -11,6 +11,7 @@ import { comparisonRunIds } from './selection.js';
 import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
 import { RecordedComparisonCharts } from './RecordedCharts.js';
+import { ComparisonTargetRuntime } from './TargetRuntime.js';
 import { ComparisonFailedSlos } from './FailedSlos.js';
 import './comparison.css';
 
@@ -79,6 +80,12 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
             items={snapshot.items}
             histories={state.histories}
             overviews={state.overviews}
+          />
+          <ComparisonTargetRuntime
+            key={ids.join(',')}
+            items={snapshot.items}
+            targets={state.targets}
+            histories={state.histories}
           />
           <MetricSection state={state} snapshot={snapshot} />
           {snapshot.items.map((item, index) => (

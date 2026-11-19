@@ -117,6 +117,19 @@ Observed peaks require matching overview numeric generation, version, manifest,
 artifact/hash and native marker. Missing/error/incompatible sources leave unknowns.
 The chart notes preserve downsampling and partial-coverage context.
 
+## Target comparison overlays
+
+Configured sampling adds one scoped sealed-result read and one sole target report
+per run, sequentially within the existing comparison original. Disabled sampling
+adds neither. The existing shared two-original byte reader verifies exact length,
+SHA-256 and the 1 MiB / 256-sample codec; retirement retains unsettled originals.
+The native marker must belong to the exact numeric artifact ID/hash in that sealed
+result. Unsafe chronology, duplicate target timestamps or missing timing cannot
+enter an overlay. Same metric keys and compatible declared units share a scale;
+raw units and different runtime metrics never mix. Zeros/nulls/source positions
+remain exact. Links expose individual-run evidence when an overlay is unavailable.
+No polling or new API contract; errors and limited/missed collection stay explicit.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -145,7 +158,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
-| `web/src/features/runs/comparison/useComparison.ts` | `812decb44ba1` |
+| `web/src/features/runs/comparison/useComparison.ts` | `3b122992b6fc` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `3d3b4ae2f47c` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
@@ -158,3 +171,6 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/api/v2/run-comparison.schema.json` | `6cc1977118f0` |
 | `contracts/src/api/client/comparison-facts.ts` | `b555242c9534` |
 | `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
+| `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
+| `web/src/features/runs/comparison/target-model.ts` | `fcd94018f94f` |
+| `web/src/features/runs/comparison/TargetRuntime.tsx` | `091438037277` |

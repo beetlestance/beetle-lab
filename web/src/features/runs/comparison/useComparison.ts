@@ -11,6 +11,8 @@ import type {
 import { readResult, useApi } from '../../../app/api.js';
 import { ReadAdmission } from '../metrics/index.js';
 import type { RunScope } from '../types.js';
+import { readComparisonTarget } from './target-read.js';
+import type { ComparisonTargets, ComparisonTargetRead } from './target-read.js';
 interface Command {
   metric: RunMetricKey | null;
   catalogue: boolean;
@@ -34,6 +36,7 @@ interface CapturedReads {
   overviews: Overviews;
   contexts: ComparisonContexts;
   histories: ComparisonHistories;
+  targets: ComparisonTargets;
 }
 interface SavedReads {
   owner: object;
@@ -90,6 +93,7 @@ async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapsh
   const overviews = new Map<string, OverviewRead>();
   const contexts = new Map<string, RunListContext | null>();
   const histories = new Map<string, ChartRead>();
+  const targets = new Map<string, ComparisonTargetRead>();
   for (const item of snapshot.items) {
     if (!context.alive()) break;
     const record = await summaryOf(context, item.run);
@@ -99,8 +103,10 @@ async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapsh
     overviews.set(item.run.id.toLowerCase(), await overviewOf(context, item.run));
     if (!context.alive()) break;
     histories.set(item.run.id.toLowerCase(), await chartOf(context, item.run));
+    if (!context.alive()) break;
+    targets.set(item.run.id.toLowerCase(), await readComparisonTarget(context, item));
   }
-  return { summaries: read, overviews, contexts, histories };
+  return { summaries: read, overviews, contexts, histories, targets };
 }
 
 /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
@@ -212,6 +218,7 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
     overviews: recorded?.overviews,
     contexts: recorded?.contexts,
     histories: recorded?.histories,
+    targets: recorded?.targets,
     admission,
     busy: busy || view.busy,
     select,
