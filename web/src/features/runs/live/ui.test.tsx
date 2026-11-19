@@ -181,6 +181,11 @@ it('keeps the compare action disabled with an explanation, and lists script vers
   const compare = screen.getByRole('button', { name: 'Compare' });
   expect(compare).toHaveAttribute('aria-disabled', 'true');
   expect(compare).toHaveAccessibleDescription(/once this one has finished/);
+  fireEvent.focus(compare);
+  fireEvent.keyDown(compare, { key: 'Escape' });
+  expect(compare.parentElement).toHaveAttribute('data-dismissed', 'true');
+  fireEvent.mouseEnter(compare);
+  expect(compare.parentElement).toHaveAttribute('data-dismissed', 'false');
   fireEvent.click(screen.getByRole('button', { name: 'Download' }));
   fireEvent.click(screen.getByRole('button', { name: 'Script for revision 4' }));
   const dialog = await screen.findByRole('dialog', { name: 'Scripts for steady-1.2k' });
