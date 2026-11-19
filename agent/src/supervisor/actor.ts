@@ -51,7 +51,7 @@ export class LaunchActor {
     telemetry: { resources?: AttemptResources; live: AttemptLiveMetrics },
   ) {
     this.time = new AttemptTime(clock);
-    this.evidence = new RuntimeEvidence(journal, input.key);
+    this.evidence = new RuntimeEvidence(journal, input.key, input.plan.spec.Env);
     this.telemetry = new ActorTelemetry({
       resources: telemetry.resources,
       live: telemetry.live,
@@ -346,7 +346,7 @@ export class LaunchActor {
   }
   private record(view: Observation, recovered = false): void {
     if ('id' in view && this.current!.runtimeId !== view.id) throw new SupervisorError('conflict');
-    this.evidence.observe(view, this.time.wall(), this.durable?.cancelReason ?? this.cause);
+    this.evidence.observe(view, this.time.wall(), this.durable?.cancelReason ?? this.cause, this.authority?.engine.id);
     this.observation = { ...view };
     this.telemetry.recordTelemetry(view, recovered);
   }

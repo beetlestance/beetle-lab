@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { expect } from '@playwright/test';
+import { K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import { validateApi } from '@beetle/contracts/api';
 import { attach } from '../native-application/flood/attach.ts';
 import { configuration } from '../native-application/flood/config.ts';
-import { counts, runningRuntime } from '../resources/lifecycle/observations.ts';
+import { counts, runningRuntime, runtime } from '../resources/lifecycle/observations.ts';
 import { revision } from './authoring.mjs';
 import { start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
@@ -50,14 +51,25 @@ export async function outputPressure(page, authored, fixture, installation, evid
     await open.click();
     await assertRunState(page, { state: 'errored', outcome: 'inconclusive' }, submitted);
     const ended = await readRun(page, submitted);
-    assert(['output_limit', 'artifact_incomplete'].includes(ended.reason ?? ''));
-    await expect(page.locator('.result-head')).toBeVisible();
+    assert.equal(ended.reason, 'output_limit');
+    const stopped = runtime(fixture, ended, installation);
+    assert.equal(stopped.id, engine.id);
+    assert.equal(stopped.state.Running, false);
+    assert.equal(stopped.state.OOMKilled, false);
+    assert.equal(stopped.state.ExitCode, K6_WRAPPER_OUTPUT_LIMIT_EXIT);
+    await expect(page.getByRole('heading', { name: /filled its output/ })).toBeVisible();
     const retained = await retainedHistory(page, submitted, ended);
     const observed = counts(fixture);
     assert(observed.work > 0 && observed.unexpected === 0);
     await writeFile(
       join(evidence, 'output-pressure-coverage.json'),
-      JSON.stringify({ observed, retained, reason: ended.reason, wrapperStop: attached.failures[0] }),
+      JSON.stringify({
+        observed,
+        retained,
+        reason: ended.reason,
+        wrapperStop: attached.failures[0],
+        exitCode: stopped.state.ExitCode,
+      }),
       { mode: 0o600, flag: 'wx' },
     );
     await page.screenshot({ path: join(evidence, 'output-pressure-result.png'), fullPage: true });

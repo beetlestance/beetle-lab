@@ -173,6 +173,13 @@ evidence incomplete. Details: [decision 011](../../decisions/011-k6-outcome-evid
 - [Decision 006: agent staging](../../decisions/006-agent-staging.md)
 - [Decision 007: admitted validation](../../decisions/007-admitted-validation.md)
 
+An installed k6 image declaring `BEETLE_K6_EXIT_PROTOCOL_V1=1` reserves Docker
+exit 74 for the wrapper's structured output-limit signal. The supervisor binds
+the marker to the inspected image and retains its physical reason across replay.
+The physical failure takes precedence over a racing user cancellation, with
+OOM and durable system stops retaining their existing priority. Diagnostic
+stderr grants no closure or publication authority.
+
 ## Anchors
 
 | Code | Reviewed |

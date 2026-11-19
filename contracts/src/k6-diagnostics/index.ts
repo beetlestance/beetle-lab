@@ -4,6 +4,9 @@ import type { NativeDiagnosticArtifact } from '../generated/types.js';
 export type K6Diagnostics = NativeDiagnosticArtifact;
 export type NativeDiagnostics = Omit<K6Diagnostics, 'format' | 'version' | 'scope'>;
 export type DiagnosticRecord = K6Diagnostics['records'][number];
+/** Exit of the installed wrapper process, distinct from a k6 child exit or diagnostic text. */
+export const K6_WRAPPER_OUTPUT_LIMIT_EXIT = 74;
+export const K6_EXIT_PROTOCOL_IMAGE_ENV = 'BEETLE_K6_EXIT_PROTOCOL_V1=1';
 export const K6_DIAGNOSTIC_RECORDS = 256;
 export const K6_DIAGNOSTIC_BYTES = 32768;
 export class K6DiagnosticError extends Error {

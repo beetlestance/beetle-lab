@@ -1,3 +1,4 @@
+import { K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import type { DatabaseSync } from 'node:sqlite';
 import { captureOutputAbsence, OUTPUT_ABSENCE_BYTES, OUTPUT_REJECTION_REASONS } from '@beetle/contracts/output-source';
 import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
@@ -25,7 +26,13 @@ function requireFact(value: unknown): asserts value {
 }
 function diagnostic(db: DatabaseSync, row: Row, fallback: OutputAbsence['reason']): OutputAbsence['reason'] {
   const record = db.prepare(`SELECT cancel_reason FROM supervision_clock WHERE attempt_id=?`).get(row.attempt_id);
-  const exit = JSON.parse(row.exit_facts_json ?? row.exit_json ?? '{}') as { reason?: unknown };
+  const exit = JSON.parse(row.exit_facts_json ?? row.exit_json ?? '{}') as { reason?: unknown; exitCode?: unknown };
+  if (
+    record?.cancel_reason === 'cancelled' &&
+    exit.reason === 'output_limit' &&
+    exit.exitCode === K6_WRAPPER_OUTPUT_LIMIT_EXIT
+  )
+    return 'output_limit';
   const reason = record?.cancel_reason ?? exit.reason;
   return [
     'cancelled',
