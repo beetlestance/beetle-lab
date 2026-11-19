@@ -55,8 +55,11 @@ The synthetic target permits at most 128 requests per path. This does not qualif
 maximum load or resource enforcement. A full passing outcome is required; separate
 feature probes do not establish that this entire sequence passed.
 
-The UI-adapted harness has not yet completed a current-image run. Its source checks
-cover scope/state binding and cleanup; they do not qualify installed images. Run
+The UI-adapted `run-results` profile passed all seven phases locally on ARM64
+with six matching `322d2851` images and harness `dde0dee7` in 88.36 seconds.
+Installation and browser cleanup were verified. This is not the twelve-phase
+functional profile, configured-target comparison, visual acceptance or AMD64 proof.
+Source checks cover scope/state binding and cleanup separately. Run
 submission captures the suite/workspace and selected revision before accepting the
 202 response, checks the exact 8 MiB budget, and binds later UI/API reads to it.
 The `test:cleanup` command also runs these state-boundary tests.
