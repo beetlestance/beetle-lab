@@ -312,13 +312,6 @@
   .live-charts {
     grid-template-columns: minmax(0, 1fr);
   }
-  .live-stage-label > span:not(.number) {
-    display: none;
-  }
-  .live-left {
-    display: block;
-    margin: var(--s-4) 0 0;
-  }
 }
 
 .live-threshold-head .number {

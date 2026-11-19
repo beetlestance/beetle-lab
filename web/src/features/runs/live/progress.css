@@ -115,3 +115,31 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 760px) {
+  .live-stages {
+    position: relative;
+    font-size: var(--fs-sm);
+    padding-top: calc(1.5em + var(--s-12));
+  }
+  .live-stage {
+    gap: 0;
+  }
+  .live-stage-label {
+    display: none;
+  }
+  .live-stage.is-now .live-stage-label,
+  .live-stages:not(:has(.is-now)) .live-stage.is-done:last-child .live-stage-label {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: 100%;
+  }
+  .live-left {
+    margin-left: var(--s-12);
+  }
+  .live-end {
+    display: none;
+  }
+}
