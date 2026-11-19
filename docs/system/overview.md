@@ -175,5 +175,5 @@ its execution and result contract is clear.
 
 | Code | Reviewed |
 | --- | --- |
-| `compose.rewrite.yml` | `a59e8fdf0d91` |
+| `compose.rewrite.yml` | `2485661d902a` |
 | `package.json` | `fe17c16c3951` |

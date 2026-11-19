@@ -85,7 +85,7 @@ services:
     container_name: beetle-${BEETLE_INSTANCE}-agent
     user: "${BEETLE_UID}:${BEETLE_GID}"
     group_add: ["${BEETLE_DOCKER_GID:?Set the container-visible Docker socket group}"]
-    cpus: 0.25
+    cpus: 1
     mem_limit: 256m
     pids_limit: 64
     environment:

@@ -10,7 +10,7 @@ function fixture() {
   const calls = [read('run'), ...Array.from({length: 6}, () => read('live')), ...Array.from({length: 3}, () => read('live', false))];
   return {status: 'passed', phase: 'post-idle', cleanupVerified: true, sourceRevision: revision, architecture: 'amd64', harnessNode: 'v24.22.3',
     private: canary, environment: {cpus: 4, memoryBytes: 16106127360, dockerVersion: '28.0.4', kernelVersion: '7.0.0-1017-azure', cgroupVersion: '2', private: canary}, imageSizes: ['frontend', 'backend', 'agent', 'installer', 'engine', 'export'].map(role => ({role, bytes: 16777216, private: canary})), imageIds: Object.fromEntries(['frontend', 'backend', 'agent', 'installer', 'engine', 'offline'].map(role => [role, 'sha256:' + 'b'.repeat(64)])),
-    results: {targetRequests: {ready: 1, work: 40, unexpected: 0}, controlReserve: {cpuMillis: 1350, memoryBytes: 603979776, pids: 160},
+    results: {targetRequests: {ready: 1, work: 40, unexpected: 0}, controlReserve: {cpuMillis: 2100, memoryBytes: 603979776, pids: 160},
       idle: {peers, apiCalls: 1, apiP95Ms: 20, readFailures: 0}, idlePartial: {calls: [read('settings')], readFailures: 0},
       loaded: {peers, apiCalls: calls.length, apiP95Ms: 20, readFailures: 0, elapsedMs: 10000, readers: Array.from({length: 3}, () => ({frames: 2, unavailable: 1}))},
       loadedPartial: {calls, readFailures: 0}, postIdle: {peers, apiCalls: 1, apiP95Ms: 20, readFailures: 0},

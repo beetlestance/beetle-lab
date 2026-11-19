@@ -15,7 +15,7 @@ The identity checks below reduce privileges; they do not sandbox socket access.
 | --- | --- | --- | --- | --- |
 | frontend | ingress + control; only `127.0.0.1:<port>` → 8080 published | UID/GID 101 | 0.1 / 64 MiB / 32 | none |
 | backend | control (internal) | 1000:1000 | 1 / 256 MiB / 64 | config ro, backend data rw |
-| agent | control (internal) | starts root with only `SETUID`/`SETGID`, drops to 1000:1000 + socket group | 0.25 / 256 MiB / 64 | config ro, journal rw, staging rw, published inputs ro, socket |
+| agent | control (internal) | starts root with only `SETUID`/`SETGID`, drops to 1000:1000 + socket group | 1 / 256 MiB / 64 | config ro, journal rw, staging rw, published inputs ro, socket |
 | setup | targets | starts root with `CHOWN`, `FOWNER`, `SETUID`, `SETGID` for empty-skeleton preparation, then drops | 1 / 256 MiB / 64 | home, socket |
 | engine attempts | `beetle-<instance>-targets` bridge, never control | non-root, per-attempt spec | admission budget | staged inputs, output, scratch |
 
@@ -103,7 +103,7 @@ are CPU in millicores.
 | --- | --- | --- | --- | --- |
 | Pool | 2000 | 1 GiB | 256 | output 128 MiB, staging 128 MiB, concurrency 2, storage 2 GiB, free-space reserve 256 MiB |
 | Per-run ceiling and default | 1000 | 512 MiB | 128 | timeout 300000 ms, output 64 MiB, staging 64 MiB |
-| Control reserve | 1350 | 576 MiB | 160 | equals the backend, agent and frontend hard caps |
+| Control reserve | 2100 | 576 MiB | 160 | equals the backend, agent and frontend hard caps |
 | Headroom | 250 | 128 MiB | 16 | output and staging 0 |
 
 `maxConcurrent` 2, `maxTimeoutMs` 300000, `observationTtlMs` 1000, no required sensors,
@@ -214,7 +214,7 @@ request alias never becomes an environment variable name or file path
 | --- | --- |
 | `tools/install/src/` | `3c5a00e5ccff` |
 | `tools/install/compose/` | `20a3f76728ad` |
-| `tools/install/starter/policy.ts` | `05f116398b2b` |
+| `tools/install/starter/policy.ts` | `c6d6ef3e6999` |
 | `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
 | `agent/src/installation-state/` | `0beedc07f9a0` |
 | `contracts/src/installed-identity.ts` | `564605f73a36` |

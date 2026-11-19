@@ -6,7 +6,7 @@ constructors plus real outputguard/watchdog/admission/observation owners.
 Build a task-only agent overlay FROMverifiedb489 base; bundle a dedicated
 container.ts importing actualidentitydrop then qualificationmain (basecontainer.js
 inlines stockmain, so replacingmain.js alone doesnotrun thebenchmark). Keep PID 1 identity
-bootstrap,0.25CPU/256 MiB/PID 64/read-only/security/mount recipe. Record overlaydigest
+bootstrap,1CPU/256 MiB/PID 64/read-only/security/mount recipe. Record overlaydigest
 separately from immutable sourcebase. Never claimnormalstartup/offmodequalified.
 On: actualresource sampler, livepublisher, agentdecode and3settled2sreaders.
 Off: omitresource sampler andlive publication/consumption only. Same fullOffer

@@ -91,7 +91,7 @@ try {
   assert.equal(actual.Image, built.id);
   assert.deepEqual(
     [actual.HostConfig.NanoCpus, actual.HostConfig.Memory, actual.HostConfig.PidsLimit],
-    [250000000, 268435456, 64],
+    [1000000000, 268435456, 64],
   );
   const socket = f.docker.run(['context', 'inspect', context, '--format', '{{.Endpoints.docker.Host}}']);
   assert(socket.startsWith('unix://'));

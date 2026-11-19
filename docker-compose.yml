@@ -90,7 +90,7 @@ services:
     user: "0:0"
     cap_add: [SETUID, SETGID]
     entrypoint: [node, /beetle/agent/container.js]
-    cpus: 0.25
+    cpus: 1
     mem_limit: 256m
     pids_limit: 64
     healthcheck:
