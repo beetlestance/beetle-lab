@@ -5,6 +5,7 @@ export interface Row {
   at: string;
   phase: Event['phase'];
   kind: Event['kind'];
+  artifactKind?: Extract<Event, { kind: 'artifact.sealed' }>['payload']['kind'];
   text: string;
 }
 export interface Progress {
@@ -117,14 +118,24 @@ function emptyTimeline(page: RunEventPage): Timeline {
     retainedStart: null,
   };
 }
+function eventRow(event: Event): Row {
+  return {
+    seq: event.seq,
+    at: event.observedAt,
+    phase: event.phase,
+    kind: event.kind,
+    text: event.source === 'wrapper' ? wrapperText(event) : agentText(event),
+    ...(event.kind === 'artifact.sealed' ? { artifactKind: event.payload.kind } : {}),
+  };
+}
+
 /** No raw payload survives this projection. Bounds apply to serialized UTF-8 rows. */
 export function project(page: RunEventPage, previous?: Timeline, skipped = false): Timeline {
   const data = previous ? { ...previous, rows: [...previous.rows] } : emptyTimeline(page);
   data.omitted ||= skipped;
   for (const event of page.items) {
     if (event.seq <= data.through) continue;
-    const text = event.source === 'wrapper' ? wrapperText(event) : agentText(event);
-    data.rows.push({ seq: event.seq, at: event.observedAt, phase: event.phase, kind: event.kind, text });
+    data.rows.push(eventRow(event));
     data.progress = progressAfter(data.progress, event);
     if (event.kind === 'resource.summary') data.resources = resourceText(event.payload);
   }

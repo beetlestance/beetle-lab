@@ -48,9 +48,9 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
   local draft/export intent through cached metadata refresh failures, with a warning.
 - Artifact states are pending, absent, ready-empty and ready; an empty ready page
   is not source-free absence.
-- Finalizing uses one indeterminate sealing/KPI card. Only recorded events mark
-  reports/files complete; event read errors label retained state and offer retry.
-  A last live window is not a confirmed execution-stop timestamp.
+- Finalizing uses one indeterminate sealing card. Recorded events confirm files.
+  K6 collect or seal entry confirms sampler closure when configured; seal confirms collection.
+  Read errors label retained state and offer retry. Last-window time does not confirm execution stop.
 - Run state and outcome come from the application. An engine-reported result is
   labelled provisional until the run is terminal; cancellation requested is not
   stopped, runtime exit is not passed, and a terminal run does not imply that the
@@ -215,6 +215,6 @@ navigation and build. Frontend image qualification is separate from source proof
 | `web/src/app/routes.ts` | `0cd883b6c7a9` |
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
-| `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |
+| `web/src/features/runs/timeline/projection.ts` | `c683fdfec49a` |
 | `web/src/features/command-search/model.ts` | `6d1867832757` |
 | `web/src/features/input-directory/plan.ts` | `f0ec22cf9b89` |

@@ -70,3 +70,25 @@ it('labels unavailable resource values and sampled coverage without inventing ze
   expect(data.resources).toContain('observation unavailable');
   expect(data.resources).not.toContain('0 ms');
 });
+
+it('exposes sealed artifact kind without exposing the source path or hash', () => {
+  const row = project({
+    ...page({ through: 1 }),
+    items: [{
+      ...event(1),
+      source: 'wrapper',
+      wrapperSeq: 1,
+      kind: 'artifact.sealed',
+      payload: {
+        artifactId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        kind: 'performance-report',
+        relativePath: 'report.txt',
+        bytes: 512,
+        sha256: 'a'.repeat(64),
+        sealedAt: '2026-11-10T00:00:01.000Z',
+      },
+    }],
+  }).rows[0];
+  expect(row).toMatchObject({ artifactKind: 'performance-report', text: 'Artifact sealed: 512 bytes' });
+  expect(JSON.stringify(row)).not.toContain('report.txt');
+});

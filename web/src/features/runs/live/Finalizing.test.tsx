@@ -20,13 +20,18 @@ it('shows an indeterminate card and unknown figures before sealing evidence arri
 });
 it('labels retained evidence after a read error and retries without overlapping the read', () => {
   const refetch = vi.fn();
-  timeline.mockReturnValue({ isError: true, isFetching: false, refetch, data: { omitted: true, rows: [
-    { kind: 'artifact.sealed' }, { kind: 'engine.result' },
-  ] } });
+  timeline.mockReturnValue({
+    isError: true,
+    isFetching: false,
+    refetch,
+    data: { omitted: true, rows: [{ kind: 'artifact.sealed' }, { kind: 'engine.result' }] },
+  });
   render(<Finalizing {...props} lastT={316000} />);
   expect(screen.getByText('Last live window at 05:16 of 10:00')).toBeVisible();
   expect(screen.getByText('At least 1 file sealed')).toBeVisible();
-  expect(within(screen.getByRole('list', { name: 'Last recorded sealing events' })).getByText('Engine report written')).toBeVisible();
+  expect(
+    within(screen.getByRole('list', { name: 'Last recorded sealing events' })).getByText('Engine report written'),
+  ).toBeVisible();
   expect(screen.getByRole('alert')).toHaveTextContent('last recorded events are shown');
   fireEvent.click(screen.getByRole('button', { name: 'Retry sealing events' }));
   expect(refetch).toHaveBeenCalledWith({ cancelRefetch: false });
@@ -36,4 +41,40 @@ it('keeps the retry unavailable while an existing sealing read settles', () => {
   render(<Finalizing {...props} />);
   expect(screen.getByRole('button', { name: 'Retry sealing events' })).toBeDisabled();
   expect(screen.getByRole('alert')).toHaveTextContent('Sealing events could not be read.');
+});
+
+it('advances artifact collection and sampler closure only on recorded phase entry', () => {
+  const plan = { ...props.plan, samplingIntervalMs: 1000 };
+  timeline.mockReturnValue({
+    isError: false,
+    data: { coverage: 'contiguous', rows: [{ kind: 'phase.finished', phase: 'execute' }] },
+  });
+  const view = render(<Finalizing {...props} plan={plan} />);
+  expect(screen.getByText('Waiting for target sampler closure')).toBeVisible();
+  expect(screen.queryByText('Target sampler closed')).toBeNull();
+
+  timeline.mockReturnValue({
+    isError: false,
+    data: {
+      coverage: 'contiguous',
+      rows: [
+        { kind: 'phase.started', phase: 'collect' },
+        { kind: 'artifact.sealed', artifactKind: 'performance-report' },
+      ],
+    },
+  });
+  view.rerender(<Finalizing {...props} plan={plan} />);
+  expect(screen.getByText('Target sampler closed')).toBeVisible();
+  expect(screen.getByText('Artifact collection started')).toBeVisible();
+  expect(screen.getByText('Engine report written')).toBeVisible();
+  expect(screen.queryByText(/Awaiting final confirmation/)).toBeNull();
+
+  timeline.mockReturnValue({
+    isError: false,
+    data: { coverage: 'contiguous', rows: [{ kind: 'phase.started', phase: 'seal' }] },
+  });
+  view.rerender(<Finalizing {...props} plan={plan} />);
+  expect(screen.getByText('Target sampler closed')).toBeVisible();
+  expect(screen.getByText('Artifact collection complete. Awaiting final confirmation')).toBeVisible();
+  expect(screen.queryByText('Engine report written')).toBeNull();
 });
