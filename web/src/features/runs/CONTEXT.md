@@ -1,12 +1,12 @@
 # Runs
-
 Public entries: `Runs({organizationId, workspaceId, runId?})` and
 `RunSavedRevision({revision})`. Only immutable saved revisions can launch runs.
 Generated ApiClient owns request/response validation and scope bindings.
 History keeps bounded keyset pages (shared Pagination with order: Newer/Older, page N). Chips (no counts), pinned
 (runsPage key slot), suite, sort apply at once; search on Enter sends 8+ hex characters as
 runIdPrefix, else name (names and notes). Changes reset paging/selection.
-HistorySuites reads one listSuites page (100) for row names and the suite filter;
+History rows prefer same-page bound suite/revision context, without row fanout.
+HistorySuites reads 100 filter/fallback names; failed reads retire cached names;
 HistorySummaryCells shows stored summaries only, missing values unknown (—).
 Details poll every two seconds while nonterminal, stop on errors/terminal states,
 and suspend interval work when hidden. Unmount cancels/removes scoped run queries.

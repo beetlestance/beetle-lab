@@ -1,4 +1,4 @@
-import type { RunPage } from '@beetle/contracts/api';
+import type { Run, RunListContext, RunPage } from '@beetle/contracts/api';
 import { Link } from 'react-router-dom';
 import { routes } from '../../app/routes.js';
 import { Badge, Status } from '../../components/Badge.js';
@@ -39,7 +39,6 @@ export function HistoryTable({
       {page.items.map((run, index) => {
         const status = runStatus(run);
         const started = startedAt(run);
-        const suite = name(run.suiteId);
         const position = selected.indexOf(run.id);
         return (
           <tr key={run.id} aria-selected={position >= 0 || undefined}>
@@ -53,16 +52,13 @@ export function HistoryTable({
                 onChange={() => toggle(run.id)}
               />
             </Td>
-            <th scope="row" className="history-run">
-              <Link to={routes.run(scope.organizationId, scope.workspaceId, run.id)} className="history-run-link">
-                <span className="history-suite">{suite ?? 'Suite'}</span>{' '}
-                <span className="number history-id">{shortId(run.id)}</span>
-                <span className="sr-only">, run {run.id}</span>
-              </Link>
-              {run.pinned && <Badge tone="strong">Pinned</Badge>}
-              {position === 0 && <Badge tone="amber">Baseline</Badge>}
-              {run.note && <span className="history-note">{run.note}</span>}
-            </th>
+            <HistoryIdentity
+              run={run}
+              context={page.contexts?.[index]}
+              scope={scope}
+              position={position}
+              fallbackName={name(run.suiteId)}
+            />
             <Td>
               <Status tone={status.tone}>{status.label}</Status>
             </Td>
@@ -76,5 +72,34 @@ export function HistoryTable({
         );
       })}
     </Table>
+  );
+}
+
+function HistoryIdentity({
+  run,
+  context,
+  scope,
+  position,
+  fallbackName,
+}: {
+  run: Run;
+  context: RunListContext | undefined;
+  scope: RunScope;
+  position: number;
+  fallbackName: string | undefined;
+}) {
+  const suite = context?.suiteName ?? fallbackName;
+  return (
+    <th scope="row" className="history-run">
+      <Link to={routes.run(scope.organizationId, scope.workspaceId, run.id)} className="history-run-link">
+        <span className="history-suite">{suite ?? 'Suite'}</span>{' '}
+        <span className="number history-id">{shortId(run.id)}</span>
+        <span className="history-revision">, {context ? `rev ${context.revisionOrdinal}` : 'revision unknown'}</span>
+        <span className="sr-only">, run {run.id}</span>
+      </Link>
+      {run.pinned && <Badge tone="strong">Pinned</Badge>}
+      {position === 0 && <Badge tone="amber">Baseline</Badge>}
+      {run.note && <span className="history-note">{run.note}</span>}
+    </th>
   );
 }
