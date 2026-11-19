@@ -14,6 +14,9 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 | `web/src/features/runs/HistoryHeader.tsx` | `000000000000` |
 | `web/src/app/navigation.ts` | `000000000000` |
 | `web/src/app/shell/AppShell.tsx` | `000000000000` |
+| `web/src/features/runs/HistoryTable.tsx` | `000000000000` |
+| `web/src/features/runs/result/PinControl.tsx` | `000000000000` |
+| `web/src/features/runs/result/usePin.ts` | `000000000000` |
 | `web/src/app/routes.ts`, the only source of in-app URLs                                                                                                                     |
 | Server state                 | One TanStack Query client; keys from `web/src/app/queries.ts`, nested organisation → workspace → run → attempt                                                              |
 | API access                   | The generated client from `contracts/`; no hand-written DTOs, no second client factory                                                                                      |
@@ -186,8 +189,10 @@ Run history uses its existing page's scoped workspace name for the workspace fra
 a failed refresh hides cached names. Empty unfiltered history uses the exported
 Runs illustration and opens the real suite creation flow; restored history keeps
 only read navigation. A suite-filtered empty page never claims the workspace has
-no runs. Names, row contexts and numeric facts never require per-row reads.
-Wide history tables retain readable columns in a named, keyboard-scrollable region.
+no runs. Names, row contexts and numeric facts never require per-row reads. Wide history tables retain readable columns in a named, keyboard-scrollable region.
+The last column shares receipt-only pinning: unfinished runs hide it, restored pins are read-only at backup.
+Accepted writes refresh history; uncertain writes permit identical replay; retention refusals preserve state.
+Row and checkbox labels expand colliding source UUIDs, never inventing an ordinal.
 
 The header's existing Docs entry opens `/docs/` as a full document navigation to
 the bundled Starlight site. React Router does not intercept it. `/reference`
@@ -204,6 +209,9 @@ navigation and build. Frontend image qualification is separate from source proof
 
 | Code                                           | Reviewed       |
 | ---------------------------------------------- | -------------- |
+| `web/src/features/runs/HistoryTable.tsx` | `924679ca2e4a` |
+| `web/src/features/runs/result/PinControl.tsx` | `bc6759f3a2cf` |
+| `web/src/features/runs/result/usePin.ts` | `7b5bca93a0ad` |
 | `web/src/app/routes.ts` | `0cd883b6c7a9` |
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |

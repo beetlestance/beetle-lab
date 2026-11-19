@@ -1,15 +1,15 @@
 import { terminal } from '../terminal.js';
 import { useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Run } from '@beetle/contracts/api';
-import { errorMessage, useApi } from '../../../app/api.js';
+import { useApi } from '../../../app/api.js';
 import { routes } from '../../../app/routes.js';
 import { Status } from '../../../components/Badge.js';
 import { Button } from '../../../components/Button.js';
 import { runStatus } from '../../run-results/format.js';
-import { usePin } from './usePin.js';
+import { PinControl } from './PinControl.js';
+import { WriteError } from './WriteError.js';
 import { useWrite } from './useWrite.js';
-import type { Write } from './useWrite.js';
 import { ResultDownloads } from './ResultDownloads.js';
 import { ResultContext } from './ResultContext.js';
 import { ResultCompare } from './ComparePicker.js';
@@ -74,24 +74,6 @@ export function ResultHeader({
   );
 }
 
-function WriteError({ write, label }: { write: Write; label: string }) {
-  if (!write.error) return null;
-  return (
-    <p role="alert" className="result-inline-error">
-      {errorMessage(write.error.failure)}
-      {write.error.unknown && (
-        <>
-          {' '}
-          The outcome is unknown.{' '}
-          <Button variant="text" size="sm" onClick={write.retry} disabled={write.pending}>
-            {label}
-          </Button>
-        </>
-      )}
-    </p>
-  );
-}
-
 /** Starts the same saved revision with the run's own profile, budget and policy. */
 function RunAgain({ run }: { run: Run }) {
   const api = useApi();
@@ -120,46 +102,6 @@ function RunAgain({ run }: { run: Run }) {
         Run again
       </Button>
       <WriteError write={write} label="Retry the same start" />
-    </span>
-  );
-}
-
-function PinControl({ run }: { run: Run }) {
-  const pin = usePin(run);
-  const { organizationId, workspaceId } = run.scope;
-  const hidden = run.state !== 'finished' && run.state !== 'cancelled' && run.state !== 'errored';
-  if (hidden) return null;
-  return (
-    <span className="result-action">
-      <Button
-        size="sm"
-        aria-pressed={pin.pinned}
-        loading={pin.write.pending}
-        loadingLabel={pin.pinned ? 'Unpinning…' : 'Pinning…'}
-        disabled={pin.reason === 'cleanup_in_progress'}
-        onClick={pin.toggle}
-      >
-        {pin.pinned ? '✓ Pinned' : 'Pin this run'}
-      </Button>
-      {pin.reason === 'pin_limit' ? (
-        <p role="alert" className="result-inline-error">
-          256 runs are pinned in this workspace. Unpin one to pin this run.{' '}
-          <Link to={routes.pinnedRuns(organizationId, workspaceId)}>See pinned runs</Link>
-        </p>
-      ) : pin.reason === 'cleanup_in_progress' ? (
-        <p role="alert" className="result-inline-error">
-          This run is being removed, so it can no longer be pinned.
-        </p>
-      ) : (
-        <>
-          <WriteError write={pin.write} label="Retry" />
-          {pin.write.error && !pin.write.error.unknown && (
-            <Button variant="text" size="sm" onClick={pin.toggle}>
-              Try again
-            </Button>
-          )}
-        </>
-      )}
     </span>
   );
 }

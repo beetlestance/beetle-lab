@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Run, RunPinReceipt } from '@beetle/contracts/api';
 import { useApi } from '../../../app/api.js';
@@ -19,6 +19,9 @@ export function usePin(run: Run) {
   const write = useWrite(`${organizationId}/${workspaceId}/${run.id}/pin`);
   const [receipt, setReceipt] = useState<RunPinReceipt | null>(null);
   const shown = receipt && receipt.pinned !== (run.pinned ?? false) ? receipt.pinned : (run.pinned ?? false);
+  useEffect(() => {
+    if (receipt && receipt.pinned === (run.pinned ?? false)) setReceipt(null);
+  }, [receipt, run.pinned]);
   function toggle() {
     const body = { scope: run.scope, requestId: crypto.randomUUID() };
     const params = { organizationId, workspaceId, runId: run.id };
@@ -33,8 +36,10 @@ export function usePin(run: Run) {
       },
       (failure) => {
         // A refused pin re-reads the run so the state shown is the server's.
-        if (!failure.unknown)
+        if (!failure.unknown) {
           void client.invalidateQueries({ queryKey: queryKeys.run(organizationId, workspaceId, run.id), exact: true });
+          void client.invalidateQueries({ queryKey: [...queryKeys.runs(organizationId, workspaceId), 'page'] });
+        }
       },
     );
   }
