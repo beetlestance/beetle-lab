@@ -2,8 +2,9 @@
 Public RunTargetObservations receives one scoped published target-runtime descriptor.
 RunResultRead reuses resultView identity checks and rejects multiple target reports;
 there is no second metadata request/poll or engine-path selector.
-TargetReportReads uses shared browser artifact admission (two across report kinds), no queue/retry/corpus, a 5 s
-fetch/body/hash/decode lifetime, fixed same-origin UUID routes and strict metadata.
+TargetReportReads shares two whole-operation credits across report kinds, one
+fetch/body wire, and a 5 s budget including waiting; no retries or corpus.
+Fixed same-origin UUID routes and strict metadata precede body/hash/decode.
 Exact actual bytes and SHA256 precede the shared 1 MiB/256sample report codec.
 Browser fetch, body read/cancel/closed, lock release and digest originals settle
 before admission returns. Abort is a hint; uncooperative originals retain credit.

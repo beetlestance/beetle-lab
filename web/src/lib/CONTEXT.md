@@ -6,7 +6,8 @@ Live metrics cap 64 KiB; target artifacts retain their exact descriptor length.
 series-buffer owns the separate bounded rendering buffer for historical samples.
 verified-artifact owns finite same-origin UUID artifact reads, exact metadata/body/
 SHA256 checks and a 5 s whole fetch/body/hash/decode lifetime. One module-level owner
-admits two originals across target and performance report readers; ignored abort,
+admits two whole originals across report kinds; fetch/body wires serialize through
+read-gate within their original 5 s budget. Ignored abort,
 body cancellation/closed, lock release and digest work retain credits until settled.
 Policy is fixed by composition, never a response or engine filename. No retries.
 use-artifact-report owns session/selection display leases and an independent 5 s

@@ -19,18 +19,28 @@ it('rejects malformed UTF-8 even when the body length and verified hash agree', 
   const reads = reader({fetch: async () => new Response(body), monotonic: () => 0, digest: async () => 'a'.repeat(64)});
   await expect(reads.read({...input(), artifact: {...artifact, bytes: 2, sha256: 'a'.repeat(64)}})).rejects.toThrow();
 });
-it('shares two physical credits with target-report readers and retains them through ignored aborts', async () => {
+it('shares two whole-operation credits while serializing target/report wires and retaining ignored aborts', async () => {
   const {fixture: targetFixture} = await import('../target-observations/read-fixtures.js');
   const {deferred} = await import('./fixtures.js');
   const holds = [deferred<Response>(), deferred<Response>()]; const issued = [deferred<void>(), deferred<void>()];
   const target = targetFixture({fetch: async () => {issued[0]!.resolve(); return holds[0]!.promise;}});
   const selected = input(); const controller = new AbortController();
-  const reads = reader({fetch: async () => {issued[1]!.resolve(); return holds[1]!.promise;},
+  let secondIssued = false;
+  const reads = reader({fetch: async () => {secondIssued = true; issued[1]!.resolve(); return holds[1]!.promise;},
     digest: async () => artifact.sha256, monotonic: () => 0});
   const first = target.reads.read(target.input); const firstRejected = expect(first).rejects.toThrow();
   const second = reads.read({...selected, signal: controller.signal}); const secondRejected = expect(second).rejects.toThrow();
-  await Promise.all(issued.map(item => item.promise)); target.controller.abort(); controller.abort();
-  try {await expect(reader().read(input())).rejects.toThrow('capacity');}
-  finally {holds[0]!.resolve(new Response(target.bytes)); holds[1]!.resolve(new Response(bytes)); await Promise.all([firstRejected, secondRejected]);}
+  await issued[0]!.promise;
+  try {
+    expect(secondIssued).toBe(false);
+    await expect(reader().read(input())).rejects.toThrow('capacity');
+    target.controller.abort();
+    await expect(reader().read(input())).rejects.toThrow('capacity');
+    holds[0]!.resolve(new Response(target.bytes)); await firstRejected;
+    await issued[1]!.promise; controller.abort();
+  } finally {
+    holds[0]!.resolve(new Response(target.bytes)); holds[1]!.resolve(new Response(bytes));
+    await Promise.all([firstRejected, secondRejected]);
+  }
   expect(await reader({fetch: async () => new Response(bytes), digest: async () => artifact.sha256, monotonic: () => 0}).read(input())).toBe(report);
 });

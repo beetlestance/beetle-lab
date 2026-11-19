@@ -11,8 +11,8 @@ Attachment filenames/media policy are unchanged; unknown formats stay binary.
 
 The shared VerifiedArtifactReads admits an explicit artifact-preview profile up
 to 32 MiB. Every other reader keeps its 1 MiB default. The same two-original
-admission spans kinds/profiles; no queue, cache or automatic retry is introduced.
-The 5 s lifetime spans fetch, exact body size, full-file SHA-256 and decode.
+admission spans kinds/profiles; fetch/body wires serialize without cache or retries.
+The 5 s lifetime includes waiting, fetch, exact size, full-file SHA-256 and decode.
 Ignored aborts, body cleanup and hashing retain admission until actual settlement.
 Response streams keep their 4096-fragment limit and exact advertised length checks.
 Same-origin credentials, redirect refusal and immutable captured descriptors apply.
@@ -40,7 +40,7 @@ does not claim that a later download or OS save has been verified.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/lib/verified-artifact.ts` | `b66cb07ff878` |
+| `web/src/lib/verified-artifact.ts` | `f67c4aa25dbe` |
 | `web/src/lib/response-body.ts` | `253992da68f6` |
 | `web/src/features/runs/artifacts/ArtifactViewer.tsx` | `a523d5fbe171` |
 | `web/src/features/runs/artifacts/preview.ts` | `ed499f014a55` |

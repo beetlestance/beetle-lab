@@ -1,3 +1,4 @@
+import { ReadGate } from './read-gate.js';
 import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import type { Artifact } from '@beetle/contracts';
 import { runArtifactContentPath } from '@beetle/contracts/api';
@@ -28,7 +29,8 @@ const native: ArtifactReadPorts = {
   },
 };
 let activeOriginals = 0;
-/** Shared two-original admission, no queue/retries/cache; caller retires its own result. */
+const contentWire = new ReadGate();
+/** Two retained operations; one fetch/body wire owner across report kinds. No retry or cache. */
 export class VerifiedArtifactReads<T> {
   private readonly ports: ArtifactReadPorts;
   private readonly policy: ArtifactReadPolicy<T>;
@@ -69,6 +71,21 @@ export class VerifiedArtifactReads<T> {
     const signal = AbortSignal.any([input.signal, controller.signal]);
     const start = this.ports.monotonic();
     const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+      const bytes = await contentWire.run(signal, () => this.readBytes(input, signal, start));
+      this.check(signal, start);
+      const digest = await this.ports.digest(bytes);
+      this.check(signal, start);
+      if (digest !== input.artifact.sha256) throw new Error('Artifact integrity mismatch');
+      const report = this.policy.decode(bytes);
+      this.check(signal, start);
+      return report;
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
+    }
+  }
+  private async readBytes(input: ReturnType<typeof capture>, signal: AbortSignal, start: number) {
     let response: Response | undefined;
     let bodyOwned = false;
     try {
@@ -82,7 +99,7 @@ export class VerifiedArtifactReads<T> {
       });
       this.check(signal, start);
       bodyOwned = true;
-      const bytes = await responseBody(
+      return await responseBody(
         response,
         {
           maximum: this.policy.maximumBytes,
@@ -91,16 +108,7 @@ export class VerifiedArtifactReads<T> {
         },
         signal,
       );
-      this.check(signal, start);
-      const digest = await this.ports.digest(bytes);
-      this.check(signal, start);
-      if (digest !== input.artifact.sha256) throw new Error('Artifact integrity mismatch');
-      const report = this.policy.decode(bytes);
-      this.check(signal, start);
-      return report;
     } finally {
-      clearTimeout(timer);
-      controller.abort();
       if (!bodyOwned && response?.body && !response.body.locked) await response.body.cancel();
     }
   }
