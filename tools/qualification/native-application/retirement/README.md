@@ -97,3 +97,9 @@ runtime or volume, and only the installed staging marker.
 
 The qualification agent uses the user recipe, not the socket-group-drop entry; that
 recipe's command check is unit-tested. Stop signals are covered by composed tests.
+On 19 November 2026 the same commands also ran as Compose one-offs of a scratch
+installation under the packaged entry (root, then UID 1000, groups 0, no
+capabilities), with no candidates: usage exit 2, preview and apply exit 0, and a
+SIGTERM 0–2.2 s after start ended `stopped` with exit 1 and released the owner.
+A signal in the first ~0.15 s (Node start and bundle parse, PID 1 with no handler
+yet) is still dropped and the command runs to completion.

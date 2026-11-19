@@ -48,7 +48,7 @@ export function failureCodes(error: unknown): readonly string[] {
   return codes.length ? codes : ['unknown'];
 }
 export function reportFailure(
-  event: 'startup_failed' | 'shutdown_failed' | 'storage_failed' | 'shutdown_deadline',
+  event: 'startup_failed' | 'startup_stopped' | 'shutdown_failed' | 'storage_failed' | 'shutdown_deadline',
   error: unknown,
 ): void {
   try {

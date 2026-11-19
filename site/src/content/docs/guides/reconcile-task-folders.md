@@ -91,8 +91,9 @@ it.
 | `2` | Unknown arguments; only `reconcile` and `reconcile --apply` are accepted. |
 
 Pressing Ctrl-C (or sending SIGTERM) cancels the run being reconciled, starts no
-further run and closes cleanly; the summary then shows `"stopped":true`. Runs
-already reconciled keep their recorded numbers.
+further run and closes cleanly; the summary then shows `"stopped":true`. A stop
+while the command is still starting shows the same summary with `"attempts":0`.
+Runs already reconciled keep their recorded numbers.
 
 The command refuses to start while the agent is running, because both take the
 same exclusive lock on the installation. It never listens for requests and never
