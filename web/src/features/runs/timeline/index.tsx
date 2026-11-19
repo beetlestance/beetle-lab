@@ -1,3 +1,5 @@
+import { Milestones } from './Milestones.js';
+import { Button } from '../../../components/Button.js';
 import { useId } from 'react';
 import type { Run } from '@beetle/contracts/api';
 import { useTimeline } from './useTimeline.js';
@@ -10,7 +12,15 @@ function coverage(data: Timeline) {
     ? 'More durable activity remains; reading in bounded intervals.'
     : 'Caught up with currently durable activity; this does not establish complete capture.';
 }
-export function ExecutionActivity({ run, terminal }: { run: Run; terminal: boolean }) {
+export function ExecutionActivity({
+  run,
+  terminal,
+  narrative = false,
+}: {
+  run: Run;
+  terminal: boolean;
+  narrative?: boolean;
+}) {
   const heading = useId();
   const query = useTimeline(run, terminal);
   const data = query.data;
@@ -18,12 +28,17 @@ export function ExecutionActivity({ run, terminal }: { run: Run; terminal: boole
     <section className="execution-activity" aria-labelledby={heading}>
       <header className="section-header">
         <div>
-          <h2 id={heading}>Execution activity</h2>
+          <h2 id={heading}>{narrative ? 'What happened' : 'Execution activity'}</h2>
           <p>Source timestamps correlate observations; they do not measure elapsed time.</p>
         </div>
-        <button disabled={query.isFetching} onClick={() => void query.refetch({ cancelRefetch: false })}>
+        <Button
+          variant="text"
+          size="sm"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch({ cancelRefetch: false })}
+        >
           Refresh activity
-        </button>
+        </Button>
       </header>
       {query.isPending && <p role="status">Loading execution activity…</p>}
       {query.isError && (
@@ -38,31 +53,16 @@ export function ExecutionActivity({ run, terminal }: { run: Run; terminal: boole
             <p>Retained activity starts at sequence {data.retainedStart}; earlier coverage has a gap.</p>
           )}
           {data.omitted && <p>Recent history only: earlier activity was omitted to keep this view bounded.</p>}
-          <dl className="run-facts">
-            <div>
-              <dt>Latest useful progress</dt>
-              <dd>
-                <ProgressFact progress={data.progress} />
-              </dd>
-            </div>
-            <div>
-              <dt>Reported resources</dt>
-              <dd>{data.resources ?? 'Not reported'}</dd>
-            </div>
-          </dl>
-          {data.rows.length === 0 ? (
-            <p>No activity rows reported.</p>
+          {narrative ? (
+            <>
+              <Milestones rows={data.rows} />
+              <details>
+                <summary>Inspect recorded activity and resource observations</summary>
+                <ActivityFacts data={data} />
+              </details>
+            </>
           ) : (
-            // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- A scrollable list takes focus so keyboard users can scroll it.
-            <ol tabIndex={0} className="activity-rows" aria-label="Recent execution observations">
-              {data.rows.map((row) => (
-                <li key={row.seq}>
-                  <span className="number">#{row.seq}</span> <time dateTime={row.at}>{row.at}</time>
-                  <span>{row.phase}</span>
-                  <span>{row.text}</span>
-                </li>
-              ))}
-            </ol>
+            <ActivityFacts data={data} />
           )}
         </>
       )}
@@ -77,6 +77,39 @@ function ProgressFact({ progress }: { progress: Progress | null }) {
       {progress.phase}: {progress.completed} completed units
       {progress.total > 0 && ` of ${progress.total}`}; last useful observation{' '}
       <time dateTime={progress.usefulAt ?? undefined}>{progress.usefulAt ?? 'not reported'}</time>
+    </>
+  );
+}
+
+function ActivityFacts({ data }: { data: Timeline }) {
+  return (
+    <>
+      <dl className="run-facts">
+        <div>
+          <dt>Latest useful progress</dt>
+          <dd>
+            <ProgressFact progress={data.progress} />
+          </dd>
+        </div>
+        <div>
+          <dt>Reported resources</dt>
+          <dd>{data.resources ?? 'Not reported'}</dd>
+        </div>
+      </dl>
+      {data.rows.length === 0 ? (
+        <p>No activity rows reported.</p>
+      ) : (
+        // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- A scrollable list takes focus so keyboard users can scroll it.
+        <ol tabIndex={0} className="activity-rows" aria-label="Recent execution observations">
+          {data.rows.map((row) => (
+            <li key={row.seq}>
+              <span className="number">#{row.seq}</span> <time dateTime={row.at}>{row.at}</time>
+              <span>{row.phase}</span>
+              <span>{row.text}</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </>
   );
 }

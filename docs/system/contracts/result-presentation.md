@@ -64,12 +64,13 @@ Methods and original observations stay inspectable without a second artifact rea
 
 ## Report navigation
 
-Top Report, Artifacts and Diagnostics anchors select the same desktop report tab
-as the lower tab bar; supported hash deep links select their panel on entry.
+Top Report, Artifacts and Diagnostics anchors select the desktop report tab; supported hash deep links select their panel on entry.
 Permanent desktop anchors keep native scrolling valid before a panel mounts.
 Phone views retain separate report sections and their actual anchors. Navigation
 adds no reader of its own; selected feature owners retain their existing admission,
 publication, retry and retirement rules.
+
+See [recorded milestones](result-milestones.md) for What happened and its clock sources.
 
 ## Comparison figures
 
@@ -193,7 +194,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `a508874444a6` |
 | `web/src/features/runs/comparison/useComparison.ts` | `fae69b8c7304` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `8668f89aa562` |

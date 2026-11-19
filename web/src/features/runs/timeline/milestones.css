@@ -1,0 +1,24 @@
+.result-milestones {
+  list-style: none;
+  padding: 0;
+  margin: var(--s-16) 0;
+}
+.result-milestones li {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--s-16);
+  padding: var(--s-12) 0;
+  border-top: 1px solid var(--line);
+}
+.result-milestones time {
+  color: var(--mute);
+}
+.result-milestones li span {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 759px) {
+  .result-milestones li {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: var(--s-8);
+  }
+}
