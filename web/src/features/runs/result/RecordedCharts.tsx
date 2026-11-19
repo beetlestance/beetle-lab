@@ -7,16 +7,17 @@ import { LiveChart } from '../live/LiveChart.js';
 import { ms, whole } from '../live/format.js';
 import { RunMetrics } from '../metrics/index.js';
 import type { RunPlan } from '../live/plan.js';
-import { recordedPlot, recordedBands } from './chart-model.js';
+import { recordedPlot, recordedBands, sourceClock } from './chart-model.js';
 import type { ResultReads } from './useResultReads.js';
 import '../live/live.css';
 import './charts.css';
 export function readyChartHistory(query: ResultReads['chartHistory']): RunChartHistory | null {
   return query.isSuccess && query.data.reason === null ? query.data : null;
 }
-export function useRecordedCharts(query: ResultReads['chartHistory']) {
+export function useRecordedCharts(query: ResultReads['chartHistory'], totalMs: number | null, state: Run['state']) {
   const data = readyChartHistory(query);
-  const plot = useMemo(() => (data ? recordedPlot(data) : null), [data]);
+  const plannedDurationMs = state === 'cancelled' || state === 'errored' ? totalMs : null;
+  const plot = useMemo(() => (data ? recordedPlot(data, plannedDurationMs) : null), [data, plannedDurationMs]);
   const [hoverT, onHover] = useState<number | null>(null);
   return { data, plot, hover: { hoverT, onHover }, query };
 }
@@ -61,6 +62,12 @@ export function RecordedWhole({
             </header>
             <WholeChart view={view} selected={selected} p95Limit={p95Limit} plan={plan} phone={phone} />
           </div>
+          {plot.lastWindowBeforePlanEnd !== null && (
+            <p className="result-muted">
+              Last recorded window at {sourceClock(plot.lastWindowBeforePlanEnd)} · Planned end at{' '}
+              {sourceClock(plot.domain[1])}.
+            </p>
+          )}
           <Coverage data={data} phone={phone} />
         </>
       )}
@@ -91,6 +98,7 @@ function WholeChart({
       xs={plot.points.map((point) => point.t)}
       breaks={plot.points.map((point) => point.gapBefore)}
       domain={plot.domain}
+      strictHoverRange={plot.lastWindowBeforePlanEnd !== null}
       ticks={phone ? plot.ticks.filter((_, index) => index % 2 === 0) : plot.ticks}
       bands={phone ? undefined : recordedBands(plan, plot.domain)}
       series={[
@@ -119,6 +127,7 @@ export function RecordedMetrics({ view, p95Limit }: { view: View; p95Limit: numb
         ticks={plot.ticks}
         hover={view.hover}
         p95Limit={p95Limit}
+        strictHoverRange={plot.lastWindowBeforePlanEnd !== null}
       />
     </section>
   );

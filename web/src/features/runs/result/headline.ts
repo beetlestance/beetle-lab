@@ -95,15 +95,15 @@ const headlines: Record<Variant, (context: Context) => Headline> = {
     title: `${name} ran out of memory`,
     sentence: join(
       `k6 went over its ${formatBytes(run.budget.memoryBytes)} memory limit and was stopped.`,
-      covered ? `Figures cover the first ${covered};` : 'Figures cover the run up to the stop;',
-      'thresholds were not judged on a partial run.',
+      covered ? `The recorded test duration was ${covered}.` : null,
+      'Thresholds were not judged on a partial run.',
     ),
   }),
   'output-full': ({ run, name, covered }) => ({
     title: `${name} filled its output`,
     sentence: join(
       `The run reached its ${formatBytes(run.budget.outputBytes)} output limit and was stopped at once.`,
-      covered ? `Figures cover the first ${covered}.` : null,
+      covered ? `The recorded test duration was ${covered}.` : null,
     ),
   }),
   incomplete: ({ name, held, result }) => ({

@@ -87,9 +87,10 @@ export function Thresholds({
       </p>
     );
   const assertions = result.requiredAssertions;
+  const stopped = stoppedEarly.includes(variant);
   return (
     <>
-      {stoppedEarly.includes(variant) && (
+      {stopped && (
         <p className="result-muted">The run stopped early. These are the engine's readings on a partial run.</p>
       )}
       {result.thresholds.length === 0 ? (
@@ -101,7 +102,7 @@ export function Thresholds({
               key={`${threshold.id}/${index}`}
               threshold={threshold}
               rules={rules}
-              unjudged={variant === 'incomplete'}
+              unjudged={stopped || variant === 'incomplete'}
             />
           ))}
         </ul>

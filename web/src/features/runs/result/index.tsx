@@ -69,8 +69,8 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const ready = readyOverview(reads.overview);
   const engine = view.status === 'ready' ? view.result : null;
   const archiveMissing = incompleteArchiveMissing(run, reads, engine);
-  const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
+  const charts = useRecordedCharts(reads.chartHistory, plan.totalMs, run.state);
   const { showTarget, nativeLayout, beforeNote, afterNote } = resultLayout({
     run,
     engine,

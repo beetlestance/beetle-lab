@@ -33,6 +33,9 @@ automatic polling, reconnect refetch or per-series fanout. Its five plots share 
 hover, preserve source gaps and signed native time, and expose explicit retry.
 Peak tiles bind to the same numeric hash/manifest/marker as the summary. Per-series
 browsing remains an explicit advanced action.
+Stopped runs with an accepted archive and a known longer saved plan show the
+remaining plan time as blank. The chart labels the last recorded window and the
+end specified by the revision. Hover beyond observed data has no reading.
 
 ## Recorded target charts
 
@@ -176,9 +179,9 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |
 | `contracts/src/api/run-chart-history.ts` | `2dd377350a07` |
-| `web/src/features/runs/result/RecordedCharts.tsx` | `d413bd4d2005` |
-| `web/src/features/runs/result/chart-model.ts` | `334c3b9b8c24` |
-| `web/src/features/runs/charts/` | `c7ae083dc754` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `3132a7e59811` |
+| `web/src/features/runs/result/chart-model.ts` | `7c592a7f4bd7` |
+| `web/src/features/runs/charts/` | `326688f9fb02` |
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `5ff3d54b4aa0` |

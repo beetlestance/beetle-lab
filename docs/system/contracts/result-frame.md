@@ -59,12 +59,15 @@ An incomplete result can display whole-run figures from the verified native k6
 summary. They carry native provenance, with the chart and endpoint section absent
 when no verified archive exists. Threshold readings remain visible without a
 run-level pass or fail label.
+For a stopped run, accepted partial threshold measurements use Not judged.
+Missing figures stay unavailable and the recorded test duration is shown only
+when provided by the accepted source.
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `f5870937c29e` |
+| `web/src/features/runs/result/headline.ts` | `f82605f66e42` |
 | `web/src/features/runs/result/SectionNav.tsx` | `c6e30d9a0588` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
@@ -74,7 +77,7 @@ run-level pass or fail label.
 | `web/src/features/runs/result/EndpointTable.tsx` | `20fd4c27e821` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
-| `web/src/features/runs/result/RecordedCharts.tsx` | `d413bd4d2005` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `3132a7e59811` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `6278ae56eb3c` |
+| `web/src/features/runs/result/index.tsx` | `9e68369f8587` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |
