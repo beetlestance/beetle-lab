@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ApiContext } from '../../../app/api.js';
 import { testClient, json, deferred } from '../../../app/test-fixtures.js';
 import { fixture, report } from '../target-observations/read-fixtures.js';
@@ -38,7 +38,10 @@ it('switches between recorded phases and cards without a new artifact read', asy
  const draw=(phaseView:boolean)=><ApiContext.Provider value={api.client}><ResultTargetReport params={f.params} artifact={f.artifact} nativeOrigin={null} hover={{hoverT:null,onHover:vi.fn()}} reads={reads} phaseView={phaseView}/></ApiContext.Provider>;
  const view=render(draw(false));await screen.findByText(/recorded target observations/);
  view.rerender(draw(true));expect(await screen.findByRole('region',{name:'Target by recorded phase'})).toBeVisible();
- expect(screen.getAllByRole('img')).toHaveLength(1);expect(screen.getByText(/Phase-local maximum was not recorded/)).toBeInTheDocument();
+ expect(screen.getAllByRole('img')).toHaveLength(1);
+ const longest=screen.getByRole('rowheader',{name:'Longest GC pause'}).closest('tr')!;
+ expect(within(longest).getAllByRole('cell').map(cell=>cell.textContent)).toEqual(['—','—','—','—']);
+ expect(screen.queryByLabelText('Recorded HTTP landmarks')).not.toBeInTheDocument();
  view.rerender(draw(false));expect(await screen.findAllByRole('img')).toHaveLength(4);expect(read).toHaveBeenCalledTimes(1);
  expect(api.records).toHaveLength(0);
 });

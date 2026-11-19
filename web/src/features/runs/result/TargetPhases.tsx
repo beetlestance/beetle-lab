@@ -16,8 +16,8 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
   });
   return (
     <div className="target-phases">
-      <p>
-        {report.samples.length} recorded observations; {report.missed} missed. Unavailable readings stay missing.
+      <p className="result-muted target-phase-count">
+        {report.samples.length} recorded observations · {report.missed} missed.
         {report.limited && ' Collection reached its limit; later activity may be absent.'}
       </p>
       <div className="target-phase-memory">
@@ -37,16 +37,8 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
         />
         {!memory.normalized && <p className="result-muted">Raw source units. Compare each series only with itself.</p>}
         <PhaseCoverage summary={summary} />
-        <p className="result-muted">
-          Shading covers only the observed before and after spans. A single point has no measured span.
-        </p>
+        <RequestLandmarks span={report.requestSpan} />
       </div>
-      <RequestLandmarks span={report.requestSpan} />
-      <p className="result-muted">
-        Phases are the sampler’s recorded phases. “During” can include engine startup; these are not exact
-        first/last-request boundaries. Before is the first point, during is the mean of known gauge readings, and after
-        is the last point. Means are not time-weighted.
-      </p>
       {!summary.ordered && (
         <p role="status">
           Chronology, phase order or target uptime changed. Differences and counter-derived figures are unavailable.
@@ -56,8 +48,21 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
         <p role="status">{plot.omittedTimestamps} observations could not be plotted; original values remain below.</p>
       )}
       <PhaseTable summary={summary} />
+      <p className="result-muted">
+        The table uses recorded sampler phases. HTTP landmarks are shown separately when recorded.
+      </p>
       <details className="target-phase-methods">
         <summary>How these values are calculated</summary>
+        <p>
+          Shading covers the observed before and after spans. A single point has no measured span. The during phase can
+          include engine startup. Before and after are the first and last recorded points of their respective phases.
+          During gauge values are means of known readings, without time weighting.
+        </p>
+        <p>
+          GC rates and averages use counter differences within each phase. Missing counters, units, phase endpoints or
+          observed resets leave a dash. The longest pause requires a complete sequence of pause records within the
+          phase.
+        </p>
         <dl>
           {summary.rows.map((row) => (
             <div key={row.name}>
@@ -66,16 +71,8 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
             </div>
           ))}
         </dl>
+        <p>Compare repeated runs with a stable baseline and an appropriate cooldown to investigate retained memory.</p>
       </details>
-      <p>
-        These observations describe reported runtime behaviour. They do not establish a leak or explain retained memory.
-        Repeat with a stable baseline and an appropriate cooldown before drawing conclusions.
-      </p>
-      <p className="result-muted">
-        GC rates and averages use cumulative counter differences within each recorded phase, not lifetime averages.
-        Missing counters, units, phase endpoints or observed resets leave a dash. The longest pause requires a complete
-        sequence of pause records within the phase.
-      </p>
     </div>
   );
 }
@@ -83,10 +80,22 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
 function RequestLandmarks({ span }: { span: TargetRuntimeReport['requestSpan'] }) {
   if (!span) return null;
   return (
-    <p className="result-muted">
-      k6 recorded the first dispatch at {new Date(span.firstDispatchMs).toISOString()} and the last HTTP completion at{' '}
-      {new Date(span.lastCompletionMs).toISOString()}. The table groups observations by their recorded sampler phase.
-    </p>
+    <dl aria-label="Recorded HTTP landmarks" className="target-phase-landmarks">
+      <Landmark label="First request dispatched" ms={span.firstDispatchMs} />
+      <Landmark label="Last HTTP request completed" ms={span.lastCompletionMs} />
+    </dl>
+  );
+}
+
+function Landmark({ label, ms }: { label: string; ms: number }) {
+  const iso = new Date(ms).toISOString();
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>
+        <time dateTime={iso}>{iso.replace('T', ' ').replace('Z', ' UTC')}</time>
+      </dd>
+    </div>
   );
 }
 

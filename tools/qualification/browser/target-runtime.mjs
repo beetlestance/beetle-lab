@@ -16,6 +16,7 @@ export async function targetRuntime(page, expectedSamples) {
   await expect(section.getByText(/Recorded missed count: 2\./)).toBeVisible();
   await comparison(section, 'heapAlloc', '0');
   await section.getByRole('button', { name: 'Compare recorded phases', exact: true }).click();
+  const requestLandmarks = await recordedLandmarks(section);
   const longest = section.getByRole('row').filter({ hasText: 'Longest GC pause' });
   await expect(longest).toContainText('11 ms');
   await section.getByText('Target observations', { exact: true }).click();
@@ -66,11 +67,26 @@ export async function targetRuntime(page, expectedSamples) {
     zeroPreserved: true,
     targetScopeVisible: true,
     phaseMaximumMs: 11,
+    requestLandmarks,
     nullUnknownVisible: true,
     reloadVerified: true,
     manualReloads: 3,
     initialReadRefused,
   };
+}
+/** @param {import('@playwright/test').Locator} section */
+async function recordedLandmarks(section) {
+  const group = section.getByLabel('Recorded HTTP landmarks', { exact: true });
+  await expect(group).toBeVisible();
+  const times = group.locator('time');
+  await expect(times).toHaveCount(2);
+  const firstDispatch = await times.nth(0).getAttribute('datetime');
+  const lastCompletion = await times.nth(1).getAttribute('datetime');
+  assert(firstDispatch && lastCompletion);
+  const firstMs = Date.parse(firstDispatch);
+  const lastMs = Date.parse(lastCompletion);
+  assert(Number.isFinite(firstMs) && Number.isFinite(lastMs) && lastMs > firstMs);
+  return { firstDispatch, lastCompletion };
 }
 /** @param {import('@playwright/test').Locator} section @param {string} metric @param {string} expected */
 async function comparison(section, metric, expected) {
