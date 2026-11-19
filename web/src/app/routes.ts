@@ -2,6 +2,7 @@ import { validateApi } from '@beetle/contracts/api';
 
 export const routes = {
   reference: '/reference',
+  docs: '/docs/',
   engines: '/engines',
   runsPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs',
   comparisonPattern: '/organizations/:organizationId/workspaces/:workspaceId/runs/compare',

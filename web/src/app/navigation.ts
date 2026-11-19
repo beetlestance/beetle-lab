@@ -63,7 +63,7 @@ export function navItems(pathname: string): NavItem[] {
     { key: 'workspaces', label: 'Workspaces', to: workspacesTarget(scope), current: workspaceChild },
     { key: 'engines', label: 'Engines', to: routes.engines, current: path === routes.engines },
     { key: 'settings', label: 'Settings', to: settingsTarget(scope), current: settings },
-    { key: 'docs', label: 'Docs', to: routes.reference, current: path === routes.reference },
+    { key: 'docs', label: 'Docs', to: routes.docs, current: path === routes.reference },
   ];
 }
 
