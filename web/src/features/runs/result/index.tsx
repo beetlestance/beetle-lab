@@ -1,3 +1,5 @@
+import { ResultSectionNav } from './SectionNav.js';
+import type { Section } from './SectionNav.js';
 import { measurementOrigin } from '../live/rise-position.js';
 import { useState } from 'react';
 import { TargetHeader, usePhaseMode } from './TargetHeader.js';
@@ -41,18 +43,6 @@ export function RunResultView({ run, scope, runId, refresh }: RunSnapshotProps &
   );
 }
 
-const sections = [
-  ['summary', 'Summary'],
-  ['thresholds', 'Thresholds'],
-  ['endpoints', 'Endpoints'],
-  ['charts', 'Charts'],
-  ['target', 'Target runtime'],
-  ['report', 'Report'],
-  ['artifacts', 'Artifacts'],
-  ['diagnostics', 'Diagnostics'],
-] as const;
-
-type Section = (typeof sections)[number][0];
 const sectionTabs: Partial<Record<Section, ReportTab>> = {
   report: 'report',
   artifacts: 'artifacts',
@@ -79,7 +69,8 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
   const engine = view.status === 'ready' ? view.result : null;
-  const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, { readOnly, rules: plan.rules });
+  const context = { readOnly, rules: plan.rules, measurements: ready };
+  const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, context);
   return (
     <div className={className}>
       {restored && (
@@ -97,13 +88,8 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         onDelete={() => setDeleting(true)}
         refresh={refresh}
       />
-      <nav className="result-nav" aria-label="Result sections">
-        {sections.map(([id, label]) => (
-          <a key={id} href={`#result-${id}`} onClick={() => selectSection(id)}>
-            {label}
-          </a>
-        ))}
-      </nav>
+      <RunNote run={run} readOnly={readOnly} />
+      <ResultSectionNav onSelect={selectSection} />
       <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
         <h2 id="result-summary-title" className="sr-only">
           Summary
@@ -114,7 +100,6 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         ) : (
           <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
         )}
-        <RunNote run={run} readOnly={readOnly} />
       </section>
       <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} />
       <div className="result-split">

@@ -70,7 +70,7 @@ Phone views retain separate report sections and their actual anchors. Navigation
 adds no reader of its own; selected feature owners retain their existing admission,
 publication, retry and retirement rules.
 
-See [recorded milestones](result-milestones.md) for What happened and its clock sources.
+See [recorded milestones](result-milestones.md) for What happened; [result frame](result-frame.md) covers headlines and navigation.
 
 ## Comparison figures
 

@@ -9,8 +9,8 @@ overview shares read admission and never polls; errors retire cached figures.
 Read-only/restored state comes from useSessionAccess, never a new session read.
 - headline.ts: variant (passed, failed, not judged, cancelled, out of memory,
   output full, incomplete, errored, pending) and the title and sentence. Sentence
-  figures use stored summary/native SLO readings and matched pinned limits.
-  Discovery triggers never become headline SLO failures. Unknowns stay unknown.
+  figures use a ready overview or indexed fallback, plus native SLOs/pinned limits.
+  Ready nulls never borrow index figures; discovery triggers never become SLO failures.
 - ResultHeader: page h1, status, Refresh run (from RunDetail), Run again (createRun
   with the run's revision, profile, budget and policy), Pin, Delete run. ResultContext
   reads namespace names only; suite/revision/engine/start time use accepted records. Read-only

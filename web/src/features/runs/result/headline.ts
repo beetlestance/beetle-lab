@@ -2,7 +2,7 @@ import type { PlanRule } from '../live/plan.js';
 import { thresholdSentence } from './threshold-sentence.js';
 import { terminal } from '../terminal.js';
 import type { EngineResult } from '@beetle/contracts';
-import type { Run, RunHistorySummary } from '@beetle/contracts/api';
+import type { Run, RunHistorySummary, RunMetricOverview } from '@beetle/contracts/api';
 import { formatBytes, formatDuration, formatNumber, formatPercent, reasonLabel } from '../../run-results/format.js';
 
 export type Variant =
@@ -39,16 +39,17 @@ export function spokenLength(ms: number | null): string | null {
   return seconds === 0 ? part(minutes, 'minute') : `${part(minutes, 'minute')} ${part(seconds, 'second')}`;
 }
 
-/** "Held 4 requests a second for 2 seconds." or "Ran for 2 seconds."; nothing without a length. */
-function heldSentence(summary: RunHistorySummary): string | null {
+/** Recorded whole-run average, never a claim that a rate held steadily. */
+type Traffic = Pick<RunHistorySummary, 'requestsPerSecond' | 'testDurationMs' | 'httpP95' | 'httpFailureRatio'>;
+function averageSentence(summary: Traffic): string | null {
   const rps = formatNumber(summary.requestsPerSecond, 'integer');
   const length = spokenLength(summary.testDurationMs);
   if (!length) return null;
-  return rps ? `Held ${rps} requests a second for ${length}.` : `Ran for ${length}.`;
+  return rps ? `Averaged ${rps} requests a second over ${length}.` : `Ran for ${length}.`;
 }
 
 /** "p95 was about 120 ms and 1% of requests failed."; either half alone is capitalised. */
-function qualitySentence(summary: RunHistorySummary): string | null {
+function qualitySentence(summary: Traffic): string | null {
   const p95 = summary.httpP95 ? `p95 was about ${formatNumber(summary.httpP95.estimate, 'integer')} ms` : null;
   const failed = formatPercent(summary.httpFailureRatio);
   const failedText = failed ? `${failed} of requests failed` : null;
@@ -58,9 +59,9 @@ function qualitySentence(summary: RunHistorySummary): string | null {
 }
 
 /** What the run held, from stored summary values only; unknown parts are left out. */
-function traffic(summary: RunHistorySummary | null): string[] {
+function traffic(summary: Traffic | null): string[] {
   if (!summary) return [];
-  return [heldSentence(summary), qualitySentence(summary)].filter((sentence): sentence is string => !!sentence);
+  return [averageSentence(summary), qualitySentence(summary)].filter((sentence): sentence is string => !!sentence);
 }
 
 type Context = {
@@ -123,20 +124,35 @@ export function headline(
   suiteName: string | undefined,
   summary: RunHistorySummary | null,
   result: EngineResult | null,
-  context: { readOnly?: boolean; rules?: readonly PlanRule[] } = {},
+  context: { readOnly?: boolean; rules?: readonly PlanRule[]; measurements?: RunMetricOverview | null } = {},
 ): Headline {
   if (context.readOnly && !terminal(run))
     return {
       title: `${suiteName ?? 'This run'} was ${run.state} at backup`,
       sentence: 'This unfinished run is recorded history. Restoring a backup does not resume it.',
     };
+  const measurements = headlineTraffic(summary, context.measurements);
   return headlines[variantOf(run)]({
     run,
     name: suiteName ?? 'This run',
-    length: formatDuration(summary?.testDurationMs),
-    covered: spokenLength(summary?.testDurationMs ?? null),
-    held: traffic(summary),
+    length: formatDuration(measurements?.testDurationMs),
+    covered: spokenLength(measurements?.testDurationMs ?? null),
+    held: traffic(measurements),
     result,
     rules: context.rules ?? [],
   });
+}
+
+/** One ready overview supplies every traffic field; nulls never borrow index values. */
+function headlineTraffic(
+  summary: RunHistorySummary | null,
+  overview: RunMetricOverview | null | undefined,
+): Traffic | null {
+  if (overview?.availability !== 'ready') return summary;
+  return {
+    testDurationMs: overview.testDurationMs,
+    requestsPerSecond: overview.requestsPerSecond,
+    httpP95: overview.latency?.percentiles.p95 ?? null,
+    httpFailureRatio: overview.failure?.ratio ?? null,
+  };
 }
