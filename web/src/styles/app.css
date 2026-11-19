@@ -25,10 +25,9 @@ a {
 a:hover {
   color: var(--amber);
 }
-button,
-input,
-select,
-textarea {
+/* Zero specificity, so the :where() button looks below (button.primary's dark ink
+   on amber) still win; an element selector here turned their text light. */
+:where(button, input, select, textarea) {
   font: inherit;
   color: inherit;
 }

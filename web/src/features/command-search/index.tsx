@@ -98,6 +98,7 @@ function Palette({ context, groups, close }: PaletteProps) {
         if (event.target === event.currentTarget) close();
       }}
     >
+      {/* eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions -- The dialog traps Tab and routes arrow keys to its results list. */}
       <div
         ref={dialog}
         className="command-dialog"

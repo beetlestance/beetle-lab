@@ -39,21 +39,27 @@ function codeTheme(name, c) {
 export const skins = skinColours();
 export const codeThemes = [codeTheme('darkroom', skins.darkroom), codeTheme('scarab', skins.scarab)];
 
-/** Writes the block's language into the frame header, which the theme shows as a bar. */
+/**
+ * Writes the block's language into the frame header, which the theme shows as a bar,
+ * and makes the code focusable so keyboard users can scroll long lines (axe
+ * scrollable-region-focusable).
+ */
 export const languageLabel = {
   name: 'Beetle language label',
   hooks: {
     postprocessRenderedBlock: ({ codeBlock, renderData }) => {
-      const header = findHeader(renderData.blockAst);
+      const header = findElement(renderData.blockAst, 'figcaption');
       if (header && codeBlock.language) header.children.unshift(h('span', { className: ['bl-lang'] }, codeBlock.language));
+      const pre = findElement(renderData.blockAst, 'pre');
+      if (pre) pre.properties.tabIndex = 0;
     },
   },
 };
 
-function findHeader(node) {
-  if (node.type === 'element' && node.tagName === 'figcaption') return node;
+function findElement(node, tagName) {
+  if (node.type === 'element' && node.tagName === tagName) return node;
   for (const child of node.children ?? []) {
-    const found = findHeader(child);
+    const found = findElement(child, tagName);
     if (found) return found;
   }
   return undefined;

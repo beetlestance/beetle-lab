@@ -155,6 +155,7 @@ function SubmissionResources({
       <label className="field">
         Engine profile
         <select
+          // eslint-disable-next-line jsx-a11y-x/no-autofocus -- First field of a dialog the user just opened.
           autoFocus
           value={values.profile}
           onChange={(event) => change({ ...values, profile: event.target.value })}

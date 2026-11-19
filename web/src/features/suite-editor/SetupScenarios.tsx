@@ -32,6 +32,7 @@ function ScenarioName({
           id={id}
           label={`Scenario ${index + 1} name`}
           hideLabel
+          // eslint-disable-next-line jsx-a11y-x/no-autofocus -- The rename field replaces the name the user chose to edit.
           autoFocus
           maxLength={64}
           value={text(scenario.name)}

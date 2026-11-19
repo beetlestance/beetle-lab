@@ -15,6 +15,7 @@ export function LiveDownloads({ ordinal, onScript }: { ordinal: number | null; o
     return () => document.removeEventListener('pointerdown', outside);
   }, []);
   return (
+    // eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions -- <details> is a native disclosure; Escape closes it like a menu.
     <details
       className="live-downloads"
       ref={ref}

@@ -37,6 +37,7 @@ export function AppShell({ children, onSearch }: AppShellProps) {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
+      {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- Menu keys bubble up from the buttons inside. */}
       <header className="shell-header" onKeyDown={onMenuKey}>
         <Link className="shell-brand" to={routes.organizations} aria-label="Beetle Lab home">
           <BeetleMark />

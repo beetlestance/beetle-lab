@@ -77,3 +77,18 @@ navigation, and zero performance target work. It is not an agent-model integrati
 `BEETLE_BROWSER_EVIDENCE` selects only target-report view acceptance. It authors
 a sampler revision and checks zeros, known/null values, phase rows and visible
 manual Reload/reconnect; it does not assert automatic initial availability.
+
+## Accessibility scan
+
+`a11y.mjs` runs axe-core (WCAG 2.1 A and AA rules, contrast included) in a real browser.
+Static JSX rules are in the root ESLint config (`eslint-plugin-jsx-a11y-x`, strict, on
+`web/src`); this scan covers what only the rendered page shows.
+
+```sh
+(cd site && npm run build)
+npm run check:a11y -- site                         # docs site, both skins, each diagram state
+npm run check:a11y -- app http://127.0.0.1:4567    # a running installation, same-origin pages
+```
+
+Set `BEETLE_BROWSER_CHANNEL=chrome` to use an installed Chrome when Playwright's bundled
+Chromium is not installed. Any violation exits 1.

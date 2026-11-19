@@ -27,6 +27,7 @@ export function ResultDownloads({ run, ordinal }: { run: Run; ordinal: number | 
     return () => document.removeEventListener('pointerdown', outside);
   }, []);
   return (
+    // eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions -- <details> is a native disclosure; Escape closes it like a menu.
     <details
       className="result-downloads"
       ref={ref}

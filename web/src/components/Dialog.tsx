@@ -102,12 +102,14 @@ export function Dialog({
     } else if (event.key === 'Tab' && ref.current) trapTab(event, ref.current);
   };
   return createPortal(
+    // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- Backdrop click dismisses; keyboard uses Escape.
     <div
       className="dialog-backdrop"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && dismissible) onClose();
       }}
     >
+      {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- The dialog (role from props) traps Tab and handles Escape for its contents. */}
       <div
         ref={ref}
         role={role}

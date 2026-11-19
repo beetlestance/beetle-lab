@@ -195,6 +195,7 @@ function CompleteConfigJson({
       </label>
       <JsonDraftInput
         id={fieldId('')}
+        // eslint-disable-next-line jsx-a11y-x/no-autofocus -- First field of a dialog the user just opened.
         autoFocus
         className="config-json"
         value={text}

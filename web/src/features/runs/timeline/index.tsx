@@ -53,6 +53,7 @@ export function ExecutionActivity({ run, terminal }: { run: Run; terminal: boole
           {data.rows.length === 0 ? (
             <p>No activity rows reported.</p>
           ) : (
+            // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- A scrollable list takes focus so keyboard users can scroll it.
             <ol tabIndex={0} className="activity-rows" aria-label="Recent execution observations">
               {data.rows.map((row) => (
                 <li key={row.seq}>
