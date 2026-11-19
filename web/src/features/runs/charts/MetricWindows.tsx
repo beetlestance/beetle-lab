@@ -9,16 +9,18 @@ export function MetricWindows({
   hover,
   ticks,
   p95Limit,
+  strictHoverRange,
 }: {
   points: readonly MetricChartPoint[];
   domain: readonly [number, number];
   hover: ChartHover;
   ticks?: readonly ChartTick[];
   p95Limit?: number | null;
+  strictHoverRange?: boolean;
 }) {
   const xs = points.map((p) => p.t);
   const pick = (key: 'rps' | 'p50' | 'p95' | 'p99' | 'failedPerSecond' | 'vus' | 'vusMax') => points.map((p) => p[key]);
-  const shared = { ticks, xs, breaks: points.map((point) => point.gapBefore), domain, ...hover };
+  const shared = { ticks, xs, breaks: points.map((point) => point.gapBefore), domain, strictHoverRange, ...hover };
   return (
     <section className="live-grid-section" aria-labelledby="live-metrics-grid">
       <header className="live-section-head">

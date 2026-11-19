@@ -7,6 +7,7 @@ export interface RecordedPlot {
   readonly points: readonly MetricChartPoint[];
   readonly domain: readonly [number, number];
   readonly ticks: readonly ChartTick[];
+  readonly lastWindowBeforePlanEnd: number | null;
 }
 export const sourceClock = (time: number) => {
   if (time !== 0 && Math.abs(time) < 1000)
@@ -14,7 +15,7 @@ export const sourceClock = (time: number) => {
   return time < 0 ? `−${clock(-time)}` : clock(time);
 };
 /** Source UTC relative to the recorded native measurement marker, never browser time. */
-export function recordedPlot(value: RunChartHistory): RecordedPlot | null {
+export function recordedPlot(value: RunChartHistory, plannedDurationMs: number | null = null): RecordedPlot | null {
   if (value.reason !== null || !value.source) return null;
   const origin = value.source.measurementSourceTimeMs;
   const points = value.points.map((point) => ({
@@ -30,11 +31,15 @@ export function recordedPlot(value: RunChartHistory): RecordedPlot | null {
   }));
   const first = Math.min(0, value.points.length ? value.points[0]!.startTimeMs - origin : 0);
   const last = Math.max(first + 1000, points.at(-1)?.t ?? 0);
+  const end = extendToPlan(last, plannedDurationMs);
   const ticks = Array.from({ length: 5 }, (_, index) => {
-    const at = first + ((last - first) * index) / 4;
+    const at = first + ((end - first) * index) / 4;
     return { at, label: sourceClock(at) };
   });
-  return { points, domain: [first, last], ticks };
+  return { points, domain: [first, end], ticks, lastWindowBeforePlanEnd: end > last ? last : null };
+}
+function extendToPlan(last: number, planned: number | null): number {
+  return planned !== null && Number.isFinite(planned) ? Math.max(last, planned) : last;
 }
 /** Never attach a peak from another manifest or numeric original to the summary. */
 export function sameChartSource(overview: Pick<RunMetricOverview, 'source'>, history: RunChartHistory): boolean {

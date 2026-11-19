@@ -14,6 +14,15 @@ it('preserves missing values and source gaps without adding zero windows',()=>{
  const plot=recordedPlot(data)!;expect(plot.points).toHaveLength(data.points.length);expect(plot.points[1]).toMatchObject({rps:null,failedPerSecond:null,gapBefore:true});
  data.reason='too_large';expect(recordedPlot(data)).toBeNull();
 });
+it('extends a stopped chart to its saved plan without adding any readings', () => {
+  const data = value();
+  const observed = recordedPlot(data)!;
+  const stopped = recordedPlot(data, 10000)!;
+  expect(stopped.domain).toEqual([0, 10000]);
+  expect(stopped.lastWindowBeforePlanEnd).toBe(3000);
+  expect(stopped.points).toEqual(observed.points);
+  expect(recordedPlot(data, 2000)?.lastWindowBeforePlanEnd).toBeNull();
+});
 it('requires the same numeric original and marker before combining a peak with summary tiles',()=>{
  const summary={...overview,source:structuredClone(source.source)} as RunMetricOverview;
  const history=value();expect(sameChartSource(summary,history)).toBe(true);
