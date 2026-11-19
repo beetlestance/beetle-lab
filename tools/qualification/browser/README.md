@@ -86,6 +86,10 @@ This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile
 continues to require the original twelve functional phases.
 
+The `early-cancel` profile keeps the synthetic readiness endpoint unavailable.
+It cancels after the engine makes a readiness request and verifies no workload
+requests, no recovered checkpoint, and a cancelled result after the UI hand-off.
+
 The `live-reconnect` profile runs only authoring and the bounded live lifecycle.
 It pauses and resumes the feed, interrupts only the active metrics read, and
 checks that the last figures stay visible until Retry now restores a real read.
