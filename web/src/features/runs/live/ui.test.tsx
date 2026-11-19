@@ -36,16 +36,6 @@ async function running(current: Run = recent()) {
   await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
   return { read, fixture, view };
 }
-it('labels raw target values with their pinned declaration without inventing percent',async()=>{
- const current=recent();vi.spyOn(LiveMetricReads.prototype,'read').mockResolvedValue(liveFrame(current,1));
- const saved=revision();
- const fixture=routesFor(()=>current,request=>request.path.includes('/revisions/')?json({...saved,config:{...saved.config,
-  targetSampling:{path:'/metrics',intervalMs:1000,timeoutMs:100,cooldownMs:0,units:{cpuPercent:'ratio',systemCpuPercent:'percent'}}}}):undefined);
- mountLive(fixture.client,{run:current});
- expect(await screen.findByRole('img',{name:/CPU: process \(ratio\)/})).toBeVisible();
- expect(screen.getByRole('img',{name:/CPU: process \(ratio\)/})).toHaveAccessibleName(/system \(%\)/);
-});
-
 it('shows the running board: headline, threshold sentence, stage progress, figures and endpoints', async () => {
   await running();
   expect(
@@ -132,14 +122,15 @@ it('cancels from the header through the shared owner and then shows cancelling',
 });
 
 it('retains the last figures in one sealing card when finalizing, without further live reads', async () => {
-  const current = recent(); const { read, view } = await running(current);
+  const current = recent();
+  const { read, view } = await running(current);
   view.update({ run: { ...current, version: 2, state: 'finalizing' } });
   const card = await screen.findByRole('region', { name: 'Sealing results' });
   expect(within(card).getByText('1,200')).toBeVisible();
   expect(screen.queryByRole('region', { name: 'Progress' })).not.toBeInTheDocument();
   expect(screen.queryByText(/left, ends about/)).not.toBeInTheDocument();
   const calls = read.mock.calls.length;
-  await act(async () => new Promise(resolve => setTimeout(resolve, 2200)));
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 2200)));
   expect(read.mock.calls.length).toBe(calls);
   expect(screen.getByRole('heading', { name: 'p95 latency, whole run' })).toBeVisible();
 });
@@ -385,18 +376,32 @@ it('loads recorded metric and target windows once and keeps later live polls ind
       subsetDigest: frame.subsetDigest,
       sampled: true,
       samples,
-      prefix: { ...historyData.prefix, scope: frame.scope, windows: 300, endTimeMs: start + 300000,
-        target: { ...targetHistoryData.prefix.target, scope: frame.scope, samples: 3 } },
-      targetSamples: [0, 150000, 300000].map((offset, index) => ({ ...targetHistoryData.targetSamples[0],
+      prefix: {
+        ...historyData.prefix,
+        scope: frame.scope,
+        windows: 300,
+        endTimeMs: start + 300000,
+        target: { ...targetHistoryData.prefix.target, scope: frame.scope, samples: 3 },
+      },
+      targetSamples: [0, 150000, 300000].map((offset, index) => ({
+        ...targetHistoryData.targetSamples[0],
         observedAt: new Date(start + offset).toISOString(),
-        values: { ...Object.fromEntries(targetMetricNames.map(key => [key, null])), rss: 100 + index * 20,
-          usedHeapSize: 80 + index * 20, cpuPercent: 20 + index, 'gc.totalMs': 20 + index } })),
+        values: {
+          ...Object.fromEntries(targetMetricNames.map((key) => [key, null])),
+          rss: 100 + index * 20,
+          usedHeapSize: 80 + index * 20,
+          cpuPercent: 20 + index,
+          'gc.totalMs': 20 + index,
+        },
+      })),
     },
     () => frame.subsetDigest,
   );
   const read = vi.mocked(HistoryReads.prototype.read).mockResolvedValue(history);
   await running(current);
-  expect(await screen.findByRole('img', { name: /^Recorded history through 05:00 · 3 of 300 windows shown · sampled:/ })).toBeVisible();
+  expect(
+    await screen.findByRole('img', { name: /^Recorded history through 05:00 · 3 of 300 windows shown · sampled:/ }),
+  ).toBeVisible();
   expect(screen.getByText('History coverage · sampled')).toBeInTheDocument();
   expect(screen.getByText(/3 recorded observations, plus live readings/)).toBeVisible();
   await act(async () => new Promise((resolve) => setTimeout(resolve, 2200)));

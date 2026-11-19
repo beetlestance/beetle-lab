@@ -2,8 +2,7 @@
 
 RunDetail owns scoped queries/cancellation. Nonterminal runs select live; restored/
 terminal records select results. Watched runs stay live until Open result remounts.
-Route/run/attempt changes remount phase selection;
-copy.phaseOf selects waiting, starting, running, cancelling, finalizing and ended.
+Route/run/attempt changes remount copy.phaseOf: waiting, starting, running, cancelling, finalizing, ended.
 
 Early boards use plain steps, an indeterminate bar, bottom cancellation, exported
 Starting art and skeleton figures. Queue reads share a scoped query; errors hide
@@ -12,8 +11,10 @@ compilation needs phase.started prepare/execute, never validate.finished alone.
 Steps never invent progress, initiators or elapsed time. Phone whole chart retains source geometry, hover and sampled coverage.
 Desktop retains its caption. Engine labels use one scoped status read with exact selector matching and retry.
 
-plan reads pinned stages/requests/rules/target units; rN is request index N. Raw
-target legends use declared symbols or explicit raw labels. model derives one
+plan reads pinned stages/requests/rules/target units; rN is request index N.
+target-charts normalizes fully declared groups to MB/%/ms/count; otherwise the
+group stays raw with source labels. Shared target formatting preserves tiny values.
+model derives one
 window, using the slowest endpoint when pooled latency is absent, never averaged
 percentiles. Unknown dimensions/values and missing/future/unparseable starts stay
 explicit; they never become zero elapsed time or invalid geometry.
@@ -26,7 +27,7 @@ omitted hints and retires on owner changes. Only producer count 256 marks its
 limit; page-buffer capacity does not. Shared hover, source gaps and singleton
 points remain visible. Strict recorded hover hides readings beyond coverage/gaps.
 Optional per-series source coordinates retain independent observations; their
-cursor uses requested time, never a fabricated union-grid reading. Units stay raw.
+cursor uses requested time, never a fabricated union-grid reading. Stored values stay raw.
 Bootstrap/coverage/lifetime rules: docs/system/contracts/active-history.md.
 
 Namespace queries have scoped retry. After verification, one workspace snapshot
@@ -35,6 +36,5 @@ Cancellation/read-only access use session context, never a new session read.
 Live downloads offer verified JavaScript export only. Picker reads 20 summaries
 plus this run's verified revision; older history links to the suite. Cached/fresh
 revisions bind scope/suite/ID/digest. No automatic export preparation or live
-report/metrics download. Terminal attribution reads sealed sources. Header,
-progress and early styles have separate owners.
+report/metrics download. Terminal attribution reads sealed sources. Header, progress and early styles have separate owners.
 Checks: ui, model, Phases, backfill, target-history and live-metrics/live-history.

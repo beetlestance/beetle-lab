@@ -4,17 +4,18 @@ import { recordedCount } from './backfill.js';
 import { Button } from '../../../components/Button.js';
 import { useState } from 'react';
 import { SegmentedFilter } from '../../../components/SegmentedFilter.js';
-import type { LiveHistory, TargetPoint } from './history.js';
+import type { LiveHistory } from './history.js';
 import type { RunPlan } from './plan.js';
 import { LiveChart } from './LiveChart.js';
 import type { ChartSeries, ChartTick } from './LiveChart.js';
-import { clock, ms, reading, span, whole } from './format.js';
+import { clock, ms, span, whole } from './format.js';
 
 type Domain = readonly [number, number];
 export type { ChartHover } from '../charts/types.js';
 import type { ChartHover } from '../charts/types.js';
 import type { TargetRuntimeUnits } from '@beetle/contracts/target-runtime';
-import { targetUnitProjection } from '@beetle/contracts/target-runtime';
+import { targetCardReading } from '../charts/target-format.js';
+import { liveTargetCharts } from './target-charts.js';
 
 const lastT = (history: LiveHistory) => Math.max(history.points.at(-1)?.t ?? 0, history.target.at(-1)?.t ?? 0);
 const firstT = (history: LiveHistory) =>
@@ -158,68 +159,16 @@ export function MetricsGrid({ history, domain, hover }: { history: LiveHistory; 
   return <MetricWindows points={history.points} domain={domain} hover={hover} />;
 }
 
-type TargetKey = keyof TargetPoint['values'];
-const value = (point: TargetPoint, key: TargetKey) => (point.status === 'ready' ? (point.values[key] ?? null) : null);
-const has = (points: readonly TargetPoint[], keys: readonly TargetKey[]) =>
-  points.some((p) => keys.some((key) => value(p, key) !== null));
-
-interface TargetChart {
-  title: string;
-  keys: TargetKey[];
-  series: ChartSeries[];
-}
-
-/** Heap and RSS, CPU, event-loop delay, handles (or goroutines); charts without any reading are left out. */
-function targetCharts(points: readonly TargetPoint[], units: TargetRuntimeUnits | undefined): TargetChart[] {
-  const heap: TargetKey = has(points, ['usedHeapSize']) ? 'usedHeapSize' : 'heapAlloc';
-  const go = !has(points, ['activeHandles']);
-  const handles: TargetKey = go ? 'goroutines' : 'activeHandles';
-  const unitLabel = (key: TargetKey) => {
-    const unit = units?.[key];
-    return unit === undefined ? 'raw' : targetUnitProjection(units, key, unit).label;
-  };
-  const line = (key: TargetKey, label: string, tone: ChartSeries['tone'], area = false): ChartSeries => ({
-    key,
-    label: `${label} (${unitLabel(key)})`,
-    tone,
-    area,
-    values: points.map((p) => value(p, key)),
-  });
-  const charts: TargetChart[] = [
-    { title: 'Heap and RSS', keys: [heap, 'rss'], series: [line(heap, 'heap', 'amber'), line('rss', 'RSS', 'info')] },
-    {
-      title: 'CPU',
-      keys: ['cpuPercent', 'systemCpuPercent'],
-      series: [line('cpuPercent', 'process', 'amber'), line('systemCpuPercent', 'system', 'mute')],
-    },
-    {
-      title: 'Event-loop delay',
-      keys: ['eventLoopDelay.mean', 'eventLoopDelay.p99', 'eventLoopDelay.max'],
-      series: [
-        line('eventLoopDelay.mean', 'mean', 'info'),
-        line('eventLoopDelay.p99', 'p99', 'amber'),
-        line('eventLoopDelay.max', 'max', 'violet'),
-      ],
-    },
-    {
-      title: go ? 'Goroutines' : 'Active handles',
-      keys: [handles],
-      series: [line(handles, go ? 'goroutines' : 'handles', 'ink', true)],
-    },
-  ];
-  return charts.filter((chart) => has(points, chart.keys));
-}
-
-function TargetNote({ history, origin }: { history: LiveHistory; origin: string | null }) {
+function TargetNote({ history, origin, raw }: { history: LiveHistory; origin: string | null; raw: boolean }) {
   const unavailable = history.target.filter((point) => point.status === 'unavailable').length;
-  const source = `Sampled${origin ? ` from ${origin}` : ''}${history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}. Values as the target reports them; raw means units were not declared.`;
+  const source = `Sampled${origin ? ` from ${origin}` : ''}${history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}.${raw ? ' Raw charts keep reported units.' : ''}`;
   const coverage = history.targetCoverage
     ? `${history.targetCoverage.samples} recorded observations, plus live readings.`
     : 'Showing observations received since this page opened.';
   const notes = [
     source,
     coverage,
-    unavailable ? `${unavailable} readings unavailable.` : '',
+    unavailable ? `${unavailable} ${unavailable === 1 ? 'reading' : 'readings'} unavailable.` : '',
     history.target.some((point) => point.gapBefore) ? 'Breaks mark missing readings or a source-clock change.' : '',
     history.targetLimited
       ? 'Target observation limit reached (256). Use a longer sampling interval for longer runs.'
@@ -244,26 +193,27 @@ export function TargetRuntime({
 }) {
   const points = history.target;
   if (!points.length) return null;
-  const charts = targetCharts(points, units);
-  const shared = {
-    xs: points.map((p) => p.t),
-    breaks: points.map((p) => p.gapBefore),
-    domain,
-    ...hover,
-    format: reading,
-  };
+  const charts = liveTargetCharts(points, units);
+  const shared = { xs: points.map((p) => p.t), breaks: points.map((p) => p.gapBefore), domain, ...hover };
   return (
     <section className="live-grid-section" aria-labelledby="live-target">
       <header className="live-section-head">
         <h2 id="live-target">Target runtime</h2>
-        <TargetNote history={history} origin={origin} />
+        <TargetNote history={history} origin={origin} raw={charts.some((chart) => !chart.normalized)} />
       </header>
       {charts.length === 0 ? (
         <p className="live-note">The target has not reported a reading yet.</p>
       ) : (
         <div className="live-charts">
           {charts.map((chart) => (
-            <LiveChart key={chart.title} {...shared} title={chart.title} series={chart.series} />
+            <LiveChart
+              key={chart.title}
+              {...shared}
+              title={chart.title}
+              series={chart.series}
+              strictHoverRange
+              format={(value) => targetCardReading(chart, value)}
+            />
           ))}
         </div>
       )}
