@@ -54,9 +54,10 @@ export function exportExecutionClient(send: Send): ExportExecutionStore {
   };
 }
 
-export function exportJobClient(send: Send): ExportStore {
+/** `create` needs live capacity, so it goes through `fresh`, which bridges a short lapse. */
+export function exportJobClient(send: Send, fresh: Send = send): ExportStore {
   return {
-    create: (command) => send({ kind: 'exportJob', command }) as ReturnType<ExportStore['create']>,
+    create: (command) => fresh({ kind: 'exportJob', command }) as ReturnType<ExportStore['create']>,
     cancel: (command) => send({ kind: 'exportJob', command }) as ReturnType<ExportStore['cancel']>,
     get: (key) => send({ kind: 'getExport', key }) as ReturnType<ExportStore['get']>,
     latest: (key) => send({ kind: 'getLatestRevisionExport', key }) as ReturnType<ExportStore['latest']>,

@@ -1,4 +1,5 @@
 import { exportArtifactClient, exportExecutionClient, exportJobClient } from './export-clients.js';
+import { CapacityWait } from './capacity-wait.js';
 import { MetadataWorker } from './metadata-worker.js';
 import { validateOptions } from './options.js';
 import type { MetadataOptions } from './options.js';
@@ -67,6 +68,7 @@ export type { MetadataOptions } from './options.js';
 
 /** Feature port composition over one owned metadata connection. */
 export class Metadata extends MetadataWorker {
+  private readonly capacity = new CapacityWait();
   readonly historySummaries: RunHistoryStore = {
     retirement: (job) =>
       this.historyCall({ kind: 'historySummary', operation: { method: 'retirement', request: { job } } }) as ReturnType<
@@ -105,7 +107,10 @@ export class Metadata extends MetadataWorker {
 
   readonly exportExecutions: ExportExecutionStore = exportExecutionClient((operation) => this.call(operation));
 
-  readonly exports: ExportStore = exportJobClient((operation) => this.call(operation));
+  readonly exports: ExportStore = exportJobClient(
+    (operation) => this.call(operation),
+    (operation) => this.capacity.retry(() => this.call(operation)),
+  );
 
   private async retentionCall(operation: RetentionOperation): Promise<Value> {
     try {
@@ -331,7 +336,8 @@ export class Metadata extends MetadataWorker {
   };
 
   readonly settings: SettingsStore = {
-    execute: (command) => this.call({ kind: 'settings', command }) as ReturnType<SettingsStore['execute']>,
+    execute: (command) =>
+      this.capacity.retry(() => this.call({ kind: 'settings', command })) as ReturnType<SettingsStore['execute']>,
   };
 
   private constructor(options: MetadataOptions, bootstrap: Bootstrap) {
@@ -367,7 +373,7 @@ export class Metadata extends MetadataWorker {
   }
 
   getSettings(scope: SettingsScope): Promise<SettingsView> {
-    return this.call({ kind: 'getSettings', scope }) as Promise<SettingsView>;
+    return this.capacity.retry(() => this.call({ kind: 'getSettings', scope })) as Promise<SettingsView>;
   }
 
   /** Internal identity seam: does not resolve defaults or inspect runtime capacity. */
@@ -375,8 +381,10 @@ export class Metadata extends MetadataWorker {
     return this.call({ kind: 'getSettingsIdentity', scope }) as Promise<SettingsIdentity>;
   }
 
-  updateRuntime(runtime: RuntimeObservation | null): Promise<null> {
-    return this.call({ kind: 'runtime', runtime }) as Promise<null>;
+  async updateRuntime(runtime: RuntimeObservation | null): Promise<null> {
+    const reply = (await this.call({ kind: 'runtime', runtime })) as null;
+    if (runtime !== null) this.capacity.accepted();
+    return reply;
   }
 }
 

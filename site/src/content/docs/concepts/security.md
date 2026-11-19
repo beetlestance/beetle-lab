@@ -88,6 +88,10 @@ Every run gets a new engine container with a fixed specification:
 | Ports | None published |
 | Network | Either none, or the test-targets network only |
 
+The test-targets network is not filtered: a run can reach what the server can reach.
+To keep runs away from the cloud metadata endpoint, the host or private ranges, see
+[Limit what runs can reach](/guides/target-egress/).
+
 The engine does not talk to the backend and keeps nothing after the run. All
 Beetle Lab containers also run with a read-only root filesystem, all
 capabilities dropped except those listed for them, and `no-new-privileges`.

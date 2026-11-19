@@ -101,8 +101,10 @@ On 19 November 2026 the same commands also ran as Compose one-offs of a scratch
 installation under the packaged entry (root, then UID 1000, groups 0, no
 capabilities), with no candidates: usage exit 2, preview and apply exit 0, and a
 SIGTERM 0–2.2 s after start ended `stopped` with exit 1 and released the owner.
-A signal in the first ~0.15 s (Node start and bundle parse, PID 1 with no handler
-yet) is still dropped and the command runs to completion.
+That run had a ~0.15 s gap (Node start and bundle parse, PID 1 with no handler)
+where a signal was dropped. `container.js` is now a small entry that records
+SIGINT/SIGTERM before importing `container-main.js`; only Node's own start
+remains unhandled. The narrowed gap has subprocess tests, not a container re-run.
 
 Two earlier smoke attempts failed once each before any reconcile step; neither
 recurred. One `createRun` returned retryable `503 capacity_unavailable` after the
@@ -110,7 +112,8 @@ organization, workspace, suite and revision were stored: the only time-dependent
 refusal there is settings resolution against the live runtime observation, which
 the metadata worker drops about 1 s after the agent sampled, while
 `waitForCapacity` checks only that the poller once published. Since commit
-acafc82d run creation no longer reads that observation; the run queues instead. The other was a raw
+acafc82d run creation no longer reads that observation; the run queues instead. Settings
+reads and changes and export creation now wait up to 2 s for the next observation. The other was a raw
 `StorageError not_found` after the run had finished and passed, surfaced by
 `app.close()` from a background owner; which owner is unknown, so the smoke now
 records `runtimeAtClose` (that owner's fixed reason).

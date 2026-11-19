@@ -13,19 +13,19 @@ reads validate scope/UUID only, preserving receipt replay without policy/runtime
 Folder paths query <=9 ancestors. Subtree evidence uses a bounded iterative walk:
 <=10,000 queued/visited nodes, depth<8 edges, indexed remaining-budget+1 child
 queries before enqueue (<=10,000 child rows enumerated, including overflow).
-Only settings values/overrides persist; domain resolution computes effective views.
-`updateRuntime(observation|null)` preserves the producer's source timestamp.
-runtimeTtlMs defaults to 5000 ms, bounds 1..60000; stale/future/invalid incoming
-timestamps are rejected at caller ingress and worker dequeue, preserving fresh state.
+Only settings values/overrides persist; domain resolution computes effective views. `updateRuntime(observation|null)` preserves the producer's source timestamp.
+runtimeTtlMs defaults to 5000 ms, bounds 1..60000; stale/future/invalid incoming timestamps
+are rejected at caller ingress and worker dequeue, preserving fresh state.
 Worker reads/decisions treat expired observations and clock rollback as unknown.
-Rollback-time updates are discarded; a persistent high-water source-time fence
-requires a genuinely later observation before recovery. Queueing never refreshes age.
+Rollback-time updates are discarded; a persistent high-water source-time fence requires a
+genuinely later observation before recovery. Queueing never refreshes age.
 Settings reductions retain charges; input admission counts payload+64 KiB and one
 configured reserve. Private advances require exact versions and trusted byte service.
 Queue <=64(default32); suites/readOffer SHARE TWO originals; input 64 KiB/reply 1 MiB;
 revision 2 MiB/config 1 MiB, Offer reply 2 MiB+64 KiB with fixed carrier; worker heap<=128 MiB.
 SQLite cache 2 MiB/busy 100 ms; startup 5 s, then 5 s without a completed worker reply.
-Bounded FIFO bursts can exceed 5 s total while progressing; no mutation retry.
+Bounded FIFO bursts can exceed 5 s total while progressing; no mutation retry, except
+capacity-wait.ts: settings/export create, once, after a definite capacity refusal and the next observation (<=2 s).
 Close drains admitted FIFO work; close/abort await worker termination, including failure paths.
 run_pins (migration 033, run-pins/): receipt-first pin/unpin, terminal runs, <=256 per workspace;
 triggers fence retention frames, retirement, admitted removal and pinned-run intents; epoch advances.
