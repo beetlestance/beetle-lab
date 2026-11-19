@@ -8,8 +8,10 @@ import { expect } from '@playwright/test';
  */
 export async function inputs(page, workspace, root) {
   await page.goto(workspace);
-  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
-  await page.getByRole('link', { name: 'Inputs', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Workspace sections' })
+    .getByRole('link', { name: 'Inputs', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Upload files', exact: true }).click();
   const payload = Buffer.from('name,value\nsynthetic,42\n');
   await page
@@ -33,7 +35,10 @@ export async function inputs(page, workspace, root) {
  * @param {import('@playwright/test').Page} page
  */
 export async function settings(page) {
-  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Settings', exact: true })
+    .click();
   await page.getByRole('link', { name: 'Installation', exact: true }).click();
   const field = page.getByLabel('Longest run allowed', { exact: true });
   const save = page.getByRole('button', { name: /^Save (?:this )?installation$/ });
@@ -53,8 +58,10 @@ export async function settings(page) {
  */
 export async function emptyFolder(page, workspace) {
   await page.goto(workspace);
-  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
-  await page.getByRole('link', { name: 'Suites', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Workspace sections' })
+    .getByRole('link', { name: 'Suites', exact: true })
+    .click();
   await page.getByRole('button', { name: 'New folder', exact: true }).click();
   const create = page.getByRole('dialog', { name: /^New folder in / });
   await create.getByLabel('Name', { exact: true }).fill('Disposable folder');
@@ -78,8 +85,10 @@ export async function directoryImport(page, workspace, root) {
   await writeFile(join(directory, 'alpha.csv'), 'alpha,1\n', { mode: 0o600 });
   await writeFile(join(directory, 'nested', 'beta.csv'), 'beta,2\n', { mode: 0o600 });
   await page.goto(workspace);
-  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
-  await page.getByRole('link', { name: 'Inputs', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Workspace sections' })
+    .getByRole('link', { name: 'Inputs', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Import a folder', exact: true }).click();
   await page.getByLabel('Input directory', { exact: true }).setInputFiles(directory);
   await page.getByRole('button', { name: 'Import directory', exact: true }).click();
@@ -90,8 +99,10 @@ export async function directoryImport(page, workspace, root) {
   await expect(page.getByRole('rowheader', { name: /^alpha\.csv\b/ })).toBeVisible();
   await expect(page.getByRole('rowheader', { name: /^beta\.csv\b/ })).toBeVisible();
   await page.goto(workspace);
-  await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
-  await page.getByRole('link', { name: 'Suites', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Workspace sections' })
+    .getByRole('link', { name: 'Suites', exact: true })
+    .click();
   await page.getByRole('link', { name: /^directory-input/ }).click();
   await expect(page.getByRole('link', { name: 'nested', exact: true })).toBeVisible();
 }
