@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import assert from 'node:assert/strict';
+import { join } from 'node:path';
 import { validateApi } from '@beetle/contracts/api';
 import { execute, start } from './results.mjs';
 import { revision } from './authoring.mjs';
@@ -56,8 +57,9 @@ export async function historyComparison(page, authored, first) {
 /**
  * @param {import('@playwright/test').Page} page
  * @param {Awaited<ReturnType<import('./authoring.mjs').author>>} authored
+ * @param {string} [evidence]
  */
-export async function cancelReconnect(page, authored) {
+export async function cancelReconnect(page, authored, evidence) {
   const config = structuredClone(authored.config);
   config.loadPlan.scenarios[0].iterations = 100;
   config.loadPlan.scenarios[0].maxDuration = '45s';
@@ -66,12 +68,63 @@ export async function cancelReconnect(page, authored) {
   await revision(page, config, 2);
   const submitted = await start(page);
   await currentWindow(page);
+  await verifyPaused(page, evidence);
+  await interruptLiveFeed(page, evidence);
   await page.reload();
   await currentWindow(page);
   await page.getByRole('button', { name: 'Cancel run', exact: true }).click();
   await expect(page.getByText('Cancelled', { exact: true }).first()).toBeVisible({ timeout: 60000 });
   await assertRunState(page, { state: 'cancelled', outcome: 'inconclusive' }, submitted);
 }
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {string | undefined} evidence
+ */
+async function verifyPaused(page, evidence) {
+  await page.getByRole('button', { name: 'Pause stream', exact: true }).click();
+  await expect(page.getByText(/stream paused at/)).toBeVisible();
+  const resume = page.getByRole('button', { name: 'Resume stream', exact: true });
+  await expect(resume).toBeVisible();
+  if (evidence) await page.screenshot({ path: join(evidence, 'live-paused.png'), fullPage: true });
+  await resume.click();
+  await expect(page.getByRole('button', { name: 'Pause stream', exact: true })).toBeVisible();
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {string | undefined} evidence
+ */
+async function interruptLiveFeed(page, evidence) {
+  const path = new URL(page.url()).pathname;
+  const state = page.getByRole('heading', { name: /^No word from the agent for / });
+  const retry = page.getByRole('button', { name: 'Retry now', exact: true });
+  const metrics = new RegExp(`^https?://[^/]+/api/v2${path}/attempts/[^/]+/metrics/live(?:\\?.*)?$`);
+  let interrupted = 0;
+  /** @param {import('@playwright/test').Route} route */
+  const interrupt = (route) => {
+    interrupted++;
+    return route.abort('connectionreset');
+  };
+  await page.route(metrics, interrupt);
+  try {
+    await expect(state).toBeVisible({ timeout: 10000 });
+    assert(interrupted > 0, 'Expected to observe an interrupted live metric read');
+    await expect(retry).toBeEnabled();
+    await currentWindow(page);
+    if (evidence) await page.screenshot({ path: join(evidence, 'live-reconnecting.png'), fullPage: true });
+  } finally {
+    await page.unroute(metrics, interrupt);
+  }
+  const recovered = page.waitForResponse((response) => metrics.test(response.url()) && response.status() === 200, {
+    timeout: 10000,
+  });
+  void recovered.catch(() => undefined);
+  await retry.click();
+  await recovered;
+  await expect(state).toHaveCount(0, { timeout: 10000 });
+  await currentWindow(page);
+}
+
 /**
  * @param {import('@playwright/test').Page} page
  * @param {string} run

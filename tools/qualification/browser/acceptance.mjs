@@ -28,6 +28,7 @@ if (
   ![
     'functional',
     'run-results',
+    'live-reconnect',
     'run-deletion',
     'interaction',
     'reference',
@@ -151,12 +152,15 @@ try {
     await phase('no-performance-work', async () => {
       assert.deepEqual(counts(f), { ready: 0, work: 0, unexpected: 0 });
     });
+  } else if (profile === 'live-reconnect') {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored, evidence ?? f.root));
   } else if (network) {
     await phase('secure-context', () => secureContext(appPage));
     const run = await phase('run-execution', () => execute(appPage));
     await phase('report-metrics-and-download', () => results(appPage, f.root));
     await phase('input-roundtrip', () => inputs(appPage, authored.workspace, f.root));
-    await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored));
+    await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored, evidence ?? f.root));
     const statuses = await phase('host-origin-csrf-refusals', () => refusals(network));
     await writeFile(join(f.root, 'network-refusals.json'), JSON.stringify({ run, statuses }), { mode: 0o600 });
   } else if (profile === 'reference') {
@@ -226,7 +230,7 @@ try {
       await appPage.goto(run);
       await results(appPage, f.root);
     });
-    await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored));
+    await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored, evidence ?? f.root));
     await phase('run-deletion', () => deleteRun(appPage, run));
   }
   outcome.status = 'passed';
