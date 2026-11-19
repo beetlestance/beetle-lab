@@ -142,6 +142,11 @@ try {
     await phase('target-suite-revision', () => revision(appPage, targetConfiguration(), 2));
     await phase('target-run-execution', () => execute(appPage));
     const observed = targetCounts(f);
+    if (evidence)
+      await writeFile(join(evidence, 'target-source-counts.json'), JSON.stringify(observed), {
+        flag: 'wx',
+        mode: 0o600,
+      });
     assert.equal(observed.ready, 1);
     assert.equal(observed.work, 40);
     assert.equal(observed.unexpected, 0);

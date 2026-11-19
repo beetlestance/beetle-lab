@@ -7,7 +7,7 @@ export async function targetRuntime(page, expectedSamples) {
   await expect(retry.or(section.getByText('Recorded target values and checkpoints', { exact: true }))).toBeVisible();
   const initialReadRefused = await retry.isVisible();
   if (initialReadRefused) await retry.click();
-  await expect(section.getByText(/^Target: http:\/\/target:8080/)).toBeVisible();
+  await expect(section.getByText(/^Target: target:8080\b/)).toBeVisible();
   await openDetails(section);
   await section.getByRole('button', { name: 'Reload target report', exact: true }).click();
   await openDetails(section);

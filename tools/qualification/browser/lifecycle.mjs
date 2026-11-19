@@ -31,7 +31,16 @@ export async function historyComparison(page, authored, first) {
     await page.getByRole('button', { name: 'Refresh comparison', exact: true }).click();
   await expect(page.getByRole('heading', { name: `Baseline: ${ids[0]}`, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Run 2: ${ids[1]}`, exact: true })).toBeVisible();
-  await page.getByRole('combobox', { name: /^Baseline metric\b/ }).selectOption({ index: 1 });
+  const catalogue = page.getByRole('combobox', { name: /^Baseline metric\b/ });
+  const retryCatalogue = page.getByRole('button', { name: 'Retry metric catalogue', exact: true });
+  await catalogue.or(retryCatalogue).waitFor();
+  if (await retryCatalogue.isVisible()) {
+    console.log(
+      JSON.stringify({ format: 'beetle-browser-read-recovery', read: 'comparison-catalogue', explicitRetry: true }),
+    );
+    await retryCatalogue.click();
+  }
+  await catalogue.selectOption({ index: 1 });
   await expect(page.getByText(/^Whole-run total:/)).toHaveCount(2);
 }
 /**
