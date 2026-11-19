@@ -47,6 +47,21 @@ Hover outside coverage or within gaps never substitutes a nearby reading.
 All retained phases are shown. Advanced details mount on demand and reuse the
 same verified report; no second byte read or automatic polling is introduced.
 
+## Target phase comparison
+
+`?target=phases` keeps the same verified report reader while showing a memory plot
+and ten recorded-phase rows. Before/after gauges use the first before and last
+after observations, including missing endpoints. During is the arithmetic mean of
+known gauge readings, never a time-weighted mean. The source sampler phases can
+include engine startup; they do not promise first/last-request boundaries or a
+steady baseline. Shaded regions cover only observed before/after spans.
+GC rate, time share and average pause require declared cumulative count/time units,
+two usable phase endpoints and ordered, reset-free observations. Their intervals
+stay within each recorded phase. Missing endpoints/units, overflow and positive
+underflow produce unknowns, never zero. Lifetime GC maximum/average readings are
+not substituted for phase-local data; the phase-local maximum remains unavailable.
+Methods and original observations stay inspectable without a second artifact read.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -70,5 +85,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/RecordedCharts.tsx` | `2e8b3ab203f4` |
 | `web/src/features/runs/result/chart-model.ts` | `52b2e65dd3d8` |
 | `web/src/features/runs/charts/` | `7df1caa86595` |
-| `web/src/features/runs/result/TargetReport.tsx` | `d155a250edf6` |
+| `web/src/features/runs/result/TargetReport.tsx` | `750bc555e4bb` |
 | `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
+| `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
+| `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |

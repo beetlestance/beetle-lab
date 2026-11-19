@@ -10,6 +10,7 @@ import { TargetReportDetails } from '../target-observations/index.js';
 import type { TargetReportReads } from '../target-observations/read.js';
 import { recordedTargetPlot, targetCardReading } from './target-model.js';
 import type { TargetCard, RecordedTargetPlot } from './target-model.js';
+import { TargetPhases } from './TargetPhases.js';
 import './target.css';
 
 /** One verified byte read; chart grid and advanced details share its frozen report. */
@@ -19,12 +20,14 @@ export function ResultTargetReport({
   nativeOrigin,
   hover,
   reads,
+  phaseView = false,
 }: {
   params: RunArtifactParams;
   artifact: Artifact;
   nativeOrigin: number | null;
   hover: ChartHover;
   reads?: Pick<TargetReportReads, 'read'>;
+  phaseView?: boolean;
 }) {
   const { state, retry } = useTargetReport({ params, artifact }, reads);
   const [details, setDetails] = useState(false);
@@ -40,12 +43,16 @@ export function ResultTargetReport({
   if (state.status !== 'ready') return <p role="status">Reading verified target observations…</p>;
   return (
     <>
-      <TargetReportPlots
-        key={`${artifact.sha256}/${nativeOrigin}`}
-        report={state.report}
-        nativeOrigin={nativeOrigin}
-        hover={hover}
-      />
+      {phaseView ? (
+        <TargetPhases report={state.report} nativeOrigin={nativeOrigin} />
+      ) : (
+        <TargetReportPlots
+          key={`${artifact.sha256}/${nativeOrigin}`}
+          report={state.report}
+          nativeOrigin={nativeOrigin}
+          hover={hover}
+        />
+      )}
       <details className="result-target-details" onToggle={(event) => setDetails(event.currentTarget.open)}>
         <summary>Recorded target values and checkpoints</summary>
         {details && <TargetReportDetails report={state.report} />}

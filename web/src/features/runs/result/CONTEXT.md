@@ -9,7 +9,6 @@ engine result for the active attempt, the run's own history summary (one listRun
 row by exact ID, limit 1), suite, saved revision and getRunMetricOverview. The
 overview shares read admission and never polls; errors retire cached figures.
 Read-only and restored-backup state comes from useSessionAccess, not a session read.
-
 - headline.ts: variant (passed, failed, not judged, cancelled, out of memory,
   output full, incomplete, errored, pending) and the title and sentence. Sentence
   figures come only from the stored summary; unknown parts are left out.
@@ -34,7 +33,8 @@ Read-only and restored-backup state comes from useSessionAccess, not a session r
 RecordedCharts reads workload history once; peak binds to the summary source.
 ResultTargetReport shares one verified report across four cards and lazy details.
 Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
-exact; only safe native chronology shares hover. Advanced views mount on demand.
-ResultCompare reads 20 candidates/page on open; suite/all filters, verified names/
-ordinals, no per-row revision reads. Chosen candidate is the comparison baseline.
+exact; only safe native chronology shares hover. ?target=phases keeps the same
+reader for observed phase comparisons; missing phase GC maxima stay unavailable.
+ResultCompare: 20 candidates/page, suite/all, verified names/ordinals, no row reads;
+the chosen candidate is the baseline.
 Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx

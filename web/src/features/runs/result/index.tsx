@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TargetHeader, usePhaseMode } from './TargetHeader.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
 import { Banner } from '../../../components/Banner.js';
@@ -49,6 +50,7 @@ const sections = [
 
 function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | undefined }) {
   const reads = useResultReads(run);
+  const { phaseView, className, togglePhases } = usePhaseMode();
   const [deleting, setDeleting] = useState(false);
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
@@ -58,8 +60,12 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const engine = view.status === 'ready' ? view.result : null;
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, readOnly);
   return (
-    <div className="result">
-      {restored && <RestoredBanner createdAt={restored.createdAt} />}
+    <div className={className}>
+      {restored && (
+        <div className="result-restored">
+          <RestoredBanner createdAt={restored.createdAt} />
+        </div>
+      )}
       <ResultHeader
         run={run}
         title={title}
@@ -97,7 +103,15 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       <ResultEndpoints overview={ready} requests={plan.requests} />
       <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
       <AdvancedMetrics run={run} />
-      <TargetRuntime run={run} engine={engine} status={view.status} charts={charts} plan={plan} />
+      <TargetRuntime
+        run={run}
+        engine={engine}
+        status={view.status}
+        charts={charts}
+        plan={plan}
+        phaseView={phaseView}
+        togglePhases={togglePhases}
+      />
       <ReportTabs run={run} view={view} />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
@@ -144,22 +158,21 @@ function TargetRuntime({
   status,
   charts,
   plan,
+  phaseView,
+  togglePhases,
 }: {
   run: Run;
   engine: EngineResult | null;
   status: ResultReads['result']['view']['status'];
   charts: ReturnType<typeof useRecordedCharts>;
   plan: RunPlan;
+  phaseView: boolean;
+  togglePhases: () => void;
 }) {
   const targets = engine ? engine.artifacts.filter((artifact) => artifact.kind === 'target-runtime') : [];
   return (
     <section id="result-target" className="result-section" aria-labelledby="result-target-title">
-      <header className="live-section-head">
-        <h2 id="result-target-title" className="result-section-title">
-          Target runtime
-        </h2>
-        <TargetSourceNote plan={plan} />
-      </header>
+      <TargetHeader plan={plan} phaseView={phaseView} togglePhases={togglePhases} />
       {targets.length === 0 && (
         <p className="result-muted">
           {engine
@@ -182,24 +195,12 @@ function TargetRuntime({
             artifactId: targets[0]!.artifactId,
           }}
           artifact={targets[0]!}
+          phaseView={phaseView}
           nativeOrigin={charts.data?.source?.measurementSourceTimeMs ?? null}
           hover={charts.hover}
         />
       )}
     </section>
-  );
-}
-
-function TargetSourceNote({ plan }: { plan: RunPlan }) {
-  if (!plan.targetOrigin) return null;
-  const interval = plan.samplingIntervalMs;
-  const cadence =
-    interval !== null && interval >= 1000 && interval <= 60000 ? ` · Configured interval ${interval / 1000} s` : '';
-  return (
-    <p className="result-muted result-target-source">
-      Target: {plan.targetOrigin}
-      {cadence}.
-    </p>
   );
 }
 

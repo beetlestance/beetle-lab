@@ -32,3 +32,13 @@ it('withdraws charts on failure and retries the same scoped artifact explicitly'
  expect(read.mock.calls[1]![0].params).toEqual(fixture().params);f.unmount();
  await waitFor(()=>expect(read.mock.calls[1]![0].signal.aborted).toBe(true));
 });
+
+it('switches between recorded phases and cards without a new artifact read', async () => {
+ const f=fixture();const read=vi.fn(async()=>report());const reads={read};const api=testClient(()=>json({}));
+ const draw=(phaseView:boolean)=><ApiContext.Provider value={api.client}><ResultTargetReport params={f.params} artifact={f.artifact} nativeOrigin={null} hover={{hoverT:null,onHover:vi.fn()}} reads={reads} phaseView={phaseView}/></ApiContext.Provider>;
+ const view=render(draw(false));await screen.findByText(/recorded target observations/);
+ view.rerender(draw(true));expect(await screen.findByRole('region',{name:'Target by recorded phase'})).toBeVisible();
+ expect(screen.getAllByRole('img')).toHaveLength(1);expect(screen.getByText(/Phase-local maximum was not recorded/)).toBeInTheDocument();
+ view.rerender(draw(false));expect(await screen.findAllByRole('img')).toHaveLength(4);expect(read).toHaveBeenCalledTimes(1);
+ expect(api.records).toHaveLength(0);
+});
