@@ -1,3 +1,4 @@
+import { PhoneMetricSummary } from './PhoneSummary.js';
 import { useState } from 'react';
 import type { RunMetricOverview, RunMetricEndpoint, RunChartHistory } from '@beetle/contracts/api';
 import { Button } from '../../../components/Button.js';
@@ -44,11 +45,28 @@ export function OverviewStatus({ query }: { query: ResultReads['overview'] }) {
 export function MetricSummary({
   overview,
   history,
+  phone = false,
 }: {
   overview: RunMetricOverview;
   history?: RunChartHistory | null;
+  phone?: boolean;
 }) {
   const peak = observedPeak(overview, history);
+  if (phone)
+    return (
+      <PhoneMetricSummary overview={overview}>
+        <MeasurementNotes overview={overview} peak={peak} />
+      </PhoneMetricSummary>
+    );
+  return <DesktopMetricSummary overview={overview} peak={peak} />;
+}
+function DesktopMetricSummary({
+  overview,
+  peak,
+}: {
+  overview: RunMetricOverview;
+  peak: ReturnType<typeof observedPeak>;
+}) {
   const p = overview.latency?.percentiles;
   const tiles = [
     {

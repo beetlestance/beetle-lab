@@ -23,7 +23,7 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
 - RunNote: frozen edit version, recorded noteUpdatedAt; useRunNote owns receipt replay,
   useNoteConflict owns scoped refresh and explicit conflict choices, including clears.
   useWrite is single-flight, with identical replay only on unknown outcomes.
-- Overview: five pooled summary tiles and a <=64-row endpoint table, p95 order,
+- Overview: five desktop/four phone tiles; expandable facts; <=64 endpoints, p95 order,
   name filter, explicit missing values/omissions. Histogram estimates stay labelled.
 - Sections: fallback history tiles, exact native threshold readings with verified
   pinned limits (no histogram substitution), native verdicts and script version.

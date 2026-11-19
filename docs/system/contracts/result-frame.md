@@ -31,7 +31,11 @@ open the addressed section. Phase comparison keeps its target and Back control
 visible. Phone endpoint columns put p95/failed first and keep them visible while other
 columns scroll in a named keyboard region. Desktop order, filters and exact
 source values survive resize; long paths wrap and nulls/zeros remain distinct.
-Header, summary and chart phone board matching remains open.
+Phone summary leads with average rate, p95 estimate, failure ratio and total
+requests from one accepted source. Other measurements stay in expandable details;
+partial-coverage warnings remain visible. Legacy/pending history keeps four explicit
+unknown figures, never invented zeros. Desktop summary stays unchanged.
+Header and chart phone board matching remains open.
 
 ## Anchors
 
@@ -45,5 +49,6 @@ Header, summary and chart phone board matching remains open.
 | `web/src/features/runs/result/phone.css` | `ba4a5771ad8d` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
 | `web/src/features/runs/result/EndpointTable.tsx` | `f7bd8fa29dec` |
-| `web/src/features/runs/result/overview.css` | `133e5e0c8d70` |
-| `web/src/features/runs/result/index.tsx` | `420ebb869b1f` |
+| `web/src/features/runs/result/overview.css` | `af298878404b` |
+| `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
+| `web/src/features/runs/result/index.tsx` | `6e87c877da8d` |

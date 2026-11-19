@@ -5,6 +5,9 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, expect, it } from 'vitest';
 import type { RunMetricOverview, RunChartHistory } from '@beetle/contracts/api';
 import source from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with { type: 'json' };
+import { SummaryTiles } from './Sections.js';
+import { pendingRunHistorySummary } from '@beetle/contracts/api';
+import { run } from '../test-fixtures.js';
 import { MetricSummary, ResultEndpoints } from './Overview.js';
 afterEach(cleanup);
 const overview=()=>structuredClone(source) as RunMetricOverview;
@@ -61,4 +64,34 @@ it('keeps the same endpoint facts and active filter when phone columns move p95 
  expect(facts()).toEqual(desktopFacts);
  expect(screen.getByRole('searchbox',{name:'Filter endpoints'})).toHaveValue('checkout');
  expect(screen.getByRole('region',{name:'Endpoint measurements, scroll for more columns'})).toHaveAttribute('tabindex','0');
+});
+
+it('uses four phone figures without losing checks, drops or latency detail', () => {
+ const value=overview();value.requestsPerSecond=0;value.requestCount=0;value.failure={kind:'rate',numerator:0,sampleCount:2,ratio:0};value.droppedIterations=0;
+ render(<MetricSummary overview={value} phone />);
+ expect(document.querySelectorAll('.result-phone-tiles dd')).toHaveLength(4);
+ expect(screen.getByText('requests in all').parentElement).toHaveTextContent('0');
+ expect(screen.getByText('a second on average').parentElement).toHaveTextContent('0');
+ expect(screen.getByText('of requests failed').parentElement).toHaveTextContent('0%');
+ expect(screen.getByText('Checks passed')).not.toBeVisible();
+ fireEvent.click(screen.getByText('More whole-run measurements'));
+ const details=screen.getByText('More whole-run measurements').closest('details')!;
+ details.open=true;fireEvent(details,new Event('toggle'));
+ expect(screen.getByText('Iterations dropped').parentElement).toHaveTextContent('0');
+ expect(screen.getByText('p50 latency, estimate')).toBeVisible();
+});
+it('keeps unknown phone values explicit and partial coverage visible outside closed details', () => {
+ const value=overview();value.requestsPerSecond=null;value.requestCount=null;value.latency=null;value.failure=null;
+ value.source={...value.source!,coverage:{complete:false,latePoints:1,markerDelayDroppedBuckets:0}};
+ render(<MetricSummary overview={value} phone />);
+ const primary=document.querySelector('.result-phone-tiles')!;
+ expect(within(primary as HTMLElement).getAllByTitle('Not recorded')).toHaveLength(4);
+ expect(screen.getByText('Source-window coverage is partial.')).toBeVisible();
+});
+
+it('keeps four explicit unknown figures when only pending history is available on phone', () => {
+ render(<SummaryTiles summary={pendingRunHistorySummary(run())} status="ready" phone />);
+ const primary=document.querySelector('.result-phone-tiles')!;
+ expect(within(primary as HTMLElement).getAllByTitle('Not recorded')).toHaveLength(4);
+ expect(screen.getByText('Saved history figures: index pending.')).toBeVisible();
 });

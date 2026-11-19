@@ -105,3 +105,28 @@
     background: var(--panel);
   }
 }
+
+.result-summary-details > summary {
+  cursor: pointer;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.result-summary-details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-16);
+}
+.result-summary-details dt {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.result-summary-details dd {
+  margin: var(--s-4) 0 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 759px) {
+  .result-phone-tiles dd {
+    font-size: var(--fs-5xl);
+    overflow-wrap: anywhere;
+  }
+}

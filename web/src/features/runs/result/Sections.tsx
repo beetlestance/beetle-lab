@@ -1,3 +1,4 @@
+import { PhoneHistorySummary } from './PhoneSummary.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunHistorySummary, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { Link } from 'react-router-dom';
@@ -10,7 +11,15 @@ import { summaryStatus } from '../HistorySummaryCells.js';
 import type { Variant } from './headline.js';
 
 /** Whole-run tiles from the run's stored history summary; unknown values are left out. */
-export function SummaryTiles({ summary, status }: { summary: RunHistorySummary | null; status: string }) {
+export function SummaryTiles({
+  summary,
+  status,
+  phone = false,
+}: {
+  summary: RunHistorySummary | null;
+  status: string;
+  phone?: boolean;
+}) {
   if (status === 'loading') return <p className="result-muted">Loading whole-run figures…</p>;
   if (!summary)
     return (
@@ -19,6 +28,7 @@ export function SummaryTiles({ summary, status }: { summary: RunHistorySummary |
       </p>
     );
   const note = summaryStatus(summary);
+  if (phone) return <PhoneHistorySummary summary={summary} note={note} />;
   const tiles = [
     { value: formatNumber(summary.requestsPerSecond, 'integer'), label: 'a second on average' },
     {
