@@ -19,6 +19,9 @@ http {
     client_max_body_size 2m;
     client_body_temp_path /tmp/client_temp;
     proxy_temp_path /tmp/proxy_temp;
+    fastcgi_temp_path /tmp/fastcgi_temp;
+    uwsgi_temp_path /tmp/uwsgi_temp;
+    scgi_temp_path /tmp/scgi_temp;
     resolver 127.0.0.11 valid=5s ipv6=off;
     server {
         listen ${port} ssl;
