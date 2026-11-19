@@ -3,6 +3,7 @@
 RunDetail owns scoped queries/cancellation. Nonterminal runs select live; restored/
 terminal records select results. Watched runs stay live until Open result remounts.
 Route/run/attempt changes remount copy.phaseOf: waiting, starting, running, cancelling, finalizing, ended.
+Finalizing shows the last live window and event-backed sealing milestones and file counts.
 
 Early boards use plain steps, an indeterminate bar, bottom cancellation, exported
 Starting art and skeleton figures. Queue reads share a scoped query; errors hide

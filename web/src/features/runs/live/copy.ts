@@ -30,7 +30,7 @@ export function statusOf(phase: Phase, run: Run): { label: string; tone: StatusT
     case 'cancelling':
       return { label: 'Cancelling', tone: 'running' };
     case 'finalizing':
-      return { label: 'Finalizing', tone: 'info' };
+      return { label: 'Finalizing', tone: 'running' };
     case 'ended': {
       const state = run.state as keyof typeof endedLabel;
       return { label: endedLabel[state] ?? run.state, tone: state === 'errored' ? 'fail' : 'neutral' };
@@ -110,8 +110,8 @@ export function sentenceOf(
     case 'cancelling':
       return `${stoppedText('Last live window at', stoppedAtMs, plan)}Cancellation requested; waiting for the agent to confirm that execution has stopped.`;
     case 'finalizing': {
-      const after = run.cancellationRequested ? ' after the cancel' : '';
-      return `${stoppedText('Last live window at', stoppedAtMs, plan)}Sealing results${after}; the verdict appears when sealing finishes.`;
+      const after = run.cancellationRequested ? ' after the cancellation request' : '';
+      return `Sealing results${after}. The outcome appears when sealing finishes.`;
     }
     case 'ended':
       return run.outcome === 'pending' ? 'The outcome is still pending.' : `Outcome: ${run.outcome}.`;

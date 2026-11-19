@@ -22,20 +22,17 @@ export function Finalizing({
   const timeline = useTimeline(run, false);
   const rows = timeline.data?.rows ?? [];
   const retained = timeline.isError && timeline.data !== undefined;
+  const incomplete = timeline.data?.coverage !== 'contiguous' || timeline.data.omitted || timeline.data.backlog;
+  const sealed = rows.filter((row) => row.kind === 'artifact.sealed').length;
   const limit = (metric: string, stat: string) =>
     plan.rules.find((rule) => rule.metric === metric && rule.stat === stat)?.value ?? null;
   return (
     <section className="live-progress live-finalizing" aria-label="Sealing results">
-      <SealingTime lastT={lastT} totalMs={plan.totalMs} />
+      <SealingTime lastT={lastT} totalMs={plan.totalMs} files={sealedFileLabel(sealed, incomplete || retained)} />
       <div className="live-early-meter" role="progressbar" aria-label="Sealing results">
         <span />
       </div>
-      <SealingEvents
-        rows={rows}
-        incomplete={timeline.data?.coverage !== 'contiguous' || timeline.data.omitted || timeline.data.backlog}
-        retained={retained}
-        sampledTarget={plan.samplingIntervalMs !== null}
-      />
+      <SealingEvents rows={rows} retained={retained} sampledTarget={plan.samplingIntervalMs !== null} />
       {timeline.isError && (
         <p role="alert">
           {retained
@@ -60,65 +57,68 @@ export function Finalizing({
   );
 }
 
-function SealingTime({ lastT, totalMs }: { lastT: number | null; totalMs: number | null }) {
+function SealingTime({ lastT, totalMs, files }: { lastT: number | null; totalMs: number | null; files: string }) {
   return (
     <div className="live-time">
       <span>
         {lastT === null ? 'Last live window unavailable' : `Last live window at ${clock(lastT)}`}
         {lastT !== null && totalMs !== null && ` of ${clock(totalMs)}`}
       </span>
-      <span>Sealing results</span>
+      <span>{files}</span>
     </div>
   );
 }
 function SealingEvents({
   rows,
-  incomplete,
   retained,
   sampledTarget,
 }: {
   rows: readonly Row[];
-  incomplete: boolean;
   retained: boolean;
   sampledTarget: boolean;
 }) {
-  const sealed = rows.filter((row) => row.kind === 'artifact.sealed').length;
   const report = rows.some((row) => row.artifactKind === 'performance-report' || row.kind === 'engine.result');
   const collecting = rows.some((row) => row.kind === 'phase.started' && row.phase === 'collect');
-  const sealing = rows.some((row) => row.kind === 'phase.started' && row.phase === 'seal');
-  const collected = collecting || sealing;
-  const files = sealedFileLabel(sealed, incomplete);
+  const complete = rows.some(
+    (row) =>
+      (row.kind === 'phase.started' && row.phase === 'seal') ||
+      (row.kind === 'phase.finished' && row.phase === 'collect'),
+  );
+  const collected = collecting || complete;
   return (
     <ul
       className="live-sealing-steps"
       aria-label={retained ? 'Last recorded sealing events' : 'Recorded sealing events'}
     >
-      <SealingStep done={report} label={report ? 'Engine report written' : 'Waiting for the engine report'} />
-      <SealingStep done={sealed > 0} label={files} />
+      <SealingStep
+        state={report ? 'done' : 'pending'}
+        label={report ? 'Engine report written' : 'Waiting for the engine report'}
+      />
+      <CollectionStep started={collected} complete={complete} retained={retained} />
       {sampledTarget && (
         <SealingStep
-          done={collected}
+          state={collected ? 'done' : 'pending'}
           label={collected ? 'Target sampler closed' : 'Waiting for target sampler closure'}
         />
       )}
-      <SealingStep done={sealing} label={collectionLabel(collected, sealing)} />
     </ul>
   );
 }
 
 function sealedFileLabel(count: number, incomplete: boolean): string {
-  if (count === 0) return 'Waiting for sealed files';
+  if (count === 0) return 'Sealing results';
   return `${incomplete ? 'At least ' : ''}${count} ${count === 1 ? 'file' : 'files'} sealed`;
 }
 
-function collectionLabel(collected: boolean, sealing: boolean): string {
-  if (sealing) return 'Artifact collection complete. Awaiting final confirmation';
-  return collected ? 'Artifact collection started' : 'Awaiting artifact collection';
+function CollectionStep({ started, complete, retained }: { started: boolean; complete: boolean; retained: boolean }) {
+  if (complete) return <SealingStep state="done" label="Artifact collection complete. Awaiting final confirmation" />;
+  if (!started) return <SealingStep state="pending" label="Awaiting artifact collection" />;
+  return <SealingStep state={retained ? 'pending' : 'active'} label="Artifact collection started" />;
 }
 
-function SealingStep({ done, label }: { done: boolean; label: string }) {
+function SealingStep({ state, label }: { state: 'done' | 'active' | 'pending'; label: string }) {
   return (
-    <li className={done ? 'is-done' : 'is-pending'}>
+    <li className={`is-${state}`}>
       <span aria-hidden="true">●</span>
       {label}
     </li>

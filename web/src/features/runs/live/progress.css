@@ -124,8 +124,20 @@
 .live-sealing-steps .is-done > span {
   color: var(--green);
 }
+.live-sealing-steps .is-active > span {
+  color: var(--amber);
+}
 .live-sealing-steps .is-pending {
   color: var(--mute);
+}
+.live-finalizing {
+  gap: var(--s-12);
+}
+.live-finalizing .live-early-meter {
+  margin-bottom: 0;
+}
+.live-finalizing .live-kpis {
+  margin-top: var(--s-12);
 }
 
 @media (max-width: 1100px) {
