@@ -26,8 +26,8 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
   name filter, explicit missing values/omissions. Histogram estimates stay labelled.
 - Sections: fallback history tiles, exact native threshold readings with verified
   pinned limits (no histogram substitution), native verdicts and script version.
-- ReportTabs: Report, What happened, Artifacts, Diagnostics; under 760px the tabs
-  become a section list (Phone / Run result).
+- ReportTabs: one selected desktop tab shared with top section links; permanent
+  anchors target Report/Artifacts/Diagnostics. Under 760px, separate sections.
 - DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
   Unpin first.
 RecordedCharts reads workload history once; peak binds to the summary source.

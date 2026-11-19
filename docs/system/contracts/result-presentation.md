@@ -62,6 +62,15 @@ underflow produce unknowns, never zero. Lifetime GC maximum/average readings are
 not substituted for phase-local data; the phase-local maximum remains unavailable.
 Methods and original observations stay inspectable without a second artifact read.
 
+## Report navigation
+
+Top Report, Artifacts and Diagnostics anchors select the same desktop report tab
+as the lower tab bar; supported hash deep links select their panel on entry.
+Permanent desktop anchors keep native scrolling valid before a panel mounts.
+Phone views retain separate report sections and their actual anchors. Navigation
+adds no reader of its own; selected feature owners retain their existing admission,
+publication, retry and retirement rules.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -89,3 +98,4 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |

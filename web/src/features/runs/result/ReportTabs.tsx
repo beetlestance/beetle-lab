@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Run } from '@beetle/contracts/api';
+import { useLocation } from 'react-router-dom';
 import { TabPanel, Tabs } from '../../../components/Tabs.js';
 import type { ResultView } from '../../run-results/index.js';
 import { RunArtifacts } from '../artifacts/index.js';
@@ -9,8 +10,28 @@ import { RunPerformanceReport } from '../performance-report/index.js';
 import { ExecutionActivity } from '../timeline/index.js';
 import { RunWarnings } from '../warnings/index.js';
 
-type Tab = 'report' | 'activity' | 'artifacts' | 'diagnostics';
+export type ReportTab = 'report' | 'activity' | 'artifacts' | 'diagnostics';
 const phoneQuery = '(max-width: 759px)';
+function tabFromHash(hash: string): ReportTab | null {
+  if (hash === '#result-artifacts') return 'artifacts';
+  if (hash === '#result-diagnostics') return 'diagnostics';
+  return hash === '#result-report' ? 'report' : null;
+}
+export function useReportTab() {
+  const { hash } = useLocation();
+  const [tab, setTab] = useState<ReportTab>(tabFromHash(hash) ?? 'report');
+  useEffect(() => {
+    const selected = tabFromHash(hash);
+    if (selected) setTab(selected);
+    const changed = () => {
+      const next = tabFromHash(window.location.hash);
+      if (next) setTab(next);
+    };
+    window.addEventListener('hashchange', changed);
+    return () => window.removeEventListener('hashchange', changed);
+  }, [hash]);
+  return [tab, setTab] as const;
+}
 
 /** True under the 760px phone breakpoint; jsdom and old browsers report false. */
 function usePhone() {
@@ -73,12 +94,21 @@ function Unready({ status, what }: { status: 'loading' | 'unavailable' | 'error'
  * Report tabs of the Run result board: Report, What happened, Artifacts, Diagnostics.
  * Under 760px (Phone / Run result) the tabs become a plain section list.
  */
-export function ReportTabs({ run, view }: { run: Run; view: ResultView }) {
+export function ReportTabs({
+  run,
+  view,
+  tab,
+  onSelect,
+}: {
+  run: Run;
+  view: ResultView;
+  tab: ReportTab;
+  onSelect: (tab: ReportTab) => void;
+}) {
   const idBase = useId();
   const phone = usePhone();
-  const [tab, setTab] = useState<Tab>('report');
   const count = view.status === 'ready' ? view.result.artifacts.length : undefined;
-  const panels: Record<Tab, { label: string; body: ReactNode }> = {
+  const panels: Record<ReportTab, { label: string; body: ReactNode }> = {
     report: { label: 'Report', body: <Report view={view} /> },
     activity: {
       label: 'What happened',
@@ -87,7 +117,7 @@ export function ReportTabs({ run, view }: { run: Run; view: ResultView }) {
     artifacts: { label: 'Artifacts', body: <RunArtifacts run={run} terminal heading="Artifacts" /> },
     diagnostics: { label: 'Diagnostics', body: <Diagnostics view={view} /> },
   };
-  const order: Tab[] = ['report', 'activity', 'artifacts', 'diagnostics'];
+  const order: ReportTab[] = ['report', 'activity', 'artifacts', 'diagnostics'];
   if (phone)
     return (
       <div className="result-sections">
@@ -101,11 +131,13 @@ export function ReportTabs({ run, view }: { run: Run; view: ResultView }) {
     );
   return (
     <section id="result-report" className="result-section result-report" aria-label="Report">
+      <span id="result-artifacts" className="result-report-anchor" aria-hidden="true" />
+      <span id="result-diagnostics" className="result-report-anchor" aria-hidden="true" />
       <Tabs
         label="Run report"
         idBase={idBase}
         selected={tab}
-        onSelect={setTab}
+        onSelect={onSelect}
         items={order.map((id) => ({
           id,
           label: panels[id].label,

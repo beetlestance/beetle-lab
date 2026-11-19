@@ -243,3 +243,20 @@ it('recovers a failed recorded-chart read explicitly without per-series fanout',
  expect(f.records.filter(record=>record.path.endsWith('/metrics/chart-history'))).toHaveLength(2);
  expect(f.records.filter(record=>/\/metrics\?/.test(record.path))).toHaveLength(0);
 });
+
+it('connects top section links with the same report tabs on repeated selections', async () => {
+  const f=fixture(finished());mount(f.client,path);
+  await screen.findByRole('heading',{name:'checkout-steady passed'});
+  const nav=screen.getByRole('navigation',{name:'Result sections'});
+  for(const label of ['Artifacts','Diagnostics','Report','Artifacts','Report']) {
+    fireEvent.click(within(nav).getByRole('link',{name:label}));
+    await waitFor(()=>expect(screen.getByRole('tab',{name:new RegExp(`^${label}`)})).toHaveAttribute('aria-selected','true'));
+  }
+  expect(within(nav).getByRole('link',{name:'Artifacts'})).toHaveAttribute('href','#result-artifacts');
+  expect(within(nav).getByRole('link',{name:'Diagnostics'})).toHaveAttribute('href','#result-diagnostics');
+});
+it('opens a deep-linked artifacts section without a preliminary report selection', async () => {
+  const f=fixture(finished());mount(f.client,path+'#result-artifacts');
+  await screen.findByRole('heading',{name:'checkout-steady passed'});
+  expect(await screen.findByRole('tab',{name:/^Artifacts/})).toHaveAttribute('aria-selected','true');
+});

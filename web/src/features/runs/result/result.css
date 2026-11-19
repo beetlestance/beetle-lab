@@ -186,3 +186,6 @@
     gap: var(--s-24);
   }
 }
+
+.result-report { position: relative; }
+.result-report-anchor { position: absolute; top: 0; left: 0; }

@@ -13,7 +13,8 @@ import { ResultTargetReport } from './TargetReport.js';
 import { DeleteRun } from './DeleteRun.js';
 import { headline, variantOf } from './headline.js';
 import type { Variant } from './headline.js';
-import { ReportTabs } from './ReportTabs.js';
+import { ReportTabs, useReportTab } from './ReportTabs.js';
+import type { ReportTab } from './ReportTabs.js';
 import { ResultHeader } from './ResultHeader.js';
 import { RunNote } from './RunNote.js';
 import { ScriptVersion, SummaryTiles, Thresholds } from './Sections.js';
@@ -46,11 +47,25 @@ const sections = [
   ['charts', 'Charts'],
   ['target', 'Target runtime'],
   ['report', 'Report'],
+  ['artifacts', 'Artifacts'],
+  ['diagnostics', 'Diagnostics'],
 ] as const;
+
+type Section = (typeof sections)[number][0];
+const sectionTabs: Partial<Record<Section, ReportTab>> = {
+  report: 'report',
+  artifacts: 'artifacts',
+  diagnostics: 'diagnostics',
+};
 
 function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | undefined }) {
   const reads = useResultReads(run);
   const { phaseView, className, togglePhases } = usePhaseMode();
+  const [tab, setTab] = useReportTab();
+  const selectSection = (section: Section) => {
+    const selected = sectionTabs[section];
+    if (selected) setTab(selected);
+  };
   const [deleting, setDeleting] = useState(false);
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
@@ -78,7 +93,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       />
       <nav className="result-nav" aria-label="Result sections">
         {sections.map(([id, label]) => (
-          <a key={id} href={`#result-${id}`}>
+          <a key={id} href={`#result-${id}`} onClick={() => selectSection(id)}>
             {label}
           </a>
         ))}
@@ -112,7 +127,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         phaseView={phaseView}
         togglePhases={togglePhases}
       />
-      <ReportTabs run={run} view={view} />
+      <ReportTabs run={run} view={view} tab={tab} onSelect={setTab} />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
   );
