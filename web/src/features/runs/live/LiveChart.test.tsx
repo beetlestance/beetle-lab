@@ -149,3 +149,19 @@ it('retains a known aggregate without inventing axes when no plot samples exist'
  expect(view.getByText('No sampled window readings.')).toBeVisible();expect(view.queryByRole('img')).toBeNull();
  expect(view.container.querySelector('.live-chart-max')).toBeNull();expect(view.container.querySelector('.live-ticks')).toBeNull();
 });
+
+it('keeps the two distinct boundary labels on a one-second chart', () => {
+  const view = render(
+    <LiveChart
+      title="First reading"
+      xs={[1000]}
+      domain={[1000, 2000]}
+      format={String}
+      series={[{ key: 'rps', label: 'requests', tone: 'amber', values: [1] }]}
+    />,
+  );
+  const ticks = Array.from(view.container.querySelectorAll('.live-ticks > span'));
+  expect(ticks.map(tick => [tick.textContent, tick.getAttribute('data-edge')])).toEqual([
+    ['00:01', 'start'], ['00:02', 'end'],
+  ]);
+});

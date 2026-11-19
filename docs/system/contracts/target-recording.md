@@ -112,4 +112,4 @@ The numeric archive keeps its existing format. No execution outcome changes.
 | `agent/src/live-metrics/` | `feac352cffc7` |
 | `engines/k6/wrapper/live/` | `9a7462c484ce` |
 | `web/src/features/runs/live/target-charts.ts` | `788710258b75` |
-| `web/src/features/runs/live/Charts.tsx` | `baf5cc7d56da` |
+| `web/src/features/runs/live/Charts.tsx` | `73a0db730fd4` |

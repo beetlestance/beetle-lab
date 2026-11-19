@@ -225,10 +225,10 @@
   transform: translateX(-50%);
   white-space: nowrap;
 }
-.live-ticks > span:first-child {
+.live-ticks > [data-edge='start'] {
   transform: none;
 }
-.live-ticks > span:last-child {
+.live-ticks > [data-edge='end'] {
   transform: translateX(-100%);
 }
 .live-board {
