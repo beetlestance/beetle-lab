@@ -1,7 +1,8 @@
 # Retain verified observations after a stopped run
 
-Status: Design in progress. The Result views can display accepted partial
-evidence now. Forced stops do not yet publish a recoverable history prefix.
+Status: Implementation in progress. The Result views can display accepted
+partial evidence. The k6 producer writes recovery checkpoints. The agent and
+backend do not yet transfer or serve them after a stop.
 
 ## Current behaviour
 
@@ -61,10 +62,10 @@ receipts unchanged. Metric recovery remains a separate step.
 1. Done. Preserve source-free OOM classification from the bound exit observation.
    Test a racing user cancellation, missing exit evidence and rejection before
    launch. Compare precedence with sealed finalisation.
-2. Add the checkpoint schema and writer, including reservation, cadence and
-   interrupted-write tests. Reuse prefix validation, with stopped reads using
-   an independent expected identity. Existing installations without a checkpoint
-   remain readable.
+2. Done. The k6 wrapper uses a bounded, rotating codec with a reserved 8 KiB
+   peak extent and a 5 s cadence. It syncs complete archive prefixes on one
+   advisory work slot, fences shutdown, and leaves the previous slot readable
+   after an interrupted write. The wire and normal result formats stay unchanged.
 3. Extend agent collection and settlement to persist the recovery decision,
    with an exact retry and restart path. Reuse existing admission and custody.
    Establish the schema and migration ownership before changing journal or wire

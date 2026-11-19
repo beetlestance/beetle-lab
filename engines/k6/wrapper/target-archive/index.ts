@@ -76,6 +76,10 @@ export class TargetArchive {
       return undefined;
     }
   }
+  syncPrefix(): Promise<void> {
+    this.check();
+    return this.files!.sync('data');
+  }
   private check(): void {
     this.options.check();
     if (this.closing || this.fault) throw this.fault ?? new AttemptError('artifact');

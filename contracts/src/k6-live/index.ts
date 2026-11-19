@@ -3,22 +3,13 @@ import type { LiveMetricHash, LiveMetricScope, LiveMetricSubset } from '../api/i
 import { encodeCanonicalJson } from '../json.js';
 import { k6MetricCatalogue, k6MetricLayout } from '../k6-metrics/index.js';
 import type { K6MetricShape } from '../k6-metrics/index.js';
+import type { K6LiveApproval, K6LiveAssignment } from './types.js';
+export type { K6LiveApproval, K6LiveAssignment } from './types.js';
 /** Trusted image metadata only; never a suite/Offer option. */
 export const K6_LIVE_METRIC_IMAGE_ENV = 'BEETLE_K6_LIVE_METRICS_V2';
 /** Virtual output-only series. No native sample uses this name. */
 export const K6_LIVE_CHECKS = 'beetle_checks_passing';
 const checksRow = { metric: K6_LIVE_CHECKS, kind: 'rate', scope: 'execute', tags: { phase: 'execute' } } as const;
-export interface K6LiveAssignment {
-  readonly specDigest: string;
-  readonly intentDigest: string;
-}
-export interface K6LiveApproval {
-  readonly scope: LiveMetricScope;
-  readonly producerEpoch: string;
-  readonly subset: LiveMetricSubset;
-  /** Validated config `targetSampling.intervalMs`, or null when the suite samples no target. */
-  readonly targetIntervalMs: number | null;
-}
 export class K6LiveApprovalError extends Error {
   constructor() {
     super('K6 live approval rejected');
@@ -159,3 +150,10 @@ function targetInterval(value: unknown): number | null {
 function fingerprint(value: unknown): value is string {
   return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 }
+
+export {
+  decodeK6HistoryCheckpoint,
+  encodeK6HistoryCheckpoint,
+  K6_HISTORY_CHECKPOINT_NAMES,
+  K6_HISTORY_CHECKPOINT_SLOT_BYTES,
+} from './checkpoint.js';

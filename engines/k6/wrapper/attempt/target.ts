@@ -51,6 +51,10 @@ export class AttemptTarget {
   completedPrefix(): TargetArchivePrefix | undefined {
     return this.archive?.completedPrefix();
   }
+  syncPrefix(): Promise<void> {
+    if (!this.archive) throw new AttemptError('artifact');
+    return this.archive.syncPrefix();
+  }
   async start(input: Input): Promise<void> {
     if (!input.suite.targetSampling) return;
     if (this.input) throw new AttemptError('execution');

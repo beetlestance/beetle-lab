@@ -15,7 +15,8 @@ Only complete metric processing receives sealed history descriptors. Failed
 processing closes partial local files and numeric-final reports no retained pair.
 completedPrefix() exposes only the last fully written pair, with immutable scope,
 IDs, extents and incremental SHA256 copies; no extra IO, corpus or per-window sync.
-It is advisory completed bytes, not durability or sealed-result authority. Headers
+The checkpoint writer separately syncs the referenced files before committing
+a slot. The getter alone provides advisory bytes. Headers
 alone expose nothing; an in-flight append retains the prior snapshot. Failure,
 external fence, collection, direct finish and close withdraw it. Authenticated
 agent/backend history reads validate this prefix through the retained native reader;

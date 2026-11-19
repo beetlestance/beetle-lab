@@ -19,15 +19,21 @@ interface CleanupOwners {
   artifacts: Artifacts | undefined;
   liveMetricMailbox: boolean | undefined;
   closeLive(): Promise<void>;
+  closeCheckpoint(): Promise<void> | undefined;
   artifactQuiescence(): 'confirmed' | 'failed';
 }
 export async function cleanupAttempt(state: State, quiet: Quiet, owners: CleanupOwners): Promise<void> {
+  const checkpoint = Promise.allSettled([owners.closeCheckpoint()]);
   const tasks: { key: keyof Quiet; work: () => Promise<unknown> }[] = [
     ...(owners.input ? [{ key: 'input' as const, work: () => owners.input!.close() }] : []),
     ...(owners.execution ? [{ key: 'execution' as const, work: () => owners.execution!.close() }] : []),
     ...(owners.publication ? [{ key: 'publication' as const, work: () => owners.publication!.close() }] : []),
-    ...(owners.archive ? [{ key: 'artifacts' as const, work: () => owners.archive!.close() }] : []),
-    ...(owners.target.started ? [{ key: 'artifacts' as const, work: () => owners.target.close() }] : []),
+    ...(owners.archive
+      ? [{ key: 'artifacts' as const, work: () => checkpoint.then(() => owners.archive!.close()) }]
+      : []),
+    ...(owners.target.started
+      ? [{ key: 'artifacts' as const, work: () => checkpoint.then(() => owners.target.close()) }]
+      : []),
     ...(owners.liveMetricMailbox ? [{ key: 'artifacts' as const, work: () => owners.closeLive() }] : []),
     { key: 'notifications', work: () => owners.notifications.quiesce() },
     ...(owners.writer

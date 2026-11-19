@@ -9,14 +9,13 @@ import { createLiveMetricPublisher } from '../live/index.js';
 import type { LiveMetricPublisher, LiveTargetSource } from '../live/index.js';
 import { createMailboxSink, NativeMailboxError, openNativeMailbox } from '../live-mailbox/index.js';
 import type { MailboxFile, MailboxSink } from '../live-mailbox/index.js';
+import { CHECKPOINT_ALLOWANCE, HistoryCheckpoint } from './history-checkpoint.js';
+import type { MetricArchive } from './archive/index.js';
+import type { AttemptTarget } from './target.js';
 import type { ExecutionClock } from '../execution/index.js';
 
-export interface AttemptLiveState {
-  readonly status: 'disabled' | 'open' | 'closed' | 'unavailable';
-  readonly reason: string | null;
-  readonly producedBytes: number;
-  readonly quiescence: 'confirmed' | 'failed' | 'unknown';
-}
+import type { AttemptLiveState } from './types.js';
+
 interface Input {
   readonly assignment: K6LiveAssignment;
   readonly suite: CompiledInput['suite'];
@@ -29,6 +28,10 @@ interface Input {
   /** Running target sampler; its interval is taken from the approval, not from this source. */
   readonly target?: Pick<LiveTargetSource, 'recent' | 'archivePrefix'>;
   readonly archivePrefix?: () => LiveMetricArchivePrefix | undefined;
+  readonly checkpoint?: {
+    readonly root: string;
+    readonly sync: (target: boolean, check: () => void) => Promise<unknown>;
+  };
 }
 const hash = (value: string | Uint8Array): string => createHash('sha256').update(value).digest('hex');
 /** Trusted default subset is derived from the same approved catalogue as the parser. */
@@ -38,6 +41,9 @@ export function attemptLiveSubset(suite: CompiledInput['suite']) {
 /** Advisory failures disable publication; failed original cleanup still blocks sealing. */
 export class AttemptLive {
   private publisher: LiveMetricPublisher | undefined;
+  private checkpoint: HistoryCheckpoint | undefined;
+  private checkpointClosing = false;
+  private history: (() => LiveMetricArchivePrefix | undefined) | undefined;
   private sink: MailboxSink | undefined;
   private file: MailboxFile | undefined;
   private failedOwner: MailboxFile | undefined;
@@ -49,7 +55,8 @@ export class AttemptLive {
     const publisher = this.publisher?.state();
     return Object.freeze({
       ...this.facts,
-      producedBytes: this.facts.producedBytes + (this.sink?.state().chargedBytes ?? 0),
+      producedBytes:
+        this.facts.producedBytes + (this.sink?.state().chargedBytes ?? 0) + (this.checkpoint?.chargedBytes ?? 0),
       ...(publisher?.reason ? { status: 'unavailable' as const, reason: publisher.reason } : {}),
     });
   }
@@ -59,7 +66,7 @@ export class AttemptLive {
     this.facts = { status: 'unavailable', reason: 'setup', producedBytes: 0, quiescence: 'unknown' };
     this.starting = Promise.resolve().then(() => this.initialize(input, open));
     this.started = this.starting.then(async () => {
-      if (!this.publisher) await this.close();
+      if (!this.publisher && !this.checkpoint) await this.close();
     });
     return this.started;
   }
@@ -72,15 +79,13 @@ export class AttemptLive {
         assignment: input.assignment,
         hash,
       });
-      if (input.maximumBytes <= MAILBOX_BYTES + 512) throw new Error('quota');
+      const checkpointBytes = this.startCheckpoint(input, approval);
+      const mailboxBytes = input.maximumBytes - checkpointBytes;
+      if (mailboxBytes <= MAILBOX_BYTES + 512) throw new Error('quota');
       this.facts = { ...this.facts, producedBytes: MAILBOX_BYTES };
       this.file = await open({ uid: input.uid, signal: input.signal });
       if (this.closing) return;
-      this.sink = createMailboxSink({
-        file: this.file,
-        hash,
-        maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,
-      });
+      this.sink = createMailboxSink({ file: this.file, hash, maximumProducedBytes: mailboxBytes - MAILBOX_BYTES });
       const { targetIntervalMs, ...frame } = approval;
       const target = targetSource(input.target, targetIntervalMs);
       this.publisher = createLiveMetricPublisher({
@@ -89,7 +94,7 @@ export class AttemptLive {
         ...(input.archivePrefix ? { archivePrefix: input.archivePrefix } : {}),
         hash,
         timeoutMs: input.timeoutMs,
-        maximumProducedBytes: input.maximumBytes - MAILBOX_BYTES,
+        maximumProducedBytes: mailboxBytes - MAILBOX_BYTES,
         sink: this.sink,
         signal: input.signal,
         clock: input.clock,
@@ -100,8 +105,30 @@ export class AttemptLive {
       this.facts = { ...this.facts, status: 'unavailable', reason: 'setup' };
     }
   }
+  private startCheckpoint(input: Input, approval: ReturnType<typeof createK6LiveApproval>): number {
+    if (this.checkpointClosing || !input.checkpoint || input.maximumBytes <= MAILBOX_BYTES + 512 + CHECKPOINT_ALLOWANCE)
+      return 0;
+    this.history = () => checkpointPrefix(input);
+    this.checkpoint = new HistoryCheckpoint({
+      root: input.checkpoint.root,
+      uid: input.uid,
+      approval,
+      signal: input.signal,
+      monotonic: input.clock.monotonic,
+      sync: input.checkpoint.sync,
+    });
+    return CHECKPOINT_ALLOWANCE;
+  }
   accept(window: MetricWindow): void {
-    if (!this.closing) this.publisher?.accept(window);
+    if (this.closing) return;
+    this.publisher?.accept(window);
+    if (!this.checkpoint) return;
+    const prefix = this.history?.();
+    if (prefix) void this.checkpoint.publish(prefix);
+  }
+  closeCheckpoint(): Promise<void> | undefined {
+    this.checkpointClosing = true;
+    return this.checkpoint?.close();
   }
   close(): Promise<AttemptLiveState> {
     this.closing ??= Promise.resolve().then(() => this.finish());
@@ -109,6 +136,13 @@ export class AttemptLive {
   }
   private async closeOriginals(): Promise<void> {
     await this.starting;
+    try {
+      await this.closeMailbox();
+    } finally {
+      await this.closeCheckpoint();
+    }
+  }
+  private async closeMailbox(): Promise<void> {
     const publisher = await this.publisher?.stop();
     if (publisher?.quiescence === 'failed') throw new Error('cleanup');
     if (!this.publisher) await (this.sink?.close() ?? this.file?.close());
@@ -136,4 +170,22 @@ function targetSource(target: Input['target'], intervalMs: number | null): LiveT
     recent: target.recent.bind(target),
     ...(target.archivePrefix ? { archivePrefix: target.archivePrefix.bind(target) } : {}),
   };
+}
+
+function checkpointPrefix(input: Input): LiveMetricArchivePrefix | undefined {
+  const prefix = input.archivePrefix?.();
+  if (!prefix) return undefined;
+  const target = input.target?.archivePrefix?.();
+  return target ? { ...prefix, target } : prefix;
+}
+
+export async function syncHistory(
+  archive: MetricArchive,
+  target: AttemptTarget,
+  includeTarget: boolean,
+  check: () => void,
+): Promise<void> {
+  await archive.syncPrefix(check);
+  check();
+  if (includeTarget) await target.syncPrefix();
 }

@@ -1,3 +1,4 @@
+import { K6_HISTORY_CHECKPOINT_NAMES, K6_HISTORY_CHECKPOINT_SLOT_BYTES } from '@beetle/contracts/k6-live';
 import { constants } from 'node:fs';
 import type { BigIntStats } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
@@ -9,12 +10,13 @@ import { AttemptError } from '../failure/index.js';
 
 export const metricFileNames = Object.freeze({ data: 'metric-windows.ndjson', index: 'metric-index.ndjson' });
 const targetFileNames = Object.freeze({ data: 'target-samples.ndjson', index: undefined });
+const checkpointNames = Object.freeze({ data: K6_HISTORY_CHECKPOINT_NAMES[0], index: K6_HISTORY_CHECKPOINT_NAMES[1] });
 export type Lane = 'data' | 'index';
 interface Options {
   root: string;
   uid: number;
   check(): void;
-  readonly profile?: 'metrics' | 'target';
+  readonly profile?: 'metrics' | 'target' | 'checkpoint';
 }
 interface OwnedFile {
   handle: FileHandle;
@@ -29,6 +31,7 @@ export class AppendFiles {
   private closing: Promise<void> | undefined;
   private cleanupFailed = false;
   private get names() {
+    if (this.options.profile === 'checkpoint') return checkpointNames;
     return this.options.profile === 'target' ? targetFileNames : metricFileNames;
   }
   private constructor(private readonly options: Options) {}
@@ -83,7 +86,11 @@ export class AppendFiles {
   }
   async append(lane: Lane, bytes: Uint8Array): Promise<void> {
     const file = this.files.get(lane);
-    if (!file) throw new AttemptError('artifact');
+    if (
+      !file ||
+      (this.options.profile === 'checkpoint' && file.bytes + bytes.length > K6_HISTORY_CHECKPOINT_SLOT_BYTES)
+    )
+      throw new AttemptError('artifact');
     const limit = Math.ceil(bytes.length / 65_536) + 32;
     for (let offset = 0, calls = 0; offset < bytes.length;) {
       if (++calls > limit) throw new AttemptError('artifact');
@@ -94,6 +101,27 @@ export class AppendFiles {
       offset += value.bytesWritten;
       file.bytes += value.bytesWritten;
     }
+  }
+  async replaceCheckpoint(lane: Lane, bytes: Uint8Array): Promise<void> {
+    const file = this.files.get(lane);
+    if (this.options.profile !== 'checkpoint' || !file || bytes.length > K6_HISTORY_CHECKPOINT_SLOT_BYTES)
+      throw new AttemptError('artifact');
+    await this.verifyCheckpointSlot(lane, file);
+    await this.checked(() => file.handle.truncate(0));
+    file.bytes = 0;
+    await this.append(lane, bytes);
+    await this.sync(lane);
+    await this.verifyCheckpointSlot(lane, file);
+  }
+  private async verifyCheckpointSlot(lane: Lane, file: OwnedFile): Promise<void> {
+    const stat = await this.checked(() => file.handle.stat({ bigint: true }));
+    regular(stat, this.options.uid, file.bytes);
+    await this.verifyNames(new Map([[lane, stat]]));
+  }
+  async sync(lane: Lane): Promise<void> {
+    const file = this.files.get(lane);
+    if (!file) throw new AttemptError('artifact');
+    await this.checked(() => file.handle.sync());
   }
   private async verifyRoot(): Promise<void> {
     const root = this.options.root;
@@ -107,7 +135,7 @@ export class AppendFiles {
     const file = this.files.get(lane);
     if (!file || file.bytes !== expected.bytes) throw new AttemptError('artifact');
     await this.verifyRoot();
-    await this.checked(() => file.handle.sync());
+    await this.sync(lane);
     const before = await this.checked(() => file.handle.stat({ bigint: true }));
     regular(before, this.options.uid, expected.bytes);
     const digest = await this.hash(file);
