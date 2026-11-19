@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 import type { LiveMetricHistory } from '@beetle/contracts/api';
+import { SegmentedFilter } from '../../../components/SegmentedFilter.js';
 import { Button } from '../../../components/Button.js';
 import { MetricWindows } from '../charts/MetricWindows.js';
 import { chartDomain, TargetRuntime } from '../live/Charts.js';
 import { mergeHistory, recordedCount } from '../live/backfill.js';
-import { clock } from '../live/format.js';
+import { LiveChart } from '../live/LiveChart.js';
+import type { ChartTick } from '../live/LiveChart.js';
+import type { ChartHover } from '../charts/types.js';
+import { clock, ms, whole } from '../live/format.js';
+import type { LivePoint } from '../live/history.js';
 import { emptyHistory } from '../live/history.js';
 import type { RunPlan } from '../live/plan.js';
 import type { ResultReads } from './useResultReads.js';
@@ -25,7 +30,15 @@ export function resultSections(reads: ResultReads, showTarget: boolean) {
   };
 }
 
-export function RecoveredHistory({ query, plan }: { query: ResultReads['stoppedHistory']; plan: RunPlan }) {
+export function RecoveredHistory({
+  query,
+  plan,
+  phone,
+}: {
+  query: ResultReads['stoppedHistory'];
+  plan: RunPlan;
+  phone: boolean;
+}) {
   return (
     <section id="result-charts" className="result-section" aria-label="Recovered charts">
       {query.isError ? (
@@ -36,7 +49,7 @@ export function RecoveredHistory({ query, plan }: { query: ResultReads['stoppedH
           </Button>
         </p>
       ) : query.data ? (
-        <RecoveredCharts data={query.data} plan={plan} />
+        <RecoveredCharts data={query.data} plan={plan} phone={phone} />
       ) : (
         <p role="status">Reading recovered history…</p>
       )}
@@ -44,7 +57,7 @@ export function RecoveredHistory({ query, plan }: { query: ResultReads['stoppedH
   );
 }
 
-function RecoveredCharts({ data, plan }: { data: LiveMetricHistory; plan: RunPlan }) {
+function RecoveredCharts({ data, plan, phone }: { data: LiveMetricHistory; plan: RunPlan; phone: boolean }) {
   const [hoverT, onHover] = useState<number | null>(null);
   const hover = { hoverT, onHover };
   const history = useMemo(() => mergeHistory(emptyHistory(null), data, plan, null), [data, plan]);
@@ -57,6 +70,7 @@ function RecoveredCharts({ data, plan }: { data: LiveMetricHistory; plan: RunPla
         {recordedCount(history)} of {data.prefix.windows} recorded windows shown. Time starts at the first retained
         window. The verified archive is unavailable, so these charts cover only the retained observations.
       </p>
+      <RecoveredOverview points={history.points} domain={domain} ticks={ticks} hover={hover} phone={phone} />
       <MetricWindows points={history.points} domain={domain} hover={hover} ticks={ticks} strictHoverRange />
       {history.target.length > 0 && (
         <div id="result-target">
@@ -71,5 +85,58 @@ function RecoveredCharts({ data, plan }: { data: LiveMetricHistory; plan: RunPla
         </div>
       )}
     </>
+  );
+}
+
+function RecoveredOverview({
+  points,
+  domain,
+  ticks,
+  hover,
+  phone,
+}: {
+  points: readonly LivePoint[];
+  domain: readonly [number, number];
+  ticks: readonly ChartTick[];
+  hover: ChartHover;
+  phone: boolean;
+}) {
+  const [metric, selectMetric] = useState<'p95' | 'rps'>('p95');
+  const latency = metric === 'p95';
+  return (
+    <div className="live-whole">
+      <header className="live-section-head">
+        <h3>{latency ? 'Latency before the stop' : 'Requests before the stop'}</h3>
+        <SegmentedFilter
+          label="Recovered overview chart"
+          value={metric}
+          onChange={selectMetric}
+          options={[
+            { value: 'p95', label: 'p95' },
+            { value: 'rps', label: 'Requests' },
+          ]}
+        />
+      </header>
+      <LiveChart
+        {...hover}
+        title={latency ? 'Recovered p95 latency' : 'Recovered requests a second'}
+        tall={!phone}
+        domain={domain}
+        ticks={ticks}
+        strictHoverRange
+        xs={points.map((point) => point.t)}
+        breaks={points.map((point) => point.gapBefore)}
+        format={latency ? ms : whole}
+        series={[
+          {
+            key: metric,
+            label: latency ? 'p95' : 'requests',
+            tone: 'amber',
+            area: true,
+            values: points.map((point) => point[metric]),
+          },
+        ]}
+      />
+    </div>
   );
 }

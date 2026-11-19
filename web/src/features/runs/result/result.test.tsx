@@ -388,6 +388,9 @@ it('displays scoped recovered chart windows and target readings in read-only res
   });
   expect(await screen.findByRole('heading', { name: 'Recovered before the stop' })).toBeVisible();
   expect(screen.getByText(/1 of 1 recorded windows shown/)).toBeVisible();
+  expect(screen.getByRole('img', { name: /Recovered p95 latency/ })).toBeVisible();
+  fireEvent.click(within(screen.getByRole('region', { name: 'Recovered charts' })).getByRole('radio', { name: 'Requests' }));
+  expect(screen.getByRole('img', { name: /Recovered requests a second/ })).toBeVisible();
   expect(screen.getByRole('img', { name: /Heap and RSS:.*1,024/ })).toBeVisible();
   expect(document.querySelectorAll('#result-target')).toHaveLength(1);
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
