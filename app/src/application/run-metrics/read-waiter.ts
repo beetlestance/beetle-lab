@@ -5,8 +5,8 @@ interface WaitingRead {
   start(): void;
   abort(): void;
 }
-/** One bounded successor to a background history read; it owns no parser or native IO. */
-export class HistoryReadWaiter {
+/** One bounded waiting read; it owns no parser or native IO. */
+export class MetricReadWaiter {
   private entry: WaitingRead | undefined;
   get busy(): boolean {
     return this.entry !== undefined;

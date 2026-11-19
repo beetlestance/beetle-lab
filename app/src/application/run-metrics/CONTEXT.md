@@ -1,9 +1,9 @@
 # Historical metrics
 
 Public entry: createRunMetricsService with frozen RunMetricServiceOptions.
-One shared metadata/native operation; one foreground successor may wait behind
-indexing within its original deadline. Other overlap is busy; caller abort returns failure while
-original metadata/native result AND settlement remain owned. close fences and
+One shared metadata/native operation and one waiting slot within the original deadline.
+Overview and chart reads may wait behind any active read. Other foreground reads may
+wait only behind indexing. Caller abort leaves the original result and native settlement owned. close fences and
 drains without closing shared adapters. One original <=30 s monotonic budget via shared metric-read-lifetime.
 Private archive codec transforms sealed k6 v3 numeric and v1 NDJSON pair into
 bounded public series/sample pages. Fresh injected SHA streams full numeric/index;

@@ -101,8 +101,8 @@ SHA and count. No pair is `unavailable/not_recorded`; an unknown private version
 walk backwards from the newest window, points within a page ascend, and a null
 cursor means the requested range is exhausted, not that capture was complete.
 Missing samples are absent points or null ratios, never zero. Public metrics, comparison and
-indexing share one physical parser. One foreground successor may wait behind indexing within
-its original 30 s deadline; other overlap is busy. Abort retains native settlement.
+indexing share one parser and one waiting slot. Overview and chart may wait within the original 30 s deadline.
+Other foreground reads wait only behind indexing. Further overlap is busy. Abort retains native settlement.
 Without byte or hash capability, ready reads fail 503. Owner: `app/src/application/run-metrics`; [result overview](result-presentation.md) adds one compact read.
 
 The browser chart holds ≤ 1000 points and ≤ 1 MiB, issues ≤ 10 sequential page
@@ -214,7 +214,7 @@ a failed revocation keeps ownership and rejects close.
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/attempt/archive/` | `7683fd6aee33` |
-| `app/src/application/run-metrics/` | `58d640006ba7` |
+| `app/src/application/run-metrics/` | `d4944e23743b` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
 | `contracts/src/k6-live/` | `3b8aa2acc2e3` |
 | `agent/src/live-metrics/` | `feac352cffc7` |
