@@ -68,6 +68,8 @@ async function completedRun() {
     return { configuration, queued, terminal };
   } finally {
     evidence.phase = `${String(evidence.phase)}:application-close`;
+    // A background owner's failure surfaces only at close; its fixed reason names the owner.
+    evidence.runtimeAtClose = app.runtimeState();
     await app.close();
   }
 }

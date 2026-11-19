@@ -103,3 +103,13 @@ capabilities), with no candidates: usage exit 2, preview and apply exit 0, and a
 SIGTERM 0–2.2 s after start ended `stopped` with exit 1 and released the owner.
 A signal in the first ~0.15 s (Node start and bundle parse, PID 1 with no handler
 yet) is still dropped and the command runs to completion.
+
+Two earlier smoke attempts failed once each before any reconcile step; neither
+recurred. One `createRun` returned retryable `503 capacity_unavailable` after the
+organization, workspace, suite and revision were stored: the only time-dependent
+refusal there is settings resolution against the live runtime observation, which
+the metadata worker drops about 1 s after the agent sampled, while
+`waitForCapacity` checks only that the poller once published. The other was a raw
+`StorageError not_found` after the run had finished and passed, surfaced by
+`app.close()` from a background owner; which owner is unknown, so the smoke now
+records `runtimeAtClose` (that owner's fixed reason).
