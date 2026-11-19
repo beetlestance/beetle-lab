@@ -1,6 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { exportContentPath } from '@beetle/contracts/api';
+import { VerifiedExportDownload } from './VerifiedDownload.js';
 import type { ExportJob } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
@@ -89,11 +89,7 @@ function RowAction({ job }: { job: ExportJob }) {
   const write = useExportWrite();
   const params = { organizationId: job.scope.organizationId, workspaceId: job.scope.workspaceId, exportId: job.id };
   if (job.state === 'ready' && job.artifact)
-    return (
-      <a className={buttonClass('text', 'sm')} href={exportContentPath(params)} download={job.artifact.name}>
-        Download
-      </a>
-    );
+    return <VerifiedExportDownload job={job} label="Download" variant="text" size="sm" />;
   if (!exportTerminalStates.includes(job.state))
     return (
       <Button

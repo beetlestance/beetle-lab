@@ -1,11 +1,11 @@
 import { API_MAXIMUM_JSON_BYTES } from '@beetle/contracts/api';
 interface BodyState {
-  readonly buffer: Uint8Array;
+  readonly buffer: Uint8Array<ArrayBuffer>;
   bytes: number;
   fragments: number;
 }
 interface BodyLimit {
-  readonly profile?: 'api-history';
+  readonly profile?: 'api-history' | 'export-script';
   readonly maximum: number;
   readonly expected?: number;
 }
@@ -13,7 +13,7 @@ function bodyBuffer(limit: BodyLimit): BodyState {
   if (
     !Number.isSafeInteger(limit.maximum) ||
     limit.maximum < 1 ||
-    limit.maximum > (limit.profile === 'api-history' ? API_MAXIMUM_JSON_BYTES : 1048576) ||
+    limit.maximum > maximumFor(limit.profile) ||
     (limit.expected !== undefined &&
       (!Number.isSafeInteger(limit.expected) || limit.expected < 1 || limit.expected > limit.maximum))
   )
@@ -31,7 +31,11 @@ function append(state: BodyState, chunk: unknown): void {
   state.bytes += chunk.byteLength;
 }
 /** One finite browser stream; retain original cancellation/closed/lock cleanup. */
-export async function responseBody(response: Response, limit: BodyLimit, signal: AbortSignal): Promise<Uint8Array> {
+export async function responseBody(
+  response: Response,
+  limit: BodyLimit,
+  signal: AbortSignal,
+): Promise<Uint8Array<ArrayBuffer>> {
   const state = bodyBuffer(limit);
   if (!response.body) throw new Error('Response body unavailable');
   const reader = response.body.getReader();
@@ -84,4 +88,9 @@ function headers(response: Response, limit: BodyLimit): number | undefined {
   if (bytes > limit.maximum || (limit.expected !== undefined && bytes !== limit.expected))
     throw new Error('Response length mismatch');
   return bytes;
+}
+
+function maximumFor(profile: BodyLimit['profile']): number {
+  if (profile === 'api-history') return API_MAXIMUM_JSON_BYTES;
+  return profile === 'export-script' ? 64 * 1024 * 1024 : 1048576;
 }

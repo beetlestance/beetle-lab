@@ -15,3 +15,11 @@ it('keeps the artifact ceiling while permitting the explicit bounded history pro
     ).length,
   ).toBe(bytes.length);
 });
+
+it('requires an explicit export profile for larger script bytes and caps it at64MiB',async()=>{
+ const data=new Uint8Array(1048577);
+ const actual=await responseBody(new Response(data),{profile:'export-script',maximum:data.length,expected:data.length},new AbortController().signal);
+ expect(actual.byteLength).toBe(data.length);
+ const refused=new Response(data);
+ await expect(responseBody(refused,{profile:'export-script',maximum:67108865},new AbortController().signal)).rejects.toThrow();await refused.body?.cancel();
+});
