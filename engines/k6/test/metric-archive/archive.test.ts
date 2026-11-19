@@ -243,3 +243,17 @@ it('withdraws previous prefix evidence after a partial pair fails without syncin
  await expect(f.archive.append(window(4000))).rejects.toMatchObject({reason:'artifact'});
  expect(f.archive.completedPrefix()).toBeUndefined();expect(sync).not.toHaveBeenCalled();
 });
+
+it('seals a sparse p95 preview without connecting across empty or missing windows', async () => {
+  const { archive } = await fixture();
+  for (let i = 0; i < 31; i++) {
+    if (i === 19) continue;
+    const next = window(1000 + i * 1000);
+    await archive.append(i === 7 ? { ...next, series: [] } : next);
+  }
+  const result = await archive.finish();
+  expect(result.httpP95Preview?.map(({ offsetSeconds, gapBefore }) => [offsetSeconds, gapBefore])).toEqual([
+    [0, false], [4, false], [8, true], [12, false], [16, false], [20, true], [24, false], [28, false],
+  ]);
+  expect(result.httpP95Preview?.every(({ p95Ms }) => p95Ms >= 4 && p95Ms <= 9)).toBe(true);
+});

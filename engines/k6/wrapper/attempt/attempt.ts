@@ -5,7 +5,7 @@ import {
   resultEvidence,
   performanceReports,
   archiveAccounting,
-  numericEvidence,
+  writeNumericEvidence,
   targetReportWithSpan,
   artifactBytes,
   presentArtifacts,
@@ -305,9 +305,7 @@ class Attempt {
     const artifacts: EngineResult['artifacts'] = [...historyWork.artifacts];
     artifacts.push(...presentArtifacts(warnings, diagnostics, target));
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
-    artifacts.push(
-      await this.artifacts!.numeric(numericEvidence(this.state, mapped.diagnostics, history), numericBytes),
-    );
+    artifacts.push(await writeNumericEvidence(this.artifacts!, this.state, mapped.diagnostics, history, numericBytes));
     const reportAllowance = this.reservation!.reports / 2;
     artifacts.push(await this.artifacts!.report('performance-report', reports.text, reportAllowance));
     artifacts.push(await this.artifacts!.report('metrics-csv', reports.csv, reportAllowance));

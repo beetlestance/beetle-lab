@@ -41,3 +41,21 @@ it('rejects a mismatched summary instead of attaching another attempt’s number
   const f = testClient(request => suiteNames(request.path) ?? json(page)); mount(f.client, routes.runs(ids.a, ids.workspace));
   await screen.findByRole('alert'); expect(screen.queryByRole('table')).not.toBeInTheDocument(); expect(runReads(f.records)).toHaveLength(1);
 });
+
+it('draws indexed latency points in one run read and leaves measured gaps open', async () => {
+  const summary = measured();
+  summary.source = { ...summary.source!, numericVersion: 5 };
+  summary.httpP95Preview = [
+    { offsetSeconds: 0, p95Ms: 9, gapBefore: false },
+    { offsetSeconds: 2, p95Ms: 11, gapBefore: false },
+    { offsetSeconds: 5, p95Ms: 10, gapBefore: true },
+  ];
+  const page = historyPage([run()]);
+  page.summaries = [summary];
+  const f = testClient(request => suiteNames(request.path) ?? json(page));
+  mount(f.client, routes.runs(ids.a, ids.workspace));
+  const sparkline = await screen.findByRole('img', { name: 'Sampled p95 latency over time' });
+  expect(sparkline.querySelector('path')?.getAttribute('d')).toMatch(/^M.* L.* M/);
+  expect(f.records.some(record => record.path.includes('/metrics'))).toBe(false);
+  expect(runReads(f.records)).toHaveLength(1);
+});

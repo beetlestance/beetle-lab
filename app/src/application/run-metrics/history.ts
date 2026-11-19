@@ -21,6 +21,7 @@ export function historyProjection(publication: Publication): RunHistoryProjectio
   return {
     ...base,
     ...totals,
+    ...(numeric.httpP95Preview && totals.httpP95 ? { httpP95Preview: numeric.httpP95Preview } : {}),
     availability: 'ready',
     publishedArtifactBytes,
     testDurationMs: numeric.testDurationMs,

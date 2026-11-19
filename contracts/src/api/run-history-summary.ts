@@ -29,6 +29,48 @@ export function pendingRunHistorySummary(run: Pick<Run, 'id' | 'activeAttemptId'
     metadataAllowanceBytes: null,
   };
 }
+type HttpP95Preview = NonNullable<RunHistorySummary['httpP95Preview']>;
+/** Capture the closed preview carried by numeric-final and the indexed summary. */
+export function captureHttpP95Preview(input: unknown): HttpP95Preview {
+  if (!Array.isArray(input) || input.length < 2 || input.length > 12) throw new Error('Invalid p95 preview length');
+  let previous = -1;
+  return Array.from(input, (value, index) => {
+    const point = capturePreviewPoint(value);
+    if (point.offsetSeconds <= previous || (index === 0 && point.gapBefore))
+      throw new Error('Invalid p95 preview order');
+    previous = point.offsetSeconds;
+    return point;
+  });
+}
+
+function capturePreviewPoint(input: unknown): HttpP95Preview[number] {
+  const keys = ['offsetSeconds', 'p95Ms', 'gapBefore'];
+  if (
+    !input ||
+    typeof input !== 'object' ||
+    Reflect.ownKeys(input).length !== keys.length ||
+    keys.some((key) => !Object.hasOwn(input, key))
+  )
+    throw new Error('Invalid p95 preview point');
+  const { offsetSeconds, p95Ms, gapBefore } = input as HttpP95Preview[number];
+  if (
+    !Number.isSafeInteger(offsetSeconds) ||
+    offsetSeconds > 8640000000000 ||
+    !Number.isFinite(p95Ms) ||
+    p95Ms < 0 ||
+    typeof gapBefore !== 'boolean'
+  )
+    throw new Error('Invalid p95 preview values');
+  return { offsetSeconds, p95Ms, gapBefore };
+}
+
+function previewFacts(value: RunHistorySummary): boolean {
+  if (value.httpP95Preview === undefined) return true;
+  if (value.availability !== 'ready' || value.source?.numericVersion !== 5 || value.httpP95 === null) return false;
+  captureHttpP95Preview(value.httpP95Preview);
+  return true;
+}
+
 function numericFacts(value: RunHistorySummary): boolean {
   const fields = [
     value.testDurationMs,
@@ -76,7 +118,8 @@ export function runHistorySummaryMatches(value: RunHistorySummary, run: Pick<Run
       validateApi('RunHistorySummary', value).ok &&
       value.runId === run.id.toLowerCase() &&
       value.attemptId === run.activeAttemptId.toLowerCase() &&
-      numericFacts(value)
+      numericFacts(value) &&
+      previewFacts(value)
     );
   } catch {
     return false;

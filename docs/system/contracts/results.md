@@ -96,7 +96,7 @@ Run's current engine or head pins.
 | Deadline | one 30 s monotonic budget across metadata, native read, parse and serialisation |
 
 Availability is `pending | absent | unavailable | ready`; only `ready` carries
-measurements. Recorded history needs exactly one `numeric-final` (v3 or v4) plus one
+measurements. Recorded history needs exactly one `numeric-final` (v3–v5) plus one
 window/index pair whose headers and footers bind the same scope, data UUID, bytes,
 SHA and count. No pair is `unavailable/not_recorded`; an unknown private version is
 `unavailable/unsupported_format`; a broken pair is a storage failure. Sample pages
@@ -213,8 +213,8 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/attempt/archive/` | `93c22f858025` |
-| `app/src/application/run-metrics/` | `0d6f233b6f3e` |
+| `engines/k6/wrapper/attempt/archive/` | `b2c32badd893` |
+| `app/src/application/run-metrics/` | `58d640006ba7` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
 | `contracts/src/k6-live/` | `324516855159` |
 | `agent/src/live-metrics/` | `feac352cffc7` |

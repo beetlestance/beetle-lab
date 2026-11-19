@@ -21,6 +21,6 @@ export function risePosition(
 export function measurementOrigin(value: RunMetricOverview | null | undefined): RiseOrigin | undefined {
   if (value?.availability !== 'ready') return undefined;
   const source = value.source;
-  if (!source || source.numericVersion !== 4) return undefined;
+  if (!source || source.numericVersion === 3) return undefined;
   return source;
 }

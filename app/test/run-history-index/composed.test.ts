@@ -10,9 +10,13 @@ import { fixture as metricFixture, digest, rewrite } from '../run-metrics/fixtur
 import { client, value } from '../bootstrap/run-fixture.js';
 const storage = storageFixture();
 it('carries real published bytes through one verified projection, compiled worker and public application reads/reopen', async () => {
+  const preview = [
+    { offsetSeconds: 0, p95Ms: 12, gapBefore: false },
+    { offsetSeconds: 2, p95Ms: 22, gapBefore: true },
+  ];
   const f = await nativeFixture(filesFixture, async () => {
     const source = await metricFixture(); rewrite(source, 'numeric-final', text => {
-      const numeric = JSON.parse(text); numeric.version = 4; numeric.timing = { testRunDurationMs: 2000 };
+      const numeric = JSON.parse(text); numeric.version = 5; numeric.timing = { testRunDurationMs: 2000 }; numeric.httpP95Preview = preview;
       numeric.metrics.totals.push({ metric: 'http_reqs', kind: 'counter', scope: 'execute', tags: { phase: 'execute', request: 'r0' }, total: { kind: 'counter', sum: 8 } });
       return JSON.stringify(numeric);
     }); return source;
@@ -27,7 +31,7 @@ it('carries real published bytes through one verified projection, compiled worke
     const scope = f.source.query.scope; const params = { organizationId: scope.organizationId, workspaceId: scope.workspaceId };
     await vi.waitFor(async () => expect((await metadata.runs.listRuns({ scope, limit: 1 })).summaries[0]?.availability).toBe('ready'), { timeout: 5000, interval: 50 });
     const stored = (await metadata.runs.listRuns({ scope, limit: 1 })).summaries[0]!;
-    expect(stored).toMatchObject({ testDurationMs: 2000, requestCount: 8, requestsPerSecond: 4, source: { numericVersion: 4 } });
+    expect(stored).toMatchObject({ testDurationMs: 2000, requestCount: 8, requestsPerSecond: 4, source: { numericVersion: 5 }, httpP95Preview: preview });
     expect(stored.httpP95?.source).toBe('histogram-estimate'); expect(stored.retainedLogicalBytes).toBe(f.usage());
     expect(onFailure).not.toHaveBeenCalled(); const nativeReads = bytes.mock.calls.length;
     expect(nativeReads).toBeGreaterThan(0); await index.close(); await metrics.close(); await storage.close(metadata);

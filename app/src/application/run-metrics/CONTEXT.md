@@ -16,7 +16,8 @@ verified source/projection and returns its ACTUAL original (no early deadline ra
 Catalogue/sample routes retain their prior early caller failure and owned drain.
 Lookup shares their one physical admission; no pagination/corpus or second parser.
 readRunHistorySummary shares that same parser/actual-original lane and returns
-compact v3/v4 source-bound scalars. Native4 timing comes from the sole collector;
+compact v3–v5 source-bound measurements. Native timing comes from the sole collector;
+v5 carries a bounded p95 preview.
 HTTP request distributions merge through the shared k6 projector.
 reader.getRunLatencyAttribution (latency.ts + pure rise.ts) streams the whole data
 artifact once with full SHA (<=3600 windows, <=32 MiB, <=64 request labels) and

@@ -6,7 +6,8 @@ import {
   projectMetricSeries,
 } from '@beetle/contracts/metrics';
 import type { NumericTotal, SeriesTotal } from '@beetle/contracts/metrics';
-import type { RunMetricSeries, RunMetricValue, RunMetricCoverage } from '@beetle/contracts/api';
+import { captureHttpP95Preview } from '@beetle/contracts/api';
+import type { RunHistorySummary, RunMetricSeries, RunMetricValue, RunMetricCoverage } from '@beetle/contracts/api';
 export function fail(): never {
   throw new MetricReadError('unavailable');
 }
@@ -40,7 +41,8 @@ export function descriptor(value: SeriesTotal, ordinal: number): RunMetricSeries
   }
 }
 export interface NumericEvidence {
-  readonly version: 3 | 4;
+  readonly version: 3 | 4 | 5;
+  readonly httpP95Preview?: RunHistorySummary['httpP95Preview'];
   readonly testDurationMs: number | null;
   readonly totals: readonly SeriesTotal[];
   readonly coverage: RunMetricCoverage;
@@ -82,23 +84,38 @@ function snapshot(value: unknown) {
   };
 }
 export function captureNumeric(input: unknown, scope: unknown): NumericEvidence | null {
-  const version = knownVersion(input, 3) ? 3 : knownVersion(input, 4) ? 4 : null;
-  if (version === null) return null;
+  const version = artifactVersion(input);
+  if (version !== 3 && version !== 4 && version !== 5) return null;
   const keys = ['version', 'scope', 'metrics', 'diagnostics', 'buildUsage', 'windowsRetained', 'history', 'quantiles'];
-  const v = fields(input, version === 4 ? [...keys, 'timing'] : keys);
+  if (version >= 4) keys.push('timing');
+  if (version === 5) keys.push('httpP95Preview');
+  const v = fields(input, keys);
   numericScope(v.scope, scope);
   if (v.windowsRetained !== true || v.quantiles !== 'histogram-estimate') return fail();
-  const h = fields(v.history, ['windows', 'bytes', 'dataArtifactId', 'indexArtifactId']);
-  if (typeof h.dataArtifactId !== 'string' || typeof h.indexArtifactId !== 'string') return fail();
   return {
     ...snapshot(v.metrics),
+    ...archiveMetadata(v.history),
     version,
-    testDurationMs: version === 4 ? testDuration(v.timing) : null,
+    testDurationMs: version >= 4 ? testDuration(v.timing) : null,
+    ...(version === 5 ? { httpP95Preview: numericPreview(v.httpP95Preview) } : {}),
+  };
+}
+function archiveMetadata(input: unknown) {
+  const h = fields(input, ['windows', 'bytes', 'dataArtifactId', 'indexArtifactId']);
+  if (typeof h.dataArtifactId !== 'string' || typeof h.indexArtifactId !== 'string') return fail();
+  return {
     windows: safe(h.windows, 65536),
     bytes: safe(h.bytes, 268435456),
     dataArtifactId: h.dataArtifactId,
     indexArtifactId: h.indexArtifactId,
   };
+}
+function numericPreview(input: unknown) {
+  try {
+    return captureHttpP95Preview(input);
+  } catch {
+    return fail();
+  }
 }
 function testDuration(input: unknown): number | null {
   const value = fields(input, ['testRunDurationMs']).testRunDurationMs;
@@ -107,10 +124,13 @@ function testDuration(input: unknown): number | null {
   return value;
 }
 export function knownVersion(value: unknown, current: number): boolean {
+  return artifactVersion(value) === current;
+}
+function artifactVersion(value: unknown): number {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !Object.hasOwn(value, 'version')) return fail();
   const version = safe((value as { version: unknown }).version);
   if (version < 1) return fail();
-  return version === current;
+  return version;
 }
 function captureSeries(value: unknown): SeriesTotal {
   try {

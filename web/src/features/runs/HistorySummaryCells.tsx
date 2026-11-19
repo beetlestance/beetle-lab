@@ -1,3 +1,4 @@
+import { HistoryP95Sparkline } from './HistoryP95Sparkline.js';
 import type { RunHistorySummary } from '@beetle/contracts/api';
 import { Td } from '../../components/Table.js';
 import { formatDuration, formatNumber, formatPercent } from '../run-results/format.js';
@@ -43,7 +44,10 @@ export function HistorySummaryCells({ value }: { value: RunHistorySummary }) {
             : 'No recorded HTTP duration samples'
         }
       >
-        {p95 ? `≈ ${formatNumber(p95.estimate, 'integer')} ms` : <Unknown label="p95 unknown" />}
+        <span className="history-p95">
+          {value.httpP95Preview && <HistoryP95Sparkline points={value.httpP95Preview} />}
+          {p95 ? `≈ ${formatNumber(p95.estimate, 'integer')} ms` : <Unknown label="p95 unknown" />}
+        </span>
       </Td>
       <Td
         numeric
