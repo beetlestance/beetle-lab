@@ -31,6 +31,7 @@ export function OverviewStatus({ query }: { query: ResultReads['overview'] }) {
         </Button>
       </p>
     );
+  if (query.data.availability === 'not_recorded') return null;
   if (query.data.availability !== 'ready')
     return (
       <p className="result-muted">
@@ -109,7 +110,14 @@ export function ResultEndpoints({
   phone?: boolean;
 }) {
   const [filter, setFilter] = useState('');
-  const rows = [...(overview?.endpoints ?? [])].sort(
+  if (!overview)
+    return (
+      <section id="result-endpoints" className="result-section" aria-labelledby="result-endpoints-title">
+        <h2 id="result-endpoints-title">Where the requests go</h2>
+        <p className="result-muted">Endpoint measurements are unavailable.</p>
+      </section>
+    );
+  const rows = [...overview.endpoints].sort(
     (a, b) => latency(b) - latency(a) || Number(a.request.slice(1)) - Number(b.request.slice(1)),
   );
   const selected = rows.filter((row) =>
@@ -132,26 +140,18 @@ export function ResultEndpoints({
           />
         </label>
       </div>
-      {!overview ? (
-        <p className="result-muted">Endpoint measurements are unavailable until whole-run measurements are read.</p>
-      ) : (
-        <>
-          <div className="result-endpoint-table">
-            <EndpointTable rows={selected} requests={requests} total={overview.requestCount} phone={phone} />
-          </div>
-          {phone && (
-            <p className="result-muted">p95 and failed stay in view. Swipe sideways for share, rate and p50.</p>
-          )}
-          {selected.length === 0 && (
-            <p role="status">{rows.length ? 'No endpoints match this filter.' : 'No endpoint series were recorded.'}</p>
-          )}
-          <p className="result-muted">
-            Sorted by p95, highest first. Latencies are histogram estimates. Unknown values are shown as –.
-            {overview.omittedEndpoints > 0 &&
-              ` ${overview.omittedEndpoints} additional endpoint rows are omitted by this bounded read; pooled totals include them.`}
-          </p>
-        </>
+      <div className="result-endpoint-table">
+        <EndpointTable rows={selected} requests={requests} total={overview.requestCount} phone={phone} />
+      </div>
+      {phone && <p className="result-muted">p95 and failed stay in view. Swipe sideways for share, rate and p50.</p>}
+      {selected.length === 0 && (
+        <p role="status">{rows.length ? 'No endpoints match this filter.' : 'No endpoint series were recorded.'}</p>
       )}
+      <p className="result-muted">
+        Sorted by p95, highest first. Latencies are histogram estimates. Unknown values are shown as –.
+        {overview.omittedEndpoints > 0 &&
+          ` ${overview.omittedEndpoints} additional endpoint rows are omitted by this bounded read; pooled totals include them.`}
+      </p>
     </section>
   );
 }

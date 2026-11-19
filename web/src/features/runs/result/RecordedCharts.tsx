@@ -177,9 +177,11 @@ function ChartUnavailable({ query }: { query: ResultReads['chartHistory'] }) {
   return (
     <div>
       <p role={query.isError ? 'alert' : 'status'}>{text}</p>
-      <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch({ cancelRefetch: false })}>
-        Retry recorded charts
-      </Button>
+      {(reason === 'unavailable' || reason === 'pending') && (
+        <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch({ cancelRefetch: false })}>
+          Retry recorded charts
+        </Button>
+      )}
     </div>
   );
 }

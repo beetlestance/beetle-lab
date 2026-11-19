@@ -20,10 +20,12 @@ export function TargetHeader({
   plan,
   phaseView,
   togglePhases,
+  canCompare,
 }: {
   plan: RunPlan;
   phaseView: boolean;
   togglePhases: () => void;
+  canCompare: boolean;
 }) {
   return (
     <header className="live-section-head">
@@ -43,9 +45,11 @@ export function TargetHeader({
       </div>
       <div>
         {!phaseView && <TargetSourceNote plan={plan} />}
-        <Button size="sm" variant="text" onClick={togglePhases}>
-          {phaseView ? 'Back to run result' : 'Compare recorded phases'}
-        </Button>
+        {(phaseView || canCompare) && (
+          <Button size="sm" variant="text" onClick={togglePhases}>
+            {phaseView ? 'Back to run result' : 'Compare recorded phases'}
+          </Button>
+        )}
       </div>
     </header>
   );

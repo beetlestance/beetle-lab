@@ -396,3 +396,31 @@ it('displays scoped recovered chart windows and target readings in read-only res
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
   expect(f.records.filter((record) => record.path.endsWith('/metrics/stopped-history'))).toHaveLength(1);
 });
+
+it('keeps a confirmed early-cancel result free of controls for unavailable measurements', async () => {
+  const current = finished({ state: 'cancelled', outcome: 'inconclusive', reason: 'cancelled', cancellationRequested: true });
+  const identity = { id: current.id, scope: current.scope, attemptId: current.activeAttemptId };
+  const f = fixture(current, (request) => {
+    if (request.path.endsWith('/metrics/chart-history'))
+      return json({ ...identity, source: null, windows: 0, sampled: false, points: [], observedPeakRequestsPerSecond: null,
+        knownRequestWindows: 0, meanVus: null, knownVusWindows: 0, reason: 'not_recorded' });
+    if (request.path.endsWith('/metrics/overview'))
+      return json({ ...identity, availability: 'not_recorded', source: null, testDurationMs: null, requestCount: null,
+        requestsPerSecond: null, failure: null, latency: null, checks: null, droppedIterations: null, endpoints: [],
+        omittedEndpoints: 0 });
+    if (request.path.includes('/runs?'))
+      return json({ scope: current.scope, items: [current], nextCursor: null,
+        summaries: [{ ...pendingRunHistorySummary(current), availability: 'not_recorded' }] });
+    if (request.path.endsWith('/metrics/stopped-history')) return json(apiError('not_found'), 404);
+    return undefined;
+  });
+  mount(f.client, path);
+  expect(await screen.findByText('No whole-run figures were recorded.')).toBeVisible();
+  expect(screen.getByText('No chart history was recorded.')).toBeVisible();
+  expect(screen.getByText('Endpoint measurements are unavailable.')).toBeVisible();
+  expect(screen.queryByRole('searchbox', { name: 'Filter endpoints' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Retry recorded charts' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Check measurements' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Compare recorded phases' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Check for the result again' })).not.toBeInTheDocument();
+});

@@ -177,13 +177,13 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
-| `web/src/features/runs/result/Overview.tsx` | `db6adc16cee5` |
+| `web/src/features/runs/result/Overview.tsx` | `0ebf4543d649` |
 | `web/src/features/runs/result/useResultReads.ts` | `b36179d98fab` |
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |
 | `contracts/src/api/run-chart-history.ts` | `2dd377350a07` |
-| `web/src/features/runs/result/RecordedCharts.tsx` | `3132a7e59811` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/chart-model.ts` | `7c592a7f4bd7` |
 | `web/src/features/runs/charts/` | `326688f9fb02` |
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |

@@ -27,7 +27,12 @@ import type { RunPlan } from '../live/plan.js';
 import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
 import { ResultSummary } from './Summary.js';
-import { RecoveredHistory, recoveredHistoryState, resultSections } from './RecoveredHistory.js';
+import {
+  RecoveredHistory,
+  recoveredHistoryState,
+  resultSections,
+  stoppedMeasurementsAbsent,
+} from './RecoveredHistory.js';
 import { ResultReadProblem } from './ResultReadProblem.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
@@ -212,7 +217,7 @@ function ThresholdSection({
         Thresholds
       </h2>
       <Thresholds result={engine} status={status} variant={variant} rules={readPlan(reads.revision?.config).rules} />
-      {status === 'unavailable' && (
+      {status === 'unavailable' && !stoppedMeasurementsAbsent(reads) && (
         <Button size="sm" variant="text" onClick={() => void reads.result.query.refetch()}>
           Check for the result again
         </Button>
@@ -242,7 +247,7 @@ function TargetRuntime({
   const targets = engine ? engine.artifacts.filter((artifact) => artifact.kind === 'target-runtime') : [];
   return (
     <section id="result-target" className="result-section" aria-labelledby="result-target-title">
-      <TargetHeader plan={plan} phaseView={phaseView} togglePhases={togglePhases} />
+      <TargetHeader plan={plan} phaseView={phaseView} togglePhases={togglePhases} canCompare={targets.length === 1} />
       {targets.length === 0 && (
         <p className="result-muted">
           {engine
@@ -304,7 +309,7 @@ function SupplementaryResult({
     <>
       {!phone && (
         <>
-          {!archiveMissing && !recoveredHistoryState(reads) && (
+          {!archiveMissing && !recoveredHistoryState(reads) && !stoppedMeasurementsAbsent(reads) && (
             <>
               <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
               <AdvancedMetrics run={run} />
