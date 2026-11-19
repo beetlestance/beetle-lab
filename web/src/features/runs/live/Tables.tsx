@@ -3,15 +3,22 @@ import { Status } from '../../../components/Badge.js';
 import { Table, Td, Th } from '../../../components/Table.js';
 import type { LiveFigures, RuleReading } from './model.js';
 import { ruleName } from './model.js';
-import { ms, percent, whole } from './format.js';
+import { clock, ms, percent, whole } from './format.js';
 
 const stateText = { holding: 'Holding', over: 'Over limit', unknown: 'Checked at the end' } as const;
 const stateTone = { holding: 'pass', over: 'fail', unknown: 'neutral' } as const;
 const opText = { '<': 'under', '<=': 'at most', '>': 'over', '>=': 'at least' } as const;
 
 /** Latest-window readings of the revision's thresholds. The verdict is the sealed result's. */
-export function Thresholds({ readings }: { readings: readonly RuleReading[] }) {
+export function Thresholds({
+  readings,
+  lastUpdate,
+}: {
+  readings: readonly RuleReading[];
+  lastUpdate?: { elapsed: number | null } | undefined;
+}) {
   if (!readings.length) return null;
+  const staleLabel = lastUpdate?.elapsed != null ? `As of ${clock(lastUpdate.elapsed)}` : 'Last observed';
   return (
     <section className="live-thresholds" aria-labelledby="live-thresholds">
       <h2 id="live-thresholds">Thresholds</h2>
@@ -25,7 +32,7 @@ export function Thresholds({ readings }: { readings: readonly RuleReading[] }) {
           return (
             <li key={reading.rule.id} className={`live-threshold is-${reading.state}`}>
               <div className="live-threshold-head">
-                <Status tone={stateTone[reading.state]}>{stateText[reading.state]}</Status>
+                <Status tone={stateTone[reading.state]}>{lastUpdate ? staleLabel : stateText[reading.state]}</Status>
                 <span className="number">
                   {reading.value !== null && (
                     <>

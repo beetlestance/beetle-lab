@@ -8,7 +8,7 @@ import { useMemo, useState } from 'react';
 import type { Run, Suite, SuiteRevision } from '@beetle/contracts/api';
 import type { RunSnapshotProps } from '../RunSnapshot.js';
 import { RunReads } from '../RunReads.js';
-import { EndedBanner, StallBanner } from './Banners.js';
+import { EndedBanner } from './Banners.js';
 import { WholeRun, MetricsGrid, TargetRuntime, chartDomain } from './Charts.js';
 import { headlineOf, sentenceOf, statusOf, isEarlyPhase } from './copy.js';
 import type { Phase } from './copy.js';
@@ -135,7 +135,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
         />
       )}
       {isEarlyPhase(stream.phase) && <EarlyArt />}
-      <StateBanners run={run} plan={plan} stream={stream} showResult={showResult} />
+      <EndedBanner run={run} requests={plan.requests} showResult={showResult} />
       {stream.phase === 'finalizing' && (
         <Finalizing run={run} plan={plan} figures={stream.figures} lastT={at.stoppedAtMs} />
       )}
@@ -157,21 +157,16 @@ function RunHeader(props: {
   cancel: Cancellation | undefined;
   onScript: () => void;
 }) {
-  const { run, plan, stream, at } = props;
+  const { run, stream } = props;
   const session = useSessionAccess();
   const suiteName = props.suite?.name ?? null;
-  const early = isEarlyPhase(stream.phase);
-  const sentence = headerSentence(run, stream, at, plan, props.queue);
-  const stage = at.elapsedMs === null ? null : stageAt(plan, at.elapsedMs);
   return (
     <LiveHeader
-      early={early}
+      early={isEarlyPhase(stream.phase)}
       run={run}
       suiteName={suiteName}
       revisionOrdinal={props.revision?.ordinal ?? null}
-      headline={headlineOf(stream.phase, suiteName ?? `Run ${shortId(run.id)}`, stage, run)}
-      sentence={sentence}
-      status={{ ...statusOf(stream.phase, run), note: pauseNote(stream.paused, at.stoppedAtMs) }}
+      {...headerText(props, suiteName)}
       stream={stream.streaming && stream.latest ? { paused: stream.paused, toggle: stream.togglePause } : null}
       cancel={props.cancel}
       readOnly={session.readOnly}
@@ -181,27 +176,33 @@ function RunHeader(props: {
   );
 }
 
+function headerText(props: Parameters<typeof RunHeader>[0], suiteName: string | null) {
+  const { run, plan, stream, at } = props;
+  const reconnect = reconnectHeader(stream, at);
+  if (reconnect) return reconnect;
+  const stage = at.elapsedMs === null ? null : stageAt(plan, at.elapsedMs);
+  return {
+    headline: headlineOf(stream.phase, suiteName ?? `Run ${shortId(run.id)}`, stage, run),
+    sentence: headerSentence(run, stream, at, plan, props.queue),
+    status: { ...statusOf(stream.phase, run), note: pauseNote(stream.paused, at.stoppedAtMs) },
+  };
+}
+
+function reconnectHeader(stream: LiveStream, at: Positions) {
+  if (!stream.stalled || !stream.latest) return null;
+  const seconds = Math.max(0, Math.round((stream.now - stream.latest.receivedWall) / 1000));
+  const lastUpdate = at.stoppedAtMs === null ? 'the last received window' : clock(at.stoppedAtMs);
+  return {
+    headline: `No word from the agent for ${seconds} s`,
+    sentence: `The figures below are from ${lastUpdate} and may be out of date. The run continues on the agent while this page reconnects.`,
+    status: { label: 'Reconnecting', tone: 'running' as const },
+    retryStream: stream.retry,
+  };
+}
+
 function headerSentence(run: Run, stream: LiveStream, at: Positions, plan: RunPlan, queue: QueueRead) {
   if (stream.phase === 'waiting') return queueSentence(queue.isError ? undefined : queue.data);
   return sentenceOf(stream.phase, stream.readings, at.stoppedAtMs, plan, run);
-}
-
-function StateBanners({
-  run,
-  plan,
-  stream,
-  showResult,
-}: {
-  run: Run;
-  plan: RunPlan;
-  stream: LiveStream;
-  showResult: () => void;
-}) {
-  const { latest } = stream;
-  if (stream.stalled && latest)
-    return <StallBanner silentMs={stream.now - latest.receivedWall} onRetry={stream.retry} />;
-  if (stream.phase === 'ended') return <EndedBanner run={run} requests={plan.requests} showResult={showResult} />;
-  return null;
 }
 
 /** The figures board, once a frame has arrived; dimmed whenever it is not the current running window. */
@@ -219,6 +220,8 @@ function LiveBoard({
   const { figures, phase } = stream;
   if (!figures) return null;
   const moving = phase === 'running' || phase === 'cancelling';
+  const elapsed = moving ? at.elapsedMs : at.lastT;
+  const lastUpdate = stream.stalled ? { elapsed: at.stoppedAtMs } : undefined;
   return (
     <Board
       plan={plan}
@@ -228,7 +231,8 @@ function LiveBoard({
       historyEnabled={stream.historyEnabled}
       finalizing={phase === 'finalizing'}
       readings={stream.readings}
-      elapsedMs={moving ? at.elapsedMs : at.lastT}
+      elapsedMs={lastUpdate ? lastUpdate.elapsed : elapsed}
+      lastUpdate={lastUpdate}
       origin={at.origin}
       p95Limit={ruleLimit(plan, 'http_req_duration', 'p95')}
       failedLimit={ruleLimit(plan, 'http_req_failed', 'rate')}
@@ -276,6 +280,7 @@ function Board(props: {
   historyEnabled: boolean;
   readings: RuleReading[];
   elapsedMs: number | null;
+  lastUpdate?: { elapsed: number | null } | undefined;
   origin: number | null;
   p95Limit: number | null;
   failedLimit: number | null;
@@ -291,6 +296,7 @@ function Board(props: {
           plan={props.plan}
           elapsedMs={props.elapsedMs}
           originMs={props.origin}
+          stalled={props.lastUpdate !== undefined}
           figures={props.figures}
           p95Limit={props.p95Limit}
           failedLimit={props.failedLimit}
@@ -308,7 +314,7 @@ function Board(props: {
           slowest={props.figures.p95?.slowest ?? false}
         />
         <div className="live-split">
-          <Thresholds readings={props.readings} />
+          <Thresholds readings={props.readings} lastUpdate={props.lastUpdate} />
           <Endpoints figures={props.figures} />
         </div>
       </div>
