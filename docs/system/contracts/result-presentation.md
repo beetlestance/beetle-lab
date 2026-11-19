@@ -77,7 +77,8 @@ See [recorded milestones](result-milestones.md) for What happened; [result frame
 Comparison reads one bounded overview per selected terminal run (two to four),
 sequentially with the existing exact-ID history reads under the same original
 admission. Retirement hides the old view and prevents peer work; an ignored abort
-never refunds physical admission before the API original settles. No polling.
+never refunds admission before the API original settles. A catalogue refusal keeps accepted
+comparison facts and offers explicit catalogue retry; there is no polling.
 Ready overviews supply their own complete figure set: p50/p95/p99 estimates,
 request/failure/check values and dropped iterations. Missing fields remain unknown;
 no history field fills a ready overview's null. Without a ready overview, existing
@@ -91,8 +92,7 @@ Selected IDs with colliding four-character prefixes expand to prefix plus suffix
 then the complete source UUID if needed; labels never invent a run ordinal.
 Phone comparison tables keep readable row/column widths inside named keyboard-
 focusable scroll regions, while run cards wrap their controls.
-Rates stay labelled whole-run averages; no peak is invented from the configured
-load. Differences describe scalar observations, not statistical confidence.
+Rates are whole-run averages, not configured peaks. Deltas describe observations, not statistical confidence.
 
 ## Native SLO comparison
 
@@ -195,7 +195,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
-| `web/src/features/runs/comparison/useComparison.ts` | `fae69b8c7304` |
+| `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `8668f89aa562` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
@@ -217,4 +217,4 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
-| `web/src/features/runs/comparison/index.tsx` | `805a5f52c0bd` |
+| `web/src/features/runs/comparison/index.tsx` | `55f5fe76fb86` |

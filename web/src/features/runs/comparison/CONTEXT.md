@@ -15,12 +15,12 @@ from one exact-ID listRuns row per run (limit 1), read inside the comparison
 admission after the catalogue on first catalogue loads only; each run then gets
 one getRunMetricOverview and getRunChartHistory. Failures stay explicit gaps.
 One catalogue page (<=100 entries); selection uses RunMetricKey, never an ordinal.
-Unknown conditions and limited
-configuration path differences are explicit. Compact intent only; no raw configs or secrets.
+Unknown conditions and limited configuration path differences are explicit. Compact intent only; no raw configs or secrets.
 One module-lifetime ReadAdmission sequences comparison, summaries, catalogue and
 every chart across route/session remounts. Render leases hide old snapshots at
 once; cleanup retires/aborts tokens and cancels queued waits. API originals keep
-admission until they settle. Errors stop automatic reads; retries are manual.
+admission until they settle. Errors stop automatic reads; retries are manual. Catalogue failure preserves the
+accepted comparison and shows a scoped alert with explicit retry.
 Recorded p95/requests/failures/active-VU overlays retain each run's <=900 actual source positions and
 native-marker-relative time on one scale. Gaps, nulls and zero remain exact; no
 phase warping, union-grid fill or extrapolation. Peak requires the same numeric

@@ -222,11 +222,14 @@ function MetricSection({ state, snapshot }: { state: ComparisonState; snapshot: 
   return (
     <section className="compare-section" aria-labelledby="compare-metric">
       <h2 id="compare-metric">One metric, per run</h2>
+      {state.view.catalogueError && (
+        <p role="alert">Metric catalogue could not be loaded. The comparison remains available.</p>
+      )}
       {state.view.page ? (
         <MetricSelection page={state.view.page} busy={state.busy} select={state.select} next={state.page} />
       ) : (
         <Button size="sm" disabled={state.busy} onClick={() => state.page()}>
-          Choose another metric
+          {state.view.catalogueError ? 'Retry metric catalogue' : 'Choose another metric'}
         </Button>
       )}
       {snapshot.metricBinding && (
