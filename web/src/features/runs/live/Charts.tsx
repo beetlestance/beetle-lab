@@ -95,7 +95,7 @@ export function WholeRun({
   const xs = history.points.map((p) => p.t);
   const p95 = view === 'p95';
   return (
-    <section className="live-whole" aria-labelledby="live-whole">
+    <section className="live-whole" data-recorded={history.coverage !== null || undefined} aria-labelledby="live-whole">
       <header className="live-section-head">
         <h2 id="live-whole">{p95 ? 'p95 latency' : 'Requests a second'}, whole run</h2>
         <SegmentedFilter
@@ -118,6 +118,7 @@ export function WholeRun({
         series={[wholeSeries(view, history, slowest)]}
         format={p95 ? ms : whole}
         limit={wholeLimit(view, p95Limit)}
+        tightLimitScale={p95}
         bands={stageBands(history, plan)}
         ticks={history.fromStart ? stageTicks(plan, domain, xs.at(-1) ?? null) : undefined}
       />

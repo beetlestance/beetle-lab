@@ -56,7 +56,7 @@ values remain null. Hover keeps original observations and does not use the mean.
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |
 | `contracts/src/api/run-chart-history.ts` | `2dd377350a07` |
-| `web/src/features/runs/live/LiveChart.tsx` | `e3144875cff1` |
+| `web/src/features/runs/live/LiveChart.tsx` | `2136c6c66bde` |
 | `web/src/features/runs/comparison/resting-values.ts` | `12e46664550f` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `04e94c1c9f79` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `3bf347e8f56f` |

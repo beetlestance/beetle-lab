@@ -4,6 +4,24 @@ import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { LiveChart } from './LiveChart.js';
 afterEach(cleanup);
+it('keeps a tight threshold scale while expanding to include readings over the limit', () => {
+  const draw = (value: number) => (
+    <LiveChart
+      title="Whole run latency"
+      xs={[1000]}
+      domain={[0, 5000]}
+      format={String}
+      series={[{ key: 'p95', label: 'p95', tone: 'amber', values: [value] }]}
+      limit={{ value: 250, label: 'Limit 250 ms' }}
+      tightLimitScale
+    />
+  );
+  const view = render(draw(184));
+  expect(view.container.querySelector('.live-chart-max')).toHaveTextContent('300');
+  view.rerender(draw(510));
+  expect(view.container.querySelector('.live-chart-max')).toHaveTextContent('1000');
+  expect(view.container.querySelector('.live-single-point')).not.toHaveAttribute('cy', '0');
+});
 it('withholds shared-clock readouts beyond coverage and inside an explicit gap while preserving a known zero',()=>{
   const props={title:'Target CPU',xs:[0,1000],domain:[0,5000] as const,breaks:[false,true],strictHoverRange:true,
     series:[{key:'cpu',label:'process',tone:'amber' as const,values:[0,20]}],format:String};
