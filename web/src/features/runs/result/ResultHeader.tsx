@@ -59,9 +59,9 @@ export function ResultHeader({
           </div>
         ) : (
           <div className="result-actions">
-            <RunAgain run={run} />
             <ResultCompare run={run} suiteName={suiteName} />
             <ResultDownloads run={run} ordinal={ordinal} />
+            <RunAgain run={run} />
             <PinControl run={run} />
             <Button variant="text" size="sm" onClick={onDelete}>
               Delete run…

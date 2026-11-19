@@ -124,7 +124,12 @@ export function headline(
   suiteName: string | undefined,
   summary: RunHistorySummary | null,
   result: EngineResult | null,
-  context: { readOnly?: boolean; rules?: readonly PlanRule[]; measurements?: RunMetricOverview | null } = {},
+  context: {
+    readOnly?: boolean;
+    rules?: readonly PlanRule[];
+    measurements?: RunMetricOverview | null;
+    phone?: boolean;
+  } = {},
 ): Headline {
   if (context.readOnly && !terminal(run))
     return {
@@ -132,11 +137,14 @@ export function headline(
       sentence: 'This unfinished run is recorded history. Restoring a backup does not resume it.',
     };
   const measurements = headlineTraffic(summary, context.measurements);
+  const phone = phonePassedHeadline(run, measurements, result, context.phone === true);
+  if (phone) return phone;
+  const duration = measurements?.testDurationMs ?? null;
   return headlines[variantOf(run)]({
     run,
     name: suiteName ?? 'This run',
-    length: formatDuration(measurements?.testDurationMs),
-    covered: spokenLength(measurements?.testDurationMs ?? null),
+    length: formatDuration(duration),
+    covered: spokenLength(duration),
     held: traffic(measurements),
     result,
     rules: context.rules ?? [],
@@ -154,5 +162,22 @@ function headlineTraffic(
     requestsPerSecond: overview.requestsPerSecond,
     httpP95: overview.latency?.percentiles.p95 ?? null,
     httpFailureRatio: overview.failure?.ratio ?? null,
+  };
+}
+
+/** Prominent traffic remains a measured average, never a steady-rate assertion. */
+function phonePassedHeadline(
+  run: Run,
+  measurements: Traffic | null,
+  result: EngineResult | null,
+  phone: boolean,
+): Headline | null {
+  if (!phone || variantOf(run) !== 'passed' || !measurements) return null;
+  const rate = formatNumber(measurements.requestsPerSecond, 'integer');
+  const duration = spokenLength(measurements.testDurationMs);
+  if (rate === null || duration === null) return null;
+  return {
+    title: `Averaged ${rate} a second over ${duration}`,
+    sentence: join(qualitySentence(measurements), thresholdSentence(result)),
   };
 }

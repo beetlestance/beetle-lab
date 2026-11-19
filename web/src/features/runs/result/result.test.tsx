@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import chartData from '../../../../../contracts/fixtures/api/valid/run-chart-history.json' with { type: 'json' };
 import '@testing-library/jest-dom/vitest';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import metricOverview from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with { type: 'json' };
 import { pendingRunHistorySummary } from '@beetle/contracts/api';
@@ -10,7 +10,7 @@ import { routes } from '../../../app/routes.js';
 import { suite } from '../history-fixtures.js';
 import { apiError, ids, json, mount, resultSnapshot, revision, run, runId, testClient } from '../test-fixtures.js';
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const path = routes.run(ids.a, ids.workspace, runId);
 type Request = Parameters<Parameters<typeof testClient>[0]>[0];
 
@@ -259,4 +259,18 @@ it('opens a deep-linked artifacts section without a preliminary report selection
   const f=fixture(finished());mount(f.client,path+'#result-artifacts');
   await screen.findByRole('heading',{name:'checkout-steady passed'});
   expect(await screen.findByRole('tab',{name:/^Artifacts/})).toHaveAttribute('aria-selected','true');
+});
+
+it('shows the compact phone chart and measured-average title, with unchanged chart switching and coverage access', async () => {
+ vi.stubGlobal('matchMedia',(media:string)=>({media,matches:media==='(max-width: 759px)',
+   addEventListener:()=>{},removeEventListener:()=>{}}));
+ const current=finished();const f=fixture(current,request=>request.path.endsWith('/metrics/chart-history')?json({...chartData,id:current.id,scope:current.scope,attemptId:current.activeAttemptId}):undefined);mount(f.client,path);
+ expect(await screen.findByRole('heading',{level:1,name:/^Averaged/})).toBeVisible();
+ expect(await screen.findByRole('heading',{level:2,name:'p95 latency, whole run'})).toBeVisible();
+ fireEvent.click(screen.getByRole('radio',{name:'Requests'}));
+ expect(screen.getByRole('heading',{level:2,name:'Requests, whole run'})).toBeVisible();
+ expect(screen.getByRole('img',{name:/Recorded requests per one-second window/})).toBeVisible();
+ const coverage=document.querySelector('.result-chart-coverage') as HTMLDetailsElement;
+ expect(coverage).not.toHaveAttribute('open');coverage.open=true;fireEvent(coverage,new Event('toggle'));
+ expect(within(coverage).getByText(/The axis follows the native measurement marker/)).toBeVisible();
 });

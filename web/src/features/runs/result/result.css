@@ -220,7 +220,7 @@
     justify-items: start;
   }
   .result-title {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-4xl);
   }
   .result-split {
     grid-template-columns: minmax(0, 1fr);

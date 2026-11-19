@@ -21,3 +21,14 @@ it('retains the indexed fallback without a ready overview and preserves measured
  expect(headline(current,'Checkout',historical,null).sentence).toContain('Averaged 99 requests a second over 2 seconds.');
  expect(headline(current,'Checkout',historical,null,{measurements:overview({requestsPerSecond:0})}).sentence).toContain('Averaged 0 requests a second over 1 minute.');
 });
+it('makes passed phone traffic prominent without repeating its average in the sentence',()=>{
+ const result=headline(current,'Checkout',historical,null,{measurements:overview(),phone:true});
+ expect(result.title).toBe('Averaged 5 a second over 1 minute');
+ expect(result.sentence).not.toContain('Averaged');expect(result.sentence).toMatch(/p95/i);
+ expect(headline(current,'Checkout',historical,null,{measurements:overview({requestsPerSecond:0}),phone:true}).title).toContain('Averaged 0');
+});
+it('does not fill a missing phone title field from history, conceal failure, or imply a restored run resumed',()=>{
+ expect(headline(current,'Checkout',historical,null,{measurements:overview({requestsPerSecond:null}),phone:true}).title).toBe('Checkout passed');
+ expect(headline({...current,outcome:'failed'},'Checkout',historical,null,{measurements:overview(),phone:true}).title).toBe('Checkout failed');
+ expect(headline({...current,state:'active',outcome:'pending'},'Checkout',historical,null,{measurements:overview(),phone:true,readOnly:true}).title).toContain('at backup');
+});

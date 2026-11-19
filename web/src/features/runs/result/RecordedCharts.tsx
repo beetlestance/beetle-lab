@@ -21,7 +21,17 @@ export function useRecordedCharts(query: ResultReads['chartHistory']) {
   return { data, plot, hover: { hoverT, onHover }, query };
 }
 type View = ReturnType<typeof useRecordedCharts>;
-export function RecordedWhole({ view, p95Limit, plan }: { view: View; p95Limit: number | null; plan: RunPlan }) {
+export function RecordedWhole({
+  view,
+  p95Limit,
+  plan,
+  phone = false,
+}: {
+  view: View;
+  p95Limit: number | null;
+  plan: RunPlan;
+  phone?: boolean;
+}) {
   const [selected, setSelected] = useState<'p95' | 'rps'>('p95');
   const { data, plot, query } = view;
   return (
@@ -36,7 +46,9 @@ export function RecordedWhole({ view, p95Limit, plan }: { view: View; p95Limit: 
         <>
           <div className="live-whole">
             <header className="live-section-head">
-              <h2>The whole run</h2>
+              <h2>
+                {phone ? (selected === 'p95' ? 'p95 latency, whole run' : 'Requests, whole run') : 'The whole run'}
+              </h2>
               <SegmentedFilter
                 label="Recorded whole-run chart"
                 value={selected}
@@ -47,9 +59,9 @@ export function RecordedWhole({ view, p95Limit, plan }: { view: View; p95Limit: 
                 ]}
               />
             </header>
-            <WholeChart view={view} selected={selected} p95Limit={p95Limit} plan={plan} />
+            <WholeChart view={view} selected={selected} p95Limit={p95Limit} plan={plan} phone={phone} />
           </div>
-          <Coverage data={data} />
+          <Coverage data={data} phone={phone} />
         </>
       )}
     </section>
@@ -60,11 +72,13 @@ function WholeChart({
   selected,
   p95Limit,
   plan,
+  phone,
 }: {
   view: View;
   selected: 'p95' | 'rps';
   p95Limit: number | null;
   plan: RunPlan;
+  phone: boolean;
 }) {
   const plot = view.plot!;
   const p95 = selected === 'p95';
@@ -72,7 +86,8 @@ function WholeChart({
     <LiveChart
       {...view.hover}
       title={p95 ? 'Recorded p95 latency, histogram estimates' : 'Recorded requests per one-second window'}
-      tall
+      tall={!phone}
+      className={phone ? 'result-whole-compact' : undefined}
       xs={plot.points.map((point) => point.t)}
       breaks={plot.points.map((point) => point.gapBefore)}
       domain={plot.domain}
@@ -116,14 +131,25 @@ export function AdvancedMetrics({ run }: { run: Run }) {
     </details>
   );
 }
-function Coverage({ data }: { data: RunChartHistory }) {
-  return (
+function Coverage({ data, phone }: { data: RunChartHistory; phone: boolean }) {
+  const text = (
     <p className="result-muted">
       {data.points.length} of {data.windows} recorded windows shown
       {data.sampled ? ' · sampled with first and last retained' : ''}. Latencies are histogram estimates; breaks mark
       missing source time. The axis follows the native measurement marker.
       {data.source && !data.source.coverage.complete && ' Source-window coverage is partial.'}
     </p>
+  );
+  return phone ? (
+    <details className="result-chart-coverage">
+      <summary>
+        {data.points.length} of {data.windows} windows{data.sampled ? ' · sampled' : ''}
+        {data.source && !data.source.coverage.complete && ' · partial source'}
+      </summary>
+      {text}
+    </details>
+  ) : (
+    text
   );
 }
 function ChartUnavailable({ query }: { query: ResultReads['chartHistory'] }) {
