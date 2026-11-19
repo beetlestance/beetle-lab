@@ -148,12 +148,6 @@
   .live-actions {
     justify-content: start;
   }
-  .live-title-row h1 {
-    font-size: var(--fs-3xl);
-  }
-  .live-sentence {
-    font-size: var(--fs-base);
-  }
   .live-download-menu {
     right: auto;
     left: -50px;
