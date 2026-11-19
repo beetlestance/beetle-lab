@@ -35,7 +35,7 @@ export function RunTargetObservations({
       {state.status === 'error' && (
         <p role="alert">Target observations could not be verified or loaded. Reload to retry.</p>
       )}
-      {state.status === 'ready' && <Report key={artifact.sha256} report={state.report} />}
+      {state.status === 'ready' && <TargetReportDetails key={artifact.sha256} report={state.report} />}
     </section>
   );
 }
@@ -44,7 +44,7 @@ function initialMetric(report: TargetRuntimeReport): TargetMetricName {
     targetMetricNames.find((name) => report.samples.some((sample) => targetReading(sample, name) !== null)) ?? 'rss'
   );
 }
-function Report({ report }: { report: TargetRuntimeReport }) {
+export function TargetReportDetails({ report }: { report: TargetRuntimeReport }) {
   const [metric, setMetric] = useState<TargetMetricName>(() => initialMetric(report));
   const id = useId();
   const summary = observationSummary(report, metric);

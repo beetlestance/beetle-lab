@@ -8,7 +8,7 @@ import { formatTime } from '../../run-results/format.js';
 import { RecordedWhole, RecordedMetrics, AdvancedMetrics, useRecordedCharts } from './RecordedCharts.js';
 import { RunReads } from '../RunReads.js';
 import type { RunSnapshotProps } from '../RunSnapshot.js';
-import { RunTargetObservations } from '../target-observations/index.js';
+import { ResultTargetReport } from './TargetReport.js';
 import { DeleteRun } from './DeleteRun.js';
 import { headline, variantOf } from './headline.js';
 import type { Variant } from './headline.js';
@@ -97,7 +97,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       <ResultEndpoints overview={ready} requests={plan.requests} />
       <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
       <AdvancedMetrics run={run} />
-      <TargetRuntime run={run} engine={engine} status={view.status} />
+      <TargetRuntime run={run} engine={engine} status={view.status} charts={charts} plan={plan} />
       <ReportTabs run={run} view={view} />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
@@ -142,17 +142,24 @@ function TargetRuntime({
   run,
   engine,
   status,
+  charts,
+  plan,
 }: {
   run: Run;
   engine: EngineResult | null;
   status: ResultReads['result']['view']['status'];
+  charts: ReturnType<typeof useRecordedCharts>;
+  plan: RunPlan;
 }) {
   const targets = engine ? engine.artifacts.filter((artifact) => artifact.kind === 'target-runtime') : [];
   return (
     <section id="result-target" className="result-section" aria-labelledby="result-target-title">
-      <h2 id="result-target-title" className="result-section-title">
-        Target runtime
-      </h2>
+      <header className="live-section-head">
+        <h2 id="result-target-title" className="result-section-title">
+          Target runtime
+        </h2>
+        <TargetSourceNote plan={plan} />
+      </header>
       {targets.length === 0 && (
         <p className="result-muted">
           {engine
@@ -166,7 +173,7 @@ function TargetRuntime({
         <p role="alert">Multiple target observation reports were published; this view requires one report.</p>
       )}
       {targets.length === 1 && (
-        <RunTargetObservations
+        <ResultTargetReport
           params={{
             organizationId: run.scope.organizationId,
             workspaceId: run.scope.workspaceId,
@@ -175,9 +182,24 @@ function TargetRuntime({
             artifactId: targets[0]!.artifactId,
           }}
           artifact={targets[0]!}
+          nativeOrigin={charts.data?.source?.measurementSourceTimeMs ?? null}
+          hover={charts.hover}
         />
       )}
     </section>
+  );
+}
+
+function TargetSourceNote({ plan }: { plan: RunPlan }) {
+  if (!plan.targetOrigin) return null;
+  const interval = plan.samplingIntervalMs;
+  const cadence =
+    interval !== null && interval >= 1000 && interval <= 60000 ? ` · Configured interval ${interval / 1000} s` : '';
+  return (
+    <p className="result-muted result-target-source">
+      Target: {plan.targetOrigin}
+      {cadence}.
+    </p>
   );
 }
 

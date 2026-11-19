@@ -1,0 +1,7 @@
+.result-target-card { min-width: 0; display: grid; gap: var(--s-8); align-content: start; }
+.result-target-grid .live-chart { margin: 0; }
+.result-target-card > .result-muted { padding: 0 var(--s-16); }
+.result-target-details > summary { cursor: pointer; color: var(--mute); }
+.result-target-details[open] { display: grid; gap: var(--s-16); }
+.result-target-source { min-width: 0; max-width: 65ch; overflow-wrap: anywhere; text-align: right; }
+@media (max-width: 759px) { .result-target-source { text-align: left; } }

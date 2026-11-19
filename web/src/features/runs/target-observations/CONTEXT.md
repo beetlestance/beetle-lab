@@ -18,5 +18,6 @@ Positive memory-only point growth is a labelled follow-up signal, not a leak ver
 Raw source names/declared unit labels/table remain visible; undeclared units are explicit.
 The chart owns finite coordinates and
 gaps; neither view relabels target readings as engine resource measurements.
+TargetReportDetails is a pure view; result cards reuse it without another read.
 There is no live target feed here; source is the verified published artifact.
 Checks: focused target-observations tests, affected result tests, web types/lint.

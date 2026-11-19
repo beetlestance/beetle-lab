@@ -34,6 +34,19 @@ hover, preserve source gaps and signed native time, and expose explicit retry.
 Peak tiles bind to the same numeric hash/manifest/marker as the summary. Per-series
 browsing remains an explicit advanced action.
 
+## Recorded target charts
+
+Four cards share one verified target report and its 256-sample / 1 MiB bounds.
+Compatible declared groups normalize to MB, %, ms and counts; any missing unit
+keeps that whole group raw, with source labels and a self-comparison warning.
+Nulls, zeros, ordinal gaps and duplicate/rollback timestamps stay explicit.
+Unplottable UTC observations are counted and retained in advanced source details.
+Native marker time shares workload hover only with safe target chronology;
+otherwise target cards use their own cursor and disclose the available time origin.
+Hover outside coverage or within gaps never substitutes a nearby reading.
+All retained phases are shown. Advanced details mount on demand and reuse the
+same verified report; no second byte read or automatic polling is introduced.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -57,3 +70,5 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/RecordedCharts.tsx` | `2e8b3ab203f4` |
 | `web/src/features/runs/result/chart-model.ts` | `52b2e65dd3d8` |
 | `web/src/features/runs/charts/` | `7df1caa86595` |
+| `web/src/features/runs/result/TargetReport.tsx` | `d155a250edf6` |
+| `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |

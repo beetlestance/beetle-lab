@@ -1,8 +1,18 @@
 // @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { LiveChart } from './LiveChart.js';
 afterEach(cleanup);
+it('withholds shared-clock readouts beyond coverage and inside an explicit gap while preserving a known zero',()=>{
+  const props={title:'Target CPU',xs:[0,1000],domain:[0,5000] as const,breaks:[false,true],strictHoverRange:true,
+    series:[{key:'cpu',label:'process',tone:'amber' as const,values:[0,20]}],format:String};
+  const view=render(<LiveChart {...props} hoverT={3000}/>);
+  expect(view.getByRole('img')).toHaveAttribute('aria-label','Target CPU: process no reading');
+  expect(view.container.querySelector('.live-cursor')).toBeNull();
+  view.rerender(<LiveChart {...props} hoverT={500}/>);expect(view.getByRole('img')).toHaveAttribute('aria-label','Target CPU: process no reading');
+  view.rerender(<LiveChart {...props} hoverT={0}/>);expect(view.getByRole('img')).toHaveAttribute('aria-label','Target CPU: process 0');
+});
 it('keeps a single measured point visible on either side of a missing interval', () => {
   const view = render(
     <LiveChart

@@ -31,6 +31,8 @@ export interface ChartProps {
   readonly onHover?: ((t: number | null) => void) | undefined;
   readonly className?: string | undefined;
   readonly tall?: boolean | undefined;
+  /** Shared clocks must not show stale readings outside coverage or across an explicit gap. */
+  readonly strictHoverRange?: boolean | undefined;
 }
 
 const W = 600;
@@ -52,6 +54,13 @@ export function nearestIndex(xs: readonly number[], t: number): number {
     }
   });
   return best;
+}
+
+export function recordedHoverIndex(xs: readonly number[], breaks: readonly boolean[] | undefined, t: number): number {
+  const finite = xs.filter(Number.isFinite);
+  if (!finite.length || !Number.isFinite(t) || t < Math.min(...finite) || t > Math.max(...finite)) return -1;
+  if (breaks?.some((gap, index) => gap && index > 0 && t > xs[index - 1]! && t < xs[index]!)) return -1;
+  return nearestIndex(xs, t);
 }
 
 interface Scale {
@@ -160,7 +169,12 @@ function hoverHandlers(props: ChartProps) {
 
 function legendOf(props: ChartProps): { entries: LegendEntry[]; index: number } {
   const { xs, hoverT } = props;
-  const index = hoverT == null ? xs.length - 1 : nearestIndex(xs, hoverT);
+  const index =
+    hoverT == null
+      ? xs.length - 1
+      : props.strictHoverRange
+        ? recordedHoverIndex(xs, props.breaks, hoverT)
+        : nearestIndex(xs, hoverT);
   const entries = props.series.map((s) => ({ s, value: index >= 0 ? (s.values[index] ?? null) : null }));
   return { entries, index };
 }

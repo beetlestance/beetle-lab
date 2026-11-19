@@ -1,10 +1,9 @@
 # Run result (Penpot "Run result" boards)
 
 Public entry: `RunResultView({run, scope, runId})`, chosen once by RunDetail for a
-terminal run or any restored record. It wraps its own RunReads admission.
+terminal/restored record; owns RunReads admission.
 Restored unfinished state stays labelled at backup; no current-work owners mount,
 and run/artifact/metric/timeline polling stops. Stored state and outcome stay exact.
-
 Reads (useResultReads), each under the scoped run key and removed on unmount:
 engine result for the active attempt, the run's own history summary (one listRuns
 row by exact ID, limit 1), suite, saved revision and getRunMetricOverview. The
@@ -32,9 +31,10 @@ Read-only and restored-backup state comes from useSessionAccess, not a session r
   become a section list (Phone / Run result).
 - DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
   Unpin first.
-RecordedCharts owns the once-per-entry chart query, one memoized projection and
-shared cursor. Advanced per-series browsing mounts only on explicit expansion.
-Peak binds to summary source; unknowns/gaps and native marker time stay exact.
+RecordedCharts reads workload history once; peak binds to the summary source.
+ResultTargetReport shares one verified report across four cards and lazy details.
+Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
+exact; only safe native chronology shares hover. Advanced views mount on demand.
 ResultCompare reads 20 candidates/page on open; suite/all filters, verified names/
 ordinals, no per-row revision reads. Chosen candidate is the comparison baseline.
 Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx
