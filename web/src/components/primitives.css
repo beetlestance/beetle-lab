@@ -70,6 +70,18 @@
 .btn-text {
   background: transparent;
 }
+/* A Link styled as a button keeps its label colour on hover. The global a:hover
+   amber (0,1,1) outranks a single variant class and turned the label into the fill. */
+a.btn:hover {
+  color: var(--ink);
+}
+a.btn-primary:hover,
+a.btn-danger:hover {
+  color: var(--on-amber);
+}
+a.btn-inverse:hover {
+  color: var(--on-inverse);
+}
 .btn-text:hover {
   background: var(--line);
 }
