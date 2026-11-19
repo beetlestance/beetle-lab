@@ -63,8 +63,8 @@ never returned. Unpinned broad searches keep their existing explicit refusal.
 | `contracts/src/api/run-list-page.ts` | `dd72ba836665` |
 | `contracts/src/api/client/input.ts` | `c762f1c76820` |
 | `web/src/features/runs/history-range.ts` | `9e5d615fbb81` |
-| `web/src/features/runs/HistoryFilters.tsx` | `89e3ebbe1ff5` |
+| `web/src/features/runs/HistoryFilters.tsx` | `4b44664b11a1` |
 | `web/src/features/runs/HistoryHeader.tsx` | `34fa1ea25a54` |
-| `web/src/features/runs/RunHistory.tsx` | `690950be6763` |
+| `web/src/features/runs/RunHistory.tsx` | `2f2177e2b0eb` |
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/components/Pagination.tsx` | `e750e5cd3deb` |
