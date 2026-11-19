@@ -53,7 +53,11 @@ export function ResultTargetReport({
           hover={hover}
         />
       )}
-      <details className="result-target-details" onToggle={(event) => setDetails(event.currentTarget.open)}>
+      <details
+        className="result-target-details"
+        open={details}
+        onToggle={(event) => setDetails(event.currentTarget.open)}
+      >
         <summary>Recorded target values and checkpoints</summary>
         {details && (
           <>

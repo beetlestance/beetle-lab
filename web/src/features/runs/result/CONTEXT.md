@@ -33,7 +33,7 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
   visited state; stable Notes survives resize. Phase mode keeps target/Back visible.
 - DeleteRun: RetentionControls dialog; a pinned run offers Unpin first.
 RecordedCharts reads history once; peak binds to summary. ResultTargetReport shares
-one verified report across four cards and lazy details.
+one verified report across four cards and lazy details; reload preserves expansion.
 Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
 exact; only safe native chronology shares hover. ?target=phases keeps the same
 reader for observed phase comparisons; missing phase GC maxima stay unavailable.
