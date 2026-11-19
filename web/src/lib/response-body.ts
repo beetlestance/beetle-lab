@@ -5,7 +5,7 @@ interface BodyState {
   fragments: number;
 }
 interface BodyLimit {
-  readonly profile?: 'api-history' | 'export-script';
+  readonly profile?: 'api-history' | 'export-script' | 'artifact-preview';
   readonly maximum: number;
   readonly expected?: number;
 }
@@ -91,6 +91,7 @@ function headers(response: Response, limit: BodyLimit): number | undefined {
 }
 
 function maximumFor(profile: BodyLimit['profile']): number {
+  if (profile === 'artifact-preview') return 32 * 1024 * 1024;
   if (profile === 'api-history') return API_MAXIMUM_JSON_BYTES;
   return profile === 'export-script' ? 64 * 1024 * 1024 : 1048576;
 }

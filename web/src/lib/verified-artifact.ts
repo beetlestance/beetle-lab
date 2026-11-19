@@ -15,6 +15,7 @@ export interface ArtifactReadPorts {
 }
 export interface ArtifactReadPolicy<T> {
   readonly kind: string;
+  readonly profile?: 'artifact-preview';
   readonly maximumBytes: number;
   decode(bytes: Uint8Array): T;
 }
@@ -35,12 +36,13 @@ export class VerifiedArtifactReads<T> {
     if (
       !Number.isSafeInteger(policy.maximumBytes) ||
       policy.maximumBytes < 1 ||
-      policy.maximumBytes > 1048576 ||
+      (policy.profile !== undefined && policy.profile !== 'artifact-preview') ||
+      policy.maximumBytes > (policy.profile === 'artifact-preview' ? 32 * 1048576 : 1048576) ||
       !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(policy.kind) ||
       typeof policy.decode !== 'function'
     )
       throw new Error('Invalid artifact policy');
-    this.policy = { kind: policy.kind, maximumBytes: policy.maximumBytes, decode: policy.decode };
+    this.policy = { ...policy, kind: policy.kind, maximumBytes: policy.maximumBytes, decode: policy.decode };
     this.ports = {
       fetch: ports.fetch.bind(ports),
       digest: ports.digest.bind(ports),
@@ -82,7 +84,11 @@ export class VerifiedArtifactReads<T> {
       bodyOwned = true;
       const bytes = await responseBody(
         response,
-        { maximum: this.policy.maximumBytes, expected: input.artifact.bytes },
+        {
+          maximum: this.policy.maximumBytes,
+          expected: input.artifact.bytes,
+          ...(this.policy.profile ? { profile: this.policy.profile } : {}),
+        },
         signal,
       );
       this.check(signal, start);
