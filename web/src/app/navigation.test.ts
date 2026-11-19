@@ -18,7 +18,7 @@ it('scopes navigation targets to the organisation and workspace in the path', ()
   const items = navItems(routes.runs(org, ws));
   expect(items.map((item) => [item.label, item.to])).toEqual([
     ['Overview', routes.workspace(org, ws)],
-    ['Workspaces', routes.suites(org, ws)],
+    ['Workspaces', routes.organizationWorkspaces(org)],
     ['Engines', routes.engines],
     ['Settings', routes.workspaceSettings(org, ws)],
     ['Docs', routes.docs],
@@ -27,6 +27,9 @@ it('scopes navigation targets to the organisation and workspace in the path', ()
 
 it('marks exactly one current item per destination', () => {
   expect(current('/')).toEqual(['overview']);
+  expect(navItems('/').find((item) => item.key === 'workspaces')?.to).toBe(routes.workspaces);
+  expect(current(routes.workspaces)).toEqual(['workspaces']);
+  expect(current(routes.organizationWorkspaces(org))).toEqual(['workspaces']);
   expect(current(routes.workspace(org, ws))).toEqual(['overview']);
   expect(current(routes.run(org, ws, run))).toEqual(['workspaces']);
   expect(current(routes.inputs(org, ws))).toEqual(['workspaces']);

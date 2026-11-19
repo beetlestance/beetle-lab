@@ -33,7 +33,7 @@ function organizationFields(org?: Organization): EditorField[] {
   ];
 }
 
-export function Organizations() {
+export function Organizations({ workspaceDirectory = false }: { workspaceDirectory?: boolean }) {
   const api = useApi();
   const client = useQueryClient();
   const editor = useEditor();
@@ -67,8 +67,12 @@ export function Organizations() {
       <header className="section-header">
         <div>
           <p className="eyebrow">Installation</p>
-          <h1>Organizations</h1>
-          <p>Keep each company or client’s work in its own namespace.</p>
+          <h1>{workspaceDirectory ? 'Workspaces' : 'Organizations'}</h1>
+          <p>
+            {workspaceDirectory
+              ? 'Choose an organization to see its workspaces.'
+              : 'Keep each company or client’s work in its own namespace.'}
+          </p>
         </div>
         <button className="primary" disabled={editor.busy} onClick={() => edit()}>
           Create organization
@@ -85,7 +89,9 @@ export function Organizations() {
               {data.items.map((org) => (
                 <tr key={org.id}>
                   <th scope="row">
-                    <Link to={routes.organization(org.id)}>{org.name}</Link>
+                    <Link to={workspaceDirectory ? routes.organizationWorkspaces(org.id) : routes.organization(org.id)}>
+                      {org.name}
+                    </Link>
                   </th>
                   <td>{org.slug}</td>
                   <td className="number">{org.version}</td>

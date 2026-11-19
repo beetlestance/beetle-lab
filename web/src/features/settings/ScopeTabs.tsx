@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { SettingsScope } from '@beetle/contracts/api';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
+import { useRememberedSettingsScope } from '../../app/settings-scope.js';
 import { NavTabs } from '../../components/Tabs.js';
 import type { NavTabItem } from '../../components/Tabs.js';
 
@@ -39,9 +40,36 @@ function draftCount(get: (key: readonly unknown[]) => unknown, key: readonly str
 }
 
 /** Installation / Organization / Workspace, with the number of unsaved changes kept at each level. */
-export function ScopeTabs({ scope }: { scope: SettingsScope }) {
-  const organizationId = scope.kind === 'installation' ? undefined : scope.organizationId;
-  const workspaceId = scope.kind === 'workspace' ? scope.workspaceId : undefined;
+export function ScopeTabs({ scope, choose }: { scope: SettingsScope; choose?: 'organization' | 'workspace' }) {
+  const { organizationId, workspaceId } = useScopeIds(scope);
+  const [installation, organization, workspace] = useScopeDraftCounts(organizationId, workspaceId);
+  const items: NavTabItem[] = [
+    {
+      to: routes.settings,
+      label: 'Installation',
+      current: scope.kind === 'installation' && !choose,
+      count: installation ?? undefined,
+    },
+    {
+      to: organizationId ? routes.organizationSettings(organizationId) : routes.chooseSettings('organization'),
+      label: 'Organization',
+      current: scope.kind === 'organization' || choose === 'organization',
+      count: organization ?? undefined,
+    },
+    {
+      to:
+        organizationId && workspaceId
+          ? routes.workspaceSettings(organizationId, workspaceId)
+          : routes.chooseSettings('workspace', organizationId),
+      label: 'Workspace',
+      current: scope.kind === 'workspace' || choose === 'workspace',
+      count: workspace ?? undefined,
+    },
+  ];
+  return <NavTabs label="Settings level" items={items} size="md" />;
+}
+
+function useScopeDraftCounts(organizationId: string | undefined, workspaceId: string | undefined) {
   const counts = useCached((get) =>
     JSON.stringify([
       draftCount(get, queryKeys.installationSettings),
@@ -51,28 +79,17 @@ export function ScopeTabs({ scope }: { scope: SettingsScope }) {
         : undefined,
     ]),
   );
-  const [installation, organization, workspace] = JSON.parse(counts) as (number | null)[];
-  const items: NavTabItem[] = [
-    {
-      to: routes.settings,
-      label: 'Installation',
-      current: scope.kind === 'installation',
-      count: installation ?? undefined,
-    },
-  ];
-  if (organizationId)
-    items.push({
-      to: routes.organizationSettings(organizationId),
-      label: 'Organization',
-      current: scope.kind === 'organization',
-      count: organization ?? undefined,
-    });
-  if (organizationId && workspaceId)
-    items.push({
-      to: routes.workspaceSettings(organizationId, workspaceId),
-      label: 'Workspace',
-      current: true,
-      count: workspace ?? undefined,
-    });
-  return <NavTabs label="Settings level" items={items} size="md" />;
+  return JSON.parse(counts) as (number | null)[];
+}
+
+function useScopeIds(scope: SettingsScope) {
+  const remembered = useRememberedSettingsScope();
+  const organizationId = scope.kind === 'installation' ? remembered.organizationId : scope.organizationId;
+  const workspaceId =
+    scope.kind === 'workspace'
+      ? scope.workspaceId
+      : organizationId === remembered.organizationId
+        ? remembered.workspaceId
+        : undefined;
+  return { organizationId, workspaceId };
 }

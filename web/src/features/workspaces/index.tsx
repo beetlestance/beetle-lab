@@ -48,9 +48,11 @@ export function OrganizationScope({
   organizationId,
   workspaceId,
   view,
+  directory = false,
 }: {
   organizationId: string;
   workspaceId?: string;
+  directory?: boolean;
   view?: 'inputs' | 'exports' | undefined;
 }) {
   const api = useApi();
@@ -84,8 +86,21 @@ export function OrganizationScope({
           />
         ) : (
           <>
-            <OrganizationOverview key={organizationId} organization={organization} />
-            <WorkspaceList organizationId={organizationId} organizationName={organization.name} />
+            {directory ? (
+              <header className="section-header">
+                <div>
+                  <p className="eyebrow">{organization.name}</p>
+                  <h1>Workspaces</h1>
+                </div>
+              </header>
+            ) : (
+              <OrganizationOverview key={organizationId} organization={organization} />
+            )}
+            <WorkspaceList
+              organizationId={organizationId}
+              organizationName={organization.name}
+              showHeading={!directory}
+            />
           </>
         )
       }
@@ -118,18 +133,12 @@ function WorkspaceScope({
     <ScopeState
       query={workspace}
       kind="workspace"
-      back={{ to: routes.organization(organizationId), label: 'Back to workspaces' }}
+      back={{ to: routes.organizationWorkspaces(organizationId), label: 'Back to workspaces' }}
       loading={<LoadingState variant="page" label="Loading workspace…" />}
     >
       {(data) => (
         <div className="workspace-page">
-          {view && (
-            <WorkspaceTabs
-              organizationId={organizationId}
-              workspaceId={workspaceId}
-              current={view === 'inputs' ? 'inputs' : 'exports'}
-            />
-          )}
+          <WorkspaceTabs organizationId={organizationId} workspaceId={workspaceId} current={view ?? 'overview'} />
           {view === 'exports' ? (
             <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
           ) : view === 'inputs' ? (

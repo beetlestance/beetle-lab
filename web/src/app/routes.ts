@@ -41,7 +41,12 @@ export const routes = {
   suiteScriptFromRun: (org: string, workspace: string, suite: string, revision: string, run: string) =>
     `${routes.suiteScript(org, workspace, suite, revision)}?run=${encodeURIComponent(run)}`,
   organizations: '/',
+  workspaces: '/workspaces',
+  organizationWorkspacesPattern: '/organizations/:organizationId/workspaces',
+  organizationWorkspaces: (id: string) => `/organizations/${encodeURIComponent(id)}/workspaces`,
   settings: '/settings',
+  chooseSettings: (level: 'organization' | 'workspace', organizationId?: string) =>
+    `/settings?level=${level}${organizationId ? `&organization=${encodeURIComponent(organizationId)}` : ''}`,
   organizationSettingsPattern: '/organizations/:organizationId/settings',
   workspaceSettingsPattern: '/organizations/:organizationId/workspaces/:workspaceId/settings',
   organizationSettings: (id: string) => `/organizations/${encodeURIComponent(id)}/settings`,

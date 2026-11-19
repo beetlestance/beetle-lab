@@ -256,7 +256,7 @@ describe('mutation identity and draft ownership', () => {
     fireEvent.click(screen.getByRole('button',{name:'Switch workspace B'}));
     await screen.findByText('Workspace overview unavailable. Counts are unknown.');
     expect(original.signal?.aborted).toBe(true);
-    fireEvent.click(screen.getByRole('link',{name:'Workspaces'}));
+    fireEvent.click(screen.getByRole('link',{name:'Suites'}));
     fireEvent.click(await screen.findByRole('button',{name:'New folder'}));
     expect(screen.getByLabelText('Name')).toHaveValue('');
     await act(async()=>pending.resolve(json({...folder(),name:'Old scope draft'},201)));

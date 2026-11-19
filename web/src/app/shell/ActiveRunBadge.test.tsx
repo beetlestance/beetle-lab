@@ -158,7 +158,7 @@ it('keeps the snapshot owned after Overview-to-Suites navigation in the same wor
   );
   mount(api.client, routes.workspace(ids.a, ids.workspace));
   await screen.findByRole('link', { name: /Workspaces\s*,\s*1\s*running/ });
-  fireEvent.click(screen.getByRole('link', { name: /Workspaces\s*,\s*1\s*running/ }));
+  fireEvent.click(screen.getByRole('link', { name: 'Suites' }));
   await screen.findByRole('table', { name: 'Folders' });
   await waitFor(() => expect(reads).toBe(2));
   await act(async () => pending.resolve(json(snapshot(2))));
