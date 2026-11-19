@@ -119,7 +119,7 @@ Comparison plots are 120 px high; source coordinates, gap flags and default rend
 Legends use each series' nearest source sample, hide readings outside coverage/across gaps and retain zero.
 An overlay cursor denotes requested time, not a new sample.
 Peaks require matching numeric generation/version/manifest/artifact/hash/native marker; missing/error/incompatible sources stay unknown.
-The chart notes preserve downsampling and partial-coverage context.
+Downsampling, partial coverage and missing peak/source notes stay visible; healthy window counts use source details.
 
 ## Target comparison overlays
 
@@ -132,7 +132,7 @@ result. Unsafe chronology, duplicate target timestamps or missing timing cannot
 enter an overlay. Same metric keys and compatible declared units share a scale;
 raw units and different runtime metrics never mix. Zeros/nulls/source positions
 remain exact. Links expose individual-run evidence when an overlay is unavailable.
-No polling or new API contract; errors and limited/missed collection stay explicit.
+No polling or new API contract; errors and limited/missed collection stay visible. Healthy source identities use details.
 
 ## Configured scenario intent
 
@@ -167,8 +167,7 @@ subpercent differences are never called unchanged. It infers neither statistical
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
 not pool percentile estimates or treat excluded endpoint rows as the entire run.
-Ready source identity includes the numeric artifact hash and manifest; restored
-history can read it without starting work. No mutation or current-work polling.
+Numeric hash and manifest bind ready source identity; restored history reads it without starting work, mutation or polling.
 
 ## Anchors
 
@@ -198,7 +197,8 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/comparison.css` | `79854448ac21` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
-| `web/src/features/runs/comparison/RecordedCharts.tsx` | `6f2604ca7c2a` |
+| `web/src/features/runs/comparison/SourceNotes.tsx` | `0c63fd55d953` |
+| `web/src/features/runs/comparison/RecordedCharts.tsx` | `f6d13f3d74a3` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `651a2449b402` |
@@ -209,7 +209,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
 | `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
 | `web/src/features/runs/comparison/target-model.ts` | `fcd94018f94f` |
-| `web/src/features/runs/comparison/TargetRuntime.tsx` | `2a1bbffdcca9` |
+| `web/src/features/runs/comparison/TargetRuntime.tsx` | `689024e21952` |
 | `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
 | `web/src/features/runs/comparison/Slos.tsx` | `e66be0ef3b34` |
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
