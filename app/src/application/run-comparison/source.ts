@@ -2,13 +2,20 @@ import { encodeCanonicalJson, encodeJson, verifyEngineResultSeal } from '@beetle
 import type { EngineResult } from '@beetle/contracts';
 import type { ConfigSchema } from '@beetle/contracts/engine-config';
 import type { K6MetricShape } from '@beetle/contracts/k6-metrics';
-import type { Run, RunResultSnapshot, SuiteRevision, RunComparisonRequest } from '@beetle/contracts/api';
+import type {
+  Run,
+  RunResultSnapshot,
+  SuiteRevision,
+  RunComparisonRequest,
+  RunComparisonSloLimit,
+} from '@beetle/contracts/api';
 import type { RunComparisonOptions } from '../../ports/run-comparison.js';
 import { ComparisonError } from '../../ports/run-comparison.js';
 import type { MetricReadOperation } from '../metric-read-lifetime/index.js';
 import { captureApi } from './capture.js';
 /** Read subset only after the shared closed suite schema accepts the full config. */
 export interface ComparisonConfig extends K6MetricShape {
+  readonly loadPlan: { readonly slos: readonly (RunComparisonSloLimit & { readonly id: string })[] };
   readonly target: string;
   readonly datasets: readonly unknown[];
   readonly secrets: readonly {

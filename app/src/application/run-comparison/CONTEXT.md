@@ -5,7 +5,10 @@ HTTP owns its fast cancellation race and retains that promise through settlement
 One active comparison, no queue/cache, whole 30 s context. Close fences and drains.
 Capture2..4 distinct canonical terminal runs, immutable config pins and sealed
 result scopes. Reconcile full Run, full revision and result-seal identity after IO.
-Configs remain transient <=1 MiB each; no config values leave this owner.
+Configs remain transient <=1 MiB each; only the matched SLO limit may leave.
+Optional firstFailedSlo uses a native SLO failure and unique pinned rule match;
+metric/stat mismatches keep the limit unknown. No extra IO or native regrading.
+The unchanged 262144-byte cap can omit optional detail to preserve required data.
 Shared k6 schema/layout maps baseline aliases through stable request/assertion IDs;
 peer lookup must return the exact remapped series identity, not merely a matching
 kind. Missing input, missing points, source absence and missing results differ.

@@ -89,3 +89,16 @@ it('rejects missing-result/source contradictions in both directions', async () =
   item.result = null; item.run.state = 'errored'; item.run.outcome = 'inconclusive'; item.metric = {...snapshot.items[0]!.metric, availability: 'missing', reason: 'not_observed', series: null};
   item.warnings = comparisonWarnings(item); expect(runComparisonSnapshotMatches(snapshot, request)).toBe(false);
 });
+
+ it('accepts optional native failure detail and rejects contradictory count or metric bindings', async () => {
+  const {request, snapshot} = await pair(); const item = snapshot.items[0]!;
+  expect(runComparisonSnapshotMatches(snapshot, request)).toBe(true);
+  item.result!.firstFailedSlo = {id: 'tail', reading: {source: 'native-summary', metric: 'http_req_duration', stat: 'p99', value: 322},
+    limit: {metric: 'http_req_duration', stat: 'p99', operator: '<', value: 300}};
+  expect(runComparisonSnapshotMatches(snapshot, request)).toBe(false);
+  item.result!.failedSloCount = 1; item.result!.outcome = 'failed'; item.run.outcome = 'failed';
+  expect(runComparisonSnapshotMatches(snapshot, request)).toBe(true);
+  expect(await createApiClient({baseUrl, fetch: reply(snapshot)}).compareRuns({params, body: request})).toMatchObject({ok: true});
+  item.result!.firstFailedSlo.limit!.stat = 'p95';
+  expect(await createApiClient({baseUrl, fetch: reply(snapshot)}).compareRuns({params, body: request})).toMatchObject({ok: false, error: {kind: 'response'}});
+ });

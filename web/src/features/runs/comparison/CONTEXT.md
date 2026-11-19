@@ -34,6 +34,7 @@ dropped counts, without pooling estimates or deriving checks from definition ver
 Each ready overview is one source; its nulls never backfill from saved summaries.
 When it is unavailable, only the existing accepted history scalars can fall back.
 Average rate stays average; overflowed relative deltas stay unknown.
-Remaining: native per-threshold values and target runtime overlay.
-No new API contract or automatic polling was introduced.
+Optional firstFailedSlo shows native failure/reading with a matched saved limit;
+legacy missing details stay explicit. No regrading, new reads or polling.
+Remaining: target runtime overlay and full board acceptance.
 Focused checks: compare, selection, history, integration and lifecycle tests here.

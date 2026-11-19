@@ -11,6 +11,7 @@ import { comparisonRunIds } from './selection.js';
 import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
 import { RecordedComparisonCharts } from './RecordedCharts.js';
+import { ComparisonFailedSlos } from './FailedSlos.js';
 import './comparison.css';
 
 export function RunComparison(scope: RunScope) {
@@ -61,6 +62,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
       {state.view.error && <p role="alert">Comparison could not be loaded. Use Refresh comparison to retry.</p>}
       {snapshot && (
         <>
+          <ComparisonFailedSlos items={snapshot.items} />
           <RunStrip scope={scope} ids={ids} snapshot={snapshot} contexts={state.contexts} />
           <ComparisonDeltas
             items={snapshot.items}

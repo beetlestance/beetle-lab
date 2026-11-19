@@ -75,3 +75,5 @@
 
 .compare-head > div:first-child { min-width: 0; }
 .compare h1 { overflow-wrap: anywhere; }
+
+.compare-native-failures { margin: 0; padding-left: var(--s-20); color: var(--error); overflow-wrap: anywhere; }

@@ -1,12 +1,5 @@
-import { encodeJson } from '@beetle/contracts';
 import { createK6ConfigSchema } from '@beetle/contracts/engine-config/k6';
-import {
-  comparisonFields,
-  comparisonWarnings,
-  runComparisonSnapshotMatches,
-  validateApi,
-  RUN_COMPARISON_BYTES,
-} from '@beetle/contracts/api';
+import { comparisonFields, comparisonWarnings, runComparisonSnapshotMatches, validateApi } from '@beetle/contracts/api';
 import type { RunComparisonRequest, RunComparisonItem, RunComparisonSnapshot } from '@beetle/contracts/api';
 import type { RunComparisonOptions, RunComparisonService } from '../../ports/run-comparison.js';
 import { ComparisonError } from '../../ports/run-comparison.js';
@@ -17,6 +10,7 @@ import { loadSources, reconcile } from './source.js';
 import { environment, summary } from './environment.js';
 import { revisionDifferences } from './diff.js';
 import { baselineBinding, peerKey } from './logical.js';
+import { encodeComparison } from './serialize.js';
 import { emptyMetric, readMetric } from './metrics.js';
 /** One read-only admitted comparison; its promise retains actual originals through cleanup. */
 export function createRunComparisonService(input: RunComparisonOptions): RunComparisonService {
@@ -97,16 +91,13 @@ async function executeComparison(
   await reconcile(sources, options, owner);
   owner.check();
   const value = JSON.parse(
-    encodeJson(
-      {
-        scope: request.scope,
-        baselineRunId: request.runIds[0]!,
-        metric: request.metric,
-        metricBinding: binding,
-        items,
-      },
-      RUN_COMPARISON_BYTES,
-    ),
+    encodeComparison({
+      scope: request.scope,
+      baselineRunId: request.runIds[0]!,
+      metric: request.metric,
+      metricBinding: binding,
+      items,
+    }),
   ) as unknown;
   const checked = validateApi('RunComparisonSnapshot', value);
   if (!checked.ok || !runComparisonSnapshotMatches(checked.value, request)) throw new ComparisonError('unavailable');

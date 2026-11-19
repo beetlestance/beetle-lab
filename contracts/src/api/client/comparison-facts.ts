@@ -43,6 +43,7 @@ export function comparisonResultMatches(item: RunComparisonItem): boolean {
   const r = item.result;
   if (!r) return item.run.outcome !== 'passed';
   if (item.run.outcome === 'passed' && r.outcome !== 'passed') return false;
+  if (!failureDetailMatches(r)) return false;
   const a = r.requiredAssertions;
   if (!Number.isSafeInteger(a.passed + a.failed + a.unknown) || a.required !== a.passed + a.failed + a.unknown)
     return false;
@@ -54,4 +55,17 @@ export function comparisonResultMatches(item: RunComparisonItem): boolean {
     default:
       return true;
   }
+}
+
+function failureDetailMatches(r: NonNullable<RunComparisonItem['result']>): boolean {
+  const failure = r.firstFailedSlo;
+  if (
+    failure &&
+    (r.failedSloCount === 0 ||
+      (failure.reading &&
+        failure.limit &&
+        (failure.reading.metric !== failure.limit.metric || failure.reading.stat !== failure.limit.stat)))
+  )
+    return false;
+  return true;
 }

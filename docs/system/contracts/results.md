@@ -170,7 +170,7 @@ on session, scope, attempt or artefact change without releasing unsettled origin
 | Runs | 2..4 distinct canonical IDs, first is baseline; all terminal and in scope, else 404 or conflict, never partial |
 | Metric | optional baseline `RunMetricKey`; request/assertion aliases remapped by stable ID per revision; deleted work is `not_applicable` |
 | Config diff | ≤ 100 pointers per peer, ≤ 65536 nodes, ≤ 4096 pending pairs, depth 64, ≤ 512 B per pointer; excess becomes a `limited` parent/root change |
-| Reply | ≤ 262144 B; no config values, headers, bodies, URLs or secret locators |
+| Reply | ≤ 262144 B; optional first failed SLO/native reading/matched saved limit; no other config values or secret locators |
 | Lifetime | one active comparison per installation, ≤ 4 sequential run reads and metric lookups, one 30 s deadline |
 
 Identity, version, active attempt and pinned revision are rechecked after source
@@ -215,6 +215,6 @@ a failed revocation keeps ownership and rejects close.
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/attempt/archive/` | `93c22f858025` |
 | `app/src/application/run-metrics/` | `b11366f52408` |
-| `app/src/application/run-comparison/` | `cddffebb9dee` |
+| `app/src/application/run-comparison/` | `d6caadaf6639` |
 | `contracts/src/k6-live/` | `324516855159` |
 | `agent/src/live-metrics/` | `feac352cffc7` |

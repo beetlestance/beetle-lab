@@ -27,5 +27,9 @@ function failedSentence(threshold: EngineResult['thresholds'][number], rules: re
   if (!rule || !reading || reading.metric !== rule.metric || reading.stat !== rule.stat)
     return `Threshold ${threshold.id} failed.`;
   const unit = ruleUnit(rule);
-  return `${ruleName(rule)} failed: ${ruleValue(unit, reading.value)}; limit ${operators[rule.operator]} ${ruleValue(unit, rule.value)}.`;
+  return `${ruleName(rule)} failed: ${ruleValue(unit, reading.value)}; ${thresholdLimitText(rule)}.`;
+}
+
+export function thresholdLimitText(rule: Pick<PlanRule, 'metric' | 'stat' | 'operator' | 'value'>): string {
+  return `limit ${operators[rule.operator]} ${ruleValue(ruleUnit(rule), rule.value)}`;
 }

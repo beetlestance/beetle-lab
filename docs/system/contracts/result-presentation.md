@@ -89,6 +89,16 @@ then the complete source UUID if needed; labels never invent a run ordinal.
 Rates stay labelled whole-run averages; no peak is invented from the configured
 load. Differences describe scalar observations, not statistical confidence.
 
+## Native comparison failures
+
+The optional first failed SLO detail reuses captured sealed results and the pinned,
+validated revision. It includes its native reading and a uniquely matched saved
+limit, never the full config or secret values. Missing readings and mismatched
+metric/statistic limits remain explicit. Discovery triggers are not SLO failures.
+The client rejects detail with zero failed count or contradictory reading/limit
+identity. Display never reevaluates the native verdict. The unchanged 256 KiB
+reply cap may omit this optional detail; no additional reads or polling are added.
+
 ## Recorded comparison overlays
 
 One existing chart-history read per selected run shares comparison admission and
@@ -140,3 +150,8 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/overlay-model.ts` | `b3a951dbbbb0` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
+| `app/src/application/run-comparison/failed-slo.ts` | `pending` |
+| `app/src/application/run-comparison/serialize.ts` | `pending` |
+| `contracts/api/v2/run-comparison.schema.json` | `pending` |
+| `contracts/src/api/client/comparison-facts.ts` | `pending` |
+| `web/src/features/runs/comparison/FailedSlos.tsx` | `pending` |

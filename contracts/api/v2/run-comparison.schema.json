@@ -22,6 +22,25 @@
       "required": ["requestId", "assertionId"],
       "additionalProperties": false
     },
+    "RunComparisonSloLimit": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "metric": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/threshold/properties/reading/properties/metric"},
+        "stat": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/threshold/properties/reading/properties/stat"},
+        "operator": {"enum": ["<", "<=", ">", ">="]},
+        "value": {"type": "number", "minimum": 0, "maximum": 1000000000000}
+      },
+      "required": ["metric", "stat", "operator", "value"]
+    },
+    "RunComparisonFailedSlo": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/common#/$defs/token"},
+        "reading": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/threshold/properties/reading"}, {"type": "null"}]},
+        "limit": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonSloLimit"}, {"type": "null"}]}
+      },
+      "required": ["id", "reading", "limit"]
+    },
     "RunComparisonResult": {
       "type": "object",
       "properties": {
@@ -29,6 +48,7 @@
         "completeness": {"enum": ["complete", "partial", "missing"]},
         "execution": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-execution#/$defs/any"},
         "requiredAssertions": {"$ref": "https://beetle-lab.dev/contracts/runner/v1/result-evidence#/$defs/base/properties/requiredAssertions"},
+        "firstFailedSlo": {"anyOf": [{"$ref": "https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonFailedSlo"}, {"type": "null"}]},
         "failedSloCount": {"type": "integer", "minimum": 0, "maximum": 256},
         "discoveryReached": {"anyOf": [{"type": "boolean"}, {"type": "null"}]}
       },

@@ -161,6 +161,8 @@ export const apiMessageSchemas = freezeSchema({
   RunChartHistory: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-chart-history#/$defs/RunChartHistory' },
   RunComparisonRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonRequest' },
   RunComparisonBinding: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonBinding' },
+  RunComparisonSloLimit: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonSloLimit' },
+  RunComparisonFailedSlo: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonFailedSlo' },
   RunComparisonResult: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonResult' },
   RunComparisonEnvironment: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonEnvironment' },
   RunComparisonConfigChange: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-comparison#/$defs/RunComparisonConfigChange' },
