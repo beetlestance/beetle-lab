@@ -43,11 +43,32 @@ it('upgrades schema33 rows: backfills latest retained Runs, groups and revision 
     asSchema33(f.db);
     const columns = f.db.prepare("SELECT name FROM pragma_table_info('suites') WHERE name LIKE 'latest%'").all();
     expect(columns).toEqual([]);
+    expect(f.db.prepare("SELECT name FROM pragma_table_info('run_notes') WHERE name='updated_at'").all()).toEqual([]);
+    expect(f.db.prepare("SELECT name FROM pragma_table_info('export_jobs') WHERE name='last_agent_report_at'").all()).toEqual([]);
+    expect(f.db.prepare("SELECT name FROM sqlite_schema WHERE name='exports_revision_latest'").all()).toEqual([]);
     transaction(f.db, () => f.db.exec(migration034));
     expect(f.db.prepare('PRAGMA user_version').get()).toEqual({ user_version: 34 });
     expect(derived(f)).toEqual(expected);
     expect(f.list({})).toEqual(before);
     expect(f.revision(61).runCount).toBe(2);
+  } finally {
+    f.db.close();
+  }
+});
+
+it('refuses to project recorded note times without changing the fixture', () => {
+  const f = populated();
+  try {
+    f.db.prepare(`INSERT INTO run_notes(run_id,organization_id,workspace_id,version,note,updated_at)
+      VALUES(?,?,?,1,?,?)`).run(uuid(71), scope.organizationId, scope.workspaceId, 'Recorded note', time(4));
+    const before = f.db.prepare('SELECT type,name,sql FROM sqlite_schema ORDER BY type,name').all();
+    const version = f.db.prepare('PRAGMA user_version').get();
+    expect(() => asSchema33(f.db)).toThrow('Cannot project recorded note edit time');
+    expect(f.db.prepare('SELECT type,name,sql FROM sqlite_schema ORDER BY type,name').all()).toEqual(before);
+    expect(f.db.prepare('PRAGMA user_version').get()).toEqual(version);
+    expect(f.db.prepare('SELECT note,updated_at FROM run_notes').all()).toEqual([
+      { note: 'Recorded note', updated_at: time(4) },
+    ]);
   } finally {
     f.db.close();
   }
