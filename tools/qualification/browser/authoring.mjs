@@ -18,9 +18,7 @@ export async function author(page, origin) {
   await saveEditor(page);
   await page.getByRole('link', { name: 'Synthetic workspace', exact: true }).click();
   const workspace = page.url();
-  await page.getByRole('link', { name: 'Suites', exact: true }).click();
-  await page.getByRole('button', { name: 'New suite', exact: true }).click();
-  await page.getByRole('button', { name: 'Choose k6 load tests', exact: true }).click();
+  await page.getByRole('link', { name: 'Write your first suite', exact: true }).click();
   await page.getByLabel('Suite name', { exact: true }).fill('Synthetic k6 suite');
   await page.getByRole('button', { name: 'Create suite', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Synthetic k6 suite', exact: true })).toBeVisible();

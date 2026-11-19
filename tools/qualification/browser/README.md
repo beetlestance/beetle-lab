@@ -13,7 +13,7 @@ npm run check --prefix tools/qualification/browser
 npm run test:cleanup --prefix tools/qualification/browser
 ```
 
-For a container browser, run a matching-version Playwright `launchServer` in a
+For a container browser, run a matching-version Playwright `run-server` in a
 separate browser container, publishing its WebSocket port to loopback only. Set
 `BEETLE_BROWSER_WS_ENDPOINT=ws://127.0.0.1:PORT/OPAQUE_PATH` on the acceptance command.
 Client/server major and minor versions must match the pinned driver. The client
