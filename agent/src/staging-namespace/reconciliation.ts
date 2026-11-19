@@ -11,7 +11,9 @@ function assert(condition: unknown): asserts condition {
  * Newly observed directory facts for a prepared task whose recorded facts went stale when the
  * installed root was renumbered (decision 030). The anchor and its identity never change; the
  * reconciliation is bound to that identity and to the retirement whose runtime absence was proven.
- * Owner, group and mode must equal the recorded ones; at least one device or inode must differ.
+ * Owner, group and mode must equal the recorded ones. Device and inode numbers are per-start
+ * observations, so any values are accepted, including the anchor's own: folders that move A→B→A
+ * replace a recorded B with A, and the record is never cleared (decision 030).
  */
 export function captureTaskReconciliation(input: unknown, anchor: TaskNamespaceAnchor): TaskReconciliation {
   const value = JSON.parse(encodeJson(input, namespaceCaps.task)) as unknown;
@@ -22,14 +24,11 @@ export function captureTaskReconciliation(input: unknown, anchor: TaskNamespaceA
   assert(row.protocolVersion === 1 && row.taskNamespaceIdentity === anchor.taskNamespaceIdentity);
   assert(cleanupDigest(row.retirementRequestDigest));
   const directories = captureTaskDirectories(row.directories);
-  let moved = false;
   for (const role of roles) {
     const recorded = anchor.directories[role];
     const observed = directories[role];
     assert(observed.uid === recorded.uid && observed.gid === recorded.gid && observed.mode === recorded.mode);
-    if (observed.dev !== recorded.dev || observed.ino !== recorded.ino) moved = true;
   }
-  assert(moved);
   const result: TaskReconciliation = {
     protocolVersion: 1,
     taskNamespaceIdentity: anchor.taskNamespaceIdentity,

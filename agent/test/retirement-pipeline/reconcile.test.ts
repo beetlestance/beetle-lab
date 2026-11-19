@@ -73,6 +73,34 @@ it('reconciles a renumbered task folder after proving the runtime absent, then c
   } finally { await s.close(); }
 });
 
+it('recovers A→B→A: replaces a recorded B with the anchor facts A and cleans against A, anchor unchanged', async () => {
+  const e = await f.inventory();
+  const recorded = await e.owner.stagingNamespace.readTask(tk(e));
+  if (recorded?.state !== 'prepared') throw new Error('Missing prepared task');
+  const s = await restart(e);
+  try {
+    const original = await observed(e.task);
+    expect(original).toEqual(recorded.anchor.directories);
+    // B: an earlier start observed the folders at other numbers and recorded them.
+    const shifted = Object.fromEntries(Object.entries(original).map(([role, fact]) => [role, { ...fact, ino: String(BigInt(fact.ino) + 1_000_000n) }])) as unknown as TaskDirectoryFacts;
+    const b: TaskReconciliation = { protocolVersion: 1, taskNamespaceIdentity: recorded.anchor.taskNamespaceIdentity, retirementRequestDigest: producerBarrierFacts(e.producer, e.owner.retirements).intent.requestDigest, directories: shifted };
+    expect(await e.owner.stagingNamespace.reconcileTask(tk(e), b)).toEqual(b);
+    // Cleanup now checks B, which no longer exists physically, and refuses.
+    await expect(settle(s.pipeline.tickWithPorts(s.request, operation(), s.ports))).rejects.toMatchObject({ reason: 'unavailable' });
+    expect(await e.owner.cleanupPlans.read(e.key)).toBeNull();
+    // A: the folders are back at the anchor's numbers; reconciliation records A over B.
+    const outcome = await settle(s.pipeline.reconcileWithPorts(s.request, operation(), s.ports));
+    expect(outcome).toEqual({ state: 'reconciled', reconciliation: { ...b, directories: original } });
+    expect(await e.owner.stagingNamespace.readTaskReconciliation(tk(e))).toEqual({ ...b, directories: original });
+    expect(await e.owner.stagingNamespace.readTask(tk(e))).toEqual(recorded);
+    expect(await settle(s.pipeline.reconcileWithPorts(s.request, operation(), s.ports))).toEqual({ state: 'current' });
+    expect(s.effects).toEqual([]);
+    expect(await settle(s.pipeline.tickWithPorts(s.request, operation(), s.ports))).toMatchObject({ state: 'cleaned' });
+    expect((await e.owner.cleanupPlans.read(e.key))?.plan.entries.find((entry) => entry.path === 'output')?.native).toEqual(original.output);
+    await expect(lstat(e.task)).rejects.toMatchObject({ code: 'ENOENT' });
+  } finally { await s.close(); }
+});
+
 it('records nothing when the folders still match the recorded facts', async () => {
   const e = await f.inventory();
   const s = await restart(e);

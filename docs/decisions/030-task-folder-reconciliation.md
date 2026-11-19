@@ -21,9 +21,10 @@ an explicit operator command, never from a cleanup tick. In order it:
 3. finds the folder by its recorded name under this start's verified root,
    without following links, on the live root's device, and reads the whole tree
    with the same checks as cleanup inventory;
-4. requires each of the four folders to keep the recorded owner, group and mode,
-   and at least one device or inode to differ (otherwise it reports `current` and
-   records nothing);
+4. requires each of the four folders to keep the recorded owner, group and mode;
+   device and inode numbers are observations for the current verified start, so
+   any values are accepted (when they equal the facts cleanup already checks
+   against, it reports `current` and records nothing);
 5. records `{taskNamespaceIdentity, retirementRequestDigest, directories}` in
    Journal schema 27's `reconciliation_json` column.
 
@@ -31,7 +32,9 @@ The Journal checks the durable side again in the same transaction, and a SQL
 trigger refuses any write that clears the column, names another retirement, or
 happens once a cleanup plan, progress or receipt exists. A reconciliation may be
 replaced while no plan exists, so a second renumbering before cleanup is
-recoverable. Inventory, removal and the plan trigger then compare role folders
+recoverable. Because the record is never cleared, folders that move A→B→A
+replace a recorded B with facts equal to the anchor's A; the anchor itself never
+changes. Inventory, removal and the plan trigger then compare role folders
 with the reconciled facts instead of the anchor's.
 
 ## Why
