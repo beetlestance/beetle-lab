@@ -23,7 +23,12 @@ const budgetNames = {
   output_bytes: 'outputBytes',
   timeout_ms: 'timeoutMs',
 } as const;
-export function blocked(reason: DispatchBlockReason): DispatchEligibility {
+type IndividualReason = Exclude<
+  DispatchBlockReason,
+  'isolated' | 'isolated_predecessor' | 'not_queued' | 'untracked_intent' | 'ownership_unknown'
+>;
+type IndividualEligibility = { kind: 'ready' } | { kind: 'blocked'; reason: IndividualReason };
+export function blocked<Reason extends DispatchBlockReason>(reason: Reason): { kind: 'blocked'; reason: Reason } {
   return { kind: 'blocked', reason };
 }
 function safe(value: number): number {
@@ -79,7 +84,7 @@ export class DispatchEligibilityOwner {
       for (const key of costs) this.totals[key] = safe(this.totals[key] + row[key]);
     }
   }
-  individual(row: ExecutionResourceFact): DispatchEligibility {
+  individual(row: ExecutionResourceFact): IndividualEligibility {
     const runtime = this.capacity.runtime;
     if (runtime === null) return blocked('capacity_unknown');
     checkedCosts(row);

@@ -97,7 +97,7 @@ neither contacts the agent nor grants dispatch. [Engine metadata](engine-metadat
   digest was verified at agent start (`verifyInstalledImages`); there is no later re-inspection.
 - Pool usage mirrors backend dispatch accounting (charged runs and exports, ≤ 64); agent admission
   stays final. Queue position counts uncancelled queued runs and exports ahead by `queue_order`.
-  Holders are named only for the caller's workspace; other workspaces are a count.
+  Holders are named only within the workspace; others are counted. `capacityBlockReason` is individual fit only; null never grants dispatch.
 
 ## Timeout watchdog
 

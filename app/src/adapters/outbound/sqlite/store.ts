@@ -294,7 +294,10 @@ export class Store {
     if (runPinOperation(operation)) return this.runPins.execute(operation);
     if (outputOperation(operation)) return this.outputs.execute(operation);
     if (eventOperation(operation)) return this.events.execute(operation);
-    if (statusOperation(operation)) return readInstallationStatus(this.db, this.settings, this.runReads, operation);
+    if (statusOperation(operation))
+      return readInstallationStatus(this.db, this.settings, this.runReads, operation, (run) =>
+        this.dispatchClaims.capacityReason(run),
+      );
     return this.executeLegacy(operation);
   }
   private settlement(operation: Operation): Value {

@@ -49,29 +49,35 @@ export function validateRunDefaults(defaults: RunDefaults, values: InstallationV
   validateBudget(defaults.budget, values.perRunCeilings);
 }
 
-export function validateInstallation(values: InstallationValues, runtime: RuntimeCeilings | null): void {
-  requireRule(runtime != null, 'capacity_unavailable');
-  requireRule(runtime.supportedProfiles.length >= 1 && runtime.supportedProfiles.length <= 32, 'capacity_unavailable');
-  poolKeys.forEach((key) => {
-    safeInteger(values.pool[key]);
-    safeInteger(runtime.pool[key]);
-    requireRule(values.pool[key] <= runtime.pool[key], 'capacity_unavailable');
-  });
+/** Durable policy invariants, independent of a momentary capacity observation. */
+export function validateInstallationPolicy(values: InstallationValues): void {
+  poolKeys.forEach((key) => safeInteger(values.pool[key]));
   safeInteger(values.pool.freeSpaceReserveBytes, 0);
-  safeInteger(runtime.pool.freeSpaceReserveBytes, 0);
-  requireRule(values.pool.freeSpaceReserveBytes <= runtime.pool.freeSpaceReserveBytes, 'capacity_unavailable');
-  // Allocation includes the reserve; retained output must leave that reserve free.
   requireRule(safeSum(values.pool.outputBytes, values.pool.freeSpaceReserveBytes) <= values.pool.storageBytes);
-  validateBudget(values.perRunCeilings, runtime.perRun);
+  validateBudget(values.perRunCeilings, values.perRunCeilings);
   pooledBudgetKeys.forEach((key) => requireRule(values.perRunCeilings[key] <= values.pool[key]));
   requireRule(values.supportedProfiles.length >= 1 && values.supportedProfiles.length <= 32);
   requireRule(new Set(values.supportedProfiles).size === values.supportedProfiles.length);
-  values.supportedProfiles.forEach((profile) => {
-    requireRule(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(profile));
-    requireRule(runtime.supportedProfiles.includes(profile), 'capacity_unavailable');
-  });
+  values.supportedProfiles.forEach((profile) => requireRule(/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(profile)));
   validateRunDefaults(values.runDefaults, values);
   validateRetention(values.retention);
+}
+
+/** Effective settings and policy edits must still fit the current runtime. */
+export function validateInstallation(values: InstallationValues, runtime: RuntimeCeilings | null): void {
+  requireRule(runtime != null, 'capacity_unavailable');
+  requireRule(runtime.supportedProfiles.length >= 1 && runtime.supportedProfiles.length <= 32, 'capacity_unavailable');
+  validateInstallationPolicy(values);
+  poolKeys.forEach((key) => {
+    safeInteger(runtime.pool[key]);
+    requireRule(values.pool[key] <= runtime.pool[key], 'capacity_unavailable');
+  });
+  safeInteger(runtime.pool.freeSpaceReserveBytes, 0);
+  requireRule(values.pool.freeSpaceReserveBytes <= runtime.pool.freeSpaceReserveBytes, 'capacity_unavailable');
+  validateBudget(values.perRunCeilings, runtime.perRun);
+  values.supportedProfiles.forEach((profile) =>
+    requireRule(runtime.supportedProfiles.includes(profile), 'capacity_unavailable'),
+  );
 }
 
 /** Setup chooses manual retention unless an explicit validated policy was supplied. */

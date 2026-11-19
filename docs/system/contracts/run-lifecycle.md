@@ -51,8 +51,8 @@ One immediate transaction in the metadata worker, receipt first:
    operation and validated request, excluding allocated IDs and time.
 2. Verify workspace, revision and every published input pin; read the immutable
    configuration from the revision.
-3. Resolve installation, organisation and workspace settings against the current
-   runtime observation. Budget and profile must fit; unknown capacity refuses.
+3. Resolve installation, organisation and workspace settings against installed policy.
+   Budget/profile must fit installed ceilings; unknown or reduced live capacity queues until dispatch.
    The three settings versions and [requester label](authoring.md#run-requester) are snapshotted into the run.
 4. Bind the trusted installed profile to the revision engine and config version,
    then build the complete immutable Offer. Its `intentDigest` is canonical JSON

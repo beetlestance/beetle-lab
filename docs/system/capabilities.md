@@ -20,7 +20,7 @@ measurements live in [evidence](../evidence/README.md).
 - Configurable run budgets within installed limits and explicit retention controls;
   run pinning protects up to 256 runs per workspace.
 - Read-only installation status (agent reachability, measured host facts, verified image/engine-version
-  metadata, pool usage) and run queue position; CPU use and available memory are not measured.
+  metadata, pool usage) and run queue position/individual-capacity wait reasons; CPU use and available memory are not measured.
 - Cold backup and fresh read-only historical restoration. General in-place upgrade,
   downgrade and mutable restore are not claimed.
 
@@ -35,4 +35,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `adea4f145b1c` |
+| `contracts/api/v2/` | `7cf0f2c30f70` |

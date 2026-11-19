@@ -126,6 +126,9 @@ explicit until physical stop. Only verified native custody publishes the file.
 The script embeds the revision's inline datasets and request bodies, so it is as
 sensitive as the suite itself.
 
+Fresh export submission retains live installation-capacity validation; run enqueue
+uses installed policy only. Export receipt replay still precedes that validation.
+
 ## Metadata, accounting and publication
 
 | Rule | Behaviour |
@@ -171,7 +174,7 @@ is not a claim that the browser wrote a file.
 | `contracts/src/export-job/` | `ee5dbee9e357` |
 | `app/src/application/exports/` | `31ac98ced322` |
 | `app/src/application/export-runtime/` | `23cbf619a3fc` |
-| `app/src/adapters/outbound/sqlite/export-jobs/` | `84be6cb419bc` |
+| `app/src/adapters/outbound/sqlite/export-jobs/` | `e98230e78f90` |
 | `app/src/adapters/outbound/sqlite/migration035.ts` | `44762d1ad5ac` |
 | `contracts/src/api/export-latest.ts` | `5f08c834aac2` |
 | `web/src/features/exports/prepare.ts` | `4f600d24a45a` |

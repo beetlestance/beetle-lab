@@ -48,6 +48,20 @@ function positionText(queue: RunQueueStatus): string {
   return queue.position === 1 ? 'Queued, first in line.' : `Queued, number ${queue.position} in line.`;
 }
 
+const capacityReasons: Record<NonNullable<RunQueueStatus['capacityBlockReason']>, string> = {
+  capacity_unknown: 'Waiting for a current capacity reading from the agent.',
+  profile_unavailable: 'The requested engine profile is not currently available.',
+  per_run_ceiling: 'This run exceeds the current per-run resource limit. Review installation capacity and settings.',
+  budget_unavailable: 'Waiting for enough capacity in the execution pool.',
+  staging_unavailable: 'Waiting for enough engine staging space.',
+  storage_unavailable: 'Waiting for enough storage capacity.',
+  ownership_unknown: 'Dispatch is paused until existing execution ownership is reconciled.',
+};
+
+function waitLabel(queue: RunQueueStatus): string {
+  return queue.capacityBlockReason ? capacityReasons[queue.capacityBlockReason] : 'Waiting for execution capacity.';
+}
+
 function QueueFacts({
   run,
   queue,
@@ -75,7 +89,7 @@ function QueueFacts({
           {
             label: (
               <span>
-                Waiting for a run slot.
+                {waitLabel(queue)}
                 {queue.holders.length > 0 && (
                   <>
                     {' '}

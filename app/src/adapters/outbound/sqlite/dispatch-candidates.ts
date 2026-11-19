@@ -1,3 +1,4 @@
+import type { Run } from '@beetle/contracts/api';
 import type { DatabaseSync } from 'node:sqlite';
 import type { DispatchKey } from '../../../ports/dispatch.js';
 import { MAX_DISPATCH_CHARGED, MAX_DISPATCH_PENDING } from '../../../ports/dispatch.js';
@@ -85,6 +86,15 @@ export function chargedFacts(db: DatabaseSync): DispatchFact[] {
   const rows = db.prepare(chargedFactsSql).all() as unknown as DispatchFact[];
   if (rows.length > MAX_DISPATCH_CHARGED) throw new StorageError('unavailable');
   return rows;
+}
+/** Exact currently displayed run; caller already owns the scoped queue-read transaction. */
+export const runCapacityFactSql = `SELECT ${columns} FROM attempts a LEFT JOIN dispatch_outbox d ON d.attempt_id=a.id
+  ${joins} WHERE a.id=? AND a.run_id=? AND a.organization_id=? AND a.workspace_id=?`;
+export function runCapacityFact(db: DatabaseSync, run: Run): DispatchFact | undefined {
+  return db
+    .prepare(runCapacityFactSql)
+    .get(run.activeAttemptId, run.id, run.scope.organizationId, run.scope.workspaceId) as unknown as
+    DispatchFact | undefined;
 }
 export function originalFact(db: DatabaseSync, key: DispatchKey): DispatchFact | undefined {
   return db

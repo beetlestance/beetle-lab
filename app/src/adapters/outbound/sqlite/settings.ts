@@ -99,8 +99,15 @@ export class Settings {
     return { installation, organization, workspace };
   }
   resolveRun(scope: WorkspaceScope, run: RunDefaults) {
+    return this.resolveIntent(scope, run, this.chain(scope));
+  }
+  resolveExport(scope: WorkspaceScope, run: RunDefaults) {
     const chain = this.chain(scope);
-    const resolved = resolveRunSettings({ scope, chain, runtime: this.runtime.snapshot(), run });
+    validateInstallation(chain.installation.values, this.runtime.snapshot());
+    return this.resolveIntent(scope, run, chain);
+  }
+  private resolveIntent(scope: WorkspaceScope, run: RunDefaults, chain: SettingsChain) {
+    const resolved = resolveRunSettings({ scope, chain, run });
     requireRule(chain.organization !== undefined && chain.workspace !== undefined, 'not_found');
     return {
       defaults: resolved.defaults,
