@@ -14,7 +14,8 @@ Relative paths are text; shared artifactDownload sets fixed UUID names and safe
 txt/CSV/JSON extensions for known kinds, bin otherwise; no engine filenames.
 Browser owns bytes, save/progress/cancel; links create no completion state or byte
 client/cache. Already-issued native transfers remain browser/server owned.
-Table: File / What it holds (static map by kind) / Size / Verify and open.
+Table: File / What it holds / Size / Verify and open; readable columns in a named
+keyboard-scrollable region on narrow screens.
 ArtifactViewer opens declared native text kinds through the explicit 32 MiB preview profile.
 Full size/SHA-256 verification precedes a <=64 KiB UTF-8 excerpt. Other readers keep their caps.
 Formatting only applies to tiny depth/node-bounded JSON; retained DOM text stays bounded.

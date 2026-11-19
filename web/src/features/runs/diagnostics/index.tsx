@@ -1,3 +1,7 @@
+import { artifactDownload } from '@beetle/contracts';
+import { runArtifactContentPath } from '@beetle/contracts/api';
+import { Dialog } from '../../../components/Dialog.js';
+import { Button, buttonClass } from '../../../components/Button.js';
 import { useState } from 'react';
 import type { Artifact } from '@beetle/contracts';
 import type { RunArtifactParams } from '@beetle/contracts/api';
@@ -24,15 +28,39 @@ function DiagnosticSelection({ params, artifact }: { params: RunArtifactParams; 
   const [open, setOpen] = useState(false);
   return (
     <section aria-label="Native diagnostic history">
-      <h2>Native diagnostic history</h2>
       <p>
         Ordered sanitized records after publication. Native messages, URLs and dynamic values are omitted. This is not
         live output or original stderr replay.
       </p>
-      <button onClick={() => setOpen((value) => !value)}>
-        {open ? 'Close diagnostic history' : 'View diagnostic history'}
-      </button>
-      {open && <DiagnosticRead params={params} artifact={artifact} />}
+      <Button variant="text" size="sm" onClick={() => setOpen(true)}>
+        Open the sanitized log
+      </Button>
+      {open && (
+        <Dialog
+          title="Sanitized k6 log"
+          onClose={() => setOpen(false)}
+          actions={
+            <>
+              <Button variant="text" onClick={() => setOpen(false)}>
+                Close
+              </Button>
+              <a
+                className={buttonClass('primary')}
+                href={runArtifactContentPath(params)}
+                download={artifactDownload(artifact).filename}
+              >
+                Download
+              </a>
+            </>
+          }
+        >
+          <p>
+            Only recorded fixed messages are shown. Native messages, URLs and dynamic values were omitted during
+            capture.
+          </p>
+          <DiagnosticRead params={params} artifact={artifact} />
+        </Dialog>
+      )}
     </section>
   );
 }
@@ -43,7 +71,9 @@ function DiagnosticRead({ params, artifact }: { params: RunArtifactParams; artif
   return (
     <>
       <p role="alert">Diagnostic history could not be verified.</p>
-      <button onClick={retry}>Retry diagnostic history</button>
+      <Button size="sm" onClick={retry}>
+        Retry diagnostic history
+      </Button>
     </>
   );
 }
