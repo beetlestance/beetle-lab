@@ -7,6 +7,7 @@ import type { AccumulatorCode, MetricSnapshot, MetricWindow } from './snapshot.j
 import { accumulate, checkedSum } from './totals.js';
 import { Windows } from './windows.js';
 import type { MetricPoint } from './types.js';
+import { RequestSpanTracker } from './request-span.js';
 
 export interface MetricAccumulatorOptions {
   readonly profile: K6MetricProfile;
@@ -17,6 +18,7 @@ export class MetricAccumulator {
   private readonly sink: MetricAccumulatorOptions['window'];
   private readonly totals = new Map<string, AccumulatedSeries>();
   private readonly windows: Windows;
+  private readonly requestSpan = new RequestSpanTracker();
   private flight: Promise<unknown> | undefined;
   private closePromise: Promise<void> | undefined;
   private closed = false;
@@ -72,6 +74,7 @@ export class MetricAccumulator {
         return;
       }
       if (input.tags.phase === 'prepare') return;
+      this.requestSpan.point(input);
       accumulate(this.totals, input, this.profile.maximumSeries);
       if (!this.windowEligible(input)) return;
       const cutoff = this.windows.advance(input.timeMs);
@@ -147,9 +150,11 @@ export class MetricAccumulator {
       if (this.markerTime === undefined) throw new MetricAccumulatorError('measurement');
       await this.drain(Infinity, signal);
       this.permitted(signal);
+      const requestSpan = this.requestSpan.snapshot();
       const result: MetricSnapshot = Object.freeze({
         totals: seriesSnapshot(this.totals),
         totalsComplete: true,
+        ...(requestSpan ? { requestSpan } : {}),
         measurement: Object.freeze({ complete: true, sourceTimeMs: this.markerTime }),
         windowCoverage: Object.freeze({
           complete: this.windows.latePoints === 0 && this.markerDelayDroppedBuckets === 0,

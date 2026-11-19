@@ -14,7 +14,7 @@ import type { StagedK6Options } from '../../wrapper/attempt/index.js';
 
 const native = vi.hoisted(() => ({ calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false,
   closeFails: false, buildFails: false, summaryTamper: false, built: undefined as BuildInput | undefined,
-  warnings: false, diagnostics: false, summaryPadding: 0,
+  warnings: false, diagnostics: false, summaryPadding: 0, withDispatch: false,
   metricOffsets: undefined as readonly number[] | undefined, wallOffset: 0,
   blockBuild: undefined as Promise<void> | undefined, blockClose: undefined as Promise<void> | undefined }));
 export { native };
@@ -51,6 +51,10 @@ function stream(): Uint8Array {
   return Buffer.from([
     { type: 'Metric', metric: 'beetle_measure_started', data: { type: 'counter' } },
     { type: 'Point', metric: 'beetle_measure_started', data: { value: 1, time: new Date(now).toISOString(), tags: {} } },
+    ...(native.withDispatch ? [
+      { type: 'Metric', metric: 'beetle_requests', data: { type: 'counter' } },
+      { type: 'Point', metric: 'beetle_requests', data: { value: 1, time: new Date(now).toISOString(), tags: { phase: 'execute', request: 'r0' } } },
+    ] : []),
     { type: 'Metric', metric: 'http_req_duration', data: { type: 'trend' } },
     ...(native.metricOffsets ?? [0]).map(offset => ({ type: 'Point', metric: 'http_req_duration',
       data: { value: 3, time: new Date(now + offset).toISOString(), tags: { phase: 'execute', request: 'r0' } } })),
@@ -70,8 +74,9 @@ function projected(input: BuildInput): string {
   return summaryProjection(input.suite, { state: { testRunDurationMs: Math.max(1000, native.wallOffset) }, metrics });
 }
 export function resetNative(): void {
+  native.withDispatch = false;
   Object.assign(native, { calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false, closeFails: false,
-    buildFails: false, summaryTamper: false, warnings: false, diagnostics: false, summaryPadding: 0, metricOffsets: undefined, wallOffset: 0,
+    buildFails: false, summaryTamper: false, warnings: false, diagnostics: false, summaryPadding: 0, withDispatch: false, metricOffsets: undefined, wallOffset: 0,
     built: undefined, blockBuild: undefined, blockClose: undefined });
 }
 export async function fixture() {

@@ -41,6 +41,7 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
           Shading covers only the observed before and after spans. A single point has no measured span.
         </p>
       </div>
+      <RequestLandmarks span={report.requestSpan} />
       <p className="result-muted">
         Phases are the sampler’s recorded phases. “During” can include engine startup; these are not exact
         first/last-request boundaries. Before is the first point, during is the mean of known gauge readings, and after
@@ -76,6 +77,16 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
         pause is not recorded by this report format.
       </p>
     </div>
+  );
+}
+
+function RequestLandmarks({ span }: { span: TargetRuntimeReport['requestSpan'] }) {
+  if (!span) return null;
+  return (
+    <p className="result-muted">
+      k6 recorded the first dispatch at {new Date(span.firstDispatchMs).toISOString()} and the last HTTP completion at{' '}
+      {new Date(span.lastCompletionMs).toISOString()}. The table groups observations by their recorded sampler phase.
+    </p>
   );
 }
 

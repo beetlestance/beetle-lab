@@ -6,6 +6,7 @@ import {
   performanceReports,
   archiveAccounting,
   numericEvidence,
+  targetReportWithSpan,
   artifactBytes,
   presentArtifacts,
 } from './result-evidence.js';
@@ -281,9 +282,8 @@ class Attempt {
     const collectOutputBytes = this.input!.manifest.phases.find((phase) => phase.phase === 'collect')!.outputBytes;
     const history = await this.archiveEvidence();
     const historyWork = archiveAccounting(this.archive, this.historyAtCollect, history);
-    const target = this.target.report
-      ? await this.artifacts!.target(this.target.report, this.reservation!.target)
-      : undefined;
+    const targetReport = targetReportWithSpan(this.target.report, this.state.execution!);
+    const target = targetReport ? await this.artifacts!.target(targetReport, this.reservation!.target) : undefined;
     const evidence = warningArtifact(compiled, this.state.execution!, this.state.scope!);
     const warnings = evidence ? await this.artifacts!.warnings(evidence, this.reservation!.warnings) : undefined;
     const diagnosticReport = diagnosticArtifact(this.state.execution!, { ...this.state.scope!, generation: 1 });

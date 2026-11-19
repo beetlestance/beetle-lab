@@ -1,4 +1,5 @@
 import type { DurationHistogram, NumericTotal, SeriesTotal } from '@beetle/contracts/metrics';
+import type { RequestSpan } from './request-span.js';
 export type { NumericTotal, SeriesTotal, MetricWindow } from '@beetle/contracts/metrics';
 
 export type AccumulatorCode =
@@ -24,6 +25,7 @@ export type AccumulatedSeries = Omit<SeriesTotal, 'total'> & { readonly total: A
 export interface MetricSnapshot {
   readonly totals: readonly SeriesTotal[];
   readonly totalsComplete: true;
+  readonly requestSpan?: RequestSpan;
   readonly measurement: Readonly<{ complete: true; sourceTimeMs: number }>;
   readonly windowCoverage: Readonly<{ complete: boolean; latePoints: number; markerDelayDroppedBuckets: number }>;
   readonly quantiles: 'histogram-estimate';
