@@ -36,6 +36,11 @@ export function captureTargetRuntimeReport(input: unknown): TargetRuntimeReport 
     }
     Object.freeze(report.samples);
     if (report.units) Object.freeze(report.units);
+    if (report.requestSpan) {
+      if (report.requestSpan.firstDispatchMs > report.requestSpan.lastCompletionMs)
+        throw new TargetRuntimeError('invalid_report');
+      Object.freeze(report.requestSpan);
+    }
     return Object.freeze(report);
   } catch {
     throw new TargetRuntimeError('invalid_report');

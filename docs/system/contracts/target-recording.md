@@ -66,17 +66,29 @@ Returned frame mutation cannot change this baseline. Metadata hints grant no
 sealed-result authority. Target-file reads additionally require the existing
 approved actor, native custody and [active-history verification](active-history.md).
 
+## Managed request landmarks
+
+A complete native k6 execution can seal optional request landmarks in the
+target report. The wrapper takes the earliest execute dispatch counter and
+latest HTTP duration point, whose native timestamp records completion. Only
+approved request labels participate, and per-label dispatch and completion counts
+must agree with ordered extrema. The bounded tracker consumes the existing
+metric stream. It emits no extra metric records and keeps no request log.
+The report exposes UTC landmarks separately from sampler phases, whose labels
+remain as recorded. Old, incomplete and unmatched sources omit the field.
+The numeric archive keeps its existing format. No execution outcome changes.
+
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
-| `engines/k6/wrapper/attempt/attempt.ts` | `2ab9a3755951` |
+| `engines/k6/wrapper/attempt/attempt.ts` | `7ca31d6d9130` |
 | `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/target-sampling/` | `c601c5e4dfb5` |
 | `engines/k6/wrapper/target-archive/` | `7bc3a5dba7c2` |
 | `contracts/runner/v1/target-runtime-units.schema.json` | `05a6a5565ff1` |
-| `contracts/src/target-runtime/` | `537749bd717f` |
+| `contracts/src/target-runtime/` | `67aa82aa131b` |
 | `engines/k6/wrapper/artifact-custody/append-files.ts` | `0a83d0325b03` |
 | `contracts/api/v2/live-history-prefix.schema.json` | `995b549a49d8` |
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |

@@ -70,3 +70,13 @@ it('decodes earlier artifacts without the additive GC/handle fields and keeps ma
   source.samples[0]!.values['gc.totalMs'] = 1;source.samples[0]!.status='unavailable';source.samples[0]!.reason='timeout';source.missed=1;
   expect(() => captureTargetRuntimeReport(source)).toThrow();
 });
+
+it('binds ordered request landmarks to the detached report and accepts legacy reports', () => {
+  const requestSpan = { firstDispatchMs: 1000, lastCompletionMs: 2400 };
+  const report = decodeTargetRuntimeReport(encodeTargetRuntimeReport({ ...fixture(), requestSpan }));
+  expect(report.requestSpan).toEqual(requestSpan);
+  expect(Object.isFrozen(report.requestSpan)).toBe(true);
+  expect(captureTargetRuntimeReport(fixture()).requestSpan).toBeUndefined();
+  expect(() => captureTargetRuntimeReport({ ...fixture(), requestSpan: { ...requestSpan, firstDispatchMs: 2401 } }))
+    .toThrow(expect.objectContaining({ code: 'invalid_report' }));
+});

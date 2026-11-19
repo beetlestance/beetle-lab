@@ -30,6 +30,15 @@ export function resultEvidence(
     artifacts,
   };
 }
+export function targetReportWithSpan(
+  report: TargetSamplingReport | undefined,
+  receipt: NonNullable<State['execution']>,
+): TargetSamplingReport | undefined {
+  if (!report || !receipt.ok || !receipt.summary?.ok || receipt.summary.evidence.nativeCollection !== 'complete')
+    return report;
+  const requestSpan = receipt.metrics?.requestSpan;
+  return requestSpan ? { ...report, requestSpan } : report;
+}
 export function performanceReports(
   mapped: MappedResult,
   state: State,
@@ -58,6 +67,13 @@ export function archiveAccounting(
     artifacts: history?.artifacts ?? [],
   };
 }
+/** Native request landmarks live only in the verified target report. */
+function numericSnapshot(snapshot: NonNullable<State['execution']>['metrics']) {
+  if (!snapshot) return null;
+  const { totals, totalsComplete, measurement, windowCoverage, quantiles } = snapshot;
+  return { totals, totalsComplete, measurement, windowCoverage, quantiles };
+}
+
 export function numericEvidence(state: State, diagnostics: MappingDiagnostics, history: ArchiveEvidence | null) {
   const summary = state.execution!.summary;
   const timing =
@@ -68,7 +84,7 @@ export function numericEvidence(state: State, diagnostics: MappingDiagnostics, h
     version: 4,
     timing,
     scope: state.scope,
-    metrics: state.execution!.metrics,
+    metrics: numericSnapshot(state.execution!.metrics),
     diagnostics,
     buildUsage: buildUsage(state),
     windowsRetained: history !== null,

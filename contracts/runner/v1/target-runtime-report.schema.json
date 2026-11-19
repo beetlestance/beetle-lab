@@ -28,8 +28,13 @@
       "minimum": 0,
       "maximum": 257
     },
-    "units": {
-      "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-units"
+    "units": { "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-units" },
+    "requestSpan": {
+      "type": "object", "additionalProperties": false, "required": ["firstDispatchMs", "lastCompletionMs"],
+      "properties": {
+        "firstDispatchMs": { "type": "integer", "minimum": 0, "maximum": 8640000000000000 },
+        "lastCompletionMs": { "type": "integer", "minimum": 0, "maximum": 8640000000000000 }
+      }
     }
   },
   "required": [

@@ -54,7 +54,8 @@ and ten recorded-phase rows. Before/after gauges use the first before and last
 after observations, including missing endpoints. During is the arithmetic mean of
 known gauge readings, never a time-weighted mean. The source sampler phases can
 include engine startup; they do not promise first/last-request boundaries or a
-steady baseline. Shaded regions cover only observed before/after spans.
+steady baseline. Shading covers only observed before/after spans. Sealed k6
+request landmarks are shown separately when available.
 GC rate, time share and average pause require declared cumulative count/time units,
 two usable phase endpoints and ordered, reset-free observations. Their intervals
 stay within each recorded phase. Missing endpoints/units, overflow and positive
@@ -168,7 +169,7 @@ Numeric hash and manifest bind ready source identity; restored history reads it 
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
-| `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
+| `web/src/features/runs/result/TargetPhases.tsx` | `d895c5d92fdf` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
