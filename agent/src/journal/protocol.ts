@@ -22,7 +22,7 @@ import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-s
 import type { OutputSourceOperation } from './output-source-protocol.js';
 import type { OutputDeliveryOperation, OutputDeliveryClosure } from './output-delivery-protocol.js';
 import type { OutputAbsence } from '@beetle/contracts/output-source';
-import type { OutputAbsenceOperation } from './output-absence-protocol.js';
+import type { OutputAbsenceOperation, StoppedHistoryClosure } from './output-absence-protocol.js';
 
 export type ErrorCode =
   | 'installed_identity'
@@ -156,6 +156,7 @@ export type Value =
   | SourceReceipt
   | OutputDeliveryClosure
   | OutputAbsence
+  | StoppedHistoryClosure
   | string
   | null;
 export type Reply =

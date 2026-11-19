@@ -33,6 +33,7 @@ function largeOperation(operation: Operation): boolean {
       'outputDeliveryRead',
       'outputAbsenceClose',
       'outputAbsenceRead',
+      'outputStoppedHistoryRead',
     ].includes(operation.kind) ||
     operation.kind === 'offer' ||
     operation.kind === 'cancelOriginal' ||

@@ -1,4 +1,6 @@
 import { migration026 } from './migration026.js';
+import { registerStoppedHistory } from './stopped-history-store.js';
+import { migration028 } from './migration028.js';
 import { migration027 } from './migration027.js';
 import { migration025 } from './migration025.js';
 import { migration024 } from './migration024.js';
@@ -36,7 +38,7 @@ import { migration013 } from './migration013.js';
 import { migration014 } from './migration014.js';
 import { migration015 } from './migration015.js';
 
-export const JOURNAL_SCHEMA_VERSION = 27;
+export const JOURNAL_SCHEMA_VERSION = 28;
 
 // Rebuild only the foundation's fixed sequence constraint. Copy immutable JSON and
 // row IDs verbatim, including original UUID spellings and durable cancel intent.
@@ -155,9 +157,11 @@ function migrateSettlementFunding(db: DatabaseSync, version: number): void {
   if (version < 25) db.exec(migration025);
   if (version < 26) db.exec(migration026);
   if (version < 27) db.exec(migration027);
+  if (version < 28) db.exec(migration028);
 }
 
 function registerJournalFunctions(db: DatabaseSync): void {
+  registerStoppedHistory(db);
   registerNoTaskReceipt(db);
   registerRejectedFunding(db);
   registerSettlementGuard(db);
