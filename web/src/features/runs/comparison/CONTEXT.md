@@ -7,8 +7,8 @@ four-character IDs expand to source prefix+suffix or the full UUID.
 Empty selection reads one history page for its workspace name; invalid runs rejects.
 Layout: one table owns run headers, eight primary figures and paged native SLOs.
 Baseline controls only reorder the URL; client deltas preserve unknowns and zeros.
-Additional averages/counts/check facts remain in a disclosure. SettingsTable owns
-What was different (revision, profile, configured load/budgets/policy/note).
+Additional figures and saved engine/budget settings remain in disclosures.
+SettingsTable owns the primary revision/executor/rate/VUs/note comparison.
 Compact native rows share equal limits in their label; unequal limits stay per cell.
 Generated compareRuns owns request/response semantics. Whole-run summaries come
 from one exact-ID listRuns row per run (limit 1), read inside the comparison

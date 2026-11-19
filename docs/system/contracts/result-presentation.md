@@ -217,4 +217,4 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
-| `web/src/features/runs/comparison/index.tsx` | `c0a836ea2467` |
+| `web/src/features/runs/comparison/index.tsx` | `1c317f271c49` |

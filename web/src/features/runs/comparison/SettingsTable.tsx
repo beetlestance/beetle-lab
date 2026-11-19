@@ -13,7 +13,6 @@ export function WhatWasDifferent({
   items: readonly RunComparisonItem[];
   contexts: ComparisonContexts | undefined;
 }) {
-  const labels = comparisonRunLabels(items.map((item) => item.run.id));
   const facts: readonly [string, (item: RunComparisonItem) => string][] = [
     [
       'Revision',
@@ -32,10 +31,37 @@ export function WhatWasDifferent({
     ['Note', (item) => item.run.note ?? 'None'],
   ];
   return (
+    <>
+      <FactsTable items={items} facts={facts.filter(([label]) => primaryLabels.has(label))} primary />
+      <details className="compare-additional">
+        <summary>Additional saved settings</summary>
+        <p className="compare-muted">Saved intent, not observed traffic, admission or combined concurrency.</p>
+        <FactsTable items={items} facts={facts.filter(([label]) => !primaryLabels.has(label))} />
+      </details>
+    </>
+  );
+}
+const primaryLabels = new Set(['Revision', 'Configured executor', 'Configured arrivals', 'Configured VUs', 'Note']);
+const visibleLabels: Record<string, string> = {
+  'Configured executor': 'Executor',
+  'Configured arrivals': 'Rate',
+  'Configured VUs': 'Virtual users',
+};
+function FactsTable({
+  items,
+  facts,
+  primary = false,
+}: {
+  items: readonly RunComparisonItem[];
+  facts: readonly (readonly [string, (item: RunComparisonItem) => string])[];
+  primary?: boolean;
+}) {
+  const labels = comparisonRunLabels(items.map((item) => item.run.id));
+  return (
     <Table
-      caption="What was different between the runs"
-      className="compare-different"
-      scrollLabel="Run settings differences"
+      caption={primary ? 'What was different between the runs' : 'Additional saved settings'}
+      className={primary ? 'compare-different compare-intent' : 'compare-different'}
+      scrollLabel={primary ? 'Run settings differences' : 'Additional run settings differences'}
       columns={[
         { key: 'fact', label: 'Setting' },
         ...items.map((item) => ({ key: item.run.id, label: labels.get(item.run.id.toLowerCase())! })),
@@ -45,7 +71,9 @@ export function WhatWasDifferent({
         const base = read(items[0]!);
         return (
           <tr key={label}>
-            <Th scope="row">{label}</Th>
+            <Th scope="row" aria-label={label}>
+              {visibleLabels[label] ?? label}
+            </Th>
             {items.map((item, index) => {
               const value = read(item);
               const same =
