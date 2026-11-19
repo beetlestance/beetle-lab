@@ -71,6 +71,20 @@ function ContextLine({
   const started = run.startedAt
     ? `started ${wallTime(run.startedAt) || run.startedAt}`
     : `requested ${wallTime(run.requestedAt) || run.requestedAt}`;
+  const revision =
+    revisionOrdinal === null ? null : (
+      <Link
+        to={routes.suiteScriptFromRun(
+          run.scope.organizationId,
+          run.scope.workspaceId,
+          run.suiteId,
+          run.revisionId,
+          run.id,
+        )}
+      >
+        revision {revisionOrdinal}
+      </Link>
+    );
   return (
     <p className="live-context">
       <WorkspaceCrumb run={run} />
@@ -80,12 +94,12 @@ function ContextLine({
       {early ? (
         <>
           {suiteName ?? 'Suite'}
-          {revisionOrdinal !== null && ` · revision ${revisionOrdinal}`} · {started}
+          {revision && <> · {revision}</>} · {started}
         </>
       ) : (
         <>
           {suiteName ?? 'Suite'} (k6 load test), run <span className="number">{shortId(run.id)}</span>
-          {revisionOrdinal !== null && `, revision ${revisionOrdinal}`}, {started}
+          {revision && <>, {revision}</>}, {started}
         </>
       )}
       {' · '}
