@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { expect } from '@playwright/test';
+import { runRoute } from './run-state.mjs';
 /** @param {import('@playwright/test').Page} page @param {number} expectedSamples */
 export async function targetRuntime(page, expectedSamples) {
   const section = page.locator('#result-target');
@@ -14,6 +15,9 @@ export async function targetRuntime(page, expectedSamples) {
   await expect(section.getByLabel('Target metric', { exact: true })).toBeVisible();
   await expect(section.getByText(/Recorded missed count: 2\./)).toBeVisible();
   await comparison(section, 'heapAlloc', '0');
+  await section.getByRole('button', { name: 'Compare recorded phases', exact: true }).click();
+  const longest = section.getByRole('row').filter({ hasText: 'Longest GC pause' });
+  await expect(longest).toContainText('11 ms');
   await section.getByText('Target observations', { exact: true }).click();
   const table = section.getByRole('region', { name: 'Target observation samples', exact: true });
   await expect(table.locator('tbody tr')).toHaveCount(expectedSamples);
@@ -61,6 +65,7 @@ export async function targetRuntime(page, expectedSamples) {
     unavailable: 2,
     zeroPreserved: true,
     targetScopeVisible: true,
+    phaseMaximumMs: 11,
     nullUnknownVisible: true,
     reloadVerified: true,
     manualReloads: 3,
@@ -81,4 +86,18 @@ async function openDetails(section) {
   await expect(details).toBeVisible();
   if (!(await details.evaluate((node) => node.hasAttribute('open'))))
     await details.getByText('Recorded target values and checkpoints', { exact: true }).click();
+}
+
+/** @param {import('@playwright/test').Page} page @param {string} run */
+export async function indexedLatencyPreview(page, run) {
+  const key = runRoute(run);
+  await page.goto(new URL(key.path.slice(0, key.path.lastIndexOf('/')), key.origin).href);
+  const table = page.getByRole('region', { name: 'Run history table', exact: true });
+  const row = table.getByRole('row').filter({ has: page.locator(`a[href="${key.path}"]`) });
+  await expect(row).toBeVisible();
+  const graph = row.getByRole('img', { name: 'Sampled p95 latency over time', exact: true });
+  await expect(async () => {
+    if (!(await graph.isVisible())) await page.getByRole('button', { name: 'Refresh', exact: true }).click();
+    expect(await graph.isVisible()).toBe(true);
+  }).toPass({ timeout: 15000, intervals: [1000, 2000] });
 }
