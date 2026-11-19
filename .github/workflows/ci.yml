@@ -159,6 +159,33 @@ jobs:
       - run: npm run smoke:input-controls
 
 
+  accessibility:
+    name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-accessibility' || 'ci/accessibility' }}
+    if: ${{ inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            site/package-lock.json
+            tools/qualification/browser/package-lock.json
+      - name: Build the docs site
+        working-directory: site
+        run: |
+          npm ci --ignore-scripts --include=optional
+          npm run build
+      - name: Install axe and the pinned Playwright Chromium
+        working-directory: tools/qualification/browser
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Scan every docs page in both skins with axe (WCAG 2.1 A/AA)
+        run: node tools/qualification/browser/a11y.mjs site
+
   tests:
     name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-tests' || 'ci/tests' }} (${{ matrix.shard }}/6)
     needs: source
@@ -184,17 +211,19 @@ jobs:
   checks:
     name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-checks' || 'ci/checks' }}
     if: ${{ always() && inputs.deliver_rewrite_run_id == '' && inputs.qualify_rewrite_release == '' && inputs.qualify_rewrite_run_id == '' && inputs.qualify_rewrite_revision == '' }}
-    needs: [source, tests]
+    needs: [source, tests, accessibility]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Require successful source checks and every test shard
+      - name: Require successful source checks, every test shard and the accessibility scan
         env:
           SOURCE_RESULT: ${{ needs.source.result }}
           TEST_RESULT: ${{ needs.tests.result }}
+          ACCESSIBILITY_RESULT: ${{ needs.accessibility.result }}
         run: |
           test "$SOURCE_RESULT" = success
           test "$TEST_RESULT" = success
+          test "$ACCESSIBILITY_RESULT" = success
 
   rewrite-container:
     name: ${{ (inputs.deliver_rewrite_run_id != '' || inputs.qualify_rewrite_release != '' || inputs.qualify_rewrite_run_id != '' || inputs.qualify_rewrite_revision != '') && 'qualification/unused-native' || 'ci/rewrite-container' }} (${{ matrix.arch }})

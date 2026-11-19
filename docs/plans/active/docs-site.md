@@ -48,6 +48,10 @@ The site chrome, home and article styles follow the Penpot "Docs" boards
 code and illustration colours) are docs-only, and their Scarab values have no
 board to check against.
 
+CI job `ci/accessibility` (required by `ci/checks`) builds the site and runs
+axe-core on every page in both skins and each diagram state
+(`npm run check:a11y -- site`); text contrast below 4.5:1 fails it.
+
 | Item                                                                    | State                                                                                                     |
 | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Header: tabs, Search ⌘K, "Open the app", Darkroom/Scarab radio switch   | Done. "Open the app" uses `DOCS_APP_URL`; it defaults to `/` and is hidden when the variable is set empty |
