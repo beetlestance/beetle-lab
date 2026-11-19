@@ -37,6 +37,10 @@ Stopped runs with an accepted archive and a known longer saved plan show the
 remaining plan time as blank. The chart labels the last recorded window and the
 end specified by the revision. Hover beyond observed data has no reading.
 
+When a stopped run has no published archive, Results can chart
+[recovered observations](result-frame.md#recovered-observations) without deriving
+whole-run metrics or verdicts.
+
 ## Recorded target charts
 
 Four cards share one verified target report and its 256-sample / 1 MiB bounds.
@@ -174,7 +178,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `db6adc16cee5` |
-| `web/src/features/runs/result/useResultReads.ts` | `38c36f18eee5` |
+| `web/src/features/runs/result/useResultReads.ts` | `b36179d98fab` |
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |

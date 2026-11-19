@@ -6,8 +6,10 @@ export interface RunArtifactListQuery extends RunKey {
   readonly limit: number;
   readonly cursor?: string;
 }
-export interface RunArtifactKey extends RunKey {
+export interface RunAttemptReadKey extends RunKey {
   readonly attemptId: string;
+}
+export interface RunArtifactKey extends RunAttemptReadKey {
   readonly artifactId: string;
 }
 export interface PublishedArtifactRead {

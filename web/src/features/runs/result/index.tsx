@@ -27,6 +27,7 @@ import type { RunPlan } from '../live/plan.js';
 import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
 import { ResultSummary } from './Summary.js';
+import { RecoveredHistory, recoveredHistoryState, resultSections } from './RecoveredHistory.js';
 import { ResultReadProblem } from './ResultReadProblem.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
@@ -79,6 +80,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
     phaseView,
     samplingIntervalMs: plan.samplingIntervalMs,
   });
+  const sections = resultSections(reads, showTarget);
   const context = { readOnly, rules: plan.rules, measurements: ready, phone };
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, context);
   return (
@@ -101,7 +103,14 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       />
       <ResultReadProblem read={reads.result} />
       {beforeNote}
-      {!phone && <ResultSectionNav onSelect={selectSection} archiveMissing={archiveMissing} hideTarget={!showTarget} />}
+      {!phone && (
+        <ResultSectionNav
+          onSelect={selectSection}
+          archiveMissing={archiveMissing}
+          recoveredCharts={sections.recoveredCharts}
+          hideTarget={sections.hideTarget}
+        />
+      )}
       <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} archiveMissing={archiveMissing} />
       <ResultMeasurements
         reads={reads}
@@ -120,7 +129,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         phone={phone}
         archiveMissing={archiveMissing}
         tab={tab}
-        showTarget={showTarget}
+        showTarget={sections.sealedTarget}
         onSelect={setTab}
       />
       {afterNote}
@@ -148,14 +157,18 @@ function ResultMeasurements({
   phone: boolean;
   archiveMissing: boolean;
 }) {
+  const recovered = recoveredHistoryState(reads);
   return (
     <>
-      {!archiveMissing && <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />}
+      {recovered && <RecoveredHistory query={recovered} plan={plan} />}
+      {!archiveMissing && !recovered && (
+        <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />
+      )}
       <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
       {archiveMissing ? (
         <p className="result-muted">
-          Charts and endpoint detail require a verified metrics archive. Diagnostics and published artifacts remain
-          available below.
+          {recovered ? 'Endpoint detail requires' : 'Charts and endpoint detail require'} a verified metrics archive.
+          Diagnostics and published artifacts remain available below.
         </p>
       ) : (
         <ResultEndpoints overview={overview} requests={plan.requests} phone={phone} />
@@ -291,7 +304,7 @@ function SupplementaryResult({
     <>
       {!phone && (
         <>
-          {!archiveMissing && (
+          {!archiveMissing && !recoveredHistoryState(reads) && (
             <>
               <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
               <AdvancedMetrics run={run} />

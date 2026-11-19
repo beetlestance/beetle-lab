@@ -1,11 +1,13 @@
 import { executionArtifacts } from '@beetle/contracts';
 import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import { captureRunArtifactCursor, encodeRunArtifactCursor } from '@beetle/contracts/api';
-import type { Run, RunArtifactPage } from '@beetle/contracts/api';
+import type { LiveMetricHistory, Run, RunArtifactPage } from '@beetle/contracts/api';
+import type { RunAttemptReadKey } from '../../../../ports/run-artifacts.js';
 import type { RunKey } from '../../../../ports/runs.js';
 import type { PublishedArtifactRead } from '../../../../ports/run-artifacts.js';
 import type { EventBinding } from '../../../../ports/events.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
+import { readRetainedStoppedHistory } from '../output-absence/stopped-history.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';
 import { OutputAbsences } from '../output-absence/index.js';
 import { transaction } from '../transaction.js';
@@ -36,11 +38,15 @@ export class RunArtifacts {
     private readonly db: DatabaseSync,
     private readonly runs: { get(key: RunKey): Run },
   ) {}
-  execute(input: ArtifactReadOperation): RunArtifactPage | PublishedArtifactRead {
+  execute(input: ArtifactReadOperation): RunArtifactPage | PublishedArtifactRead | LiveMetricHistory {
     const operation = captureArtifactReadOperation(input);
-    return transaction(this.db, () => captureArtifactReadReply(operation, this.read(operation)));
+    return transaction(this.db, () => {
+      const value =
+        operation.kind === 'getRunStoppedHistory' ? this.stoppedHistory(operation.key) : this.read(operation);
+      return captureArtifactReadReply(operation, value);
+    });
   }
-  private read(operation: ArtifactReadOperation): unknown {
+  private read(operation: Exclude<ArtifactReadOperation, { kind: 'getRunStoppedHistory' }>): unknown {
     const key = operation.kind === 'listRunArtifacts' ? operation.query : operation.key;
     this.requireAvailable(key);
     const run = this.runs.get(key);
@@ -83,6 +89,25 @@ export class RunArtifacts {
     }
     return this.published(operation, page, binding, final, source);
   }
+  private stoppedHistory(key: RunAttemptReadKey): unknown {
+    this.requireAvailable(key);
+    const run = this.runs.get(key);
+    if (run.activeAttemptId !== key.attemptId || !['cancelled', 'errored'].includes(run.state))
+      throw new StorageError('not_found');
+    const binding = this.binding(run, key.attemptId);
+    const receipt = this.db
+      .prepare('SELECT * FROM execution_output_absence_finalizations WHERE attempt_id=?')
+      .get(key.attemptId);
+    if (!binding || !receipt) throw new StorageError('not_found');
+    matches(receipt, binding);
+    const proof = new OutputAbsences(this.db).read(binding);
+    requireEvidence(
+      proof && proof.proofDigest === receipt.proof_digest && proof.closure.finalAgentSeq === receipt.final_agent_seq,
+    );
+    const observation = readRetainedStoppedHistory(this.db, proof);
+    if (!observation) throw new StorageError('not_found');
+    return JSON.parse(observation.json) as unknown;
+  }
   private requireAvailable(key: RunKey): void {
     if (
       this.db
@@ -92,7 +117,7 @@ export class RunArtifacts {
       throw new StorageError('not_found');
   }
   private pendingSource(
-    operation: ArtifactReadOperation,
+    operation: Exclude<ArtifactReadOperation, { kind: 'getRunStoppedHistory' }>,
     binding: EventBinding,
     source: ReturnType<typeof readEnvelope>,
   ): void {
@@ -107,7 +132,7 @@ export class RunArtifacts {
     }
   }
   private published(
-    operation: ArtifactReadOperation,
+    operation: Exclude<ArtifactReadOperation, { kind: 'getRunStoppedHistory' }>,
     page: RunArtifactPage,
     binding: EventBinding,
     final: Row,
@@ -142,7 +167,10 @@ export class RunArtifacts {
       executionArtifacts(source.manifest.result),
     );
   }
-  private unready(operation: ArtifactReadOperation, page: RunArtifactPage): RunArtifactPage {
+  private unready(
+    operation: Exclude<ArtifactReadOperation, { kind: 'getRunStoppedHistory' }>,
+    page: RunArtifactPage,
+  ): RunArtifactPage {
     if (operation.kind === 'getRunArtifact')
       throw new StorageError(page.availability === 'pending' ? 'conflict' : 'not_found');
     if (operation.query.cursor !== undefined) throw new StorageError('invalid_input');

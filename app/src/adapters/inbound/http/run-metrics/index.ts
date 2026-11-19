@@ -1,10 +1,13 @@
 import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
+import type { LiveMetricHistory } from '@beetle/contracts/api';
+import type { RunAttemptReadKey } from '../../../../ports/run-artifacts.js';
 import type { RunMetricsService } from '../../../../ports/run-metrics.js';
 import { registerApiOperation } from '../api-route.js';
 import { RequestLifetimes } from '../request-lifetimes/index.js';
 interface Options {
   service: RunMetricsService;
   authorize: onRequestAsyncHookHandler;
+  stoppedHistory?: (key: RunAttemptReadKey) => Promise<LiveMetricHistory>;
 }
 /** JSON routes retain their request lifetime through service and transport work. */
 export function registerRunMetricRoutes(server: FastifyInstance, options: Options): { close(): Promise<void> } {
@@ -52,6 +55,7 @@ export function registerRunMetricRoutes(server: FastifyInstance, options: Option
     );
     registerOverview(routes, options, owners);
     registerChartHistory(routes, options, owners);
+    if (options.stoppedHistory) registerStoppedHistory(routes, options.stoppedHistory, owners);
     registerApiOperation(
       routes,
       'getRunLatencyAttribution',
@@ -114,6 +118,24 @@ function registerChartHistory(routes: FastifyInstance, options: Options, owners:
         ),
       );
     },
+    { signalFor: (request) => owners.forRequest(request).signal },
+  );
+}
+
+function registerStoppedHistory(
+  routes: FastifyInstance,
+  read: NonNullable<Options['stoppedHistory']>,
+  owners: RequestLifetimes,
+) {
+  registerApiOperation(
+    routes,
+    'getRunStoppedHistory',
+    ({ params, signal }) =>
+      owners
+        .forSignal(signal)
+        .run(() =>
+          read({ id: params.runId.toLowerCase(), scope: scope(params), attemptId: params.attemptId.toLowerCase() }),
+        ),
     { signalFor: (request) => owners.forRequest(request).signal },
   );
 }

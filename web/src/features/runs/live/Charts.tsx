@@ -160,12 +160,24 @@ export function MetricsGrid({ history, domain, hover }: { history: LiveHistory; 
   return <MetricWindows points={history.points} domain={domain} hover={hover} />;
 }
 
-function TargetNote({ history, origin, raw }: { history: LiveHistory; origin: string | null; raw: boolean }) {
+function TargetNote({
+  history,
+  origin,
+  raw,
+  recovered,
+}: {
+  history: LiveHistory;
+  origin: string | null;
+  raw: boolean;
+  recovered: boolean;
+}) {
   const unavailable = history.target.filter((point) => point.status === 'unavailable').length;
   const source = `Sampled${origin ? ` from ${origin}` : ''}${history.intervalMs ? ` every ${span(history.intervalMs)}` : ''}.${raw ? ' Raw charts keep reported units.' : ''}`;
-  const coverage = history.targetCoverage
-    ? `${history.targetCoverage.samples} recorded observations, plus live readings.`
-    : 'Showing observations received since this page opened.';
+  const coverage = recovered
+    ? `${history.target.length} recovered observations.`
+    : history.targetCoverage
+      ? `${history.targetCoverage.samples} recorded observations, plus live readings.`
+      : 'Showing observations received since this page opened.';
   const notes = [
     source,
     coverage,
@@ -185,12 +197,14 @@ export function TargetRuntime({
   origin,
   hover,
   units,
+  recovered = false,
 }: {
   history: LiveHistory;
   domain: Domain;
   origin: string | null;
   hover: ChartHover;
   units?: TargetRuntimeUnits | undefined;
+  recovered?: boolean;
 }) {
   const points = history.target;
   if (!points.length) return null;
@@ -200,10 +214,17 @@ export function TargetRuntime({
     <section className="live-grid-section" aria-labelledby="live-target">
       <header className="live-section-head">
         <h2 id="live-target">Target runtime</h2>
-        <TargetNote history={history} origin={origin} raw={charts.some((chart) => !chart.normalized)} />
+        <TargetNote
+          history={history}
+          origin={origin}
+          raw={charts.some((chart) => !chart.normalized)}
+          recovered={recovered}
+        />
       </header>
       {charts.length === 0 ? (
-        <p className="live-note">The target has not reported a reading yet.</p>
+        <p className="live-note">
+          {recovered ? 'No usable target readings were recovered.' : 'The target has not reported a reading yet.'}
+        </p>
       ) : (
         <div className="live-charts">
           {charts.map((chart) => (

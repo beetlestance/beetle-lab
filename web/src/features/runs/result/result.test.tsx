@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import nativeTemplate from '../../../../../contracts/fixtures/valid/passed-result.json' with { type: 'json' };
+import recoveredData from '../../../../../contracts/fixtures/api/valid/live-target-history.json' with { type: 'json' };
 import chartData from '../../../../../contracts/fixtures/api/valid/run-chart-history.json' with { type: 'json' };
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -343,4 +344,52 @@ it.each([false, true])('keeps native figures and shows only available target det
   expect(tiles).toHaveTextContent('99.92%');
   expect(tiles).not.toHaveTextContent('histogram');
   expect(screen.getAllByText('Not judged').length).toBeGreaterThan(0);
+});
+
+it('displays scoped recovered chart windows and target readings in read-only restored Results', async () => {
+  const current = finished({ state: 'errored', outcome: 'inconclusive', reason: 'artifact_incomplete' });
+  const scope = {
+    organizationId: current.scope.organizationId,
+    workspaceId: current.scope.workspaceId,
+    attemptId: current.activeAttemptId,
+    generation: 1,
+  };
+  const f = fixture(current, (request) => {
+    if (request.path.endsWith('/metrics/chart-history'))
+      return json({
+        id: current.id,
+        scope: current.scope,
+        attemptId: current.activeAttemptId,
+        source: null,
+        windows: 0,
+        sampled: false,
+        points: [],
+        observedPeakRequestsPerSecond: null,
+        knownRequestWindows: 0,
+        meanVus: null,
+        knownVusWindows: 0,
+        reason: 'not_recorded',
+      });
+    if (request.path.endsWith('/metrics/stopped-history'))
+      return json({
+        ...recoveredData,
+        scope,
+        prefix: { ...recoveredData.prefix, scope, target: { ...recoveredData.prefix.target, scope } },
+        targetSamples: recoveredData.targetSamples.map((sample) => ({
+          ...sample,
+          observedAt: '1970-01-01T00:00:01.000Z',
+        })),
+      });
+    return undefined;
+  });
+  mount(f.client, path, {
+    readOnly: true,
+    restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
+  });
+  expect(await screen.findByRole('heading', { name: 'Recovered before the stop' })).toBeVisible();
+  expect(screen.getByText(/1 of 1 recorded windows shown/)).toBeVisible();
+  expect(screen.getByRole('img', { name: /Heap and RSS:.*1,024/ })).toBeVisible();
+  expect(document.querySelectorAll('#result-target')).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
+  expect(f.records.filter((record) => record.path.endsWith('/metrics/stopped-history'))).toHaveLength(1);
 });

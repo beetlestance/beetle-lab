@@ -22,7 +22,8 @@ import type { ExportArtifacts, ExportExecutionStore, ExportStore } from '../../.
 import type { LocalSessionStore } from '../../../ports/local-session.js';
 import type { OutputDeletionMetadata, OutputDeletionOperation } from '../../../ports/output-deletion-metadata.js';
 import type { RunExecutionReader } from '../../../ports/run-live-metrics.js';
-import type { RunArtifactsReader } from '../../../ports/run-artifacts.js';
+import type { LiveMetricHistory } from '@beetle/contracts/api';
+import type { RunArtifactsReader, RunAttemptReadKey } from '../../../ports/run-artifacts.js';
 import type { RunEventReader } from '../../../ports/run-events.js';
 import type { OutputAbsenceStore } from '../../../ports/output-absence.js';
 import type { OutputFinalizations } from '../../../ports/output-finalization.js';
@@ -229,6 +230,8 @@ export class Metadata extends MetadataWorker {
     getRunEvents: (query) => this.call({ kind: 'getRunEvents', query }) as ReturnType<RunEventReader['getRunEvents']>,
   };
 
+  readonly stoppedHistory = (key: RunAttemptReadKey) =>
+    this.call({ kind: 'getRunStoppedHistory', key }) as Promise<LiveMetricHistory>;
   readonly runArtifacts: RunArtifactsReader = {
     listRunArtifacts: (query) =>
       this.call({ kind: 'listRunArtifacts', query }) as ReturnType<RunArtifactsReader['listRunArtifacts']>,

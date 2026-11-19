@@ -314,6 +314,7 @@ export function largeOperation(operation: Operation): boolean {
       'outputAdopt',
       'outputReadSource',
       'getRunResult',
+      'getRunStoppedHistory',
       'getRunEvents',
       'listRunArtifacts',
     ].includes(dataProperty(operation, 'kind') as string)
@@ -341,6 +342,7 @@ export function operationReplyLimit(operation: Operation): number {
   return readReplyLimit(operation);
 }
 function readReplyLimit(operation: Operation): number {
+  if (operation.kind === 'getRunStoppedHistory') return 2_097_152;
   if (operation.kind === 'getRunArtifact') return 4096;
   if (runEventsOperation(operation)) return 262144;
   if (['listRunArtifacts', 'getRunResult'].includes(operation.kind)) return 73728;
