@@ -13,7 +13,11 @@ Cache GC is 60 seconds; page limit 100; cursor history 20. Scope departure remov
 its remaining queries. UUID validation uses the public API schema, including URNs.
 EditorProvider retains one draft across navigation and snapshots mutation intents.
 Unknown results allow identical replay; editing begins a new request ID.
-Settings routes lazy-load one feature; settings query keys include full scope.
+Workspaces opens the organization chooser or the current organization's workspace list.
+The header switcher reads up to 20 organizations on demand and links to the full list.
+Settings routes lazy-load one feature and always expose all three levels. The shell
+remembers the current organization and workspace for Settings within the session.
+Settings query keys include full scope. Page and tab entry honor reduced motion.
 Parent saves invalidate descendant effective settings; null removes scoped overrides.
 The Darkroom or Scarab skin is the only persisted browser preference; no credentials.
 SessionApp also supplies InputTransferClient through InputTransferContext. Omitted

@@ -20,6 +20,7 @@ import { budgetRows, installationRows, profileRow, retentionRow } from './model.
 import { buildPatch } from './patch.js';
 import { SettingRow } from './Row.js';
 import { ChangedElsewhere, SaveBar, SaveFailure } from './SaveBar.js';
+import { SettingsScopeChooser, useSettingsChoice } from './ScopeChooser.js';
 import { ScopeTabs, useScopeName } from './ScopeTabs.js';
 import { useDraft, useSave } from './useSave.js';
 import type { SavePhase } from './useSave.js';
@@ -32,6 +33,12 @@ function settingsKey(scope: SettingsScope): readonly string[] {
 }
 
 export function Settings({ scope }: { scope: SettingsScope }) {
+  const choice = useSettingsChoice(scope);
+  if (choice) return <SettingsScopeChooser {...choice} />;
+  return <SettingsQuery scope={scope} />;
+}
+
+function SettingsQuery({ scope }: { scope: SettingsScope }) {
   const api = useApi();
   const client = useQueryClient();
   const key = settingsKey(scope);

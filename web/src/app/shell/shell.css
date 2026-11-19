@@ -243,3 +243,43 @@
     padding: var(--s-24) var(--gutter) var(--s-64);
   }
 }
+
+.shell-switcher {
+  position: relative;
+  min-width: 0;
+}
+.shell-switcher .shell-scope {
+  border: 0;
+  cursor: pointer;
+}
+.shell-scope-links {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--s-8));
+  left: 0;
+  width: min(248px, 68vw);
+  max-height: min(50vh, 360px);
+  overflow: auto;
+  padding: var(--s-8);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  animation: fade-in var(--motion-fast) var(--ease-out);
+}
+.shell-scope-links ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shell-scope-links a {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: var(--s-8) var(--s-10);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  text-decoration: none;
+}
+.shell-scope-links a:hover,
+.shell-scope-links a[aria-current] {
+  background: var(--line);
+}

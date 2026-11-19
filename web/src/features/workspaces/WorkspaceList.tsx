@@ -107,9 +107,11 @@ function WorkspaceRows({
 export function WorkspaceList({
   organizationId,
   organizationName,
+  showHeading = true,
 }: {
   organizationId: string;
   organizationName: string;
+  showHeading?: boolean;
 }) {
   const api = useApi();
   const editor = useWorkspaceEditor(organizationId);
@@ -121,9 +123,9 @@ export function WorkspaceList({
     queryFn: ({ signal }) => readResult(api.listWorkspaces({ params: { organizationId }, query: page.query, signal })),
   });
   return (
-    <section className="organization-workspaces" aria-labelledby="organization-workspaces-heading">
+    <section className="organization-workspaces" aria-label="Workspaces">
       <header className="overview-section-head">
-        <h2 id="organization-workspaces-heading">Workspaces</h2>
+        {showHeading && <h2>Workspaces</h2>}
         <Button variant="primary" disabled={editor.busy} onClick={() => editor.edit()}>
           Create workspace
         </Button>

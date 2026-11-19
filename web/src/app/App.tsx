@@ -11,6 +11,7 @@ import { EditorProvider } from '../components/Editor.js';
 import { LoadingState } from '../components/States.js';
 import { NotFound } from '../components/NotFound.js';
 import { ToastProvider } from '../components/Toast.js';
+import { PageTransition } from '../components/NavigationMotion.js';
 import { AppShell } from './shell/AppShell.js';
 import { CommandPalette, useCommandNavigation } from '../features/command-search/index.js';
 
@@ -58,7 +59,9 @@ export function App({
                 <AppShell onSearch={commands.show}>
                   <EditorProvider>
                     <Suspense fallback={<LoadingState label="Loading view…" />}>
-                      <AppRoutes />
+                      <PageTransition>
+                        <AppRoutes />
+                      </PageTransition>
                     </Suspense>
                   </EditorProvider>
                 </AppShell>
@@ -88,6 +91,8 @@ function AppRoutes() {
       <Route path={routes.settings} element={<Settings scope={{ kind: 'installation' }} />} />
       <Route path={routes.organizationSettingsPattern} element={<SettingsRoute />} />
       <Route path={routes.workspaceSettingsPattern} element={<SettingsRoute />} />
+      <Route path={routes.workspaces} element={<Organizations workspaceDirectory />} />
+      <Route path={routes.organizationWorkspacesPattern} element={<ScopeRoute directory />} />
       <Route path={routes.organizations} element={<Organizations />} />
       <Route path={routes.organizationPattern} element={<ScopeRoute />} />
       <Route path={routes.workspacePattern} element={<ScopeRoute />} />
@@ -96,7 +101,7 @@ function AppRoutes() {
   );
 }
 
-function ScopeRoute({ view }: { view?: 'inputs' | 'exports' }) {
+function ScopeRoute({ view, directory }: { view?: 'inputs' | 'exports'; directory?: boolean }) {
   const { organizationId, workspaceId } = useParams();
   if (
     !validId(organizationId) ||
@@ -108,6 +113,7 @@ function ScopeRoute({ view }: { view?: 'inputs' | 'exports' }) {
     <OrganizationScope
       key={organizationId}
       organizationId={organizationId}
+      directory={directory ?? false}
       {...(workspaceId ? { workspaceId } : {})}
       {...(view ? { view } : {})}
     />

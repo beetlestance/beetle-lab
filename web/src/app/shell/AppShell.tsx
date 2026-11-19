@@ -3,6 +3,7 @@ import type { KeyboardEvent, ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { routes } from '../routes.js';
 import { useSessionAccess } from '../session.js';
+import { SettingsScopeContext, useSettingsScope } from '../settings-scope.js';
 import { badgeScope, navItems, shellScope } from '../navigation.js';
 import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BeetleMark } from './BeetleMark.js';
@@ -19,6 +20,7 @@ export type AppShellProps = {
 /** Header from every Penpot board plus the phone menu sheet ("Phone / Menu open"). */
 export function AppShell({ children, onSearch }: AppShellProps) {
   const { pathname } = useLocation();
+  const settingsScope = useSettingsScope(pathname);
   const { signOut } = useSessionAccess();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -43,7 +45,7 @@ export function AppShell({ children, onSearch }: AppShellProps) {
           <BeetleMark />
           <span className="shell-brand-name">Beetle Lab</span>
         </Link>
-        <ScopeSwitcher scope={shellScope(pathname)} />
+        <ScopeSwitcher key={pathname} scope={shellScope(pathname)} path={pathname} />
         <button
           ref={menuButton}
           type="button"
@@ -55,7 +57,7 @@ export function AppShell({ children, onSearch }: AppShellProps) {
           {menuOpen ? 'Close' : 'Menu'}
         </button>
         <div className="shell-menu" id="shell-menu">
-          <ShellNav pathname={pathname} />
+          <ShellNav pathname={pathname} onNavigate={() => setMenuOpen(false)} />
           <div className="shell-tools">
             <button
               type="button"
@@ -78,19 +80,24 @@ export function AppShell({ children, onSearch }: AppShellProps) {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="shell-main">
-        {children}
+        <SettingsScopeContext.Provider value={settingsScope}>{children}</SettingsScopeContext.Provider>
       </main>
     </div>
   );
 }
 
-function ShellNav({ pathname }: { pathname: string }) {
+function ShellNav({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
   return (
     <nav aria-label="Main navigation" className="shell-nav">
       <ul role="list">
         {navItems(pathname).map((item) => (
           <li key={item.key}>
-            <Link to={item.to} reloadDocument={item.key === 'docs'} aria-current={item.current ? 'page' : undefined}>
+            <Link
+              to={item.to}
+              reloadDocument={item.key === 'docs'}
+              aria-current={item.current ? 'page' : undefined}
+              onClick={onNavigate}
+            >
               {item.label}
               {item.key === 'workspaces' && <ActiveRunBadge {...badgeScope(pathname)} />}
             </Link>

@@ -36,9 +36,8 @@ function overviewTarget({ organizationId, workspaceId }: ShellScope) {
   return routes.organizations;
 }
 
-function workspacesTarget({ organizationId, workspaceId }: ShellScope) {
-  if (organizationId && workspaceId) return routes.suites(organizationId, workspaceId);
-  return organizationId ? routes.organization(organizationId) : routes.organizations;
+function workspacesTarget({ organizationId }: ShellScope) {
+  return organizationId ? routes.organizationWorkspaces(organizationId) : routes.workspaces;
 }
 
 function settingsTarget({ organizationId, workspaceId }: ShellScope) {
@@ -56,11 +55,12 @@ export function navItems(pathname: string): NavItem[] {
   const path = trimmed(pathname);
   const scope = shellScope(path);
   const overview = overviewTarget(scope);
+  const workspaces = workspacesTarget(scope);
   const settings = path.endsWith('/settings') || path === routes.settings;
   const workspaceChild = /^\/organizations\/[^/]+\/workspaces\/[^/]+\/.+/.test(path) && !settings;
   return [
     { key: 'overview', label: 'Overview', to: overview, current: path === overview },
-    { key: 'workspaces', label: 'Workspaces', to: workspacesTarget(scope), current: workspaceChild },
+    { key: 'workspaces', label: 'Workspaces', to: workspaces, current: path === workspaces || workspaceChild },
     { key: 'engines', label: 'Engines', to: routes.engines, current: path === routes.engines },
     { key: 'settings', label: 'Settings', to: settingsTarget(scope), current: settings },
     { key: 'docs', label: 'Docs', to: routes.docs, current: path === routes.reference },
@@ -69,6 +69,7 @@ export function navItems(pathname: string): NavItem[] {
 
 const badgeRoutes = [
   routes.organizationPattern,
+  routes.organizationWorkspacesPattern,
   routes.workspacePattern,
   routes.organizationSettingsPattern,
   routes.workspaceSettingsPattern,

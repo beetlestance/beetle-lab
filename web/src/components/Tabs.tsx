@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigationMotion } from './NavigationMotion.js';
 import './primitives.css';
 
 export type TabItem<T extends string> = {
@@ -96,8 +97,9 @@ export function Tabs<T extends string>({
 }
 
 export function TabPanel({ idBase, id, children }: { idBase: string; id: string; children: ReactNode }) {
+  const motion = useNavigationMotion(id);
   return (
-    <div role="tabpanel" id={panelId(idBase, id)} aria-labelledby={tabId(idBase, id)} tabIndex={0}>
+    <div ref={motion} role="tabpanel" id={panelId(idBase, id)} aria-labelledby={tabId(idBase, id)} tabIndex={0}>
       {children}
     </div>
   );

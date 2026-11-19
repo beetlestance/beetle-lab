@@ -194,10 +194,10 @@ The last column shares receipt-only pinning: unfinished runs hide it, restored p
 Accepted writes refresh history; uncertain writes permit identical replay; retention refusals preserve state.
 Row and checkbox labels expand colliding source UUIDs, never inventing an ordinal.
 
-The header's existing Docs entry opens `/docs/` as a full document navigation to
-the bundled Starlight site. React Router does not intercept it. `/reference`
-remains the standalone generated API viewer; the documentation site has its own
-navigation and build. Frontend image qualification is separate from source proof.
+Workspaces opens an organization chooser or the scoped workspace directory. Settings
+keeps Installation, Organization and Workspace available from each level. Page and
+tab entry honor reduced motion. Docs opens the bundled `/docs/` site as a full
+document navigation. `/reference` remains the standalone generated API viewer.
 
 ## Related
 
@@ -212,7 +212,7 @@ navigation and build. Frontend image qualification is separate from source proof
 | `web/src/features/runs/HistoryTable.tsx` | `924679ca2e4a` |
 | `web/src/features/runs/result/PinControl.tsx` | `bc6759f3a2cf` |
 | `web/src/features/runs/result/usePin.ts` | `7b5bca93a0ad` |
-| `web/src/app/routes.ts` | `0cd883b6c7a9` |
+| `web/src/app/routes.ts` | `ad961dbb85a0` |
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `c683fdfec49a` |

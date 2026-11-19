@@ -68,7 +68,7 @@ describe('URL scope and cancellation', () => {
     expect(link).toHaveAttribute('href', routes.workspace(organizationId, workspaceId));
     fireEvent.click(link);
     await screen.findByText('Workspace overview unavailable. Counts are unknown.');
-    fireEvent.click(screen.getByRole('link', { name: 'Workspaces' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Suites' }));
     expect(await screen.findByRole('heading', { name: 'No suites here yet' })).toBeVisible();
     expect(api.records.some(record => record.path.includes(encodeURIComponent(organizationId)))).toBe(true);
     expect(api.records.some(record => record.path.includes(encodeURIComponent(workspaceId)))).toBe(true);
@@ -96,11 +96,11 @@ describe('URL scope and cancellation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Switch workspace B' }));
     expect(screen.queryByRole('link', { name: 'Same folder' })).not.toBeInTheDocument();
     await screen.findByText('Workspace overview unavailable. Counts are unknown.');
-    fireEvent.click(screen.getByRole('link', { name: 'Workspaces' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Suites' }));
     await waitFor(() => expect(api.records.some(record => record.path.includes(`${ids.b}/workspaces/${ids.workspace}/folders?`))).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: 'Switch workspace A' }));
     await screen.findByText('Workspace overview unavailable. Counts are unknown.');
-    fireEvent.click(screen.getByRole('link', { name: 'Workspaces' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Suites' }));
     expect(await screen.findByRole('link', { name: 'Same folder' })).toBeVisible();
     expect(api.records.find(record => record.path.includes(`${ids.b}/workspaces/${ids.workspace}/folders?`))?.signal?.aborted).toBe(true);
     await act(async () => { late.resolve(json({ scope: folder(ids.b).scope, items: [{ ...folder(ids.b), name: 'Late B folder' }], nextCursor: null })); });
