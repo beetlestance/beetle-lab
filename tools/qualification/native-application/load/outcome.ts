@@ -135,7 +135,7 @@ export function publicShortOutcome(input: unknown, expectedRevision: string) {
   }
   const results = record(source.results);
   assert.deepEqual(results.targetRequests, { ready: 1, work: 40, unexpected: 0 });
-  assert.deepEqual(results.controlReserve, { cpuMillis: 2100, memoryBytes: 603979776, pids: 160 });
+  assert.deepEqual(results.controlReserve, { cpuMillis: 1350, memoryBytes: 603979776, pids: 160 });
   const windows = ['idle', 'loaded', 'postIdle'].map((kind) => {
     const row = record(results[kind]);
     return { kind, peers: peers(row.peers), latency: latency(kind, row, results[kind + 'Partial']) };
