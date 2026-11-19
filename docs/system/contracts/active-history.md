@@ -82,6 +82,18 @@ attempt, producer epoch, metric subset and sampled coverage. The report describe
 the last retained window. CSV preserves actual window timestamps, source ordinals,
 gaps, missing values and zeroes. Final artifacts remain a separate sealed path.
 
+## Internal stopped checkpoint read
+
+The native owner can also verify a stopped k6 checkpoint when a caller supplies
+independent launch approval, the exact stopped output root identity and the
+admitted byte limit. It opens only the two fixed 4 KiB slots, picks the newest
+complete approved prefix and scans the referenced extent. The shared range lease
+excludes cleanup until actual close. Stopped roots and files must keep their
+full native signature through the final named checks. The prepared output root
+must stay exclusive after stop. Partial bytes beyond
+the selected extent are ignored. This helper currently has no runner caller or
+HTTP route. The active history and sealed-result gates still apply independently.
+
 ## Anchors
 
 | Code | Reviewed |
@@ -94,7 +106,7 @@ gaps, missing values and zeroes. Final artifacts remain a separate sealed path.
 | `app/src/application/run-live-history/` | `ddb71f298e44` |
 | `app/src/adapters/inbound/http/run-live-history/` | `5f005441d44a` |
 | `app/src/adapters/outbound/runner/live-history.ts` | `3565a7c2df1a` |
-| `agent/src/collection/live-history/` | `602b4e92daa8` |
+| `agent/src/collection/live-history/` | `e8907b76b6c5` |
 | `contracts/src/api/live-history.ts` | `019e342ddd15` |
 | `web/src/features/runs/live/current.ts` | `3b7b190f7469` |
 | `web/src/features/runs/live/target-history.ts` | `bffc0d996bc2` |

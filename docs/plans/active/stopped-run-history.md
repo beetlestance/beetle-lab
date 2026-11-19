@@ -1,8 +1,9 @@
 # Retain verified observations after a stopped run
 
 Status: Implementation in progress. The Result views can display accepted
-partial evidence. The k6 producer writes recovery checkpoints. The agent and
-backend do not yet transfer or serve them after a stop.
+partial evidence. The k6 producer writes recovery checkpoints. A native agent
+reader can verify them. The controller and backend still need to transfer and
+serve them after a stop.
 
 ## Current behaviour
 
@@ -66,7 +67,7 @@ receipts unchanged. Metric recovery remains a separate step.
    peak extent and a 5 s cadence. It syncs complete archive prefixes on one
    advisory work slot, fences shutdown, and leaves the previous slot readable
    after an interrupted write. The wire and normal result formats stay unchanged.
-3. Extend agent collection and settlement to persist the recovery decision,
+3. Native reader implemented. Extend agent collection and settlement to persist the recovery decision,
    with an exact retry and restart path. Reuse existing admission and custody.
    Establish the schema and migration ownership before changing journal or wire
    state. Review producer, stop and removal boundaries together.

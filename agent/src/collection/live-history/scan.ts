@@ -30,13 +30,13 @@ export async function scan(files: PrefixFiles, options: CapturedOptions, owner: 
   const index = new PrefixLines(files, 'index', options.prefix.index);
   header((await required(data, 1024)).value, 'data', options);
   header((await required(index, 1024)).value, 'index', options);
-  const selected = new Map(options.frame.subset.selected.map((row) => [metricSeriesIdentity(row), row.ordinal]));
+  const selected = new Map(options.subset.selected.map((row) => [metricSeriesIdentity(row), row.ordinal]));
   const result: PrefixHistory = {
     prefix: options.prefix,
     scope: options.scope,
-    producerEpoch: options.frame.producerEpoch,
-    subset: options.frame.subset,
-    subsetDigest: options.frame.subsetDigest,
+    producerEpoch: options.producerEpoch,
+    subset: options.subset,
+    subsetDigest: options.subsetDigest,
     sampled: options.prefix.windows > 900,
     samples: [],
   };

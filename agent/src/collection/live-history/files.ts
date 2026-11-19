@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import type { LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import { OutputFailure } from '../output/index.js';
 import type { OutputIO, OutputPorts } from '../output/index.js';
+import { exactRoot, sameEntry } from './stopped-identity.js';
+import type { CollectionRootIdentity } from '../root/index.js';
 
 export type Lane = 'data' | 'index' | 'target';
 interface Entry {
@@ -22,7 +24,12 @@ export class PrefixFiles {
   private root: Entry | undefined;
   private readonly files = new Map<Lane, Entry>();
   constructor(
-    private readonly options: { directory: string; uid: number; prefix: LiveMetricArchivePrefix },
+    private readonly options: {
+      directory: string;
+      uid: number;
+      prefix: LiveMetricArchivePrefix;
+      stoppedRoot?: CollectionRootIdentity;
+    },
     private readonly ports: OutputPorts,
     private readonly io: OutputIO,
   ) {}
@@ -35,6 +42,9 @@ export class PrefixFiles {
       (!directory && (stat.nlink !== 1n || stat.size < BigInt(minimum)))
     )
       throw new OutputFailure('custody');
+  }
+  private matches(left: BigIntStats, right: BigIntStats): boolean {
+    return this.options.stoppedRoot ? sameEntry(left, right) : identity(left, right);
   }
   private async named(path: string, directory: boolean, minimum: number): Promise<BigIntStats> {
     if ((await this.io.io(() => this.ports.realpath(path))) !== path) throw new OutputFailure('custody');
@@ -54,12 +64,13 @@ export class PrefixFiles {
     );
     const actual = await this.io.io(() => handle.stat({ bigint: true }));
     this.metadata(actual, directory, minimum);
-    if (!identity(actual, stat)) throw new OutputFailure('custody');
+    if (!this.matches(actual, stat)) throw new OutputFailure('custody');
     return { path, stat, handle, directory, minimum };
   }
   async open(): Promise<void> {
     if (this.root) throw new OutputFailure('invalid_options');
     this.root = await this.openEntry(this.options.directory, true, 0);
+    if (this.options.stoppedRoot) exactRoot(this.options.stoppedRoot, this.root.stat);
     for (const lane of ['data', 'index'] as const) {
       const prefix = this.options.prefix[lane];
       this.files.set(
@@ -79,11 +90,11 @@ export class PrefixFiles {
     if (!this.root || this.files.size !== (this.options.prefix.target ? 3 : 2)) throw new OutputFailure('custody');
     for (const entry of [this.root, ...this.files.values()]) {
       const named = await this.named(entry.path, entry.directory, entry.minimum);
-      if (!identity(named, entry.stat)) throw new OutputFailure('custody');
+      if (!this.matches(named, entry.stat)) throw new OutputFailure('custody');
       if (!namedOnly) {
         const actual = await this.io.io(() => entry.handle.stat({ bigint: true }));
         this.metadata(actual, entry.directory, entry.minimum);
-        if (!identity(actual, entry.stat)) throw new OutputFailure('custody');
+        if (!this.matches(actual, entry.stat)) throw new OutputFailure('custody');
       }
     }
   }

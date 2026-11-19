@@ -212,7 +212,7 @@ numbers are per-start checks only ([decision 029](../../decisions/029-durable-st
 
 | Code | Reviewed |
 | --- | --- |
-| `agent/src/collection/` | `be40eea21fac` |
+| `agent/src/collection/` | `20a932208af4` |
 | `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
 | `agent/src/transport/sources.ts` | `a1e3149482d3` |
 | `app/src/ports/output-bytes.ts` | `10c5f59ca356` |

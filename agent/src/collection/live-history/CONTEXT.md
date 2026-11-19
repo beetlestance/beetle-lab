@@ -28,3 +28,12 @@ preserving first/final and marking sampled; <= 900 windows, never averaged p95.
 Public access still requires the existing scoped backend and protected HTTP route.
 Contract: docs/system/contracts/active-history.md.
 Focused checks: agent/test/live-history and agent/test/supervisor/live-history.test.ts.
+
+readStoppedHistory requires caller-proven stop, exact observed root and an
+independently derived launch approval. The same range lease owns up to two
+additional fixed slot handles. Each slot is <= 4 KiB, read positionally in at
+most 32 calls, and checked for exact named and retained facts. Use the newest
+complete approved slot inside the admitted byte cap. A torn slot contributes
+no history, while a verified earlier slot remains eligible. Stopped archive
+checks also freeze size and timestamps through original close. No live frame or
+sealed result is manufactured. Controller and durable custody are separate.
