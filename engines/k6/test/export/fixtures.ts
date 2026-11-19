@@ -54,7 +54,7 @@ export async function inspect(source: string) {
   }
   const execution = { vu: { idInTest: 1, iterationInScenario: 0, metrics: { tags: {} } }, scenario: { startTime: 1000 },
     test: { abort(reason: string): never { throw new Error(reason); } } };
-  const native = { 'k6': { sleep: () => undefined }, 'k6/metrics': { Counter }, 'k6/execution': execution,
+  const native = { 'k6': { sleep: () => undefined, check: (value:unknown,sets:Record<string,(value:unknown)=>unknown>) => Object.values(sets).every(test=>Boolean(test(value))) }, 'k6/metrics': { Counter }, 'k6/execution': execution,
     'k6/http': { request(method: string, url: string, body: string | null, params: { headers: Record<string, string>; timeout: number }) {
       requests.push({ method, url, body, params });
       return { status: 200, error_code: 0, headers: { 'x-id': 'a' }, body: '{"users":[{"id":1}],"message":"ok ready","count":1}' };

@@ -1,10 +1,9 @@
 # Native k6 request runtime
-
 `index.ts`: `createRuntime` accepts an accepted compiled suite, explicit HTTP,
 clock, sleep, random and metric adapters, a private secret resolver and limits.
 One instance belongs to one VU; selection state is isolated by scenario. `prepare`
 and `iterate` both require the caller's accepted deadline. Results contain only
-fixed classifications and counts. Required assertion failures always emit evidence.
+fixed classifications and counts. Required assertion failures always emit evidence; their health guard is separate.
 Setup consumes prepare once. After successful readiness and a final deadline check,
 it emits untagged `beetle_measure_started=1`, including readiness-disabled runs.
 The native metric timestamp is source correlation; buffered receipt is retrospective,
@@ -15,7 +14,6 @@ prepare/init elapsed; setup also clamps to the accepted timeout. Standalone star
 one fresh deadline at setup, before readiness; pre-setup init and OS enforcement
 are excluded. Setup returns only that number to all VUs. Missing setup data fails
 closed. Scenarios clamp accepted duration/grace timing to this shared deadline.
-
 Public `native-entry.ts` composes native adapters/options/summary. Init reads only `/beetle/secrets/<declared-name>`;
 trusted staging must cap files before native `open` buffers them. Limits: 64 KiB
 per secret, 1 MiB total. Values stay in private closures and request use.
@@ -23,6 +21,8 @@ per secret, 1 MiB total. Values stay in private closures and request use.
 submetrics. Native system tags are disabled; deterministic rN/aN labels admit at
 most 200 assigned label maps, including the aggregate. HTTP status failures retain
 native http_req_failed semantics; assertion and transport classifications differ.
+Each evaluated assertion emits one native check from its recorded boolean, using
+its alias and phase. Workload checks SLOs exclude readiness and include optional checks.
 Redirects are disabled in v1. `throw:true` prevents native request-warning logs;
 the runtime catches and replaces transport errors with fixed classifications.
 Bodies default to responseType none. Body/JSON assertions opt into retained text.

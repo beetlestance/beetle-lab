@@ -90,3 +90,10 @@ describe('bounded metric and build boundaries', () => {
     } finally { await rm(directory, { recursive: true, force: true }); }
   });
 });
+
+it('admits only checks rate and compiles its native workload-phase threshold',()=>{
+ const config=configFor();config.loadPlan.slos=[{id:'checks',metric:'checks',stat:'rate',operator:'>',value:.99}];const suite=compiled(config);
+ expect(nativeOptions(suite,{mode:'standalone',timeoutMs:1000}).thresholds['checks{phase:execute}']).toContainEqual({threshold:'rate>0.99',abortOnFail:false});
+ expect(nativeOptions(suite,{mode:'standalone',timeoutMs:1000}).thresholds.checks).toBeUndefined();
+ config.loadPlan.slos[0]!.stat='count';expect(validateAndCompileSuite(config,dependencies())).toMatchObject({ok:false,issues:[{code:'metric'}]});
+});

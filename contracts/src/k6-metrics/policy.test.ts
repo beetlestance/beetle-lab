@@ -18,6 +18,8 @@ it('preserves preparation, execution, engine and control catalogue identities an
   expect(rows).toContainEqual({metric: 'http_req_duration', kind: 'trend', scope: 'prepare', tags: {phase: 'prepare', request: 'r2'}});
   expect(rows).toContainEqual({metric: 'beetle_assertions', kind: 'counter', scope: 'execute', tags: {phase: 'execute', assertion: 'a2'}});
   expect(rows).toContainEqual({metric: 'beetle_execution_failures', kind: 'counter', scope: 'engine', tags: {phase: 'execute'}});
+  expect(rows).toContainEqual({metric:'checks',kind:'rate',scope:'execute',tags:{phase:'execute',assertion:'a2'}});
+  expect(rows).toContainEqual({metric:'checks',kind:'rate',scope:'prepare',tags:{phase:'prepare',assertion:'a3'}});
   expect(rows).toContainEqual({metric: 'beetle_measure_started', kind: 'counter', scope: 'control', tags: {}});
   expect(Object.isFrozen(rows[0]?.tags)).toBe(true);
 });

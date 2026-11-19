@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import '../../runtime/native-api.d.ts';
 const state = vi.hoisted(() => ({ tags: {} as Record<string, string>, points: [] as { name: string; tags: Record<string, string> }[], failMarker: false }));
-vi.mock('k6', () => ({ sleep: vi.fn() }));
+vi.mock('k6', () => ({ sleep: vi.fn(), check: vi.fn() }));
 vi.mock('k6/execution', () => ({ default: { vu: { idInTest: 1, iterationInScenario: 0, metrics: { tags: state.tags } },
   scenario: { startTime: 1000 }, test: { abort: vi.fn() } } }));
 vi.mock('k6/http', () => ({ default: { request: vi.fn() } }));

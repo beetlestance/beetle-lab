@@ -136,3 +136,12 @@ it('requires one exact marker and rejects malformed/duplicate/missing evidence',
   await feed(marker());
   await expect(accumulator.point(marker(), signal())).rejects.toMatchObject({ code: 'measurement' });
 });
+
+it('admits checks as bounded assertion-rate points and excludes readiness from measured totals',async()=>{
+ const {profile,feed,stream,accumulator,windows}=setup();
+ const prepare=profile.allowedSeries.find(row=>row.metric==='checks'&&row.scope==='prepare');if(!prepare)throw Error('Missing preparation checks fixture');
+ await feed(point('checks',1,500,prepare.tags));await feed(marker());await feed(point('checks',1));await feed(point('checks',0));stream.finish();
+ const result=await accumulator.finish(signal());const checks=result.totals.filter(row=>row.metric==='checks');
+ expect(checks.map(row=>({scope:row.scope,tags:row.tags,total:row.total}))).toEqual([{scope:'execute',tags:{phase:'execute',assertion:'a0'},total:{kind:'rate',numerator:1,sampleCount:2}}]);
+ expect(windows.flatMap(window=>window.series).filter(row=>row.metric==='checks')).toHaveLength(1);
+});

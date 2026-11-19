@@ -21,3 +21,8 @@ it('renders at most32rows and pages the bounded union without dropping rules',()
  fireEvent.click(screen.getByRole('button',{name:'Next thresholds'}));expect(within(table).getAllByRole('row')).toHaveLength(2);expect(screen.getByRole('rowheader',{name:'rule32'})).toBeVisible();expect(screen.getByText('33–33 of 33')).toBeVisible();
  fireEvent.click(screen.getByRole('button',{name:'Previous thresholds'}));expect(screen.getByRole('rowheader',{name:'rule0'})).toBeVisible();
 });
+
+it('presents a native checks rate and saved limit as percentages',()=>{
+ const items=snapshot().items;items[0]!.result!.slos=[{id:'checks',passed:true,reading:{source:'native-summary',metric:'checks',stat:'rate',value:.9995},limit:{metric:'checks',stat:'rate',operator:'>',value:.99}}];items[1]!.result!.slos=[];
+ render(<ComparisonSlos items={items}/>);expect(screen.getByText('checks rate: 99.95%')).toBeVisible();expect(screen.getByText('limit over 99%')).toBeVisible();
+});

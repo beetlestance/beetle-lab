@@ -27,8 +27,14 @@ describes the native verdict; it does not reevaluate the rule from the reading.
 Comparison uses the same native-verdict sentence and limit formatter. Optional
 compact comparison detail obeys the [comparison contract](result-presentation.md#native-slo-comparison).
 
-The current compiler does not admit a `checks` rate threshold. A design example
-with a 99% checks SLO needs separate engine support; no threshold is fabricated.
+`checks` supports the native `rate` statistic. Each assertion evaluation emits one
+native check from its existing boolean, including optional assertions. Native
+`phase:execute` submetrics exclude readiness. The shared catalogue uses bounded
+assertion aliases; native system tags and raw assertion names remain excluded.
+A checks SLO neither replaces required-assertion health nor admits a zero-sample
+verdict. Native k6 can report a vacuous true with no workload checks; the mapper
+requires known passes/fails with a positive denominator before accepting it.
+The result reading remains a native statistic; the UI never computes its verdict.
 
 ## Anchors
 
@@ -40,3 +46,6 @@ with a 99% checks SLO needs separate engine support; no threshold is fabricated.
 | `web/src/features/runs/run-revision.ts` | `d57756f98b8a` |
 | `web/src/features/runs/result/ThresholdReading.tsx` | `08971f65c4f9` |
 | `web/src/features/runs/result/threshold-sentence.ts` | `18d0102d94e8` |
+| `contracts/src/k6-metrics/index.ts` | `ae909fa57f1f` |
+| `engines/k6/runtime/native.ts` | `f2277e65a4b4` |
+| `engines/k6/runtime/native-api.d.ts` | `1d0f5d2b55d1` |

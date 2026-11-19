@@ -1,4 +1,4 @@
-import { sleep } from 'k6';
+import { sleep, check } from 'k6';
 import execution from 'k6/execution';
 import http from 'k6/http';
 import { Counter } from 'k6/metrics';
@@ -65,7 +65,11 @@ export function createNativeRuntime(suite: DeepReadonly<CompiledSuite>, attempt:
     random: () => Math.random(),
     sleep: (milliseconds) => sleep(milliseconds / 1000),
     http: nativeHttp,
-    metric: (name, value, tags) => nativeMetric(counters.get(name)!, name, value, tags),
+    metric(name, value, tags) {
+      nativeMetric(counters.get(name)!, name, value, tags);
+      // One native check for this already evaluated assertion; phase comes from the VU.
+      if (name === 'beetle_assertion_failures') check(value, { assertion_passed: (failed) => failed === 0 }, tags);
+    },
   };
   return createRuntime({ suite, adapters, resolveSecret: stagedSecrets(suite) });
 }

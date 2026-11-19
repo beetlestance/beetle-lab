@@ -1,5 +1,10 @@
 declare module 'k6' {
   export function sleep(seconds: number): void;
+  export function check<T>(
+    value: T,
+    sets: Readonly<Record<string, (value: T) => unknown>>,
+    tags?: Readonly<Record<string, string>>,
+  ): boolean;
 }
 declare module 'k6/http' {
   interface Response {

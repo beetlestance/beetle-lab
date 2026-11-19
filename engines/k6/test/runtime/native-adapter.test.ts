@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../../runtime/native-api.d.ts';
-vi.mock('k6', () => ({ sleep: vi.fn() }));
+vi.mock('k6', () => ({ sleep: vi.fn(), check: vi.fn() }));
 vi.mock('k6/execution', () => ({ default: { test: { abort: vi.fn() }, vu: { idInTest: 1, iterationInScenario: 0, metrics: { tags: {} } }, scenario: { startTime: 0 } } }));
 vi.mock('k6/http', () => ({ default: { request: vi.fn() } }));
 vi.mock('k6/metrics', () => ({ Counter: class { add = vi.fn(); } }));
+import { check } from 'k6';
 import http from 'k6/http';
 import execution from 'k6/execution';
 import { createNativeRuntime, nativeHttp, nativeIteration, nativeSetup } from '../../runtime/native.js';
@@ -93,4 +94,15 @@ describe('native API delegation', () => {
     const load = vi.fn(() => 'unused'); vi.stubGlobal('open', load);
     expect(() => createNativeRuntime(suite, attempt)).toThrow('secret'); expect(load).not.toHaveBeenCalled();
   });
+});
+
+it('records exactly one native check per already evaluated assertion with bounded labels and native phase',()=>{
+ vi.stubGlobal('open',()=> 'synthetic');vi.spyOn(Date,'now').mockReturnValue(1000);
+ const config=configFor();config.requests[0]!.assertions=[{id:'required',kind:'statusEq',required:true,value:200},{id:'optional',kind:'statusEq',required:false,value:201}];
+ const seen:{phase:string|undefined;passed:boolean;tags:Readonly<Record<string,string>>|undefined}[]=[];
+ vi.mocked(check).mockImplementation((value,sets,tags)=>{const passed=Object.values(sets).every(test=>Boolean(test(value)));seen.push({phase:execution.vu.metrics.tags.phase,passed,tags});return passed;});
+ vi.mocked(http.request).mockReturnValue({status:200,error_code:0,headers:{},body:'ok ready'});
+ const suite=compiled(config),runtime=createNativeRuntime(suite,attempt);const data=nativeSetup(runtime,attempt);const before=seen.length;nativeIteration(runtime,suite,0,data);
+ expect(seen.slice(before).map(s=>s.passed)).toEqual([true,false]);expect(seen.slice(before).every(s=>s.phase==='execute')).toBe(true);expect(seen.slice(0,before).every(s=>s.phase==='prepare')).toBe(true);
+ expect(seen.every(s=>/^a[0-9]+$/.test(s.tags?.assertion??''))).toBe(true);expect(JSON.stringify(seen)).not.toMatch(/required|optional|private-native-secret/);
 });

@@ -59,7 +59,7 @@ const counters = new Set<string>([
   'data_received',
   'data_sent',
 ]);
-const rates = new Set(['http_req_failed']);
+const rates = new Set(['http_req_failed', 'checks']);
 const gauges = new Set(['vus', 'vus_max']);
 export type { MetricKind } from '../metrics/index.js';
 export interface NativeMetricDefinition {
@@ -122,7 +122,7 @@ function seriesTags(name: string, layout: K6MetricLayout): readonly MetricTags[]
     ...layout.requests.map((item) => ({ ...item, phase: 'execute' as const })),
     ...(layout.readiness ? [{ ...layout.readiness, phase: 'prepare' as const }] : []),
   ];
-  if (name === 'beetle_assertions' || name === 'beetle_assertion_failures') {
+  if (name === 'beetle_assertions' || name === 'beetle_assertion_failures' || name === 'checks') {
     return requests.flatMap((request) =>
       request.assertions.map((assertion) => ({ phase: request.phase, assertion: assertion.label })),
     );
