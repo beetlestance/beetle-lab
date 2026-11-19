@@ -39,11 +39,11 @@ it('retains each recording’s own source positions on one native-marker-relativ
 });
 it('preserves zero, unknowns and source gaps without filling windows',()=>{
  const items=snapshot().items;const value=history(items[0]!.run);
- value.points[0]={...value.points[0]!,requestCount:0,httpSamples:0,httpFailures:0,httpP50:null,httpP95:null,httpP99:null};
- value.points[1]={...value.points[1]!,startTimeMs:value.points[1]!.startTimeMs+1000,endTimeMs:value.points[1]!.endTimeMs+1000,gapBefore:true};
+ value.points[0]={...value.points[0]!,requestCount:0,httpSamples:0,httpFailures:0,httpP50:null,httpP95:null,httpP99:null,vus:0};
+ value.points[1]={...value.points[1]!,startTimeMs:value.points[1]!.startTimeMs+1000,endTimeMs:value.points[1]!.endTimeMs+1000,gapBefore:true,vus:null};
  value.points[2]={...value.points[2]!,startTimeMs:value.points[2]!.startTimeMs+1000,endTimeMs:value.points[2]!.endTimeMs+1000};
  const curve=comparisonPlot(items,new Map([[items[0]!.run.id,{status:'loaded',value}]])).curves[0]!;
- expect(curve.xs).toEqual([1000,3000,4000]);expect(curve.requests[0]).toBe(0);expect(curve.p95[0]).toBeNull();expect(curve.breaks).toEqual([false,true,false]);
+ expect(curve.xs).toEqual([1000,3000,4000]);expect(curve.requests[0]).toBe(0);expect(curve.failures[0]).toBe(0);expect(curve.vus.slice(0,2)).toEqual([0,null]);expect(curve.p95[0]).toBeNull();expect(curve.breaks).toEqual([false,true,false]);
 });
 it('binds an observed peak to the same numeric generation/version/hash/marker, never configured rate',()=>{
  const run=snapshot().items[0]!.run;const value=history(run);const reading=overview(run);
@@ -53,8 +53,8 @@ it('binds an observed peak to the same numeric generation/version/hash/marker, n
   expect(comparisonPeak({status:'loaded',value:reading},{status:'loaded',value:other})).toBeNull();
  }
 });
-it('loads two recorded overlays with one history read per selected run',async()=>{
- const f=fixture();mountComparison(f.client);await waitFor(()=>expect(screen.getAllByRole('img')).toHaveLength(2));
+it('loads four recorded overlays with one history read per selected run',async()=>{
+ const f=fixture();mountComparison(f.client);await waitFor(()=>expect(screen.getAllByRole('img')).toHaveLength(4));
  expect(f.records.filter(record=>record.path.endsWith('/metrics/chart-history'))).toHaveLength(2);
  expect(f.records.filter(record=>record.path.includes('/samples?'))).toHaveLength(0);
  expect(screen.getByRole('rowheader',{name:'Observed peak requests a second'}).closest('tr')).toHaveTextContent('9');

@@ -106,7 +106,8 @@ reply cap may omit this optional detail; no additional reads or polling are adde
 One existing chart-history read per selected run shares comparison admission and
 retirement. Each reply remains bounded to 900 actual points / 1 MiB; the backend
 retains its 3,600-window / 32 MiB archive ceiling. No metric-per-endpoint fanout.
-P95 and request curves keep independent native-marker-relative coordinates on a
+P95, requests, failures and measured active-VU curves keep independent native-
+marker-relative coordinates on a
 common scale; they never fill a union grid, stretch phases or align wall clocks.
 The shared renderer accepts optional per-series source coordinates and gap flags.
 Its default shared-timeline behavior stays unchanged. Recorded legends use each
@@ -148,8 +149,8 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `3d3b4ae2f47c` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
-| `web/src/features/runs/comparison/RecordedCharts.tsx` | `ecfb3bf7212d` |
-| `web/src/features/runs/comparison/overlay-model.ts` | `b3a951dbbbb0` |
+| `web/src/features/runs/comparison/RecordedCharts.tsx` | `fe6f0666d203` |
+| `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
 | `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
 | `app/src/application/run-comparison/failed-slo.ts` | `97247eae9563` |

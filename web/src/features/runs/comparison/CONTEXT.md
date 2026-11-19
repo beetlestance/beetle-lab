@@ -22,7 +22,7 @@ One module-lifetime ReadAdmission sequences comparison, summaries, catalogue and
 every chart across route/session remounts. Render leases hide old snapshots at
 once; cleanup retires/aborts tokens and cancels queued waits. API originals keep
 admission until they settle. Errors stop automatic reads; retries are manual.
-Recorded p95/requests overlays retain each run's <=900 actual source positions and
+Recorded p95/requests/failures/active-VU overlays retain each run's <=900 actual source positions and
 native-marker-relative time on one scale. Gaps, nulls and zero remain exact; no
 phase warping, union-grid fill or extrapolation. Peak requires the same numeric
 source as overview (generation/version/hash/manifest/marker), never configured load.

@@ -12,6 +12,8 @@ export interface RecordedCurve {
   readonly breaks: readonly boolean[];
   readonly p95: readonly (number | null)[];
   readonly requests: readonly (number | null)[];
+  readonly failures: readonly (number | null)[];
+  readonly vus: readonly (number | null)[];
 }
 export interface ComparisonPlot {
   readonly curves: readonly RecordedCurve[];
@@ -43,6 +45,8 @@ export function comparisonPlot(
       breaks: plot.points.map((point) => point.gapBefore),
       p95: plot.points.map((point) => point.p95),
       requests: plot.points.map((point) => point.rps),
+      failures: plot.points.map((point) => point.failedPerSecond),
+      vus: plot.points.map((point) => point.vus),
     });
   });
   const domain = [Math.min(...starts), Math.max(...ends)] as const;

@@ -9,6 +9,13 @@ import { comparisonPeak } from './recorded-source.js';
 import { comparisonRunLabels } from './run-labels.js';
 import '../live/live.css';
 
+const metrics = {
+  requests: { title: 'Recorded requests per one-second window', unavailable: 'Request', format: whole },
+  p95: { title: 'Recorded p95 latency, histogram estimates', unavailable: 'Latency', format: ms },
+  failures: { title: 'Recorded failed requests per one-second window', unavailable: 'Failed request', format: whole },
+  vus: { title: 'Recorded active virtual users', unavailable: 'Active virtual user', format: whole },
+} as const;
+
 export function RecordedComparisonCharts({
   items,
   histories,
@@ -26,11 +33,14 @@ export function RecordedComparisonCharts({
       <h2 id="recorded-comparison-title">Recorded runs over time</h2>
       <p className="compare-muted">
         Time is relative to each run’s native measurement marker. Plans and phases are not stretched to align. Point at
-        either chart for the nearest recorded windows; gaps and times outside coverage stay unknown.
+        any chart for the nearest recorded windows; gaps and times outside coverage stay unknown.
       </p>
       <RecordedNotes items={items} histories={histories} overviews={overviews} />
-      <OverlayChart plot={plot} metric="p95" hoverT={hoverT} onHover={onHover} />
-      <OverlayChart plot={plot} metric="requests" hoverT={hoverT} onHover={onHover} />
+      <div className="live-charts">
+        {(Object.keys(metrics) as (keyof typeof metrics)[]).map((metric) => (
+          <OverlayChart key={metric} plot={plot} metric={metric} hoverT={hoverT} onHover={onHover} />
+        ))}
+      </div>
     </section>
   );
 }
@@ -41,11 +51,11 @@ function OverlayChart({
   onHover,
 }: {
   plot: ComparisonPlot;
-  metric: 'p95' | 'requests';
+  metric: keyof typeof metrics;
   hoverT: number | null;
   onHover: (time: number | null) => void;
 }) {
-  const latency = metric === 'p95';
+  const definition = metrics[metric];
   const series = plot.curves.map((curve) => ({
     key: curve.id,
     label: curve.label,
@@ -54,12 +64,11 @@ function OverlayChart({
     breaks: curve.breaks,
     values: curve[metric],
   }));
-  const title = latency ? 'Recorded p95 latency, histogram estimates' : 'Recorded requests per one-second window';
   if (!series.some((line) => line.values.some((value) => value !== null)))
-    return <p>{latency ? 'Latency' : 'Request'} observations are unavailable for these recordings.</p>;
+    return <p>{definition.unavailable} observations are unavailable for these recordings.</p>;
   return (
     <LiveChart
-      title={title}
+      title={definition.title}
       xs={plot.curves[0]?.xs ?? []}
       domain={plot.domain}
       ticks={plot.ticks}
@@ -68,7 +77,7 @@ function OverlayChart({
       tall
       hoverT={hoverT}
       onHover={onHover}
-      format={latency ? ms : whole}
+      format={definition.format}
     />
   );
 }
