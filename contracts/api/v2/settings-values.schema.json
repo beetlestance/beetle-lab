@@ -47,7 +47,7 @@
       ]
     },
     "AdministratorName": {
-      "description": "Display name of the single administrator, snapshotted onto new suite revisions. Absent means Administrator.",
+      "description": "Display name of the single administrator, snapshotted onto new suite revisions and runs. Absent means Administrator.",
       "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
     },
     "InstallationValues": {

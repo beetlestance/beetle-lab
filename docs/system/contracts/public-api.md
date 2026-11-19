@@ -1,10 +1,9 @@
 # Public API
 
-The public JSON API under `/api/v2` is the only boundary between the backend and
-its clients: the web app, the container automation client and agents following
-the embedded reference. `contracts/src/api/` owns schemas, operation
-descriptors and the shared client; `app/src/adapters/inbound/http/` registers
-routes; SQLite metadata enforces scope and versions.
+The public JSON API under `/api/v2` is the only backend boundary for the web app,
+automation client and agents following the embedded reference.
+`contracts/src/api/` owns schemas, operation descriptors and the shared client;
+`app/src/adapters/inbound/http/` registers routes; SQLite metadata enforces scope and versions.
 
 ## Operation catalogue
 
@@ -86,6 +85,7 @@ inputs. Folders group; they never grant permissions or create agents.
   Moves stay in the workspace, check acyclicity transactionally and compare
   versions. Folder deletion requires emptiness; workspace/organisation retirement follows [namespaces](namespaces.md).
 - Runs keep their suite's immutable scope; moving a suite never rewrites them.
+  Captured [requester labels](authoring.md#run-requester) are display metadata; old absence stays unknown.
 
 ## Settings
 
@@ -212,7 +212,7 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `829db207d841` |
+| `contracts/api/v2/` | `0aba33b43aa4` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |

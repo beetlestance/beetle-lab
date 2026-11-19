@@ -50,6 +50,7 @@ export class Runs {
       revisionId: revision.id,
       revisionDigest: revision.digest,
       requestedAt: command.requestedAt,
+      requestedBy: this.settings.administratorName(),
       state: 'queued',
       outcome: 'pending',
       validationStatus: 'pending',

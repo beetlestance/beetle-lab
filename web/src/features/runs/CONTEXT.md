@@ -1,6 +1,6 @@
 # Runs
 Public entries: `Runs({organizationId, workspaceId, runId?})` and
-`RunSavedRevision({revision})`. Only immutable saved revisions can launch runs.
+`RunSavedRevision({revision})`. Only saved revisions launch runs; RunRequester shows captured labels, never current settings.
 Generated ApiClient validates requests/responses and scope. History requests exact contextual counts/ranges; uncounted pages stay unknown. Chips, pinned
 (runsPage key slot), suite, sort apply at once; search on Enter sends 8+ hex characters as
 runIdPrefix, else name (names and notes). Changes reset paging/selection.

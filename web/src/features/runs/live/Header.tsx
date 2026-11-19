@@ -1,3 +1,4 @@
+import { RunRequester } from '../RunRequester.js';
 import { useWorkspaceSnapshot } from '../../../app/overview.js';
 import { useSessionAccess } from '../../../app/session.js';
 import { useId } from 'react';
@@ -87,6 +88,8 @@ function ContextLine({
           {revisionOrdinal !== null && `, revision ${revisionOrdinal}`}, {started}
         </>
       )}
+      {' · '}
+      <RunRequester run={run} />
     </p>
   );
 }

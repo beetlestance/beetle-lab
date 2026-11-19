@@ -4,6 +4,7 @@
   gap: 10px;
 }
 .live-context {
+  overflow-wrap: anywhere;
   color: var(--mute);
   font-size: var(--fs-md);
 }

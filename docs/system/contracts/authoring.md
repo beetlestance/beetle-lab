@@ -60,7 +60,20 @@ are in [Public API](public-api.md).
   rules), changed through the installation settings PATCH with its
   `expectedVersion`.
 - It is optional; when absent it reads as `Administrator`. It labels revision
-  stamps only and grants nothing.
+  stamps and run requests only and grants nothing.
+
+## Run requester
+
+- New runs snapshot `requestedBy` from the configured administrator display name,
+  defaulting to `Administrator`, inside the existing admission/receipt transaction.
+  It is a display label, not an authenticated person or IAM identity. Callers cannot
+  supply it in `createRun`.
+- The bounded optional field lives in the immutable run JSON snapshot; no schema
+  migration or backfill is needed. Reads and original receipts without it remain
+  unrecorded. Later settings edits never rewrite the snapshot or replayed receipt.
+- Live and result context show the captured label, or `requester not recorded` for
+  absent/null values, including restored history. They never read current settings
+  to infer an earlier requester. The label never enters the engine Offer or intent.
 
 ## Run notes
 
@@ -134,6 +147,9 @@ unchanged and that a late failure rolls back to the exact schema 030.
 
 | Code | Reviewed |
 | --- | --- |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `2d79e7059ede` |
+| `web/src/features/runs/RunRequester.tsx` | `355e1373a20b` |
+| `contracts/api/v2/run.schema.json` | `e20439ea8877` |
 | `app/src/adapters/outbound/sqlite/suites.ts` | `d70508594376` |
 | `app/src/adapters/outbound/sqlite/migration031.ts` | `b0feac9a7325` |
 | `app/src/adapters/outbound/sqlite/run-annotations.ts` | `f334af303d32` |
