@@ -102,6 +102,7 @@ export async function fixture(argv: string[], maximumTargetRequests = 4) {
     project,
     origin,
     docker,
+    context,
     compose,
     ids,
     logs,

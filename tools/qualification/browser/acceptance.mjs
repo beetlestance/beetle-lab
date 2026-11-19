@@ -12,6 +12,7 @@ import { author, revision } from './authoring.mjs';
 import { execute, results } from './results.mjs';
 import { inputs, settings, emptyFolder, directoryImport } from './inputs-settings.mjs';
 import { offlineExport } from './exports.mjs';
+import { outputPressure } from './output-pressure.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
 import { cleanupBrowserInstallation } from './cleanup.mjs';
@@ -31,6 +32,7 @@ if (
     'run-results',
     'live-reconnect',
     'early-cancel',
+    'output-pressure',
     'run-deletion',
     'interaction',
     'reference',
@@ -86,7 +88,10 @@ try {
   const override = JSON.parse(await readFile(target, 'utf8'));
   const entry = override.services['synthetic-target'].entrypoint;
   if (!entry[2].includes('if(++counts[key]>4)')) throw Error('Unexpected target fixture');
-  entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
+  entry[2] = entry[2].replace(
+    'if(++counts[key]>4)',
+    profile === 'output-pressure' ? 'if(++counts[key]>4000)' : 'if(++counts[key]>128)',
+  );
   if (profile === 'early-cancel') {
     const status = "r.writeHead(key==='unexpected'?404:200)";
     assert(entry[2].includes(status));
@@ -159,6 +164,13 @@ try {
     await phase('no-performance-work', async () => {
       assert.deepEqual(counts(f), { ready: 0, work: 0, unexpected: 0 });
     });
+  } else if (profile === 'output-pressure') {
+    assert(installation);
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    const ownedInstallation = installation;
+    await phase('output-pressure-and-result', () =>
+      outputPressure(appPage, authored, f, ownedInstallation, evidence ?? f.root),
+    );
   } else if (profile === 'early-cancel') {
     await appPage.setViewportSize({ width: 1440, height: 900 });
     await phase('cancel-during-readiness', () => earlyCancel(appPage, authored, f, evidence ?? f.root));

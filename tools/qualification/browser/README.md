@@ -86,6 +86,10 @@ This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile
 continues to require the original twelve functional phases.
 
+The `output-pressure` profile exercises a bounded workload capped at 4,000
+synthetic requests and 4 MiB of output. It binds the observed wrapper failure
+to the submitted attempt and checks the terminal result and any retained history.
+
 The `early-cancel` profile keeps the synthetic readiness endpoint unavailable.
 It cancels after the engine makes a readiness request and verifies no workload
 requests, no recovered checkpoint, and a cancelled result after the UI hand-off.

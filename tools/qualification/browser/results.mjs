@@ -6,13 +6,14 @@ import assert from 'node:assert/strict';
 import { assertRunState, submittedRun, suiteRoute } from './run-state.mjs';
 /**
  * @param {import('@playwright/test').Page} page
+ * @param {number} outputBytes
  */
-export async function start(page) {
+export async function start(page, outputBytes = 8388608) {
   const suite = suiteRoute(page.url());
   await page.getByRole('button', { name: 'Start run', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: /^Start / });
   await dialog.getByRole('button', { name: 'Change for this run', exact: true }).click();
-  await dialog.getByLabel(/^Output, up to /).fill('0.0078125');
+  await dialog.getByLabel(/^Output, up to /).fill(String(outputBytes / 1073741824));
   const revisionId = await dialog.getByLabel('Revision', { exact: true }).inputValue();
   const [reply] = await Promise.all([
     page.waitForResponse((reply) => {
@@ -27,7 +28,7 @@ export async function start(page) {
   ]);
   assert.equal(reply.status(), 202);
   const submitted = submittedRun(await reply.json(), suite, revisionId);
-  assert.equal(submitted.outputBytes, 8388608);
+  assert.equal(submitted.outputBytes, outputBytes);
   await expect(page).toHaveURL(submitted.origin + submitted.path);
   return submitted;
 }
