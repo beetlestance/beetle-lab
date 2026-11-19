@@ -14,6 +14,8 @@ COPY tsconfig.base.json ./
 COPY contracts/src ./contracts/src
 COPY contracts/engines/k6/v1 ./contracts/engines/k6/v1
 COPY contracts/scripts/standalone.ts ./contracts/scripts/standalone.ts
+# web/vite.config.ts loads the k6 engine config, which imports this schema.
+COPY contracts/runner/v1/target-runtime-units.schema.json ./contracts/runner/v1/target-runtime-units.schema.json
 COPY web ./web
 COPY LICENSE ./LICENSE
 RUN npm run build:web
