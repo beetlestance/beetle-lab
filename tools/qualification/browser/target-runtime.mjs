@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 import { expect } from '@playwright/test';
 /** @param {import('@playwright/test').Page} page @param {number} expectedSamples */
 export async function targetRuntime(page, expectedSamples) {
-  const section = page.getByRole('region', { name: 'Target-reported runtime', exact: true });
-  await expect(section).toBeVisible();
-  await expect(
-    section.getByText('Point observations from the target endpoint, separate from engine resource measurements.', {
-      exact: true,
-    }),
-  ).toBeVisible();
-  const initialReadRefused = (await section.getByRole('alert').count()) > 0;
+  const section = page.locator('#result-target');
+  const retry = section.getByRole('button', { name: 'Retry target observations', exact: true });
+  await expect(retry.or(section.getByText('Recorded target values and checkpoints', { exact: true }))).toBeVisible();
+  const initialReadRefused = await retry.isVisible();
+  if (initialReadRefused) await retry.click();
+  await expect(section.getByText(/^Target: http:\/\/target:8080/)).toBeVisible();
+  await openDetails(section);
   await section.getByRole('button', { name: 'Reload target report', exact: true }).click();
+  await openDetails(section);
   await expect(section.getByLabel('Target metric', { exact: true })).toBeVisible();
   await expect(section.getByText(/Recorded missed count: 2\./)).toBeVisible();
   await comparison(section, 'heapAlloc', '0');
@@ -48,9 +48,12 @@ export async function targetRuntime(page, expectedSamples) {
   ).toBeVisible();
   await expect(section.getByLabel('Target metric').locator('option[value="temperature"]')).toHaveCount(0);
   await section.getByRole('button', { name: 'Reload target report', exact: true }).click();
+  await openDetails(section);
   await comparison(section, 'heapAlloc', '0');
   await page.reload();
+  await openDetails(section);
   await section.getByRole('button', { name: 'Reload target report', exact: true }).click();
+  await openDetails(section);
   await comparison(section, 'heapAlloc', '0');
   return {
     observations: expectedSamples,
@@ -70,4 +73,12 @@ async function comparison(section, metric, expected) {
   const facts = section.getByLabel('Target point comparison');
   for (const label of ['Before point', 'Observed during peak', 'Last after point'])
     await expect(facts.getByText(label, { exact: true }).locator('..').locator('dd')).toHaveText(expected);
+}
+
+/** @param {import('@playwright/test').Locator} section */
+async function openDetails(section) {
+  const details = section.locator('.result-target-details');
+  await expect(details).toBeVisible();
+  if (!(await details.evaluate((node) => node.hasAttribute('open'))))
+    await details.getByText('Recorded target values and checkpoints', { exact: true }).click();
 }

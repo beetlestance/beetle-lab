@@ -19,12 +19,12 @@ export async function author(page, origin) {
   await page.getByRole('link', { name: 'Synthetic workspace', exact: true }).click();
   const workspace = page.url();
   await page.getByRole('link', { name: 'Suites', exact: true }).click();
-  await page.getByRole('button', { name: 'Create suite', exact: true }).click();
+  await page.getByRole('button', { name: 'New suite', exact: true }).click();
+  await page.getByRole('button', { name: 'Choose k6 load tests', exact: true }).click();
   await page.getByLabel('Suite name', { exact: true }).fill('Synthetic k6 suite');
-  await page.getByRole('button', { name: 'Save suite', exact: true }).click();
-  await page.getByRole('button', { name: 'Close metadata editor', exact: true }).click();
-  await page.getByRole('link', { name: 'Synthetic k6 suite', exact: true }).click();
-  const suite = page.url();
+  await page.getByRole('button', { name: 'Create suite', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Synthetic k6 suite', exact: true })).toBeVisible();
+  const suite = new URL(page.url()).origin + new URL(page.url()).pathname;
   const source = JSON.parse(await readFile('contracts/fixtures/api/valid/suite-revision.json', 'utf8'));
   const config = source.config;
   config.target = 'http://target:8080';
@@ -65,8 +65,20 @@ export async function saveEditor(page) {
  * @param {number} ordinal
  */
 export async function revision(page, config, ordinal) {
-  await page.getByRole('button', { name: 'JSON editor', exact: true }).click();
+  await page.getByRole('tab', { name: 'Edit', exact: true }).click();
+  await page.getByRole('radio', { name: 'Complete configuration JSON', exact: true }).click();
   await page.getByLabel('Complete configuration JSON', { exact: true }).fill(JSON.stringify(config));
-  await page.getByRole('button', { name: 'Save new revision', exact: true }).click();
-  await page.getByRole('button', { name: `View revision ${ordinal}`, exact: true }).click();
+  await page.getByRole('button', { name: 'Save revision', exact: true }).click();
+  await expect(page.getByText(`Saved as revision ${ordinal}.`, { exact: true })).toBeVisible();
+  await revisionItem(page, ordinal);
+}
+
+/** @param {import('@playwright/test').Page} page @param {number} ordinal */
+export async function revisionItem(page, ordinal) {
+  await page.getByRole('tab', { name: /^Revisions\b/ }).click();
+  const item = page
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('heading', { name: new RegExp(`^Revision ${ordinal}(?: Latest)?$`) }) });
+  await expect(item).toBeVisible();
+  return item;
 }
