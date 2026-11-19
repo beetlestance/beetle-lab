@@ -26,6 +26,17 @@
 }
 .target-phase-landmarks > div { display: flex; flex-wrap: wrap; column-gap: var(--s-8); }
 .target-phase-landmarks dd { margin: 0; color: var(--ink); font-variant-numeric: tabular-nums; }
+.target-phase-cooldown {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-8) var(--s-16);
+}
+.target-phase-cooldown h2 { margin: 0; font-size: var(--fs-md); }
+.target-phase-cooldown dl,
+.target-phase-cooldown dl > div { display: flex; flex-wrap: wrap; gap: var(--s-8); margin: 0; }
+.target-phase-cooldown dt { color: var(--mute); }
+.target-phase-cooldown dd { margin: 0 var(--s-12) 0 0; font-variant-numeric: tabular-nums; }
 .target-phase-methods { color: var(--mute); font-size: var(--fs-sm); }
 .target-phase-methods > summary { cursor: pointer; }
 @media (max-width: 760px) { .target-phase-memory { padding: var(--s-12); } .target-phase-spans { flex-wrap: wrap; } .result-phase-view h1 { font-size: var(--fs-2xl); } }
