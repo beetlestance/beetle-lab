@@ -346,7 +346,7 @@ it.each([false, true])('keeps native figures and shows only available target det
   expect(screen.getAllByText('Not judged').length).toBeGreaterThan(0);
 });
 
-it('displays scoped recovered chart windows and target readings in read-only restored Results', async () => {
+it.each([false, true])('displays recovered charts and prefers a published target report when present (%s)', async (publishedTarget) => {
   const current = finished({ state: 'errored', outcome: 'inconclusive', reason: 'artifact_incomplete' });
   const scope = {
     organizationId: current.scope.organizationId,
@@ -355,6 +355,15 @@ it('displays scoped recovered chart windows and target readings in read-only res
     generation: 1,
   };
   const f = fixture(current, (request) => {
+    if (publishedTarget && request.path.endsWith('/result')) {
+      return json({ ...resultSnapshot(current), result: {
+        ...nativeTemplate, ...scope, outcome: 'inconclusive', completeness: 'partial',
+        artifacts: [{
+          artifactId: ids.request, kind: 'target-runtime', relativePath: 'target-runtime.json',
+          bytes: 1024, sha256: 'b'.repeat(64), sealedAt: nativeTemplate.seal.sealedAt,
+        }],
+      } });
+    }
     if (request.path.endsWith('/metrics/chart-history'))
       return json({
         id: current.id,
@@ -391,7 +400,11 @@ it('displays scoped recovered chart windows and target readings in read-only res
   expect(screen.getByRole('img', { name: /Recovered p95 latency/ })).toBeVisible();
   fireEvent.click(within(screen.getByRole('region', { name: 'Recovered charts' })).getByRole('radio', { name: 'Requests' }));
   expect(screen.getByRole('img', { name: /Recovered requests a second/ })).toBeVisible();
-  expect(screen.getByRole('img', { name: /Heap and RSS:.*1,024/ })).toBeVisible();
+  const recoveredTarget = screen.queryByRole('img', { name: /Heap and RSS:.*1,024/ });
+  if (publishedTarget) {
+    expect(recoveredTarget).not.toBeInTheDocument();
+    expect(document.querySelector('#result-target')).toHaveAttribute('aria-labelledby', 'result-target-title');
+  } else expect(recoveredTarget).toBeVisible();
   expect(document.querySelectorAll('#result-target')).toHaveLength(1);
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
   expect(f.records.filter((record) => record.path.endsWith('/metrics/stopped-history'))).toHaveLength(1);

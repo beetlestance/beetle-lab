@@ -32,11 +32,12 @@ export function stoppedMeasurementsAbsent(reads: ResultReads): boolean {
   );
 }
 
-export function resultSections(reads: ResultReads, showTarget: boolean) {
+export function resultSections(reads: ResultReads, showTarget: boolean, recordedTarget: boolean) {
   const recovered = recoveredHistoryState(reads);
-  const target = recovered?.isSuccess && Boolean(recovered.data?.targetSamples?.length);
+  const target = !recordedTarget && Boolean(recovered?.data?.targetSamples?.length);
   return {
     recoveredCharts: Boolean(recovered),
+    recoveredTarget: target,
     hideTarget: !showTarget && !target,
     sealedTarget: showTarget && !target,
   };
@@ -46,10 +47,12 @@ export function RecoveredHistory({
   query,
   plan,
   phone,
+  showTarget,
 }: {
   query: ResultReads['stoppedHistory'];
   plan: RunPlan;
   phone: boolean;
+  showTarget: boolean;
 }) {
   return (
     <section id="result-charts" className="result-section" aria-label="Recovered charts">
@@ -61,7 +64,7 @@ export function RecoveredHistory({
           </Button>
         </p>
       ) : query.data ? (
-        <RecoveredCharts data={query.data} plan={plan} phone={phone} />
+        <RecoveredCharts data={query.data} plan={plan} phone={phone} showTarget={showTarget} />
       ) : (
         <p role="status">Reading recovered history…</p>
       )}
@@ -69,7 +72,17 @@ export function RecoveredHistory({
   );
 }
 
-function RecoveredCharts({ data, plan, phone }: { data: LiveMetricHistory; plan: RunPlan; phone: boolean }) {
+function RecoveredCharts({
+  data,
+  plan,
+  phone,
+  showTarget,
+}: {
+  data: LiveMetricHistory;
+  plan: RunPlan;
+  phone: boolean;
+  showTarget: boolean;
+}) {
   const [hoverT, onHover] = useState<number | null>(null);
   const hover = { hoverT, onHover };
   const history = useMemo(() => mergeHistory(emptyHistory(null), data, plan, null), [data, plan]);
@@ -84,7 +97,7 @@ function RecoveredCharts({ data, plan, phone }: { data: LiveMetricHistory; plan:
       </p>
       <RecoveredOverview points={history.points} domain={domain} ticks={ticks} hover={hover} phone={phone} />
       <MetricWindows points={history.points} domain={domain} hover={hover} ticks={ticks} strictHoverRange />
-      {history.target.length > 0 && (
+      {showTarget && history.target.length > 0 && (
         <div id="result-target">
           <TargetRuntime
             history={history}

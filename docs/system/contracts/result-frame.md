@@ -67,12 +67,13 @@ when provided by the accepted source.
 
 For a cancelled or errored run without a published chart archive, Results calls
 `getRunStoppedHistory`. One metadata transaction checks the workspace, current
-attempt, deletion status and final absence receipt. It returns at most 2 MiB of
+attempt, deletion status and final source or absence receipt. It returns at most 2 MiB of
 verified checkpoint observations. The same read works in a restored viewer.
 Missing evidence returns `not_found`. Other read failures offer a retry.
 
 The charts label the time origin and coverage. They display retained metric
-windows and target readings, with gaps and unavailable values preserved. The
+windows and target readings, with gaps and unavailable values preserved.
+Published target reports take precedence over the recovered target samples. The
 overview switches between p95 latency and request rate for the same windows.
 They carry no whole-run totals, threshold verdict, endpoint summary or archive.
 When a stopped attempt has neither an archive nor retained observations, Results
@@ -95,5 +96,5 @@ their retry controls.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `fcf5470ed7bc` |
+| `web/src/features/runs/result/index.tsx` | `fd8433c99712` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |
