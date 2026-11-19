@@ -76,7 +76,7 @@ it.each([true, false])(
     try {
       const work = pipeline.tickWithPorts(request, operation(), ports);
       if (renumbered) {
-        await expect(work.result).rejects.toBeTruthy();
+        await expect(work.result).rejects.toMatchObject({ reason: 'unavailable' });
         await expect(work.settled).rejects.toBeTruthy();
       } else {
         expect(await work.result).toMatchObject({ state: 'cleaned' });
@@ -92,9 +92,11 @@ it.each([true, false])(
     if (renumbered) {
       expect(effects).toEqual([]);
       expect(await tree(e.task)).toEqual(before);
-      if (plan) expect(await e.owner.cleanupReceipts.read(plan.plan)).toBeNull();
+      // Inventory refused before any cleanup plan existed, so nothing gained deletion authority.
+      expect(plan).toBeNull();
     } else {
       expect(effects.length).toBeGreaterThan(0);
+      expect(plan).not.toBeNull();
       await expect(lstat(e.task)).rejects.toMatchObject({ code: 'ENOENT' });
     }
     expect(await e.owner.stagingNamespace.read()).toEqual(recorded);

@@ -20,7 +20,10 @@ split in two:
   as before.
 
 A start whose durable facts match binds to the recorded namespace without
-rewriting it. Durable records that name the root (no-task receipts) carry the
+rewriting it. The journal therefore checks only durable facts: the marker's
+owner, group, mode, size and digest, and a new task folder's owner and group
+against the recorded root. The agent checks the device of the marker and of each
+new task folder against this start's live root before reporting them. Durable records that name the root (no-task receipts) carry the
 root facts recorded with the namespace; physical checks use the live ones.
 
 Task folders keep their recorded directory facts. A folder prepared before its

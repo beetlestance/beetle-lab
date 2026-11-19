@@ -1,7 +1,9 @@
 import { expect,it } from 'vitest';
 import { mkdir,readdir,symlink,writeFile } from 'node:fs/promises';
 import { nativeCustody } from '../../src/collection/native-custody/index.js';
-import { retirementRoot } from '../../src/staging/index.js';
+import { NamespaceBinding,retirementRoot,verifyInstallation } from '../../src/staging/index.js';
+import { NoTaskReceipt } from '../../src/no-task-receipt/index.js';
+import { renumberRoot } from '../staging/fixtures.js';
 import { fixture } from './fixtures.js';
 const f=fixture();const operation=()=>({deadline:performance.now()+10000});
 it('commits only after real root/marker closes, repeats native proof for exact receipt replay and leaves the root untouched',async()=>{
@@ -31,4 +33,20 @@ it('rechecks native task absence after the actual original root close',async()=>
  }}};
  const work=e.native.finalizeWithPorts(e.token,operation(),ports);expect(await work.result).toMatchObject({ok:false});await work.quiesced;expect(swapped).toBe(true);
  expect(e.closed.length).toBe(e.opened.length);
+});
+// Decision 029: after renumbering, the receipt names the recorded root (as the journal expects)
+// while the absence proof runs against this start's live root and marker.
+it('mints and replays a receipt on a renumbered root, bound to the recorded root facts',async()=>{
+ const e=await f.ready();const recorded=await e.owner.stagingNamespace.read();if(recorded?.state!=='bound')throw Error('Missing binding');
+ await renumberRoot(e.rootPath);
+ const verified=await verifyInstallation({configuration:e.configuration,transport:e.transport,operation:operation()});if(!verified.ok)throw Error(verified.reason);
+ const binding=new NamespaceBinding({root:verified.value,journal:e.owner.stagingNamespace,journalAuthority:await e.owner.journalAuthority(),operation:operation()});
+ try{expect(await binding.bind()).toEqual(recorded.anchor);}finally{await binding.close();}
+ const native=new NoTaskReceipt({journal:e.owner,root:verified.value,transport:e.docker});
+ try{
+  const work=native.finalizeWithPorts(e.token,operation(),e.ports);const result=await work.result;await work.quiesced;expect(result.ok).toBe(true);
+  if(!result.ok)return;expect(result.stored.receipt.root).toEqual(recorded.intent.root.native);
+  const live=retirementRoot(verified.value);expect(live.native).not.toEqual(recorded.intent.root.native);
+  const replay=native.finalizeWithPorts(e.token,operation(),e.ports);expect(await replay.result).toEqual(result);await replay.quiesced;
+ }finally{await native.close();}
 });

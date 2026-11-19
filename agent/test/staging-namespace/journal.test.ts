@@ -54,6 +54,23 @@ it('records exact four-role task facts with purpose/original/namespace binding a
   expect(db.prepare('SELECT cleanup_control_bytes FROM accepted_attempts').get()?.cleanup_control_bytes).toBe(cleanupControl.reservedBytes);
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]); db.close();
 });
+// Decision 029: after a restart the root's device and inode may differ from the recorded root.
+it('records task folders on a renumbered device by ownership, refusing foreign owners or mixed devices', async () => {
+  const path = f.path(); const journal = await f.configured(path); const job = f.job();
+  await f.enqueue(journal, job); reserved(await f.admit(journal, job));
+  const installed = await journal.stagingNamespace.read(); if (installed?.state !== 'bound') throw new Error('Missing synthetic binding');
+  const intent = { protocolVersion: 1 as const, original: { ...scope(job), generation: 1 as const, intentDigest: job.intentDigest },
+    purpose: 'performance' as const, namespaceIdentity: installed.anchor.namespaceIdentity, specDigest: 'e'.repeat(64),
+    runtimeName: runtimeName({ ...scope(job), installationId: rootFacts.installationId }) };
+  await journal.stagingNamespace.beginTask(intent);
+  const moved = Object.fromEntries(Object.entries(directories()).map(([role, native], n) =>
+    [role, { ...native, dev: '98', ino: n === 0 ? rootFacts.native.ino : native.ino }])) as unknown as ReturnType<typeof directories>;
+  const foreign = Object.fromEntries(Object.entries(moved).map(([role, native]) => [role, { ...native, uid: '10002', gid: '10002' }])) as typeof moved;
+  await expect(journal.stagingNamespace.commitTask({ intent, directories: foreign })).rejects.toMatchObject({ code: 'conflict' });
+  await expect(journal.stagingNamespace.commitTask({ intent, directories: { ...moved, output: { ...moved.output, dev: '97' } } })).rejects.toMatchObject({ code: 'invalid_input' });
+  const anchor = await journal.stagingNamespace.commitTask({ intent, directories: moved });
+  expect(await journal.stagingNamespace.readTask({ ...scope(job), generation: 1 })).toEqual({ state: 'prepared', intent, anchor });
+});
 it('replays a pending fresh intent after reopen', async () => {
   const path = f.path(); let journal = await f.open(path); const intent = await journal.stagingNamespace.begin(rootFacts);
   await f.close(journal); journal = await f.open(path);

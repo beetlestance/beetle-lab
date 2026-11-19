@@ -88,10 +88,14 @@ export function commitTaskNamespace(
   return anchor;
 }
 
+/**
+ * Durable checks only: ownership matches the recorded root (the codec already requires one device
+ * and owner across the four folders). The root's device and inode are per-start facts (decision 029);
+ * the agent checks each folder against this start's live root before it reports the facts here.
+ */
 function matchTaskRoot(directories: TaskDirectoryFacts, installed: InstalledRootFacts): void {
   const root = installed.native;
   for (const native of Object.values(directories)) {
-    if (native.dev !== root.dev || native.uid !== root.uid || native.gid !== root.gid || native.ino === root.ino)
-      throw new Failure('conflict');
+    if (native.uid !== root.uid || native.gid !== root.gid) throw new Failure('conflict');
   }
 }
