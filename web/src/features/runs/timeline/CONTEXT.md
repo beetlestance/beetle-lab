@@ -5,7 +5,8 @@ runEvents query key. readTimeline owns at most two bootstrap reads, then one
 resume read per operation. Abort signals and a retired owner fence both calls.
 The single query stores projected display data only; at most 100 rows / 64 KiB
 UTF-8 serialized rows, with explicit omission. No raw event corpus is cached.
-Each projected row carries its event `kind`; the live view reads step state from it.
+Each row keeps its event kind; live sealing and result milestones reuse it.
+Narrative mode preserves sequence/source clocks; raw facts are in details, with no second reader.
 Progress uses phase transitions/increasing useful units; resources are reported
 container aggregates. Application Run/result remain the verdict authority.
 Active polling is two seconds, pauses hidden, stops on errors. Terminal transition

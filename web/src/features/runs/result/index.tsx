@@ -1,3 +1,4 @@
+import { measurementOrigin } from '../live/rise-position.js';
 import { useState } from 'react';
 import { TargetHeader, usePhaseMode } from './TargetHeader.js';
 import type { EngineResult } from '@beetle/contracts';
@@ -58,14 +59,19 @@ const sectionTabs: Partial<Record<Section, ReportTab>> = {
   diagnostics: 'diagnostics',
 };
 
+function useSectionTab() {
+  const [tab, setTab] = useReportTab();
+  function selectSection(section: Section) {
+    const selected = sectionTabs[section];
+    if (selected) setTab(selected);
+  }
+  return { tab, setTab, selectSection };
+}
+
 function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | undefined }) {
   const reads = useResultReads(run);
   const { phaseView, className, togglePhases } = usePhaseMode();
-  const [tab, setTab] = useReportTab();
-  const selectSection = (section: Section) => {
-    const selected = sectionTabs[section];
-    if (selected) setTab(selected);
-  };
+  const { tab, setTab, selectSection } = useSectionTab();
   const [deleting, setDeleting] = useState(false);
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
@@ -127,7 +133,14 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         phaseView={phaseView}
         togglePhases={togglePhases}
       />
-      <ReportTabs run={run} view={view} tab={tab} onSelect={setTab} />
+      <ReportTabs
+        run={run}
+        view={view}
+        tab={tab}
+        onSelect={setTab}
+        requests={plan.requests}
+        origin={measurementOrigin(ready)}
+      />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
   );

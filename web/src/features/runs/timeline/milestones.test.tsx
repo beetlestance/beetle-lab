@@ -1,0 +1,18 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest';
+import {afterEach,expect,it} from 'vitest';
+import {cleanup,render,screen,within} from '@testing-library/react';
+import {Milestones} from './Milestones.js';
+import type {Row} from './projection.js';
+afterEach(cleanup);
+const row=(seq:number,kind:Row['kind'],at='2026-11-19T10:00:00Z'):Row=>({seq,kind,at,phase:'execute',text:'Recorded observation'});
+it('keeps source sequence across clock rollback and never invents elapsed time or milestones',()=>{
+ render(<Milestones rows={[row(1,'runtime.started'),row(2,'progress'),row(3,'artifact.sealed','2026-11-19T09:59:59Z')]} />);
+ const items=within(screen.getByRole('list',{name:'Recorded run milestones'})).getAllByRole('listitem');
+ expect(items).toHaveLength(2);expect(items[0]).toHaveTextContent('10:00:00');expect(items[1]).toHaveTextContent('09:59:59');
+ expect(items[1]!.querySelector('time')).toHaveAttribute('datetime','2026-11-19T09:59:59Z');
+});
+it('discloses that a retained heartbeat-only tail has no milestones, rather than synthesising start or finish',()=>{
+ render(<Milestones rows={[row(1,'progress')]} />);expect(screen.getByText('No milestones are present in the retained activity.')).toBeVisible();
+ expect(screen.queryByRole('list')).toBeNull();
+});

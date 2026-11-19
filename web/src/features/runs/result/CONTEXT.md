@@ -26,6 +26,7 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
   name filter, explicit missing values/omissions. Histogram estimates stay labelled.
 - Sections: fallback history tiles, exact native threshold readings with verified
   pinned limits (no histogram substitution), native verdicts and script version.
+- What happened: recorded milestones and source-bound native rise; source clocks stay separate.
 - ReportTabs: one selected desktop tab shared with top section links; permanent
   anchors target Report/Artifacts/Diagnostics. Under 760px, separate sections.
 - DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
@@ -35,6 +36,5 @@ ResultTargetReport shares one verified report across four cards and lazy details
 Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
 exact; only safe native chronology shares hover. ?target=phases keeps the same
 reader for observed phase comparisons; missing phase GC maxima stay unavailable.
-ResultCompare: 20 candidates/page, suite/all, verified names/ordinals, no row reads;
-the chosen candidate is the baseline.
+ResultCompare: 20 candidates/page, suite/all, verified names/ordinals, no row reads; chosen candidate is baseline.
 Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx
