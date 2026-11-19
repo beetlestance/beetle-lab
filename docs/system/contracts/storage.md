@@ -34,7 +34,7 @@ States are the closed enums in `contracts/src/generated/common.ts`.
 | Attempt observations only move forward: `stopping` → `stopping`/`lost`/`exited`; `lost` → `lost`/`exited`; `exited` is final; phases never regress; result, export result and exit evidence never change once set | `app/src/domain/attempt-observation/sequence.ts` |
 | `finished` carries `passed`, `failed` or `inconclusive`; `cancelled` and `errored` carry `inconclusive`; non-terminal runs carry `pending` | `contracts/src/api/overview.ts` |
 | Terminal runs never return to active; no automatic second attempt or target-load retry exists | metadata run transitions, runner delivery |
-| A cancel that wins the persisted transition before terminal closure produces `cancelled`; a later cancel returns the existing result | output finalization trigger |
+| A persisted cancel produces `cancelled` unless stronger stop evidence applies; a later cancel returns the existing result | output finalization trigger |
 
 Outcome rules: an ordinary k6 run fails on a failed threshold or required
 assertion. Invalid configuration, startup failure, OOM or timeout is an execution
@@ -52,7 +52,7 @@ Missing data stays unknown, never zero.
 | Queue | default 32, maximum 64 including in-flight work; close keeps one slot |
 | Worker heap | ≤ 128 MiB |
 | Startup / stall | 5 s to start, then 5 s without a completed reply |
-| Schema | `user_version` 38; a newer database refuses with `schema_newer` |
+| Schema | `user_version` 40; a newer database refuses with `schema_newer` |
 
 - No adapter opens a connection outside the worker. Write transactions are short:
   no HTTP, file publication or engine call happens inside one.
@@ -159,7 +159,7 @@ metadata worker persists it (`local-session/`, migration 014). Shapes are in
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/schema.ts` | `bca04317b4c1` |
+| `app/src/adapters/outbound/sqlite/schema.ts` | `57c10ed1acc8` |
 | `app/src/adapters/outbound/sqlite/runs.ts` | `65bcf86f1368` |
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/adapters/outbound/sqlite/migration033.ts` | `fc87dbbd4a35` |

@@ -31,7 +31,7 @@ const absentState = replace(
   `CASE WHEN ${absentReason} IN ${systemReasons} THEN 'errored'
   WHEN r.cancellation_requested=1 THEN 'cancelled' ELSE 'errored' END state`,
 );
-const absentProjection = replace(
+export const absentProjection = replace(
   absentState,
   `CASE WHEN r.cancellation_requested=1 THEN 'cancelled' ELSE ${absentReason} END reason`,
   `CASE WHEN ${absentReason} IN ${systemReasons} THEN ${absentReason}

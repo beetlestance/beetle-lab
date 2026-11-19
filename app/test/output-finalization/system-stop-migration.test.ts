@@ -8,7 +8,7 @@ import { enqueue, seedFoundation } from '../storage/execution-foundation-fixture
 import { shipped } from '../storage/legacy027.js';
 import { rows } from '../storage/clock-reason/fixtures.js';
 
-it('upgrades populated schema 38 with exactly two DDL changes and no data drift', () => {
+it('upgrades populated schema 38 with only the output evidence DDL changes and no data drift', () => {
   const root = mkdtempSync(join(tmpdir(), 'beetle-stop-039-'));
   const path = join(root, 'metadata.sqlite');
   const old = shipped(38);
@@ -24,9 +24,9 @@ it('upgrades populated schema 38 with exactly two DDL changes and no data drift'
     old.prepare('VACUUM INTO ?').run(path);
     const next = initialize(path);
     try {
-      expect(next.prepare('PRAGMA user_version').get()?.user_version).toBe(39);
+      expect(next.prepare('PRAGMA user_version').get()?.user_version).toBe(40);
       expect(rows(next)).toEqual(before);
-      const changed = new Set(['output_finalization_evidence', 'output_header_update']);
+      const changed = new Set(['output_finalization_evidence', 'output_header_update', 'output_absence_evidence']);
       expect(schema(next).filter((row) => !changed.has(String(row.name)))).toEqual(
         prior.filter((row) => !changed.has(String(row.name))),
       );
