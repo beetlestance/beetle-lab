@@ -29,9 +29,12 @@ export function TargetHeader({
     <header className="live-section-head">
       <div>
         {phaseView ? (
-          <h1 id="result-target-title">
-            How {plan.targetOrigin ?? 'the target'} behaved before, during and after load
-          </h1>
+          <>
+            <h1 id="result-target-title">
+              How {plan.targetOrigin ?? 'the target'} behaved before, during and after load
+            </h1>
+            <TargetSourceNote plan={plan} />
+          </>
         ) : (
           <h2 id="result-target-title" className="result-section-title">
             Target runtime
@@ -39,7 +42,7 @@ export function TargetHeader({
         )}
       </div>
       <div>
-        <TargetSourceNote plan={plan} />
+        {!phaseView && <TargetSourceNote plan={plan} />}
         <Button size="sm" variant="text" onClick={togglePhases}>
           {phaseView ? 'Back to run result' : 'Compare recorded phases'}
         </Button>

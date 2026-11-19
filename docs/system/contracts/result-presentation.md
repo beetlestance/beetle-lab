@@ -55,7 +55,7 @@ after observations, including missing endpoints. During is the arithmetic mean o
 known gauge readings, never a time-weighted mean. The source sampler phases can
 include engine startup; they do not promise first/last-request boundaries or a
 steady baseline. Shading covers only observed before/after spans. Sealed k6
-request landmarks are shown separately when available.
+request landmarks appear as separate UTC times below the chart when available.
 GC rate, time share and average pause require declared cumulative count/time units,
 two usable phase endpoints and ordered, reset-free observations. Their intervals
 stay within each recorded phase. Missing endpoints/units, overflow and positive
@@ -180,7 +180,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `f0f27e592159` |
-| `web/src/features/runs/result/TargetPhases.tsx` | `5f21f10508ab` |
+| `web/src/features/runs/result/TargetPhases.tsx` | `06f0c56724b5` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |

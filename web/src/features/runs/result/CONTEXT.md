@@ -35,6 +35,6 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
 RecordedCharts reads history once; peak binds to summary. ResultTargetReport shares
 one verified report across four cards and lazy details; reload preserves expansion.
 Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
-exact; only safe native chronology shares hover. ?target=phases keeps the same
-reader for observed phase comparisons; missing phase GC maxima stay unavailable.
+exact; only safe native chronology shares hover. ?target=phases shares that reader
+and shows HTTP landmarks separately; missing phase GC maxima stay unavailable.
 ResultCompare: 20 candidates/page, suite/all, verified names/ordinals, no row reads; chosen candidate is baseline.
