@@ -25,6 +25,7 @@ export function runCompiledK6(input: ExecutionOptions): ExecutionOperation {
       result: execution.result,
       final: execution.final,
       quiesced: execution.quiesced,
+      cancelAndDrain: () => execution.cancelAndDrain(),
       close: () => execution.close(),
     });
   } catch {

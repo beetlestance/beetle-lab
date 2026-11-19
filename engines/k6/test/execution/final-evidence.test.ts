@@ -110,3 +110,12 @@ it('exposes the same immediate immutable invalid-profile receipt on both public 
   const first = await operation.result; expect(first).toMatchObject({ ok: false, code: 'profile' });
   expect(await operation.final).toBe(first); expect(Object.isFrozen(first)).toBe(true); await operation.quiesced;
 });
+
+it('exposes the native drain command through the production execution adapter', async () => {
+  const { options } = setup();
+  const operation = runCompiledK6(options);
+  expect(operation.cancelAndDrain).toBeTypeOf('function');
+  expect(operation.cancelAndDrain?.()).toBe(false);
+  await operation.close();
+  expect(await operation.final).toMatchObject({ ok: false, code: 'closed' });
+});

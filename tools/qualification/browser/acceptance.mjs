@@ -14,6 +14,7 @@ import { inputs, settings, emptyFolder, directoryImport } from './inputs-setting
 import { offlineExport } from './exports.mjs';
 import { memoryPressure, memoryTarget } from './memory-pressure.mjs';
 import { outputPressure } from './output-pressure.mjs';
+import { cancelArchive } from './cancel-archive.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
 import { cleanupBrowserInstallation } from './cleanup.mjs';
@@ -33,6 +34,7 @@ if (
     'run-results',
     'live-reconnect',
     'early-cancel',
+    'cancel-archive',
     'output-pressure',
     'memory-pressure',
     'run-deletion',
@@ -101,7 +103,7 @@ try {
   }
   if (profile === 'memory-pressure') entry[2] = memoryTarget(entry[2]);
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
-  if (profile === 'target-runtime') await configureTarget(f, true);
+  if (profile === 'target-runtime' || profile === 'cancel-archive') await configureTarget(f, true);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
   const network = profile === 'network' ? await prepareNetwork(f) : undefined;
   const origin = network?.origin ?? f.origin;
@@ -181,6 +183,9 @@ try {
     await phase('output-pressure-and-result', () =>
       outputPressure(appPage, authored, f, ownedInstallation, evidence ?? f.root),
     );
+  } else if (profile === 'cancel-archive') {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await phase('cancelled-archive-and-report', () => cancelArchive(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'early-cancel') {
     await appPage.setViewportSize({ width: 1440, height: 900 });
     await phase('cancel-during-readiness', () => earlyCancel(appPage, authored, f, evidence ?? f.root));

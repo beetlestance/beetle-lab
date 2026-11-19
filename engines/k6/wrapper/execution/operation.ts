@@ -142,7 +142,11 @@ export class Execution implements ExecutionOperation {
       clock: this.input.clock,
       sink: (bytes, delivery) => this.numbers!.push(bytes, delivery.signal),
     });
-    this.native = Object.freeze({ run: native.run.bind(native), close: native.close.bind(native) });
+    this.native = Object.freeze({
+      run: native.run.bind(native),
+      close: native.close.bind(native),
+      ...(native.cancelAndDrain ? { cancelAndDrain: native.cancelAndDrain.bind(native) } : {}),
+    });
     this.fence.check();
     this.process = Object.freeze({ ...(await this.native.run()) });
     if (terminal(this.process)) this.terminalObservedAt = this.fence.terminalTime();
@@ -203,6 +207,7 @@ export class Execution implements ExecutionOperation {
   private collectionCode(numericComplete: boolean): ExecutionCode | undefined {
     if (this.numbers!.failure) return 'metrics';
     if (this.process!.collection !== 'complete') return 'native';
+    if (this.process!.cause === 'cancelled') return 'cancelled';
     return numericComplete ? undefined : 'metrics';
   }
   private async completeNumbers(): Promise<boolean> {
@@ -236,6 +241,9 @@ export class Execution implements ExecutionOperation {
       if (results.some((result) => result.status === 'rejected')) throw new ExecutionError('cleanup');
     });
     return this.cleanup;
+  }
+  cancelAndDrain(): boolean {
+    return this.native?.cancelAndDrain?.() === true;
   }
   close(): Promise<void> {
     this.fence.stop('closed');

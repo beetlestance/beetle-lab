@@ -7,6 +7,7 @@ import { ProcessBoundaryError } from './types.js';
 import type { NativeProcess, NativeProcessOptions, ProcessCause, ProcessObservation } from './types.js';
 
 const GRACE_MS = 5000;
+const CANCEL_DRAIN_MS = 1500;
 /** Owns a single child group, including any late spawn after a cancellation fence. */
 export class ProcessActor implements NativeProcess {
   private readonly input: NativeProcessOptions;
@@ -28,6 +29,8 @@ export class ProcessActor implements NativeProcess {
   private issuingSpawn = false;
   private settled = false;
   private termSent = false;
+  private drainingCancellation = false;
+  private drainDeadline = Infinity;
   private cleanupExpired = false;
   private wallTimer: ReturnType<typeof setTimeout> | undefined;
   private killTimer: ReturnType<typeof setTimeout> | undefined;
@@ -62,7 +65,7 @@ export class ProcessActor implements NativeProcess {
     });
   }
   run(): Promise<ProcessObservation> {
-    if (this.started) return this.result;
+    if (this.started || this.settled) return this.result;
     this.started = true;
     if (this.closed) {
       this.stop('closed');
@@ -164,6 +167,7 @@ export class ProcessActor implements NativeProcess {
     if (this.denied()) return false;
     try {
       this.deadline.remaining();
+      if (this.drainExpired()) this.stop('cancelled');
       return !this.denied();
     } catch (error) {
       this.stop(error instanceof ProcessBoundaryError ? error.code : 'clock');
@@ -197,6 +201,21 @@ export class ProcessActor implements NativeProcess {
     this.wallTimer = timer;
     return true;
   }
+  cancelAndDrain(): boolean {
+    if (this.drainingCancellation) return !this.denied();
+    if (!this.liveChild() || this.denied()) return false;
+    this.drainingCancellation = true;
+    if (!this.permitted()) return false;
+    this.drainDeadline = this.deadline.observedMonotonic + CANCEL_DRAIN_MS;
+    this.terminate(CANCEL_DRAIN_MS);
+    return this.cause === null;
+  }
+  private liveChild(): boolean {
+    return this.spawned && this.pid !== undefined && !this.groupAbsent;
+  }
+  private drainExpired(): boolean {
+    return this.deadline.observedMonotonic >= this.drainDeadline;
+  }
   private stop(cause: ProcessCause): void {
     this.cause ??= cause;
     this.metrics.stop();
@@ -210,18 +229,21 @@ export class ProcessActor implements NativeProcess {
     this.child?.stdout.destroy();
     this.child?.stderr.destroy();
   }
-  private terminate(): void {
+  private terminate(grace = GRACE_MS): void {
     if (this.pid === undefined || this.termSent || this.groupAbsent) return;
     this.termSent = true;
-    this.signal('SIGTERM');
     // Production grace is fixed and cannot be extended by another cancellation or clock sample.
     this.killTimer = setTimeout(() => {
       this.killTimer = undefined;
+      if (this.drainingCancellation) this.stop('cancelled');
       this.signal('SIGKILL');
-      this.endCleanupAfterDrain();
-      this.poll();
-    }, GRACE_MS);
-    this.poll();
+      if (!this.isStopped()) {
+        this.endCleanupAfterDrain();
+        this.poll();
+      }
+    }, grace);
+    this.signal('SIGTERM');
+    if (!this.isStopped()) this.poll();
   }
   private signal(signal: NodeJS.Signals): void {
     if (this.pid === undefined || this.groupAbsent) return;
@@ -283,8 +305,10 @@ export class ProcessActor implements NativeProcess {
   }
   private confirmStopped(): void {
     this.childResolve();
-    clearTimeout(this.killTimer);
-    this.killTimer = undefined;
+    if (!this.drainingCancellation || !this.metrics.pending) {
+      clearTimeout(this.killTimer);
+      this.killTimer = undefined;
+    }
     clearTimeout(this.pollTimer);
     this.pollTimer = undefined;
     if (this.settled) this.clearTimers();
@@ -309,19 +333,21 @@ export class ProcessActor implements NativeProcess {
     if (this.cause) return;
     try {
       this.deadline.remaining();
+      if (this.drainExpired()) this.cause = 'cancelled';
     } catch (error) {
       this.cause ??= error instanceof ProcessBoundaryError ? error.code : 'clock';
     }
   }
   private collectionComplete(): boolean {
-    return !this.cause && this.isStopped() && this.metrics.ended && !this.metrics.pending;
+    const gracefulExit = !this.drainingCancellation || (this.exitSignal === null && this.exitCode !== null);
+    return gracefulExit && !this.cause && this.isStopped() && this.metrics.ended && !this.metrics.pending;
   }
   private observation(noChild: boolean): ProcessObservation {
     return Object.freeze({
       spawned: this.spawned,
       exitCode: this.exitCode,
       signal: this.exitSignal,
-      cause: this.cause,
+      cause: this.cause ?? (this.drainingCancellation ? 'cancelled' : null),
       metricBytes: this.metrics.bytes,
       diagnosticBytes: this.metrics.diagnosticBytes,
       warnings: this.metrics.warnings.snapshot(),

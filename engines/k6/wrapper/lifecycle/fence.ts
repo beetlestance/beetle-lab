@@ -3,6 +3,12 @@ import type { ExecutionClock } from '../execution/index.js';
 import { AttemptError } from '../failure/index.js';
 import type { AttemptReason } from '../failure/index.js';
 
+interface GracefulCancellation {
+  signal: AbortSignal;
+  request(): boolean;
+}
+const CANCEL_PUBLICATION_MS = 3500;
+
 /** One sticky original deadline across phases. Timers cancel, never certify IO stop. */
 export class AttemptFence {
   readonly controller = new AbortController();
@@ -11,17 +17,31 @@ export class AttemptFence {
   private wallEnd = Infinity;
   private globalEnd = Infinity;
   private phaseEnd = Infinity;
+  private cancellationEnd = Infinity;
   private timer: ReturnType<typeof setTimeout> | undefined;
   reason: AttemptReason | null = null;
   private readonly cancel = () => this.stop('cancelled');
+  private readonly gracefulCancel = () => {
+    try {
+      const { mono } = this.check();
+      this.cancellationEnd = mono + CANCEL_PUBLICATION_MS;
+      if (!this.graceful?.request()) this.cancel();
+    } catch {
+      this.cancel();
+    }
+  };
   constructor(
     private readonly clock: ExecutionClock,
     private readonly parent: AbortSignal,
     timeout: number,
+    private readonly graceful?: GracefulCancellation,
   ) {
     parent.addEventListener('abort', this.cancel, { once: true });
     try {
       this.phaseEnd = this.check().mono + timeout;
+      this.graceful?.signal.addEventListener('abort', this.gracefulCancel, { once: true });
+      if (this.graceful?.signal.aborted) this.gracefulCancel();
+      this.check();
       this.tick();
     } catch (error) {
       this.dispose();
@@ -60,6 +80,7 @@ export class AttemptFence {
     this.wall = wall;
     this.mono = mono;
     if (wall >= this.wallEnd || mono >= Math.min(this.globalEnd, this.phaseEnd)) this.stop('deadline');
+    if (mono >= this.cancellationEnd) this.stop('cancelled');
     if (this.reason) throw new AttemptError(this.reason);
     return { wall, mono };
   }
@@ -93,7 +114,15 @@ export class AttemptFence {
   }
   lifetimeRemaining(): number {
     const sample = this.check();
-    return Math.max(1, Math.min(this.wallEnd - sample.wall, this.globalEnd - sample.mono, this.phaseEnd - sample.mono));
+    return Math.max(
+      1,
+      Math.min(
+        this.wallEnd - sample.wall,
+        this.globalEnd - sample.mono,
+        this.phaseEnd - sample.mono,
+        this.cancellationEnd - sample.mono,
+      ),
+    );
   }
   remaining(): number {
     return Math.min(60_000, this.lifetimeRemaining());
@@ -116,5 +145,6 @@ export class AttemptFence {
   dispose(): void {
     clearTimeout(this.timer);
     this.parent.removeEventListener('abort', this.cancel);
+    this.graceful?.signal.removeEventListener('abort', this.gracefulCancel);
   }
 }

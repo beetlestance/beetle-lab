@@ -72,11 +72,12 @@ export function useResultReads(run: Run) {
     [client, organizationId, workspaceId, run.id],
   );
   const snapshot = result.data;
-  const engine = snapshot?.activeAttemptId === run.activeAttemptId ? snapshot.result : null;
+  const matchesAttempt = snapshot?.activeAttemptId === run.activeAttemptId;
+  const engine = matchesAttempt ? snapshot.result : null;
   const status = result.isPending ? 'loading' : result.isError ? 'error' : engine === null ? 'unavailable' : 'ready';
   const view = resultView({ scope: run.scope, runId: run.id, run, result: engine, status });
   return {
-    result: { query: result, status, view },
+    result: { query: result, status, view, matchesAttempt },
     overview,
     chartHistory,
     stoppedHistory,

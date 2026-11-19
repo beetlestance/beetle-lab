@@ -8,8 +8,7 @@ returns recheck cancellation; issued work is published before reentrant hooks.
 
 Before launch, canonical absolute non-symlink regular files are checked: executable,
 <=16-byte empty JSON config, <=64 MiB owned `suite.js`, private output directory,
-and absent `beetle-evidence.json`. The root/image and output must be trusted against
-concurrent same-UID replacement. No staged secret or summary content is read.
+and absent `beetle-evidence.json`. The immutable image and output root must be trusted.
 Launch is detached POSIX, shell:false, fixed argv and three fixed environment keys.
 Production target is Linux; Darwin is used only by owned compatibility fixtures.
 
@@ -19,8 +18,7 @@ rollback, invalid values or callback errors. Cancellation/stream failure interru
 delivery independently, sends TERM once, then KILL after the first fixed 5 seconds.
 Only the PID from this child's spawn notification authorizes group signals.
 Confirmed group absence retires its PID; exit/stdio closure remain separate.
-Descendants must stay in the group. Escaped sessions, container init/subreaper
-and OS cleanup require separate qualification.
+Descendants must stay in the group. Escapes need separate qualification.
 
 Metrics read available bytes up to 64 KiB with one awaited sink and no queue.
 The pipe retains its Node high-water buffer; excessive injected buffering fails at
@@ -31,6 +29,8 @@ bound k6's Go SampleBuffer: native hard RAM containment/OOM qualification is nee
 retained; raw messages are discarded. EOF/loss/redaction stay distinct.
 Transport quota is distinct from persisted output quota; limits make evidence partial.
 
+A trusted caller may send TERM with at most 1.5 s to drain a spawned child.
+Complete collection still requires real EOF, numeric child exit and closed stdio.
 Run waiting is bounded through termination/drain; unknown observations retain late
 spawn cleanup handlers. `quiescent:false` means issued profile/sink/child work is
 unconfirmed. Idempotent close awaits that original work and can remain pending for

@@ -180,6 +180,13 @@ The physical failure takes precedence over a racing user cancellation, with
 OOM and durable system stops retaining their existing priority. Diagnostic
 stderr grants no closure or publication authority.
 
+After measurement starts, a user interrupt allows up to 1.5 s for the
+child to close and drain its existing metric stream. The wrapper can retain
+verified measurements and seal a cancelled result within 3.5 s of that
+interrupt, subject to the original attempt and phase deadlines. Hard
+abort, a repeated interrupt or a guard stop fences the original immediately.
+Cancellation still produces an inconclusive run.
+
 ## Anchors
 
 | Code | Reviewed |
@@ -189,4 +196,4 @@ stderr grants no closure or publication authority.
 | `agent/src/catalog/` | `5a0a12cb7eb9` |
 | `agent/src/staging/prepare.ts` | `76d5b154de34` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/lifecycle/` | `7b7190efcf46` |
+| `engines/k6/wrapper/lifecycle/` | `a291a5bae161` |

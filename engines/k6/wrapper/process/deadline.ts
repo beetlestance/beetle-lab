@@ -28,6 +28,9 @@ export class Deadline {
       throw new ProcessBoundaryError('clock');
     }
   }
+  get observedMonotonic(): number {
+    return this.mono;
+  }
   remaining(): number {
     const { wall, mono } = this.sample();
     this.validate(wall, mono);

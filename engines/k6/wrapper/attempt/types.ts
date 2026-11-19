@@ -18,6 +18,8 @@ export interface AttemptLiveState {
 /** Trusted packaging arguments. No options are read from the staged payload. */
 export interface StagedK6Options extends Omit<OpenStagedOptions, 'wallNow' | 'headerTimeoutMs'> {
   readonly outputRoot: string;
+  /** Entrypoint-owned cancellation request. The normal signal is still a hard fence. */
+  readonly gracefulCancellation?: AbortSignal;
   /** Trusted image-install opt-in, never staged job configuration. */
   readonly liveMetricMailbox?: boolean;
   readonly headerTimeoutMs?: number;
