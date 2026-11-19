@@ -189,4 +189,4 @@ export class RuntimeRetirement {
   }
 }
 
-export { captureWindow, checkWindow } from './window.js';
+export { captureWindow, checkWindow, maximumWindowMs } from './window.js';

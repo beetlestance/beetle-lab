@@ -7,7 +7,8 @@ import type { ReconcileRuntime } from './types.js';
 /**
  * Offline operator command (decision 030), run as `reconcile [--apply]` in a one-off container
  * while the serving agent is stopped. It takes the same exclusive process owner as serving, so it
- * refuses while an agent holds the installation; it never listens or schedules.
+ * refuses while an agent holds the installation; it never listens or schedules. SIGINT/SIGTERM
+ * cancel the attempt in progress, admit nothing further, then close before the owner is released.
  */
 process.umask(0o077);
 const options = parseReconcileArguments(process.argv.slice(3));
@@ -25,7 +26,12 @@ if (!options) {
     const loaded = await loadAgentConfiguration(process.env, new URL('./worker.js', import.meta.url), abort.signal);
     providerClose = loaded.close;
     runtime = await openReconcileRuntime(loaded.runtime);
-    process.exitCode = await runReconcileCommand(options, runtime, (line) => process.stdout.write(`${line}\n`));
+    process.exitCode = await runReconcileCommand(
+      options,
+      runtime,
+      (line) => process.stdout.write(`${line}\n`),
+      abort.signal,
+    );
   } catch (error) {
     reportFailure('startup_failed', error);
     process.stderr.write('Beetle Lab reconcile failed. Stop the agent and check installation access.\n');

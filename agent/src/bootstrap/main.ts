@@ -1,54 +1,14 @@
-import { createStorageFailureExit } from './storage-failure.js';
-import { reportFailure } from './failure.js';
-import { openAgentRuntime } from './index.js';
-import type { AgentRuntime } from './index.js';
-import { loadAgentConfiguration } from './configuration.js';
+/**
+ * The agent image entry, also reached through container.js after the identity drop. No arguments
+ * serves; `reconcile [--apply]` is the offline operator command (decision 030); anything else is
+ * refused before any configuration, journal or Docker access.
+ */
+const command = process.argv[2];
+if (command === undefined) await import('./serve.js');
+else if (command === 'reconcile') await import('./reconcile.js');
+else {
+  process.stderr.write('Usage: agent [reconcile [--apply]]\n');
+  process.exitCode = 2;
+}
 
-process.umask(0o077);
-const abort = new AbortController();
-let providerClose: (() => Promise<void>) | undefined;
-let runtime: AgentRuntime | undefined;
-let closing: Promise<void> | undefined;
-function stop(): Promise<void> {
-  if (closing) return closing;
-  closing = Promise.resolve().then(async () => {
-    await loading.catch(() => undefined);
-    const outcomes = await Promise.allSettled([runtime?.close(), providerClose?.()]);
-    if (outcomes.some((value) => value.status === 'rejected')) throw new Error('Agent cleanup incomplete');
-  });
-  abort.abort();
-  return closing;
-}
-const fatalStorage = createStorageFailureExit(stop);
-function storageFailure(error: unknown): void {
-  fatalStorage(error);
-}
-function signal(): void {
-  void stop().catch((error) => {
-    reportFailure('shutdown_failed', error);
-    process.exitCode = 1;
-  });
-}
-process.once('SIGINT', signal);
-process.once('SIGTERM', signal);
-const loading = Promise.resolve().then(async () => {
-  const loaded = await loadAgentConfiguration(process.env, new URL('./worker.js', import.meta.url), abort.signal);
-  providerClose = loaded.close;
-  if (abort.signal.aborted) return;
-  runtime = await openAgentRuntime({ ...loaded.runtime, onStorageFailure: storageFailure });
-  if (abort.signal.aborted) return;
-  await runtime.server.listen({ ...loaded.listen });
-});
-try {
-  await loading;
-  if (abort.signal.aborted) await stop();
-} catch (error) {
-  reportFailure('startup_failed', error);
-  await stop().catch((cleanup) => {
-    reportFailure('shutdown_failed', cleanup);
-  });
-  process.stderr.write(
-    'Beetle Lab agent startup failed. Check private installation configuration and runtime access.\n',
-  );
-  process.exitCode = 1;
-}
+export {};

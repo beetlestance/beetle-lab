@@ -36,5 +36,5 @@ UUID before opening the journal; then start guards, the publisher, then the
 scheduler. Ready to admit only after the publisher commits an observation. At most
 one failed runtime owner is kept.
 
-`container.js reconcile [--apply]` (decision 030): same owner/startup checks, then only the
-shared RetirementServices; no configure, guard, publisher, scheduler or server.
+`main.js` (also via container.js) serves, or runs `reconcile [--apply]` (decision 030): same owner,
+startup checks, then only shared RetirementServices; no configure, guard, scheduler or server.

@@ -38,13 +38,15 @@ the agent as unavailable until you start it again.
 docker compose run --rm --no-deps --name beetle-lab-agent agent reconcile
 ```
 
-The preview only reads the journal. It prints one JSON line per run that has a
-retirement in progress, a prepared task folder and no cleanup plan yet, then a
-summary:
+The listing itself only reads the journal, but the command first starts up the
+same way the agent does: it can upgrade the journal to the current version and
+it clears the agent's last resource reading, which the agent takes again when it
+next starts. It prints one JSON line per run that has a retirement in progress,
+a prepared task folder and no cleanup plan yet, then a summary:
 
 ```text
 {"attemptId":"…","reconciled":false}
-{"mode":"preview","attempts":1,"refused":0}
+{"mode":"preview","attempts":1,"refused":0,"stopped":false}
 ```
 
 `reconciled: true` means numbers were already recorded on an earlier run of the
@@ -85,8 +87,12 @@ it.
 | Code | Meaning |
 | --- | --- |
 | `0` | Every listed run was `current` or `reconciled`, or nothing was listed. |
-| `1` | At least one run was refused, or the command could not start. |
+| `1` | At least one run was refused, the command was stopped, or it could not start. |
 | `2` | Unknown arguments; only `reconcile` and `reconcile --apply` are accepted. |
+
+Pressing Ctrl-C (or sending SIGTERM) cancels the run being reconciled, starts no
+further run and closes cleanly; the summary then shows `"stopped":true`. Runs
+already reconciled keep their recorded numbers.
 
 The command refuses to start while the agent is running, because both take the
 same exclusive lock on the installation. It never listens for requests and never

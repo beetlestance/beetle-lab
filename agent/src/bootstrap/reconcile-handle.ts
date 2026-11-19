@@ -1,4 +1,5 @@
 import type { Journal } from '../journal/index.js';
+import type { Operation } from '../backends/docker/index.js';
 import { RetirementPipelineError, type RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { ReconcileKey, ReconcileRuntime } from './types.js';
 /**
@@ -12,10 +13,11 @@ export function reconcileHandle(
 ): ReconcileRuntime {
   return Object.freeze({
     candidates: (after: string | null) => journal.stagingNamespace.reconciliationCandidates(after),
-    async reconcile(key: ReconcileKey, deadline: number) {
+    async reconcile(key: ReconcileKey, operation: Operation) {
       const intent = await journal.retirements.read(key);
       if (!intent) throw new RetirementPipelineError('conflict');
-      const work = cleanup.reconcileWithPorts(intent.request, { deadline });
+      // The pipeline settles retained originals before `settled`; close waits for it as well.
+      const work = cleanup.reconcileWithPorts(intent.request, operation);
       try {
         return await work.result;
       } finally {

@@ -1,5 +1,6 @@
 import type { RetirementPipeline } from '../retirement-pipeline/index.js';
 import type { ReconcileOutcome } from '../task-inventory/index.js';
+import type { Operation } from '../backends/docker/index.js';
 import type { ReconciliationCandidatePage } from '../staging-namespace/index.js';
 import type { NativeReceipt } from '../native-receipt/index.js';
 import type { NativeRemoval } from '../native-removal/index.js';
@@ -51,7 +52,7 @@ export interface ReconcileRuntime {
   /** Journal-only listing; observes and changes nothing. */
   candidates(after: string | null): Promise<ReconciliationCandidatePage>;
   /** Replays retirement for the stored request, proves runtime absence, then reconciles one task. */
-  reconcile(key: ReconcileKey, deadline: number): Promise<ReconcileOutcome>;
+  reconcile(key: ReconcileKey, operation: Operation): Promise<ReconcileOutcome>;
   close(): Promise<void>;
 }
 export interface ReconcileKey {

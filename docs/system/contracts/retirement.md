@@ -99,7 +99,7 @@ An operator-only reconcile entry, never coalesced with a tick, handles a prepare
 folder facts went stale after a renumbered root ([decision 030](../../decisions/030-task-folder-reconciliation.md)):
 producer and runtime retirement, refusal once settled or once any plan exists, an inventory-style read
 under the live root with unchanged owner, group and mode, then Journal 027 `reconciliation_json`, which
-later plans must match; no plan, removal or receipt. Operators run `container.js reconcile [--apply]`
+later plans must match; no plan, removal or receipt. Operators run the agent entry with `reconcile [--apply]`
 offline in a one-off container named as the agent: same process owner, no server or scheduler.
 
 ## Fencing and ordering

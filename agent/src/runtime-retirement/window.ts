@@ -1,6 +1,8 @@
 import { performance } from 'node:perf_hooks';
 import type { Operation } from '../backends/docker/index.js';
 import { RuntimeRetirementError } from './types.js';
+/** Longest window a retirement operation may ask for; callers stay inside it. */
+export const maximumWindowMs = 30_000;
 const aborted = Object.getOwnPropertyDescriptor(AbortSignal.prototype, 'aborted')!.get!;
 /** A private attempt window; issued request promises stay owned after cancellation/expiry. */
 export function captureWindow(input: Operation): Operation {
@@ -13,7 +15,7 @@ export function captureWindow(input: Operation): Operation {
       if (!('value' in signal)) throw new Error();
       Reflect.apply(aborted, signal.value, []);
     }
-    if (deadline.value - performance.now() > 30_000) throw new Error();
+    if (deadline.value - performance.now() > maximumWindowMs) throw new Error();
     return Object.freeze({ deadline: deadline.value, ...(signal ? { signal: signal.value as AbortSignal } : {}) });
   } catch {
     throw new RuntimeRetirementError('invalid_input');
