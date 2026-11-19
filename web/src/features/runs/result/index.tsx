@@ -104,7 +104,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       <ResultSummary reads={reads} charts={charts} ready={ready} />
       <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} />
       <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
-      <ResultEndpoints overview={ready} requests={plan.requests} />
+      <ResultEndpoints overview={ready} requests={plan.requests} phone={phone} />
       <SupplementaryResult
         target={{ run, engine, status: view.status, charts, plan, phaseView, togglePhases }}
         reads={reads}

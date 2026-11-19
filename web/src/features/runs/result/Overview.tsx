@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { RunMetricOverview, RunMetricEndpoint, RunChartHistory } from '@beetle/contracts/api';
 import { Button } from '../../../components/Button.js';
-import { Table, Th, Td } from '../../../components/Table.js';
+import { EndpointTable, endpointName } from './EndpointTable.js';
 import { formatNumber, formatPercent } from '../../run-results/format.js';
 import type { PlanRequest } from '../live/plan.js';
 import type { ResultReads } from './useResultReads.js';
@@ -81,23 +81,21 @@ export function MetricSummary({
   );
 }
 const latency = (row: RunMetricEndpoint) => row.latency?.percentiles.p95.estimate ?? -1;
-function name(row: RunMetricEndpoint, requests: readonly PlanRequest[]) {
-  const request = requests.find((item) => item.label === row.request);
-  return request ? `${request.method} ${request.path}` : row.request;
-}
 export function ResultEndpoints({
   overview,
   requests,
+  phone = false,
 }: {
   overview: RunMetricOverview | null;
   requests: readonly PlanRequest[];
+  phone?: boolean;
 }) {
   const [filter, setFilter] = useState('');
   const rows = [...(overview?.endpoints ?? [])].sort(
     (a, b) => latency(b) - latency(a) || Number(a.request.slice(1)) - Number(b.request.slice(1)),
   );
   const selected = rows.filter((row) =>
-    name(row, requests).toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()),
+    endpointName(row, requests).toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase()),
   );
   return (
     <section id="result-endpoints" className="result-section" aria-labelledby="result-endpoints-title">
@@ -121,37 +119,11 @@ export function ResultEndpoints({
       ) : (
         <>
           <div className="result-endpoint-table">
-            <Table
-              caption="Whole-run endpoint measurements"
-              columns={[
-                { key: 'endpoint', label: 'Endpoint' },
-                { key: 'share', label: 'Share', numeric: true },
-                { key: 'rps', label: 'Requests a second', numeric: true },
-                { key: 'p50', label: 'p50', numeric: true },
-                { key: 'p95', label: 'p95', numeric: true, sort: 'descending' },
-                { key: 'failed', label: 'Failed', numeric: true },
-              ]}
-            >
-              {selected.map((row) => (
-                <tr key={row.request}>
-                  <Th scope="row">{name(row, requests)}</Th>
-                  <Td numeric>
-                    {missing(
-                      formatPercent(
-                        row.requestCount !== null && overview.requestCount
-                          ? row.requestCount / overview.requestCount
-                          : null,
-                      ),
-                    )}
-                  </Td>
-                  <Td numeric>{missing(number(row.requestsPerSecond))}</Td>
-                  <Td numeric>{missing(ms(row.latency?.percentiles.p50.estimate))}</Td>
-                  <Td numeric>{missing(ms(row.latency?.percentiles.p95.estimate))}</Td>
-                  <Td numeric>{missing(formatPercent(row.failure?.ratio))}</Td>
-                </tr>
-              ))}
-            </Table>
+            <EndpointTable rows={selected} requests={requests} total={overview.requestCount} phone={phone} />
           </div>
+          {phone && (
+            <p className="result-muted">p95 and failed stay in view. Swipe sideways for share, rate and p50.</p>
+          )}
           {selected.length === 0 && (
             <p role="status">{rows.length ? 'No endpoints match this filter.' : 'No endpoint series were recorded.'}</p>
           )}
