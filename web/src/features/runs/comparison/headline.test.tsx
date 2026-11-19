@@ -27,3 +27,12 @@ it('uses ready overview nulls rather than substituting native threshold readings
  expect(screen.getByText(/Recorded p95 comparison unavailable/)).toBeInTheDocument();
  expect(screen.queryByText(/197/)).not.toBeInTheDocument();
 });
+
+it('includes a complete peer threshold failure alongside the p95 comparison', () => {
+  const items = snapshot().items;
+  items[1]!.result = { ...items[1]!.result!, completeness: 'complete', failedSloCount: 1,
+    firstFailedSlo: { id: 'tail', reading: { source: 'native-summary', metric: 'http_req_duration', stat: 'p99', value: 327 },
+      limit: { metric: 'http_req_duration', stat: 'p99', operator: '<', value: 300 } } };
+  render(<ComparisonHeadline items={items} summaries={undefined} overviews={undefined} />);
+  expect(screen.getByText(/Recorded p95 comparison unavailable/)).toHaveTextContent('p99 latency failed: 327 ms; limit under 300 ms.');
+});

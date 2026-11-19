@@ -1,4 +1,5 @@
 import type { RunComparisonItem } from '@beetle/contracts/api';
+import { inlineComparisonFailure } from './FailedSlos.js';
 import { comparisonFigures } from './figures.js';
 import { comparisonRunLabels } from './run-labels.js';
 import type { Summaries, Overviews } from './useComparison.js';
@@ -21,7 +22,8 @@ export function ComparisonHeadline({
   );
   return items.slice(1).map((item, index) => (
     <span className="compare-headline" key={item.run.id}>
-      {labels.get(item.run.id.toLowerCase())}: {p95Change(values[0] ?? null, values[index + 1] ?? null)}
+      {labels.get(item.run.id.toLowerCase())}: {p95Change(values[0] ?? null, values[index + 1] ?? null)}{' '}
+      {inlineComparisonFailure(item)}
     </span>
   ));
 }
