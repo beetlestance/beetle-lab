@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { provisionFreshInstallation } from '../index.js';
 import { installedRequest } from '../src/installed-request.js';
 import { capture, canonical, digest } from '../src/capture.js';
@@ -34,6 +35,9 @@ it('keeps the installed settings and policy when this release ships different de
   expect(digest(canonical(pinned))).toBe(await requestDigest(e.root));
   const installed = await readInstalled(capture(pinned, e.context));
   expect(installed.evaluation.current).toBe(true);
+  // Upgrade actions pass a 30-minute overall deadline; the rebuild still captures within 30 s steps.
+  const upgrade = { ...e.context, deadline: performance.now() + 30 * 60_000 };
+  expect(canonical(await installedRequest(shipped, upgrade))).toBe(canonical(pinned));
 });
 
 it('refuses changed recorded bindings by fixed name and still proves the rest by digest', async () => {

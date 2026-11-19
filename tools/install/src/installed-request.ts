@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { INSTALLATION_RECEIPT_BYTES, selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
 import { captureInstalledConfiguration } from '../../../agent/src/bootstrap/index.js';
 import { captureInstallationRecord } from '../../../app/src/bootstrap/configuration.js';
@@ -74,7 +75,9 @@ export async function installedRequest(
   request: ProvisionRequest,
   context: ProvisionContext,
 ): Promise<ProvisionRequest> {
-  const c = capture(request, context);
+  // Upgrade actions carry a longer overall deadline; each configuration step gets at most 30 s.
+  const step = { ...context, deadline: Math.min(context.deadline, performance.now() + 30_000) };
+  const c = capture(request, step);
   const files = new PrivateFiles(c);
   let baseline: Baseline | undefined;
   try {
@@ -84,7 +87,7 @@ export async function installedRequest(
   }
   if (!baseline) return c.request;
   try {
-    return pinned(c.request, baseline, context);
+    return pinned(c.request, baseline, step);
   } catch (cause) {
     if (cause instanceof ProvisionError) throw cause;
     throw new ProvisionError('recovery_required', { cause });
