@@ -1,6 +1,6 @@
 import { settleSetup } from './settlement.js';
 import type { ProvisionRequest, ProvisionContext } from '../types.js';
-import { UpgradeBlockedError } from '../types.js';
+import { BindingChangedError, UpgradeBlockedError } from '../types.js';
 import { pathToFileURL } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { join, resolve } from 'node:path';
@@ -14,6 +14,7 @@ import { ComposeHome } from './home.js';
 import { ComposeGate } from './gate.js';
 import { composeOptions } from './options.js';
 import { createStarterRequest } from '../starter.js';
+import { installedRequest } from '../src/installed-request.js';
 const UPGRADE_DEADLINE_MS = 30 * 60_000;
 /** `[]` is ordinary setup; `['upgrade', action?]` is the explicit offline upgrade command. */
 export function setupAction(args: readonly string[]): UpgradeAction | undefined {
@@ -23,9 +24,14 @@ export function setupAction(args: readonly string[]): UpgradeAction | undefined 
   if (args[0] !== 'upgrade' || args.length > 2 || !actions.includes(action)) throw new ProvisionError('invalid_input');
   return action;
 }
+const bindingHint =
+  'Setup values differ from the installation: use its original BEETLE_INSTANCE and BEETLE_HOME, or set up a new installation in another folder.\n';
 function report(error: unknown): void {
   if (error instanceof UpgradeBlockedError) process.stderr.write(`upgrade_blocked ${error.items.join(',')}\n`);
-  else process.stderr.write((error instanceof ProvisionError ? error.code : 'invalid_input') + '\n');
+  else if (error instanceof BindingChangedError) {
+    process.stderr.write(`binding_changed ${error.items.join(',')}\n`);
+    process.stderr.write(bindingHint);
+  } else process.stderr.write((error instanceof ProvisionError ? error.code : 'invalid_input') + '\n');
   if (error instanceof ProvisionError && error.code === 'upgrade_required')
     process.stderr.write('Images moved: stop services, then run `docker compose run --rm setup upgrade`.\n');
 }
@@ -52,15 +58,16 @@ export async function runComposeSetup(
     await home.prepare();
     enterContainerIdentity();
     const fresh = await home.adopt();
-    const request = createStarterRequest(captured.options);
-    gate = new ComposeGate(home, { uid: 1000, gid: 1000 });
-    await gate.open(fresh, digest(canonical(request)));
     const context = {
       ...operation,
       docker: new UnixDockerTransport('/var/run/docker.sock'),
       agentWorkerUrl: new URL('./agent-worker.js', import.meta.url),
       backendWorkerUrl: new URL('./backend-worker.js', import.meta.url),
     };
+    const starter = createStarterRequest(captured.options);
+    const request = fresh ? starter : await installedRequest(starter, context);
+    gate = new ComposeGate(home, { uid: 1000, gid: 1000 });
+    await gate.open(fresh, digest(canonical(request)));
     result = action
       ? await upgrade({ fresh, home: captured.home, gate, request, context, action })
       : await initialize({ fresh, home, gate, request, context });

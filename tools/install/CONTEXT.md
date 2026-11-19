@@ -26,6 +26,8 @@ packaging bootstrap and its separate configuration gate; serving startup still
 verifies actual authority. The optional fixed export profile uses the same catalogue.
 Moved images alone make ready replay refuse with upgrade_required; upgrade/ owns the
 explicit offline re-pin, its fence, sealed backup and pre-activation rollback.
+src/installed-request.ts rebuilds an existing installation's request with its baseline
+settings and policy, so shipped defaults reach new installations only (decision 031).
 
 CLI accepts exactly three private packaging arguments, reads no environment,
 and prints only bounded result JSON or fixed private error codes.

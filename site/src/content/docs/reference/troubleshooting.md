@@ -83,6 +83,7 @@ with `docker compose logs setup`.
 | `upgrade_required` | The images moved since the installation was set up, for example after `docker compose up --build` on a newer checkout | [Upgrade the installation](/guides/upgrade/), or start it with the images it was set up with |
 | `upgrade_blocked ITEMS` | An upgrade command refused; each item names a reason | See below |
 | `conflict` | A running service still holds the installation | Stop the services with `docker compose down` and run the command again |
+| `binding_changed ITEMS` | The instance name, installation folder or Docker socket differs from the ones the installation was set up with; items name each one (`agent_container`, `target_network`, `root`, `docker_socket`, `agent_origin`) | Start it with its original `BEETLE_INSTANCE` and `BEETLE_HOME`. Renaming an installation is not supported; set up a new one in another folder instead |
 | `recovery_required` | Something other than the images differs from what the installation expects, or an upgrade found state it cannot trust | Keep the installation directory and any upgrade backup exactly as they are |
 
 `upgrade_blocked` items:

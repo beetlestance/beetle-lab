@@ -18,7 +18,8 @@ host command; normal startup never re-pins. Default action is `prepare`.
   current, with no nonterminal runs, exports, executions, dispatch outbox rows, input uploads,
   deletions, output sources or slots, attempt ownership, Journal reservations, admission
   queue, attempts, delivery or staging. Each blocker is named:
-  `upgrade_blocked engine_containers,runs`. Nothing else may differ from the request except the
+  `upgrade_blocked engine_containers,runs`. The request keeps the installation's baseline settings
+  and policy ([decision 031](../../decisions/031-installed-defaults.md)). Nothing else may differ from it except the
   config schema digest of an installed identity with the same manifest, profile and catalog
   version (a compatible revision of the same schema `$id`; the Journal step approves it). Any
   other difference is `recovery_required`.

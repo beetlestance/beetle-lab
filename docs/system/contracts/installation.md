@@ -66,10 +66,12 @@ installation ID, `created`/`unchanged` and paths; never a credential.
 - Replay of a `ready` root is `unchanged` only after receipt, configuration, authority and
   image pins match the same request (moved images: `upgrade_required`; [Upgrade](upgrade.md)). It never rotates
   tokens or rewrites settings and never inventories runtime data; a serving lease is `conflict`.
-- `inspectReadyConfiguration` validates receipt, configuration and pins without opening the
-  Journal; it grants configuration readiness only.
-- Failure codes: `invalid_input`, `inspection`, `unsafe_root`, `conflict`,
-  `recovery_required`, `upgrade_required`, `upgrade_blocked`, `cancelled`, `deadline`, `io`,
+- Existing Compose roots keep their baseline `installationValues` and `agentPolicy`
+  ([decision 031](../../decisions/031-installed-defaults.md)); changed recorded bindings refuse
+  with `binding_changed`, other differences (such as the engine template) stay `recovery_required`.
+- `inspectReadyConfiguration` checks receipt, configuration and pins without the Journal.
+- Failure codes: `invalid_input`, `inspection`, `unsafe_root`, `conflict`, `recovery_required`,
+  `upgrade_required`, `upgrade_blocked`, `binding_changed`, `cancelled`, `deadline`, `io`,
   `cleanup`. CLI exit 2 for argument errors, else 1, with fixed text; partial roots are kept.
 - The installer may import only public entrypoints of agent bootstrap, installation-state,
   journal, catalog, admission, Docker backend and backend configuration; runtime services
@@ -103,7 +105,7 @@ are CPU in millicores.
 | --- | --- | --- | --- | --- |
 | Pool | 2000 | 1 GiB | 256 | output 128 MiB, staging 128 MiB, concurrency 2, storage 2 GiB, free-space reserve 256 MiB |
 | Per-run ceiling and default | 1000 | 512 MiB | 128 | timeout 300000 ms, output 64 MiB, staging 64 MiB |
-| Control reserve | 1350 | 576 MiB | 160 | frozen: existing installations pin the starter request digest, so it still counts the agent at its former 250 |
+| Control reserve | 2100 | 576 MiB | 160 | equals the backend, agent and frontend hard caps; installations set up earlier keep 1350 (decision 031) |
 | Headroom | 250 | 128 MiB | 16 | output and staging 0 |
 
 `maxConcurrent` 2, `maxTimeoutMs` 300000, `observationTtlMs` 1000, no required sensors,
@@ -118,12 +120,10 @@ ms; execute output 64 MiB, others 4 MiB. The placeholder image digest is never e
 (`agent/src/bootstrap/installed-config.ts`):
 
 - absolute canonical private file ≤ 256 KiB, fatal UTF-8, closed version 1 envelope; unknown
-  keys reject; no environment interpolation;
+  keys reject; no environment interpolation; journal directory owned by the process UID, 0700;
 - 1–32 engines, each pinned to a daemon-resolved local image ID; images that declare volumes
   reject; no tag or newer pin is selected on restart;
-- journal directory owned by the process UID, mode 0700;
-- credential file read through the shared private-file intake, at most 128 bytes, exactly
-  43–128 base64url characters;
+- credential file read through the shared private-file intake, exactly 43–128 base64url bytes;
 - listen defaults to `127.0.0.1:4312`; hosts `127.0.0.1`, `::1` or `0.0.0.0` (private
   container network only; never published).
 
@@ -212,9 +212,9 @@ request alias never becomes an environment variable name or file path
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/src/` | `3c5a00e5ccff` |
-| `tools/install/compose/` | `20a3f76728ad` |
-| `tools/install/starter/policy.ts` | `05f116398b2b` |
+| `tools/install/src/` | `7522bbf114b7` |
+| `tools/install/compose/` | `25ccdb56fa44` |
+| `tools/install/starter/policy.ts` | `c6d6ef3e6999` |
 | `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
 | `agent/src/installation-state/` | `0beedc07f9a0` |
 | `contracts/src/installed-identity.ts` | `564605f73a36` |

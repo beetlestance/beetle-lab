@@ -56,6 +56,7 @@ export type ProvisionErrorCode =
   | 'recovery_required'
   | 'upgrade_required'
   | 'upgrade_blocked'
+  | 'binding_changed'
   | 'cancelled'
   | 'deadline'
   | 'io'
@@ -74,5 +75,12 @@ export class UpgradeBlockedError extends ProvisionError {
   constructor(readonly items: readonly string[]) {
     super('upgrade_blocked');
     this.name = 'UpgradeBlockedError';
+  }
+}
+/** Setup whose deployment bindings differ from those the installation recorded; fixed names only. */
+export class BindingChangedError extends ProvisionError {
+  constructor(readonly items: readonly string[]) {
+    super('binding_changed');
+    this.name = 'BindingChangedError';
   }
 }

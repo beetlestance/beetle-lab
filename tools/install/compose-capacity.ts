@@ -10,6 +10,7 @@ import { ComposeHome } from './compose/home.js';
 import { ComposeGate } from './compose/gate.js';
 import { settleSetup } from './compose/settlement.js';
 import { createStarterRequest } from './starter.js';
+import { installedRequest } from './src/installed-request.js';
 import { canonical, digest, requireInput, capture } from './src/capture.js';
 import { ProvisionError } from './types.js';
 import { changeInstalledCapacity } from './capacity/index.js';
@@ -39,15 +40,15 @@ export async function runComposeCapacity(
     await home.prepare();
     enterContainerIdentity();
     requireInput(!(await home.adopt()));
-    const request = createStarterRequest(captured.options);
-    gate = new ComposeGate(home, { uid: 1000, gid: 1000 });
-    await gate.open(false, digest(canonical(request)));
     const context = {
       ...operation,
       docker: new UnixDockerTransport('/var/run/docker.sock'),
       agentWorkerUrl: new URL('./agent-worker.js', import.meta.url),
       backendWorkerUrl: new URL('./backend-worker.js', import.meta.url),
     };
+    const request = await installedRequest(createStarterRequest(captured.options), context);
+    gate = new ComposeGate(home, { uid: 1000, gid: 1000 });
+    await gate.open(false, digest(canonical(request)));
     const c = capture(request, context);
     const files = await filesFor(c);
     try {

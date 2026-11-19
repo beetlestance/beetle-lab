@@ -6,6 +6,9 @@ separate bootstrap lock. Fresh initialization delegates to the offline provision
 ready checking reuses shared configuration/image-pin validation without Journal IO.
 Arguments `upgrade [action]` run the explicit offline upgrade (../upgrade/) under the
 same home and gate; the home may then also hold `upgrade/`. Moved images print the command.
+An existing root's request keeps its baseline settings and policy before the gate
+opens (../src/installed-request.ts, decision 031); changed recorded bindings print
+`binding_changed` with fixed names and a fixed hint.
 
 home.ts owns canonical private directories; gate.ts serializes only configuration
 preparation, never engine authority. Partial/conflicting state is preserved. No

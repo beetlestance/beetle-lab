@@ -124,6 +124,11 @@ new images with the offline upgrade command; see
 [Upgrade an installation](/guides/upgrade/). Only the previous release can be
 upgraded, and downgrading is not supported.
 
+An installation keeps the settings and resource limits it was set up with. When
+a newer release ships different defaults, only new installations get them. Its
+instance name and folder are fixed too: starting it under another
+`BEETLE_INSTANCE` stops setup with `binding_changed`.
+
 With the launcher, a rebuild needs the same source revision the installation was
 created from, and the upgrade command does not cover launcher installations.
 After updating the checkout, set up a **new** directory with its own port for the
