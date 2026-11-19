@@ -1,4 +1,4 @@
-.result-phase-view > :not(#result-target):not(.result-restored):not(.result-head) { display: none; }
+.result-phase-view > :not(#result-target):not(.result-restored):not(.result-head):not(.result-sections) { display: none; }
 .result-phase-view #result-target { margin-top: 0; }
 .result-phase-view #result-target > .live-section-head { align-items: flex-start; margin-bottom: var(--s-24); }
 .result-phase-view h1 { font-size: var(--fs-3xl); font-weight: 500; margin: 0; }
@@ -17,3 +17,5 @@
 @media (max-width: 760px) { .target-phase-memory { padding: var(--s-12); } .target-phase-spans { flex-wrap: wrap; } .result-phase-view h1 { font-size: var(--fs-2xl); } }
 
 .result-phase-view > .result-head > :not(.result-context) { display: none; }
+
+.result-phase-view .result-sections > :not(#result-target-details) { display: none; }

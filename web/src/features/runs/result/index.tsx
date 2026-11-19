@@ -1,10 +1,11 @@
+import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
 import { ResultSectionNav } from './SectionNav.js';
 import type { Section } from './SectionNav.js';
 import { measurementOrigin } from '../live/rise-position.js';
 import { useState } from 'react';
 import { TargetHeader, usePhaseMode } from './TargetHeader.js';
 import type { EngineResult } from '@beetle/contracts';
-import type { Run } from '@beetle/contracts/api';
+import type { Run, RunMetricOverview } from '@beetle/contracts/api';
 import { Banner } from '../../../components/Banner.js';
 import { useSessionAccess } from '../../../app/session.js';
 import { Button } from '../../../components/Button.js';
@@ -27,6 +28,7 @@ import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
+import './phone.css';
 
 /**
  * Run result view (Penpot "Run result" boards and their variants) for a terminal
@@ -60,6 +62,7 @@ function useSectionTab() {
 
 function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | undefined }) {
   const reads = useResultReads(run);
+  const phone = useResultPhone();
   const { phaseView, className, togglePhases } = usePhaseMode();
   const { tab, setTab, selectSection } = useSectionTab();
   const [deleting, setDeleting] = useState(false);
@@ -88,43 +91,27 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         onDelete={() => setDeleting(true)}
         refresh={refresh}
       />
-      <RunNote run={run} readOnly={readOnly} />
-      <ResultSectionNav onSelect={selectSection} />
-      <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
-        <h2 id="result-summary-title" className="sr-only">
-          Summary
-        </h2>
-        <OverviewStatus query={reads.overview} />
-        {ready ? (
-          <MetricSummary overview={ready} history={charts.data} />
-        ) : (
-          <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
-        )}
-      </section>
+      <PhoneDisclosure
+        id="result-notes"
+        title="Notes"
+        description="One note per run"
+        expanded={!phone}
+        className="result-note-disclosure"
+      >
+        <RunNote run={run} readOnly={readOnly} />
+      </PhoneDisclosure>
+      {!phone && <ResultSectionNav onSelect={selectSection} />}
+      <ResultSummary reads={reads} charts={charts} ready={ready} />
       <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} />
-      <div className="result-split">
-        <ThresholdSection reads={reads} engine={engine} variant={variantOf(run)} />
-        <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
-      </div>
+      <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
       <ResultEndpoints overview={ready} requests={plan.requests} />
-      <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
-      <AdvancedMetrics run={run} />
-      <TargetRuntime
-        run={run}
-        engine={engine}
-        status={view.status}
-        charts={charts}
-        plan={plan}
-        phaseView={phaseView}
-        togglePhases={togglePhases}
-      />
-      <ReportTabs
-        run={run}
-        view={view}
+      <SupplementaryResult
+        target={{ run, engine, status: view.status, charts, plan, phaseView, togglePhases }}
+        reads={reads}
+        overview={ready}
+        phone={phone}
         tab={tab}
         onSelect={setTab}
-        requests={plan.requests}
-        origin={measurementOrigin(ready)}
       />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
@@ -221,4 +208,121 @@ function recordedLimit(plan: RunPlan): number | null {
   const rules = plan.rules.filter((rule) => rule.metric === 'http_req_duration' && rule.stat === 'p95');
   const first = rules[0];
   return first && rules.every((rule) => rule.value === first.value) ? first.value : null;
+}
+
+function SupplementaryResult({
+  target,
+  reads,
+  overview,
+  phone,
+  tab,
+  onSelect,
+}: {
+  target: Parameters<typeof TargetRuntime>[0];
+  reads: ResultReads;
+  overview: RunMetricOverview | null;
+  phone: boolean;
+  tab: ReportTab;
+  onSelect: (tab: ReportTab) => void;
+}) {
+  const { run, charts, plan } = target;
+  return (
+    <>
+      {!phone && (
+        <>
+          <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
+          <AdvancedMetrics run={run} />
+          <TargetRuntime {...target} />
+        </>
+      )}
+      <ReportTabs
+        run={run}
+        view={reads.result.view}
+        tab={tab}
+        onSelect={onSelect}
+        requests={plan.requests}
+        origin={measurementOrigin(overview)}
+        phoneTarget={
+          <PhoneDisclosure
+            id="result-target-details"
+            expanded={target.phaseView}
+            hashId="result-target"
+            title="Target runtime"
+            description="Heap, RSS, CPU and event-loop delay by phase"
+          >
+            <TargetRuntime {...target} />
+          </PhoneDisclosure>
+        }
+        phoneExtras={<PhoneExtras target={target} reads={reads} />}
+      />
+    </>
+  );
+}
+function PhoneExtras({ target, reads }: { target: Parameters<typeof TargetRuntime>[0]; reads: ResultReads }) {
+  return (
+    <>
+      <PhoneDisclosure
+        id="result-chart-details"
+        hashId="result-charts"
+        title="More charts"
+        description="Requests, virtual users and individual metrics"
+      >
+        <RecordedMetrics view={target.charts} p95Limit={recordedLimit(target.plan)} />
+        <AdvancedMetrics run={target.run} />
+      </PhoneDisclosure>
+      <PhoneDisclosure id="result-script" title="Saved script" description="Revision, engine and configuration">
+        <ScriptVersion
+          run={target.run}
+          suite={reads.suite}
+          revision={reads.revision}
+          failed={reads.revisionQuery.isError}
+        />
+      </PhoneDisclosure>
+    </>
+  );
+}
+
+function ResultSummary({
+  reads,
+  charts,
+  ready,
+}: {
+  reads: ResultReads;
+  charts: ReturnType<typeof useRecordedCharts>;
+  ready: RunMetricOverview | null;
+}) {
+  return (
+    <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
+      <h2 id="result-summary-title" className="sr-only">
+        Summary
+      </h2>
+      <OverviewStatus query={reads.overview} />
+      {ready ? (
+        <MetricSummary overview={ready} history={charts.data} />
+      ) : (
+        <SummaryTiles summary={reads.summary} status={reads.summaryStatus} />
+      )}
+    </section>
+  );
+}
+
+function ResultThresholds({
+  reads,
+  engine,
+  run,
+  phone,
+}: {
+  reads: ResultReads;
+  engine: EngineResult | null;
+  run: Run;
+  phone: boolean;
+}) {
+  return (
+    <div className="result-split">
+      <ThresholdSection reads={reads} engine={engine} variant={variantOf(run)} />
+      {!phone && (
+        <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
+      )}
+    </div>
+  );
 }

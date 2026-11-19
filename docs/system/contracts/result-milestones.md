@@ -15,7 +15,7 @@ that milestones never occurred. At most 100 projected rows / 64 KiB remain cache
 
 ## Native latency observation
 
-The selected desktop activity panel (or phone activity section) reads the existing
+The selected desktop activity panel (or opened phone disclosure) reads the existing
 terminal latency-attribution endpoint once; no polling or per-endpoint fanout.
 Its detected rise uses native source instants. Elapsed display requires a version-4
 measurement origin from the already-read metric overview, matching generation and
@@ -41,4 +41,4 @@ These source checks do not qualify a packaged native deployment.
 | `web/src/features/runs/timeline/Milestones.tsx` | `ba2b2f78e6f1` |
 | `web/src/features/runs/live/Extras.tsx` | `ad293364de0f` |
 | `web/src/features/runs/live/rise-position.ts` | `b6096bcf9961` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `a508874444a6` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
