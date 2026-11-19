@@ -27,7 +27,7 @@ it('retains an unknown create intent, replays identical bytes, reads current sta
  expect(screen.getByRole('button',{name:'Generate standalone script'})).toBeDisabled();expect(screen.queryByRole('link',{name:'Download standalone script'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'Replay export request'}));await screen.findByRole('button',{name:'View submitted export'});
  const writes=api.records.filter(record=>record.method==='POST');expect(writes).toHaveLength(2);expect(writes[0]!.body).toEqual(writes[1]!.body);
- expect(writes[0]!.body).toMatchObject({revisionId:rev.id,engineProfile:'k6',options:{maximumBuildBytes:1048576,scriptTimeoutMs:180000}});
+ expect(writes[0]!.body).toMatchObject({revisionId:rev.id,engineProfile:'k6',options:{maximumBuildBytes:1048576,scriptTimeoutMs:100}});
  fireEvent.click(screen.getByRole('button',{name:'View submitted export'}));const link=await screen.findByRole('button',{name:'Download standalone script'});
  expect(link).toBeEnabled();
  expect(screen.queryByRole('button',{name:'Cancel export'})).toBeNull();expect(api.records.some(record=>record.path.includes('/runs'))).toBe(false);

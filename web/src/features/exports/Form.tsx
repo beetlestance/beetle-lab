@@ -17,7 +17,7 @@ export function ExportForm({ revision, settings, profiles, created }: ExportForm
       : (profiles[0] ?? ''),
   }));
   const [maximum, setMaximum] = useState('1048576');
-  const [timeout, setTimeout] = useState('180000');
+  const [timeout, setTimeout] = useState(() => String(settings.effective.runDefaults.budget.timeoutMs.value));
   const [error, setError] = useState('');
   const write = useExportWrite();
   const locked = write.pending || write.unknown;

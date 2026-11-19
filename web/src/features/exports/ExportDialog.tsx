@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { routes } from '../../app/routes.js';
+import { useSessionAccess } from '../../app/session.js';
 import { VerifiedExportDownload } from './VerifiedDownload.js';
 import type { ExportJob, SuiteRevision } from '@beetle/contracts/api';
 import { Button, buttonClass } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
-import { elapsedText, exportSteps, reasonText, secretNames, sizeText, stepIndex } from './prepare.js';
+import { elapsedText, exportSteps, reasonText, secretNames, sizeText, stepIndex, scriptLimitText } from './prepare.js';
 import type { useRevisionExport } from './useRevisionExport.js';
 import './exports.css';
 
@@ -171,7 +173,8 @@ export function ExportDialog({ revision, suiteName, flow, close, editHref }: Pro
 
 type StateProps = { job: ExportJob; flow: RevisionExport; close: () => void; closeButton: ReactNode };
 
-function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'> & { name: string }) {
+function ReadyDialog({ job, name, close, closeButton, flow }: StateProps & { name: string }) {
+  const { readOnly } = useSessionAccess();
   const artifact = job.artifact!;
   return (
     <Dialog
@@ -181,6 +184,13 @@ function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'>
       actions={
         <>
           {closeButton}
+          <Button
+            variant="text"
+            disabled={readOnly || flow.preparing || flow.create.unknown || flow.noEngine}
+            onClick={flow.prepare}
+          >
+            {flow.preparing ? 'Preparing new script…' : 'Prepare again'}
+          </Button>
           <ReadyActions job={job} />
         </>
       }
@@ -189,6 +199,7 @@ function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'>
         items={[
           ['File', artifact.name],
           ['Size', sizeText(artifact.bytes)],
+          ['Script time limit', scriptLimitText(job.options.scriptTimeoutMs)],
           [
             'SHA-256',
             <code key="sha" title={artifact.sha256}>
@@ -202,6 +213,8 @@ function ReadyDialog({ job, name, close, closeButton }: Omit<StateProps, 'flow'>
         ]}
       />
       <p>Run it with k6 wherever you like. The download is checked against this SHA-256.</p>
+      <p>The script stops at its declared time limit, including readiness and load.</p>
+      <StartNotes job={undefined} flow={flow} />
     </Dialog>
   );
 }
@@ -285,7 +298,7 @@ function ExportState({
   const shared = { flow, close, closeButton };
   switch (stageOf(job, flow.preparing)) {
     case 'ready':
-      return <ReadyDialog job={job!} name={name} close={close} closeButton={closeButton} />;
+      return <ReadyDialog job={job!} name={name} close={close} closeButton={closeButton} flow={flow} />;
     case 'unknown':
       return <UnknownDialog job={job!} {...shared} />;
     case 'preparing':
@@ -296,6 +309,7 @@ function ExportState({
 }
 
 function StartNotes({ job, flow }: { job: ExportJob | undefined; flow: RevisionExport }) {
+  const { readOnly } = useSessionAccess();
   const errors = [flow.inputsFailed ? 'Could not read the workspace settings.' : '', flow.problem].filter(Boolean);
   return (
     <>
@@ -309,7 +323,7 @@ function StartNotes({ job, flow }: { job: ExportJob | undefined; flow: RevisionE
       {flow.create.unknown && (
         <div role="alert">
           <p>The outcome is unknown. Replay sends the identical request.</p>
-          <Button size="sm" onClick={() => void flow.create.send()}>
+          <Button size="sm" disabled={readOnly || flow.create.pending} onClick={() => void flow.create.send()}>
             Replay export request
           </Button>
         </div>
@@ -336,6 +350,7 @@ function StartState({
   close: () => void;
   closeButton: ReactNode;
 }) {
+  const { readOnly } = useSessionAccess();
   const ended = endedTitle[job?.state ?? ''];
   return (
     <Dialog
@@ -346,12 +361,16 @@ function StartState({
       actions={
         <>
           {closeButton}
-          <Button variant="primary" disabled={flow.noEngine || flow.create.unknown} onClick={flow.prepare}>
+          <Button variant="primary" disabled={readOnly || flow.noEngine || flow.create.unknown} onClick={flow.prepare}>
             {ended ? 'Prepare again' : 'Prepare script'}
           </Button>
         </>
       }
     >
+      <p>New scripts inherit this workspace’s configured run timeout, including readiness and load.</p>
+      <Link to={routes.workspaceSettings(revision.scope.organizationId, revision.scope.workspaceId)}>
+        Workspace settings
+      </Link>
       <StartNotes job={ended ? job : undefined} flow={flow} />
     </Dialog>
   );

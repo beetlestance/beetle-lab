@@ -141,6 +141,15 @@ sensitive as the suite itself.
 Backend publication or absence does not prove agent producer retirement. No browser
 path, clock timeout or current capability creates physical authority.
 
+## Browser script limits
+
+New revision exports inherit the effective workspace run timeout as their standalone
+script limit (at most 48 hours; larger defaults are refused, never clamped). This is
+separate from the export build lifetime. The ready dialog reports the persisted job
+option; preparing again creates a new job and never changes an existing script.
+Unknown acceptance replays the captured request, including its original time limit.
+The advanced form starts from the same setting and accepts an explicit override.
+
 ## Browser downloads
 
 Ready export controls [verify exact bytes and SHA-256](verified-export-download.md)
@@ -165,5 +174,8 @@ is not a claim that the browser wrote a file.
 | `app/src/adapters/outbound/sqlite/export-jobs/` | `84be6cb419bc` |
 | `app/src/adapters/outbound/sqlite/migration035.ts` | `44762d1ad5ac` |
 | `contracts/src/api/export-latest.ts` | `5f08c834aac2` |
+| `web/src/features/exports/prepare.ts` | `4f600d24a45a` |
+| `web/src/features/exports/Form.tsx` | `e22238cb12ce` |
+| `web/src/features/exports/ExportDialog.tsx` | `83fa0323e3e3` |
 | `engines/k6/export/` | `120bf16f289c` |
 | `agent/src/journal/migration015.ts` | `e43499b5bd89` |
