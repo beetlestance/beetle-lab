@@ -1,5 +1,5 @@
 import fixture from '../../../../../contracts/fixtures/api/valid/run-comparison.json' with { type: 'json' };
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { StrictMode } from 'react';
 import { comparisonFields, comparisonWarnings, validateApi } from '@beetle/contracts/api';
@@ -81,4 +81,10 @@ export function mountComparison(api: React.ContextType<typeof ApiContext>, stric
   );
   const view = render(wrap());
   return { ...view, session: (client: typeof api) => view.rerender(wrap(client)) };
+}
+
+/** Follow the same explicit disclosure as someone exploring per-series evidence. */
+export async function openComparisonExploration() {
+  const toggle = await screen.findByText('Explore metrics and recorded evidence', { selector: 'summary' });
+  if (!toggle.closest('details')!.open) fireEvent.click(toggle);
 }

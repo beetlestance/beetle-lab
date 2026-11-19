@@ -7,7 +7,7 @@ four-character IDs expand to source prefix+suffix or the full UUID.
 Empty selection reads one history page for its workspace name; invalid runs rejects.
 Layout: one table owns run headers, eight primary figures and paged native SLOs.
 Baseline controls only reorder the URL; client deltas preserve unknowns and zeros.
-Additional figures and saved engine/budget settings remain in disclosures.
+Additional figures, saved settings and per-series exploration use disclosures; catalogue errors open exploration.
 SettingsTable owns the primary revision/executor/rate/VUs/note comparison.
 Compact native rows share equal limits in their label; unequal limits stay per cell.
 Generated compareRuns owns request/response semantics. Whole-run summaries come
@@ -26,7 +26,7 @@ native-marker-relative time on one scale. Gaps, nulls and zero remain exact; no
 phase warping, union-grid fill or extrapolation. Peak requires the same numeric
 source as overview (generation/version/hash/manifest/marker), never configured load.
 The optional legacy selector still keeps <=1,000 points/1 MiB per run with its own
-UTC timestamps and vertical scale; those advanced timelines are not aligned.
+UTC timestamps and vertical scale; advanced timelines are unaligned. Expansion survives reads, keyed by scope/selection.
 Overview supplies p50/p95/p99 estimates, invocation checks and dropped counts.
 Ready overviews never backfill nulls; headline p95 uses the same source as the table.
 When it is unavailable, only the existing accepted history scalars can fall back.

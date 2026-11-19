@@ -4,6 +4,7 @@ import { afterEach, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ApiClient, RunMetricKey } from '@beetle/contracts/api';
 import { catalogue, deferred, json, mountComparison, runIds, sampleReply, snapshot, testClient } from './fixtures.js';
+import { openComparisonExploration } from './fixtures.js';
 afterEach(cleanup);
 it('retires an ignored-abort API original on URL replacement and waits for its settlement', async () => {
   const held = deferred<Awaited<ReturnType<ApiClient['compareRuns']>>>();
@@ -18,7 +19,7 @@ it('retires an ignored-abort API original on URL replacement and waits for its s
   expect(signal!.aborted).toBe(true); await act(async () => {await Promise.resolve();}); expect(calls).toBe(1);
   expect(screen.queryByText('Application state / outcome')).not.toBeInTheDocument();
   await act(async () => held.resolve({ok: true, value: snapshot()}));
-  await screen.findByLabelText('Baseline metric');
+  await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   expect(fixture.records[0]!.body?.runIds).toEqual([...runIds].reverse()); expect(calls).toBe(2);
 });
 it('session replacement hides evidence and holds the next API behind a retired chart original', async () => {
@@ -26,7 +27,7 @@ it('session replacement hides evidence and holds the next API behind a retired c
   let signal: AbortSignal | undefined; let calls = 0;
   const first = testClient(request => json(request.path.endsWith('/comparisons') ? snapshot(request.body?.metric as RunMetricKey | null) : catalogue()));
   const client = {...first.client, getRunMetricSamples: (input: Parameters<ApiClient['getRunMetricSamples']>[0]) => {calls++; signal = input.signal; return held.promise;}};
-  const view = mountComparison(client); await screen.findByLabelText('Baseline metric');
+  const view = mountComparison(client); await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
   await waitFor(() => expect(calls).toBe(1));
   const second = testClient(request => json(request.path.endsWith('/comparisons') ? snapshot() : catalogue()));
@@ -34,7 +35,7 @@ it('session replacement hides evidence and holds the next API behind a retired c
   expect(screen.queryByText('Application state / outcome')).not.toBeInTheDocument();
   expect(signal!.aborted).toBe(true); await act(async () => {await Promise.resolve();}); expect(second.records).toHaveLength(0);
   await act(async () => held.resolve({ok: true, value: sampleReply(runIds[0]!, 2)}));
-  await screen.findByLabelText('Baseline metric'); expect(second.records).toHaveLength(8);
+  await screen.findByLabelText('Baseline metric'); await openComparisonExploration(); expect(second.records).toHaveLength(8);
   expect(screen.queryByRole('img')).not.toBeInTheDocument(); expect(calls).toBe(1);
 });
 it('unmount aborts the held comparison without starting catalogue work after late success', async () => {
@@ -51,7 +52,7 @@ it('rejects a same-ordinal sample from a different logical series without drawin
     const id = runIds.find(value => request.path.includes(value))!; const reply = sampleReply(id, ordinal);
     return json({...reply, series: {...reply.series, metric: 'iterations'}});
   });
-  mountComparison(fixture.client); await screen.findByLabelText('Baseline metric');
+  mountComparison(fixture.client); await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
   await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(6));
   expect(screen.queryByRole('img')).not.toBeInTheDocument(); expect(fixture.records).toHaveLength(11);
@@ -65,5 +66,5 @@ it('retains admission across unmount/remount until an ignored-abort API original
   const second = testClient(request => json(request.path.endsWith('/comparisons') ? snapshot() : catalogue()));
   mountComparison(second.client); await act(async () => {await Promise.resolve();}); expect(second.records).toHaveLength(0);
   await act(async () => held.resolve({ok: true, value: snapshot()}));
-  await screen.findByLabelText('Baseline metric'); expect(second.records).toHaveLength(8);
+  await screen.findByLabelText('Baseline metric'); await openComparisonExploration(); expect(second.records).toHaveLength(8);
 });

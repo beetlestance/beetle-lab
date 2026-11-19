@@ -6,6 +6,7 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { mount } from '../../../app/test-fixtures.js';
 import { routes } from '../../../app/routes.js';
 import { catalogue, json, scope, snapshot, testClient } from './fixtures.js';
+import { openComparisonExploration } from './fixtures.js';
 afterEach(cleanup);
 it('permits only four terminal runs and preserves the explicit baseline order', async () => {
   const base = snapshot().items[0]!.run;
@@ -23,5 +24,5 @@ it('permits only four terminal runs and preserves the explicit baseline order', 
   expect(screen.queryByRole('link', {name: /^Compare \d/})).not.toBeInTheDocument();
   [2, 0].forEach(index => fireEvent.click(boxes[index]!));
   fireEvent.click(screen.getByRole('link', {name: 'Compare 2'}));
-  await screen.findByRole('heading', {name: 'Compare runs'}); await screen.findByLabelText('Baseline metric');
+  await screen.findByRole('heading', {name: 'Compare runs'}); await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
 });

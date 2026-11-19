@@ -361,3 +361,18 @@
     min-width: 640px;
   }
 }
+
+.compare-advanced > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--mute);
+}
+.compare-advanced > summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.compare-advanced-content {
+  display: grid;
+  gap: var(--s-24);
+  margin-top: var(--s-20);
+}
