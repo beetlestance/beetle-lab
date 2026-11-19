@@ -13,7 +13,13 @@ const sections = [
 export type Section = (typeof sections)[number][0];
 const sectionFromHash = (hash: string) => sections.find(([id]) => hash === `#result-${id}`)?.[0];
 /** Native anchors retain scroll/history behavior; selection also follows hash navigation. */
-export function ResultSectionNav({ onSelect }: { onSelect(section: Section): void }) {
+export function ResultSectionNav({
+  onSelect,
+  archiveMissing,
+}: {
+  onSelect(section: Section): void;
+  archiveMissing?: boolean;
+}) {
   const { hash } = useLocation();
   const [selected, setSelected] = useState<Section>(() => sectionFromHash(hash) ?? 'summary');
   useEffect(() => {
@@ -22,9 +28,10 @@ export function ResultSectionNav({ onSelect }: { onSelect(section: Section): voi
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, [hash]);
+  const available = archiveMissing ? sections.filter(([id]) => id !== 'charts' && id !== 'endpoints') : sections;
   return (
     <nav className="result-nav" aria-label="Result sections">
-      {sections.map(([id, label]) => (
+      {available.map(([id, label]) => (
         <a
           key={id}
           href={`#result-${id}`}

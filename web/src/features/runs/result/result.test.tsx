@@ -294,3 +294,25 @@ it('retries failed result details explicitly without refreshing the run or losin
   expect(f.records.filter(record => record.path.endsWith('/runs/' + runId))).toHaveLength(runReads);
   expect(attempts).toBe(2);
 });
+
+it('replaces missing incomplete-archive sections with one explanation while retaining diagnostics', async () => {
+  const current = finished({ state: 'errored', outcome: 'inconclusive', reason: 'artifact_incomplete' });
+  const f = fixture(current, (request) => {
+    const ownership = { id: current.id, scope: current.scope, attemptId: current.activeAttemptId, source: null };
+    if (request.path.endsWith('/metrics/chart-history'))
+      return json({ ...ownership, windows: 0, sampled: false, points: [], observedPeakRequestsPerSecond: null,
+        knownRequestWindows: 0, meanVus: null, knownVusWindows: 0, reason: 'not_recorded' });
+    if (request.path.endsWith('/metrics/overview'))
+      return json({ ...ownership, availability: 'not_recorded', testDurationMs: null, requestCount: null,
+        requestsPerSecond: null, failure: null, latency: null, checks: null, droppedIterations: null,
+        endpoints: [], omittedEndpoints: 0 });
+    return undefined;
+  });
+  mount(f.client, path);
+  await screen.findByText(/^Charts and endpoint detail require a verified metrics archive/);
+  const nav = within(screen.getByRole('navigation', { name: 'Result sections' }));
+  expect(nav.queryByRole('link', { name: 'Charts' })).not.toBeInTheDocument();
+  expect(nav.queryByRole('link', { name: 'Endpoints' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'The whole run' })).not.toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Diagnostics' })).toBeVisible();
+});

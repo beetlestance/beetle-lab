@@ -31,10 +31,6 @@ import type { ResultReads } from './useResultReads.js';
 import './result.css';
 import './phone.css';
 
-/**
- * Run result view (Penpot "Run result" boards and their variants) for a terminal
- * run. RunDetail chooses it once; it owns its reads under the scoped run key.
- */
 /** RunDetail's run re-read, shown as Refresh run beside the result title. */
 export type RefreshControl = { readonly run: () => void; readonly busy: boolean };
 
@@ -70,6 +66,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
   const ready = readyOverview(reads.overview);
+  const archiveMissing = incompleteArchiveMissing(run, reads);
   const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
   const engine = view.status === 'ready' ? view.result : null;
@@ -102,21 +99,74 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       >
         <RunNote run={run} readOnly={readOnly} />
       </PhoneDisclosure>
-      {!phone && <ResultSectionNav onSelect={selectSection} />}
+      {!phone && <ResultSectionNav onSelect={selectSection} archiveMissing={archiveMissing} />}
       <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} />
-      <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />
-      <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
-      <ResultEndpoints overview={ready} requests={plan.requests} phone={phone} />
+      <ResultMeasurements
+        reads={reads}
+        run={run}
+        engine={engine}
+        charts={charts}
+        plan={plan}
+        overview={ready}
+        phone={phone}
+        archiveMissing={archiveMissing}
+      />
       <SupplementaryResult
         target={{ run, engine, status: view.status, charts, plan, phaseView, togglePhases }}
         reads={reads}
         overview={ready}
         phone={phone}
+        archiveMissing={archiveMissing}
         tab={tab}
         onSelect={setTab}
       />
       {deleting && !readOnly && <DeleteRun run={run} onClose={() => setDeleting(false)} />}
     </div>
+  );
+}
+
+function ResultMeasurements({
+  reads,
+  run,
+  engine,
+  charts,
+  plan,
+  overview,
+  phone,
+  archiveMissing,
+}: {
+  reads: ResultReads;
+  run: Run;
+  engine: EngineResult | null;
+  charts: ReturnType<typeof useRecordedCharts>;
+  plan: RunPlan;
+  overview: RunMetricOverview | null;
+  phone: boolean;
+  archiveMissing: boolean;
+}) {
+  return (
+    <>
+      {!archiveMissing && <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />}
+      <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
+      {archiveMissing ? (
+        <p className="result-muted">
+          Charts and endpoint detail require a verified metrics archive. Diagnostics and published artifacts remain
+          available below.
+        </p>
+      ) : (
+        <ResultEndpoints overview={overview} requests={plan.requests} phone={phone} />
+      )}
+    </>
+  );
+}
+
+function incompleteArchiveMissing(run: Run, reads: ResultReads): boolean {
+  return (
+    run.reason === 'artifact_incomplete' &&
+    reads.chartHistory.isSuccess &&
+    reads.chartHistory.data.reason === 'not_recorded' &&
+    reads.overview.isSuccess &&
+    reads.overview.data.availability === 'not_recorded'
   );
 }
 
@@ -217,6 +267,7 @@ function SupplementaryResult({
   reads,
   overview,
   phone,
+  archiveMissing,
   tab,
   onSelect,
 }: {
@@ -224,6 +275,7 @@ function SupplementaryResult({
   reads: ResultReads;
   overview: RunMetricOverview | null;
   phone: boolean;
+  archiveMissing: boolean;
   tab: ReportTab;
   onSelect: (tab: ReportTab) => void;
 }) {
@@ -232,8 +284,12 @@ function SupplementaryResult({
     <>
       {!phone && (
         <>
-          <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
-          <AdvancedMetrics run={run} />
+          {!archiveMissing && (
+            <>
+              <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
+              <AdvancedMetrics run={run} />
+            </>
+          )}
           <TargetRuntime {...target} />
         </>
       )}
@@ -255,23 +311,33 @@ function SupplementaryResult({
             <TargetRuntime {...target} />
           </PhoneDisclosure>
         }
-        phoneExtras={<PhoneExtras target={target} reads={reads} />}
+        phoneExtras={<PhoneExtras target={target} reads={reads} archiveMissing={archiveMissing} />}
       />
     </>
   );
 }
-function PhoneExtras({ target, reads }: { target: Parameters<typeof TargetRuntime>[0]; reads: ResultReads }) {
+function PhoneExtras({
+  target,
+  reads,
+  archiveMissing,
+}: {
+  target: Parameters<typeof TargetRuntime>[0];
+  reads: ResultReads;
+  archiveMissing: boolean;
+}) {
   return (
     <>
-      <PhoneDisclosure
-        id="result-chart-details"
-        hashId="result-charts"
-        title="More charts"
-        description="Requests, virtual users and individual metrics"
-      >
-        <RecordedMetrics view={target.charts} p95Limit={recordedLimit(target.plan)} />
-        <AdvancedMetrics run={target.run} />
-      </PhoneDisclosure>
+      {!archiveMissing && (
+        <PhoneDisclosure
+          id="result-chart-details"
+          hashId="result-charts"
+          title="More charts"
+          description="Requests, virtual users and individual metrics"
+        >
+          <RecordedMetrics view={target.charts} p95Limit={recordedLimit(target.plan)} />
+          <AdvancedMetrics run={target.run} />
+        </PhoneDisclosure>
+      )}
       <PhoneDisclosure id="result-script" title="Saved script" description="Revision, engine and configuration">
         <ScriptVersion
           run={target.run}

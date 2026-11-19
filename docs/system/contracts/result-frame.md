@@ -48,12 +48,16 @@ Its pending control stays disabled; reads never retry automatically. Suite and
 revision metadata share one original/four-waiter admission, separate from the same
 bounded metrics lane so archive reads cannot hold up lightweight details.
 
+An incomplete run whose chart and overview reads confirm a missing archive
+shows one explanation in place of chart and endpoint sections. The report,
+diagnostics and artifact tabs retain their usual publication checks.
+
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
 | `web/src/features/runs/result/headline.ts` | `6c8e558e75b9` |
-| `web/src/features/runs/result/SectionNav.tsx` | `2781bcc519ff` |
+| `web/src/features/runs/result/SectionNav.tsx` | `0abf45a07b51` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `eae4c3909114` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `587774070696` |
@@ -64,5 +68,5 @@ bounded metrics lane so archive reads cannot hold up lightweight details.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `2fef96a27969` |
+| `web/src/features/runs/result/index.tsx` | `1e848688809d` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |
