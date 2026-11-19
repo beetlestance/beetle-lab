@@ -13,6 +13,8 @@ import { prepareHistorySearch, historyKeys } from './run-search/index.js';
 import { transaction } from './transaction.js';
 import { runPinnedAt } from './run-pins/state.js';
 import { readRunListContexts } from './run-list-context.js';
+import { historySelection } from './run-search/selection.js';
+import { historyCounts } from './run-search/counts.js';
 
 export class RunReads {
   constructor(
@@ -43,7 +45,8 @@ export class RunReads {
     }
     return transaction(this.db, () => {
       const workspace = this.suites.workspace(scope);
-      const rows = historyKeys(this.db, search);
+      const selection = historySelection(this.db, search);
+      const rows = historyKeys(this.db, search, selection);
       const selected = rows.slice(0, query.limit);
       const last = selected.at(-1);
       const nextCursor =
@@ -54,6 +57,7 @@ export class RunReads {
       const result = {
         scope,
         workspaceName: workspace.name,
+        ...countProjection(this.db, search, selection),
         items,
         summaries: readHistorySummaries(this.db, scope, items),
         contexts: readRunListContexts(this.db, scope, items),
@@ -63,4 +67,10 @@ export class RunReads {
       return result;
     });
   }
+}
+
+function countProjection(db: DatabaseSync, input: RunList, selection: ReturnType<typeof historySelection>) {
+  if (input.includeCounts !== true) return {};
+  if (selection.countsUnavailable) return { countsUnavailable: selection.countsUnavailable };
+  return { counts: historyCounts(db, input, selection) };
 }

@@ -62,9 +62,10 @@ function decodeLimited<N extends 'RunListQuery' | 'SuiteListQuery'>(
     if (typeof query.limit !== 'string' || !/^(0|[1-9][0-9]*)$/.test(query.limit)) return { ok: false };
     query.limit = Number(query.limit);
     // Only RunListQuery declares `pinned`; any other listing still rejects it by schema.
-    if (query.pinned !== undefined) {
-      if (query.pinned !== 'true') return { ok: false };
-      query.pinned = true;
+    for (const name of ['pinned', 'includeCounts']) {
+      if (query[name] === undefined) continue;
+      if (query[name] !== 'true') return { ok: false };
+      query[name] = true;
     }
     const checked = validateApi(name, query);
     return checked.ok ? { ok: true, value: checked.value } : { ok: false };

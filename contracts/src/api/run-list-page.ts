@@ -57,7 +57,7 @@ export function runListPageMatches(page: RunPage, owner: WorkspaceScope, input: 
     )
       return false;
     if (page.items.length > query.limit || !ordered(page.items, position, owner, query)) return false;
-    if (!historyMatches(page)) return false;
+    if (!historyMatches(page, query)) return false;
     if (page.nextCursor === null) return true;
     const last = page.items.at(-1);
     if (!last || page.items.length !== query.limit) return false;
@@ -67,8 +67,9 @@ export function runListPageMatches(page: RunPage, owner: WorkspaceScope, input: 
   }
 }
 
-function historyMatches(page: RunPage): boolean {
+function historyMatches(page: RunPage, query: NormalizedRunListQuery): boolean {
   return (
+    countsMatch(page, query) &&
     contextsMatch(page) &&
     page.summaries.length === page.items.length &&
     page.summaries.every((summary, index) => runHistorySummaryMatches(summary, page.items[index]!))
@@ -88,4 +89,61 @@ function contextsMatch(page: RunPage): boolean {
       );
     })
   );
+}
+
+/** Counts are current-snapshot facts, never estimates from the retained page. */
+function countsMatch(page: RunPage, query: NormalizedRunListQuery): boolean {
+  const c = page.counts;
+  if (page.countsUnavailable !== undefined)
+    return c === undefined && query.includeCounts === true && query.pinned === true;
+  if (c === undefined) return true;
+  return countBounds(c) && countQuery(c, query) && countRange(page, query, c) && countWitnesses(page, c);
+}
+type Counts = NonNullable<RunPage['counts']>;
+function countBounds(c: Counts): boolean {
+  const classified = c.running + c.passed + c.failed + c.cancelled;
+  return (
+    Number.isSafeInteger(classified) &&
+    classified <= c.all &&
+    c.pinned <= Math.min(c.all, 256) &&
+    c.matched <= c.all &&
+    c.before <= c.matched
+  );
+}
+function countQuery(c: Counts, query: NormalizedRunListQuery): boolean {
+  if (query.cursor === undefined && c.before !== 0) return false;
+  if (query.pinned === true) return c.matched <= c.pinned && chipBounds(c, query);
+  if (query.state === undefined && query.outcome === undefined) return c.matched === c.all;
+  return chipBounds(c, query);
+}
+function countRange(page: RunPage, query: NormalizedRunListQuery, c: Counts): boolean {
+  const remaining = c.matched - c.before;
+  return (
+    page.items.length === Math.min(query.limit, remaining) && (page.nextCursor !== null) === remaining > query.limit
+  );
+}
+function countWitnesses(page: RunPage, c: Counts): boolean {
+  return (
+    page.items.filter((r) => r.state === 'active').length <= c.running &&
+    page.items.filter((r) => r.outcome === 'passed').length <= c.passed &&
+    page.items.filter((r) => r.outcome === 'failed').length <= c.failed &&
+    page.items.filter((r) => r.state === 'cancelled').length <= c.cancelled &&
+    page.items.filter((r) => r.pinned === true).length <= c.pinned
+  );
+}
+
+function chipBounds(c: Counts, query: NormalizedRunListQuery): boolean {
+  const caps = chipCounts(c, query);
+  if (caps.some((cap) => c.matched > cap)) return false;
+  const single = (query.state === undefined) !== (query.outcome === undefined);
+  return query.pinned === true || !single || caps.length === 0 || c.matched === caps[0];
+}
+
+function chipCounts(c: Counts, query: NormalizedRunListQuery): number[] {
+  return [
+    query.state === 'active' ? c.running : undefined,
+    query.state === 'cancelled' ? c.cancelled : undefined,
+    query.outcome === 'passed' ? c.passed : undefined,
+    query.outcome === 'failed' ? c.failed : undefined,
+  ].filter((value): value is number => value !== undefined);
 }

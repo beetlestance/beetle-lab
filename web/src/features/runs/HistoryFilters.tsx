@@ -1,6 +1,6 @@
 import { normalizeRunListQuery } from '@beetle/contracts/api';
 import { useEffect, useState } from 'react';
-import type { RunListQuery } from '@beetle/contracts/api';
+import type { RunHistoryCounts, RunListQuery } from '@beetle/contracts/api';
 import { Button } from '../../components/Button.js';
 import { Select, TextInput } from '../../components/Fields.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
@@ -48,11 +48,13 @@ export function HistoryFilters({
   applied,
   apply,
   suites,
+  counts,
   suiteLocked,
 }: {
   applied: HistoryFilter;
   apply: (value: HistoryFilter) => void;
   suites: readonly SuiteOption[] | undefined;
+  counts?: RunHistoryCounts | undefined;
   suiteLocked: boolean;
 }) {
   const [text, setText] = useState(applied.name ?? applied.runIdPrefix ?? '');
@@ -94,7 +96,7 @@ export function HistoryFilters({
     <div className="history-filters">
       <SegmentedFilter
         label="Run state"
-        options={chips.map(({ value, label }) => ({ value, label }))}
+        options={chips.map(({ value, label }) => ({ value, label, count: counts?.[value]?.toLocaleString('en-US') }))}
         value={chipOf(applied)}
         onChange={(value) => commit({ ...withoutChip(applied), ...chips.find((chip) => chip.value === value)!.filter })}
       />
@@ -175,7 +177,7 @@ function SuiteSelect({
         commit(next);
       }}
     >
-      <option value="">Every suite</option>
+      <option value="">All suites</option>
       {suites?.map((suite) => (
         <option key={suite.id} value={suite.id}>
           {suite.name}

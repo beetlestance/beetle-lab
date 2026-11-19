@@ -2,10 +2,10 @@
 Public entries: `Runs({organizationId, workspaceId, runId?})` and
 `RunSavedRevision({revision})`. Only immutable saved revisions can launch runs.
 Generated ApiClient owns request/response validation and scope bindings.
-History keeps bounded keyset pages (shared Pagination with order: Newer/Older, page N). Chips (no counts), pinned
+History requests exact contextual counts/ranges; uncounted pages stay unknown. Chips, pinned
 (runsPage key slot), suite, sort apply at once; search on Enter sends 8+ hex characters as
 runIdPrefix, else name (names and notes). Changes reset paging/selection.
-History frame/rows use same-page workspace and bound suite/revision names; failures hide names.
+History frame/rows use scoped page metadata; failures hide names/counts. Counts cache separately.
 HistorySuites reads 100 filter/fallback names; failed reads retire cached names;
 HistorySummaryCells keeps missing values unknown. Empty authoring is absent in restored history.
 Details poll every two seconds while nonterminal, stop on errors/terminal states,

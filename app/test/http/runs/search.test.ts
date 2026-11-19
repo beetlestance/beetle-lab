@@ -22,3 +22,13 @@ it('normalizes exact search fields and rejects invalid or mismatched semantics b
   expect((await f.server.inject({ url: f.base + '?limit=1&name=def&cursor=' + cursor, headers })).statusCode).toBe(422);
   expect(f.listRuns).toHaveBeenCalledTimes(2); expect(f.getRun).not.toHaveBeenCalled(); expect(f.execute).not.toHaveBeenCalled();
 });
+
+it('decodes only an explicit true count-enrichment flag',async()=>{
+ const f=setup();const headers=await f.paired();
+ expect((await f.server.inject({url:f.base+'?limit=1&includeCounts=true',headers})).statusCode).toBe(200);
+ expect(f.listRuns).toHaveBeenLastCalledWith({scope:f.body.scope,limit:1,order:'newest',includeCounts:true});
+ for(const value of ['false','1','TRUE','true&includeCounts=true']){
+  expect((await f.server.inject({url:f.base+'?limit=1&includeCounts='+value,headers})).statusCode).toBe(400);
+ }
+ expect(f.listRuns).toHaveBeenCalledTimes(1);
+});

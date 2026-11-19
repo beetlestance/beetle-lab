@@ -19,6 +19,7 @@ export const queryKeys = {
       q.runIdPrefix ?? '',
       q.suiteId ?? '',
       q.pinned === true ? 'pinned' : '',
+      q.includeCounts === true ? 'counts' : '',
       cursor,
     ] as const;
   },

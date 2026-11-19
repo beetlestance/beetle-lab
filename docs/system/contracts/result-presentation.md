@@ -215,5 +215,5 @@ history can read it without starting work. No mutation or current-work polling.
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
-| `app/src/adapters/outbound/sqlite/run-reads.ts` | `4bac9e44538f` |
+| `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
 | `web/src/features/runs/comparison/index.tsx` | `805a5f52c0bd` |
