@@ -89,7 +89,7 @@ function ShellNav({ pathname }: { pathname: string }) {
       <ul role="list">
         {navItems(pathname).map((item) => (
           <li key={item.key}>
-            <Link to={item.to} aria-current={item.current ? 'page' : undefined}>
+            <Link to={item.to} reloadDocument={item.key === 'docs'} aria-current={item.current ? 'page' : undefined}>
               {item.label}
               {item.key === 'workspaces' && <ActiveRunBadge {...badgeScope(pathname)} />}
             </Link>

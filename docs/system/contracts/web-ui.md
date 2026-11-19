@@ -12,6 +12,8 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 | Routes and route builders    | `web/src/features/runs/RunHistory.tsx` | `000000000000` |
 | `web/src/features/runs/HistoryEmpty.tsx` | `000000000000` |
 | `web/src/features/runs/HistoryHeader.tsx` | `000000000000` |
+| `web/src/app/navigation.ts` | `000000000000` |
+| `web/src/app/shell/AppShell.tsx` | `000000000000` |
 | `web/src/app/routes.ts`, the only source of in-app URLs                                                                                                                     |
 | Server state                 | One TanStack Query client; keys from `web/src/app/queries.ts`, nested organisation → workspace → run → attempt                                                              |
 | API access                   | The generated client from `contracts/`; no hand-written DTOs, no second client factory                                                                                      |
@@ -187,6 +189,11 @@ only read navigation. A suite-filtered empty page never claims the workspace has
 no runs. Names, row contexts and numeric facts never require per-row reads.
 Wide history tables retain readable columns in a named, keyboard-scrollable region.
 
+The header's existing Docs entry opens `/docs/` as a full document navigation to
+the bundled Starlight site. React Router does not intercept it. `/reference`
+remains the standalone generated API viewer; the documentation site has its own
+navigation and build. Frontend image qualification is separate from source proof.
+
 ## Related
 
 - [Public API](public-api.md), [inputs](inputs.md), [results](results.md), [exports](exports.md)
@@ -197,7 +204,7 @@ Wide history tables retain readable columns in a named, keyboard-scrollable regi
 
 | Code                                           | Reviewed       |
 | ---------------------------------------------- | -------------- |
-| `web/src/app/routes.ts` | `e76ff2493fa2` |
+| `web/src/app/routes.ts` | `0cd883b6c7a9` |
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |
