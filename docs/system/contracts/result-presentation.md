@@ -194,7 +194,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `3bf347e8f56f` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `04e94c1c9f79` |
-| `web/src/features/runs/live/LiveChart.tsx` | `e3144875cff1` |
+| `web/src/features/runs/live/LiveChart.tsx` | `2136c6c66bde` |
 | `app/src/application/run-comparison/failed-slo.ts` | `6e0a7894448f` |
 | `app/src/application/run-comparison/serialize.ts` | `0afc9d598903` |
 | `contracts/api/v2/run-comparison.schema.json` | `894f2795a40b` |

@@ -32,6 +32,7 @@ export interface ChartProps {
   readonly series: readonly ChartSeries[];
   readonly format: (value: number) => string;
   readonly limit?: { readonly value: number; readonly label: string } | undefined;
+  readonly tightLimitScale?: boolean | undefined;
   readonly bands?: readonly { readonly from: number; readonly to: number }[] | undefined;
   readonly ticks?: readonly ChartTick[] | undefined;
   readonly hoverT?: number | null | undefined;
@@ -80,9 +81,12 @@ interface Scale {
 function scaleOf(props: ChartProps): Scale {
   const H = props.tall ? 220 : 150;
   const measured = props.series.flatMap((s) => s.values.filter((v): v is number => v !== null));
-  const maximum = Math.max(props.limit?.value ?? 0, ...measured, 0);
-  const padded = maximum > Number.MAX_VALUE / 1.1 ? Number.MAX_VALUE : maximum * 1.1;
-  const yMax = niceCeiling(padded);
+  const limit = props.limit?.value ?? 0;
+  const maximum = Math.max(...measured, 0);
+  const yMax =
+    props.tightLimitScale && limit > 0
+      ? Math.max(paddedCeiling(limit, 1.2), niceCeiling(paddedCeiling(maximum, 1.1)))
+      : niceCeiling(paddedCeiling(Math.max(limit, maximum), 1.1));
   const [x0, x1] = props.domain;
   return {
     H,
@@ -90,6 +94,10 @@ function scaleOf(props: ChartProps): Scale {
     x: (t: number) => ((t - x0) / Math.max(1, x1 - x0)) * W,
     y: (v: number) => H - (v / yMax) * (H - 8),
   };
+}
+
+function paddedCeiling(value: number, factor: number): number {
+  return value > Number.MAX_VALUE / factor ? Number.MAX_VALUE : value * factor;
 }
 
 type LegendEntry = { s: ChartSeries; value: number | null };

@@ -315,6 +315,36 @@
 
 .live-history-details {
   display: none;
+  margin-top: var(--s-8);
+  font-size: var(--fs-sm);
+  color: var(--mute);
+}
+.live-history-details > summary {
+  cursor: pointer;
+}
+.live-whole[data-recorded] .live-history-details {
+  display: block;
+}
+.live-whole[data-recorded] .live-section-head {
+  margin-bottom: var(--s-12);
+}
+.live-whole[data-recorded] .live-chart:not(:has(.live-cursor)) .live-chart-head,
+.live-whole[data-recorded] .live-chart-max {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.live-whole[data-recorded] .live-chart:has(.live-cursor) .live-chart-head {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  padding: var(--s-8);
+  background: var(--bg);
 }
 @media (max-width: 760px) {
   .live-whole {
@@ -353,12 +383,6 @@
   }
   .live-history-details {
     display: block;
-    margin-top: var(--s-8);
-    font-size: var(--fs-sm);
-    color: var(--mute);
-  }
-  .live-history-details > summary {
-    cursor: pointer;
   }
 }
 
