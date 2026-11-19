@@ -1,5 +1,6 @@
 import { normalizeRunListQuery } from '@beetle/contracts/api';
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { RunHistoryCounts, RunListQuery } from '@beetle/contracts/api';
 import { Button } from '../../components/Button.js';
 import { Select, TextInput } from '../../components/Fields.js';
@@ -50,12 +51,14 @@ export function HistoryFilters({
   suites,
   counts,
   suiteLocked,
+  compare,
 }: {
   applied: HistoryFilter;
   apply: (value: HistoryFilter) => void;
   suites: readonly SuiteOption[] | undefined;
   counts?: RunHistoryCounts | undefined;
   suiteLocked: boolean;
+  compare: ReactNode;
 }) {
   const [text, setText] = useState(applied.name ?? applied.runIdPrefix ?? '');
   const [error, setError] = useState('');
@@ -100,8 +103,8 @@ export function HistoryFilters({
         value={chipOf(applied)}
         onChange={(value) => commit({ ...withoutChip(applied), ...chips.find((chip) => chip.value === value)!.filter })}
       />
-      <SearchForm text={text} error={error} onText={setText} onSubmit={submitSearch} />
       {!suiteLocked && <SuiteSelect applied={applied} suites={suites} commit={commit} />}
+      <SearchForm text={text} error={error} onText={setText} onSubmit={submitSearch} />
       <Select
         label="Sort"
         hideLabel
@@ -111,6 +114,7 @@ export function HistoryFilters({
         <option value="newest">Newest first</option>
         <option value="oldest">Oldest first</option>
       </Select>
+      {compare}
       {filtersActive(applied) && (
         <Button variant="text" size="sm" onClick={reset}>
           Reset filters

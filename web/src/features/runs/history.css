@@ -1,8 +1,8 @@
-/* Penpot "Runs" board: header, filter row, compare toolbar, table, pager. */
+/* Penpot "Runs" board: header, filter row with comparison, table and pager. */
 .history {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--s-20);
+  gap: var(--s-44);
 }
 /* On a phone the state filter scrolls sideways instead of widening the page. */
 .history-filters .segmented {
@@ -16,22 +16,25 @@
 }
 .history-lede {
   margin: var(--s-6) 0 0;
-  color: var(--mute);
+  color: var(--ink);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-lede);
 }
 .history-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--s-12);
+  gap: var(--s-10);
 }
 .history-search {
-  flex: 1 1 260px;
+  flex: 1 1 210px;
   min-width: 0;
 }
 .history-filters .field {
   min-width: 160px;
 }
 .history-toolbar {
+  margin-top: calc(-1 * var(--s-24));
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -91,6 +94,12 @@
   background: var(--selection);
 }
 @media (max-width: 760px) {
+  .history {
+    gap: var(--s-20);
+  }
+  .history-toolbar {
+    margin-top: 0;
+  }
   .history-filters .field,
   .history-search {
     flex: 1 1 100%;

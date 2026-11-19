@@ -93,23 +93,14 @@ function HistoryPage({
         <WorkspaceTabs organizationId={scope.organizationId} workspaceId={scope.workspaceId} current="runs" />
       </div>
       {!empty && (
-        <>
-          <HistoryFilters
-            applied={filters}
-            counts={current.counts}
-            apply={controls.apply}
-            suites={controls.suites.suites}
-            suiteLocked={controls.suiteId !== undefined}
-          />
-          <HistoryToolbar
-            scope={scope}
-            selected={selected}
-            clear={() => setSelected([])}
-            refresh={refresh}
-            fetching={query.isFetching}
-            counted={current.counts !== undefined}
-          />
-        </>
+        <HistoryFilters
+          applied={filters}
+          counts={current.counts}
+          apply={controls.apply}
+          suites={controls.suites.suites}
+          suiteLocked={controls.suiteId !== undefined}
+          compare={<HistoryCompare scope={scope} selected={selected} />}
+        />
       )}
       <QueryState query={query} loading={<LoadingState variant="table" label="Loading runs…" rows={6} />}>
         {(data: RunPage) =>
@@ -129,6 +120,15 @@ function HistoryPage({
           )
         }
       </QueryState>
+      {!empty && (
+        <HistoryToolbar
+          selected={selected}
+          clear={() => setSelected([])}
+          refresh={refresh}
+          fetching={query.isFetching}
+          counted={current.counts !== undefined}
+        />
+      )}
     </div>
   );
 }
@@ -170,15 +170,30 @@ function HistoryRows({
   );
 }
 
+function HistoryCompare({ scope, selected }: { scope: RunScope; selected: readonly string[] }) {
+  if (selected.length < 2)
+    return (
+      <Button variant="primary" disabled>
+        Compare
+      </Button>
+    );
+  return (
+    <Link
+      className={buttonClass('primary')}
+      to={routes.comparison(scope.organizationId, scope.workspaceId, [...selected])}
+    >
+      Compare {selected.length}
+    </Link>
+  );
+}
+
 function HistoryToolbar({
-  scope,
   selected,
   clear,
   refresh,
   fetching,
   counted,
 }: {
-  scope: RunScope;
   selected: readonly string[];
   clear(): void;
   refresh(): void;
@@ -198,18 +213,6 @@ function HistoryToolbar({
         {selected.length > 0 && (
           <Button variant="text" size="sm" onClick={clear}>
             Clear selection
-          </Button>
-        )}
-        {selected.length >= 2 ? (
-          <Link
-            className={buttonClass('primary', 'sm')}
-            to={routes.comparison(scope.organizationId, scope.workspaceId, [...selected])}
-          >
-            Compare {selected.length}
-          </Link>
-        ) : (
-          <Button variant="primary" size="sm" disabled>
-            Compare
           </Button>
         )}
         <Button size="sm" onClick={refresh} disabled={fetching}>
