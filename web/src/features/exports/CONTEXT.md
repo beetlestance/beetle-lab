@@ -17,7 +17,7 @@ Checks: web/src/features/exports/*.test.tsx.
 - `ExportDialog.tsx` is "Overlay / Export script": Uses secrets (any
   `config.secrets` name or an `unsupported_secrets` reason; nothing is sent),
   Preparing (steps from the job state, elapsed time since `requestedAt`), Ready
-  (file, size, SHA-256, actual artifact seal time, scoped download) and Unknown
+  (file, size, SHA-256, actual seal time, verified download) and Unknown
   (last recorded changed agent report, reserved output budget, never a guessed
   result), plus start and failed/cancelled states. Missing times say Not recorded.
   Both preparing and unknown dialogs preserve identical cancellation replay.
@@ -26,8 +26,10 @@ Checks: web/src/features/exports/*.test.tsx.
   newly created jobs, stops polling on errors, and builds the
   create request in `prepare.ts` from workspace run defaults, the first allowed
   installed profile and the default options.
-- `scriptText.ts` reads a ready script once: one bounded GET of exactly the
-  published bytes, SHA-256 checked, strict UTF-8.
+- `script-bytes.ts` captures published size/hash/path; inline scriptText stays at 1 MiB,
+  downloads at 64 MiB. One original, no queue; 30 s abort retains cleanup/hash work.
+- VerifiedDownload saves original checked bytes with one global URL; retirement
+  aborts and revokes. Browser handoff is not OS save success. No automatic reads.
 - `ExportsTable.tsx` (`WorkspaceExports`) is the Exports workspace tab, mounted at
   `routes.exports` through the workspace scope route. Suite names come from one page of 100
   suites; revision ordinals from at most 32 reads.

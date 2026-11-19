@@ -120,3 +120,9 @@
     grid-column: 2;
   }
 }
+
+.export-verified-download { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-8); }
+.export-verified-download [role='status'], .export-verified-download [role='alert'] { flex-basis: 100%; font-size: var(--fs-sm); }
+.export-verified-download [role='alert'] { color: var(--red); }
+/* Keep the primary save action in the shared dialog footer row. */
+.script-export-dialog .export-verified-download { display: contents; }

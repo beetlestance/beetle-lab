@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { exportContentPath } from '@beetle/contracts/api';
+import { VerifiedExportDownload } from './VerifiedDownload.js';
 import type { ExportJob, SuiteRevision } from '@beetle/contracts/api';
 import { Button, buttonClass } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
@@ -116,11 +116,6 @@ function CancelFailure({ flow }: { flow: RevisionExport }) {
 function ReadyActions({ job }: { job: ExportJob }) {
   const [copied, setCopied] = useState<'idle' | 'done' | 'failed'>('idle');
   const artifact = job.artifact!;
-  const href = exportContentPath({
-    organizationId: job.scope.organizationId,
-    workspaceId: job.scope.workspaceId,
-    exportId: job.id,
-  });
   return (
     <>
       <Button
@@ -134,9 +129,7 @@ function ReadyActions({ job }: { job: ExportJob }) {
       >
         {copied === 'done' ? 'Copied' : copied === 'failed' ? 'Copy not available' : 'Copy SHA-256'}
       </Button>
-      <a className={buttonClass('primary')} href={href} download={artifact.name}>
-        Download script
-      </a>
+      <VerifiedExportDownload job={job} />
     </>
   );
 }

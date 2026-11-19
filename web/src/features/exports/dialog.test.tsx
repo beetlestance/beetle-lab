@@ -4,7 +4,6 @@ import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { CreateExportRequest, ExportJob, SuiteRevision } from '@beetle/contracts/api';
-import { exportContentPath } from '@beetle/contracts/api';
 import type { RequestRecord } from '../../app/test-fixtures.js';
 import { ExportDialog } from './ExportDialog.js';
 import { WorkspaceExports } from './ExportsTable.js';
@@ -93,9 +92,8 @@ it('offers the ready script with its size, SHA-256 and scoped download', async (
   expect(screen.getByText('84 KB')).toBeInTheDocument();
   expect(document.querySelector('time')).toHaveAttribute('datetime', '2026-11-12T05:42:00.000Z');
   expect(screen.getByText('e'.repeat(64))).toBeInTheDocument();
-  const link = screen.getByRole('link', { name: 'Download script' });
-  expect(link).toHaveAttribute('href', exportContentPath({ organizationId, workspaceId, exportId: job.id }));
-  expect(link).toHaveAttribute('download', 'suite.js');
+  expect(screen.getByRole('button',{name:'Download script'})).toBeEnabled();
+  expect(screen.queryByRole('link',{name:'Save checked script'})).not.toBeInTheDocument();
 });
 
 it('never guesses the outcome of an unknown export', async () => {
@@ -129,7 +127,7 @@ it('lists workspace exports with a download for ready rows and cancel for live o
   );
   const table = await screen.findByRole('table', { name: 'Script exports' });
   expect((await within(table).findAllByText('Checkout · revision 2')).length).toBe(2);
-  expect(within(table).getByRole('link', { name: 'Download' })).toHaveAttribute('download', 'suite.js');
+  expect(within(table).getByRole('button', { name: 'Download' })).toBeEnabled();
   expect(within(table).getByRole('button', { name: 'Cancel' })).toBeEnabled();
   expect(within(table).getByText('Building the script')).toBeInTheDocument();
 });

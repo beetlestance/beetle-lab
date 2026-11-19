@@ -1,4 +1,4 @@
-import { exportContentPath } from '@beetle/contracts/api';
+import { VerifiedExportDownload } from './VerifiedDownload.js';
 import type { ExportJob } from '@beetle/contracts/api';
 import { useExportWrite } from './useWrite.js';
 export const exportTerminal = (state: ExportJob['state']) => ['ready', 'failed', 'cancelled'].includes(state);
@@ -18,9 +18,7 @@ export function ExportJobView({ job }: { job: ExportJob }) {
           <p>
             {job.artifact.bytes} bytes · SHA-256 {job.artifact.sha256}
           </p>
-          <a href={exportContentPath(params)} download="suite.js">
-            Download standalone script
-          </a>
+          <VerifiedExportDownload job={job} label="Download standalone script" />
         </>
       )}
       {!exportTerminal(job.state) && (

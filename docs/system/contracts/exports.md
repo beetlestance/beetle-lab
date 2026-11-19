@@ -141,6 +141,13 @@ sensitive as the suite itself.
 Backend publication or absence does not prove agent producer retirement. No browser
 path, clock timeout or current capability creates physical authority.
 
+## Browser downloads
+
+Ready export controls [verify exact bytes and SHA-256](verified-export-download.md)
+before requesting a browser save. Their separate 64 MiB profile does not raise the
+inline viewer's 1 MiB limit. Scope retirement cancels presentation; save handoff
+is not a claim that the browser wrote a file.
+
 ## Related
 
 - [Results](results.md)

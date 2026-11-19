@@ -3,7 +3,6 @@ import '@testing-library/jest-dom/vitest';
 import {afterEach,expect,it} from 'vitest';
 import {cleanup,fireEvent,screen,waitFor,act} from '@testing-library/react';
 import type {CreateExportRequest} from '@beetle/contracts/api';
-import {exportContentPath} from '@beetle/contracts/api';
 import {ExportSavedRevision} from './index.js';
 import {ExportJobView} from './Job.js';
 import {queryKeys} from '../../app/queries.js';
@@ -29,8 +28,8 @@ it('retains an unknown create intent, replays identical bytes, reads current sta
  fireEvent.click(screen.getByRole('button',{name:'Replay export request'}));await screen.findByRole('button',{name:'View submitted export'});
  const writes=api.records.filter(record=>record.method==='POST');expect(writes).toHaveLength(2);expect(writes[0]!.body).toEqual(writes[1]!.body);
  expect(writes[0]!.body).toMatchObject({revisionId:rev.id,engineProfile:'k6',options:{maximumBuildBytes:1048576,scriptTimeoutMs:180000}});
- fireEvent.click(screen.getByRole('button',{name:'View submitted export'}));const link=await screen.findByRole('link',{name:'Download standalone script'});
- expect(link).toHaveAttribute('href',exportContentPath({organizationId:rev.scope.organizationId,workspaceId:rev.scope.workspaceId,exportId:runId}));
+ fireEvent.click(screen.getByRole('button',{name:'View submitted export'}));const link=await screen.findByRole('button',{name:'Download standalone script'});
+ expect(link).toBeEnabled();
  expect(screen.queryByRole('button',{name:'Cancel export'})).toBeNull();expect(api.records.some(record=>record.path.includes('/runs'))).toBe(false);
 });
 it('replays unknown cancellation with the same request and blocks fresh concurrent cancellation',async()=>{
