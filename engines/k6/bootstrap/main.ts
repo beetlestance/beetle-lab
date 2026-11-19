@@ -13,12 +13,17 @@ async function main(): Promise<void> {
   }
   process.umask(0o077);
   const cancel = new AbortController();
-  const stop = () => cancel.abort();
+  const hard = new AbortController();
+  const stop = () => (cancel.signal.aborted ? hard : cancel).abort();
   const output = stdoutEvents();
-  process.once('SIGINT', stop);
-  process.once('SIGTERM', stop);
+  process.on('SIGINT', stop);
+  process.on('SIGTERM', stop);
   try {
-    const receipt = await runStagedK6({ ...imageOptions(cancel.signal), onEvent: (event) => output.send(event) });
+    const receipt = await runStagedK6({
+      ...imageOptions(hard.signal),
+      gracefulCancellation: cancel.signal,
+      onEvent: (event) => output.send(event),
+    });
     process.exitCode = receipt.ok ? 0 : receipt.reason === 'output_limit' ? K6_WRAPPER_OUTPUT_LIMIT_EXIT : 1;
     if (!receipt.ok) process.stderr.write(encodeJson({ kind: 'wrapper.error', reason: receipt.reason }, 1024) + '\n');
   } finally {

@@ -379,6 +379,11 @@ it.each([false, true])('displays recovered charts and prefers a published target
         knownVusWindows: 0,
         reason: 'not_recorded',
       });
+    if (request.path.endsWith('/metrics/overview'))
+      return json({ id: current.id, scope: current.scope, attemptId: current.activeAttemptId,
+        availability: 'not_recorded', source: null, testDurationMs: null, requestCount: null,
+        requestsPerSecond: null, failure: null, latency: null, checks: null, droppedIterations: null, endpoints: [],
+        omittedEndpoints: 0 });
     if (request.path.endsWith('/metrics/stopped-history'))
       return json({
         ...recoveredData,
@@ -407,6 +412,7 @@ it.each([false, true])('displays recovered charts and prefers a published target
   } else expect(recoveredTarget).toBeVisible();
   expect(document.querySelectorAll('#result-target')).toHaveLength(1);
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Check for the result again' })).not.toBeInTheDocument();
   expect(f.records.filter((record) => record.path.endsWith('/metrics/stopped-history'))).toHaveLength(1);
 });
 

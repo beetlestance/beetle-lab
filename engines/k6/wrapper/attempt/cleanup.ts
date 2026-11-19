@@ -1,3 +1,5 @@
+import { AttemptError } from './types.js';
+import type { AttemptLive } from './live.js';
 import type { Quiet, State } from './state.js';
 import type { ControlWriter } from '../control/index.js';
 import type { StagedInput } from '../input/index.js';
@@ -68,4 +70,18 @@ export async function cleanupAttempt(state: State, quiet: Quiet, owners: Cleanup
   if (owners.artifacts && quiet.artifacts !== 'not_started') {
     quiet.artifacts = owners.artifactQuiescence();
   }
+}
+
+export async function requireSettled(
+  quiet: Quiet,
+  key: keyof Quiet,
+  originals: readonly Promise<unknown>[],
+): Promise<void> {
+  const settled = await Promise.allSettled(originals);
+  quiet[key] = settled.every((outcome) => outcome.status === 'fulfilled') ? 'confirmed' : 'failed';
+  if (quiet[key] === 'failed') throw new AttemptError('cleanup');
+}
+
+export async function closeLive(live: AttemptLive): Promise<void> {
+  if ((await live.close()).quiescence !== 'confirmed') throw new AttemptError('cleanup');
 }

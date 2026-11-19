@@ -70,6 +70,8 @@ For a cancelled or errored run without a published chart archive, Results calls
 attempt, deletion status and final source or absence receipt. It returns at most 2 MiB of
 verified checkpoint observations. The same read works in a restored viewer.
 Missing evidence returns `not_found`. Other read failures offer a retry.
+A confirmed absent engine result does not offer another result check when
+the stopped-history read has already resolved.
 
 The charts label the time origin and coverage. They display retained metric
 windows and target readings, with gaps and unavailable values preserved.
@@ -96,5 +98,5 @@ their retry controls.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `fd8433c99712` |
+| `web/src/features/runs/result/index.tsx` | `d734e00724d2` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

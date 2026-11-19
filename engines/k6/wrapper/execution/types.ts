@@ -67,6 +67,7 @@ export interface ExecutionOperation {
   readonly final: Promise<ExecutionReceipt>;
   /** Retains every original issued operation and close, including late failures. */
   readonly quiesced: Promise<void>;
+  cancelAndDrain?(): boolean;
   close(): Promise<void>;
 }
 export class ExecutionError extends Error {

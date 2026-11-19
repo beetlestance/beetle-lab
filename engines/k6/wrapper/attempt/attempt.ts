@@ -1,4 +1,4 @@
-import { cleanupAttempt } from './cleanup.js';
+import { cleanupAttempt, closeLive, requireSettled } from './cleanup.js';
 import {
   type MappedResult,
   sealResult,
@@ -31,6 +31,9 @@ import { AttemptFence, Notifications, Phases } from '../lifecycle/index.js';
 import { numericAllowance, phaseReservation, reserveOutput, type OutputReservation } from './reservation.js';
 import type { AttemptPorts } from './ports.js';
 import { AttemptError, type AttemptReason, type StagedK6Options, type StagedK6Receipt } from './types.js';
+function fail(reason: AttemptReason): never {
+  throw new AttemptError(reason);
+}
 class Attempt {
   private readonly state = blank();
   private readonly live = new AttemptLive();
@@ -55,11 +58,16 @@ class Attempt {
     private readonly options: StagedK6Options,
     private readonly ports: AttemptPorts,
   ) {
-    this.fence = new AttemptFence(ports.clock, options.signal, options.headerTimeoutMs!);
+    this.fence = new AttemptFence(
+      ports.clock,
+      options.signal,
+      options.headerTimeoutMs!,
+      options.gracefulCancellation && {
+        signal: options.gracefulCancellation,
+        request: () => this.measured && this.execution?.cancelAndDrain?.() === true,
+      },
+    );
     this.notifications = new Notifications(options.onEvent, this.fence);
-  }
-  private fail(reason: AttemptReason): never {
-    throw new AttemptError(reason);
   }
   async run(): Promise<StagedK6Receipt> {
     try {
@@ -95,10 +103,10 @@ class Attempt {
     });
     const result = await operation.result;
     if (result.ok) this.input = result.value;
-    await this.settle('input', [operation.quiesced]);
+    await requireSettled(this.quiet, 'input', [operation.quiesced]);
     if (!result.ok) {
       this.state.inputFailure = result;
-      this.fail('input');
+      fail('input');
     }
     const input = result.value;
     this.fence.bind(input);
@@ -128,10 +136,10 @@ class Attempt {
     this.quiet.input = 'unknown';
     const operation = this.input!.compile();
     const result = await operation.result;
-    await this.settle('input', [operation.quiesced]);
+    await requireSettled(this.quiet, 'input', [operation.quiesced]);
     if (!result.ok) {
       this.state.inputFailure = result;
-      this.fail('compile');
+      fail('compile');
     }
     this.reservation = phaseReservation(
       reserveOutput(
@@ -173,18 +181,18 @@ class Attempt {
       limits: executionLimits(reservation, collectMs),
       window: (window, signal) => this.writeWindow(window, signal),
       measureStarted: async (receipt) => {
-        if (this.measured || this.collecting) this.fail('execution');
+        if (this.measured || this.collecting) fail('execution');
         this.measured = true;
         await this.phases!.transition('execute', 1, receipt.observedAt, receipt.build.bytes);
         await this.target.startRecording();
         await this.startLive(compiled);
       },
       collectStarted: async (receipt) => {
-        if (this.collecting) this.fail('execution');
+        if (this.collecting) fail('execution');
         await this.live.closeCheckpoint();
         await this.target.finish();
         this.fence.check();
-        await this.closeLive();
+        await closeLive(this.live);
         this.collecting = true;
         this.historyAtCollect = this.archive?.bytes ?? 0;
         this.archive?.beginCollection(reservation.historyCollect);
@@ -211,10 +219,10 @@ class Attempt {
     if (final?.status === 'fulfilled') this.state.execution = final.value;
     this.quiet.execution = results.slice(0, 3).every((item) => item.status === 'fulfilled') ? 'confirmed' : 'failed';
     this.quiet.input = results[3]?.status === 'fulfilled' ? 'confirmed' : 'failed';
-    await this.closeLive();
+    await closeLive(this.live);
     await this.notifications.quiesce();
     this.quiet.notifications = 'confirmed';
-    if (this.quiet.execution !== 'confirmed' || this.quiet.input !== 'confirmed') this.fail('cleanup');
+    if (this.quiet.execution !== 'confirmed' || this.quiet.input !== 'confirmed') fail('cleanup');
     if (this.archiveFailure) throw this.archiveFailure;
     if (this.target.failure) throw this.target.failure;
     this.fence.check();
@@ -240,10 +248,7 @@ class Attempt {
       },
       this.ports.openMailbox,
     );
-    if (this.live.state().quiescence === 'failed') this.fail('cleanup');
-  }
-  private async closeLive(): Promise<void> {
-    if ((await this.live.close()).quiescence !== 'confirmed') this.fail('cleanup');
+    if (this.live.state().quiescence === 'failed') fail('cleanup');
   }
   private async ensureArchive(): Promise<MetricArchive> {
     if (this.archive) return this.archive;
@@ -313,7 +318,7 @@ class Attempt {
     this.quiet.artifacts = this.artifactQuiescence();
     await this.notifications.quiesce();
     this.fence.check();
-    if (!this.collecting) this.fail('execution');
+    if (!this.collecting) fail('execution');
     await this.phases!.finish(
       1,
       artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0) - historyWork.published + historyWork.produced,
@@ -333,16 +338,16 @@ class Attempt {
     this.stage = 'mapping';
     this.fence.check();
     const initial = mapK6Result(resultEvidence(this.state, compiled, []));
-    if (!initial.ok) this.fail('mapping');
+    if (!initial.ok) fail('mapping');
     const { artifacts, evidence, native } = await this.collectArtifacts(initial, compiled);
     this.stage = 'seal';
     await this.phases!.start('seal');
     await this.notifications.quiesce();
     this.fence.check();
     const mapped = mapK6Result(resultEvidence(evidence, compiled, artifacts, native));
-    if (!mapped.ok) this.fail('mapping');
+    if (!mapped.ok) fail('mapping');
     const sealed = sealResult(mapped.body, this.fence.timestamp());
-    if (!sealed.ok) this.fail('seal');
+    if (!sealed.ok) fail('seal');
     const event = this.phases!.resultDraft(sealed.value);
     this.stage = 'publication';
     this.quiet.publication = 'unknown';
@@ -361,15 +366,10 @@ class Attempt {
     const published = await this.publication.result;
     this.state.publication = published;
     if (published.ok) this.state.result = published.value;
-    await this.settle('publication', [this.publication.quiesced, this.publication.close()]);
-    if (!published.ok) this.fail('publication');
+    await requireSettled(this.quiet, 'publication', [this.publication.quiesced, this.publication.close()]);
+    if (!published.ok) fail('publication');
     await this.phases!.result(event);
     await this.phases!.finish(1, published.bytes);
-  }
-  private async settle(key: keyof Quiet, promises: readonly Promise<unknown>[]): Promise<void> {
-    const outcomes = await Promise.allSettled(promises);
-    this.quiet[key] = outcomes.every((outcome) => outcome.status === 'fulfilled') ? 'confirmed' : 'failed';
-    if (this.quiet[key] === 'failed') this.fail('cleanup');
   }
   private cleanup(): Promise<void> {
     return cleanupAttempt(this.state, this.quiet, {
@@ -383,7 +383,7 @@ class Attempt {
       phases: this.phases,
       artifacts: this.artifacts,
       liveMetricMailbox: this.options.liveMetricMailbox,
-      closeLive: () => this.closeLive(),
+      closeLive: () => closeLive(this.live),
       closeCheckpoint: () => this.live.closeCheckpoint(),
       artifactQuiescence: () => this.artifactQuiescence(),
     });

@@ -32,6 +32,7 @@ import {
   recoveredHistoryState,
   resultSections,
   stoppedMeasurementsAbsent,
+  stoppedResultUnavailable,
 } from './RecoveredHistory.js';
 import { ResultReadProblem } from './ResultReadProblem.js';
 import type { ResultReads } from './useResultReads.js';
@@ -225,7 +226,7 @@ function ThresholdSection({
         Thresholds
       </h2>
       <Thresholds result={engine} status={status} variant={variant} rules={readPlan(reads.revision?.config).rules} />
-      {status === 'unavailable' && !stoppedMeasurementsAbsent(reads) && (
+      {status === 'unavailable' && !stoppedResultUnavailable(reads) && (
         <Button size="sm" variant="text" onClick={() => void reads.result.query.refetch()}>
           Check for the result again
         </Button>

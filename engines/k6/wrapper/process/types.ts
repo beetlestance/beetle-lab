@@ -50,6 +50,8 @@ export interface ProcessObservation {
 }
 export interface NativeProcess {
   run(): Promise<ProcessObservation>;
+  /** Trusted caller requests TERM with a fixed short drain; ordinary abort remains immediate. */
+  cancelAndDrain?(): boolean;
   /** Fences launch and awaits all issued profile/sink work, even after an unknown observation. */
   close(): Promise<void>;
 }

@@ -178,7 +178,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `0ebf4543d649` |
-| `web/src/features/runs/result/useResultReads.ts` | `b36179d98fab` |
+| `web/src/features/runs/result/useResultReads.ts` | `5b74ebd2e159` |
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |

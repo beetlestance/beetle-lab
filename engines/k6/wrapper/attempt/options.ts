@@ -11,7 +11,8 @@ function validateOptions(input: StagedK6Options): void {
     !Number.isSafeInteger(input.uid) ||
     input.uid < 0 ||
     input.uid !== process.getuid?.() ||
-    !(input.signal instanceof AbortSignal)
+    !(input.signal instanceof AbortSignal) ||
+    (input.gracefulCancellation !== undefined && !(input.gracefulCancellation instanceof AbortSignal))
   )
     throw new AttemptError('profile');
 }
@@ -20,15 +21,14 @@ export function captureOptions(input: StagedK6Options): StagedK6Options {
   const headerTimeoutMs = input.headerTimeoutMs ?? 5000;
   if (!Number.isSafeInteger(headerTimeoutMs) || headerTimeoutMs < 1 || headerTimeoutMs > 60_000)
     throw new AttemptError('profile');
-  validateCallbacks(input);
-  if (input.liveMetricMailbox !== undefined && typeof input.liveMetricMailbox !== 'boolean')
-    throw new AttemptError('profile');
+  validateOptionalOptions(input);
   return Object.freeze({
     inputRoot: input.inputRoot,
     secretRoot: input.secretRoot,
     outputRoot: input.outputRoot,
     uid: input.uid,
     signal: input.signal,
+    ...(input.gracefulCancellation ? { gracefulCancellation: input.gracefulCancellation } : {}),
     headerTimeoutMs,
     liveMetricMailbox: input.liveMetricMailbox === true,
     installed: Object.freeze({ ...input.installed }),
@@ -37,7 +37,9 @@ export function captureOptions(input: StagedK6Options): StagedK6Options {
     ...(input.onWindow ? { onWindow: input.onWindow } : {}),
   });
 }
-function validateCallbacks(input: StagedK6Options): void {
+function validateOptionalOptions(input: StagedK6Options): void {
+  if (input.liveMetricMailbox !== undefined && typeof input.liveMetricMailbox !== 'boolean')
+    throw new AttemptError('profile');
   for (const callback of [input.onEvent, input.onWindow]) {
     if (callback !== undefined && typeof callback !== 'function') throw new AttemptError('profile');
   }
