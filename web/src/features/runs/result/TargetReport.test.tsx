@@ -42,3 +42,15 @@ it('switches between recorded phases and cards without a new artifact read', asy
  view.rerender(draw(false));expect(await screen.findAllByRole('img')).toHaveLength(4);expect(read).toHaveBeenCalledTimes(1);
  expect(api.records).toHaveLength(0);
 });
+
+it('reloads through the same report owner and hides accepted charts after a failed reload', async () => {
+ const read=vi.fn().mockResolvedValueOnce(report()).mockRejectedValueOnce(Error('synthetic reload failure'));
+ const f=mount(read);await screen.findByText(/recorded target observations/);
+ fireEvent.click(screen.getByText('Recorded target values and checkpoints'));
+ const details=screen.getByText('Recorded target values and checkpoints').closest('details')!;
+ details.open=true;fireEvent(details,new Event('toggle'));
+ fireEvent.click(await screen.findByRole('button',{name:'Reload target report'}));
+ expect(await screen.findByRole('button',{name:'Retry target observations'})).toBeVisible();
+ expect(screen.queryAllByRole('img')).toHaveLength(0);expect(f.read).toHaveBeenCalledTimes(2);
+ expect(read).toHaveBeenNthCalledWith(2,expect.objectContaining({params:fixture().params}));
+});

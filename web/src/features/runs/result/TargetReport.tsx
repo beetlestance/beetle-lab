@@ -55,7 +55,14 @@ export function ResultTargetReport({
       )}
       <details className="result-target-details" onToggle={(event) => setDetails(event.currentTarget.open)}>
         <summary>Recorded target values and checkpoints</summary>
-        {details && <TargetReportDetails report={state.report} />}
+        {details && (
+          <>
+            <Button size="sm" variant="text" onClick={retry}>
+              Reload target report
+            </Button>
+            <TargetReportDetails report={state.report} />
+          </>
+        )}
       </details>
     </>
   );

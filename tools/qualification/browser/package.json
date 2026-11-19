@@ -5,7 +5,7 @@
   "scripts": {
     "test": "cd ../../.. && node --import tsx tools/qualification/browser/acceptance.mjs",
     "check": "tsc --noEmit -p tsconfig.json",
-    "test:cleanup": "node --test cleanup.test.mjs",
+    "test:cleanup": "node --import tsx --test cleanup.test.mjs run-state.test.mjs",
     "lint": "eslint --config eslint.config.mjs *.mjs"
   },
   "devDependencies": {

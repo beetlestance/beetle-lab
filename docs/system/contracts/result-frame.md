@@ -40,7 +40,8 @@ Phone titles use 34 px tokens and compare/download precede Run again in action
 order. A compact whole-run chart names its selected metric, retains exact points,
 gaps, bounds and accessible labels, and shows its reading on hover. Sampling and
 coverage details remain expandable, with partial-source coverage in the summary.
-Whole-family board acceptance and matching packaged execution remain unproven.
+Advanced target details retain explicit Reload through the same bounded owner;
+a failed reload hides previous charts. Whole-family and packaged proof remain open.
 
 ## Anchors
 

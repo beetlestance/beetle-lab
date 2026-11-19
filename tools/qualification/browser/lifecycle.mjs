@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { execute, start } from './results.mjs';
 import { revision } from './authoring.mjs';
+import { assertRunState } from './run-state.mjs';
 /**
  * @param {import('@playwright/test').Page} page
  * @param {Awaited<ReturnType<import('./authoring.mjs').author>>} authored
@@ -8,16 +9,18 @@ import { revision } from './authoring.mjs';
  */
 export async function historyComparison(page, authored, first) {
   await page.goto(authored.suite);
-  await page.getByRole('button', { name: 'View revision 1', exact: true }).click();
   const second = await execute(page);
   const ids = [first, second].map((url) => new URL(url).pathname.split('/').at(-1));
   await page.goto(authored.workspace);
   await page.getByRole('link', { name: 'Runs', exact: true }).click();
-  await page.getByRole('combobox', { name: /^Outcome\b/ }).selectOption('passed');
-  await page.getByRole('button', { name: 'Apply filters', exact: true }).click();
-  for (const id of ids) await page.getByRole('checkbox', { name: `Compare ${id}`, exact: true }).check();
-  await page.getByRole('link', { name: 'Compare selected runs', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Compare runs', exact: true })).toBeVisible();
+  await page.getByRole('radio', { name: /^Passed\b/ }).click();
+  for (const url of [first, second]) {
+    const path = new URL(url).pathname;
+    const row = page.getByRole('row').filter({ has: page.locator(`a[href="${path}"]`) });
+    await row.getByRole('checkbox', { name: /^Compare run / }).check();
+  }
+  await page.getByRole('link', { name: 'Compare 2', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /^2 runs, baseline Synthetic k6 suite / })).toBeVisible();
   await expect(page.getByText('Loading comparison…', { exact: true })).toHaveCount(0);
   if (
     await page
@@ -41,25 +44,13 @@ export async function cancelReconnect(page, authored) {
   config.selections[0].entries[0].wait = { durationMs: 500, jitterMs: 0 };
   await page.goto(authored.suite);
   await revision(page, config, 2);
-  await start(page);
-  await expect(page.getByRole('region', { name: 'Live metric values', exact: true })).toBeVisible({ timeout: 15000 });
+  const submitted = await start(page);
+  await currentWindow(page);
   await page.reload();
-  await expect(page.getByRole('region', { name: 'Live metric values', exact: true })).toBeVisible({ timeout: 15000 });
+  await currentWindow(page);
   await page.getByRole('button', { name: 'Cancel run', exact: true }).click();
-  await expect(
-    page
-      .locator('.run-facts')
-      .getByText('State', { exact: true })
-      .locator('..')
-      .getByText('cancelled', { exact: true }),
-  ).toBeVisible({ timeout: 60000 });
-  await expect(
-    page
-      .locator('.run-facts')
-      .getByText('Outcome', { exact: true })
-      .locator('..')
-      .getByText('inconclusive', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('Cancelled', { exact: true }).first()).toBeVisible({ timeout: 60000 });
+  await assertRunState(page, { state: 'cancelled', outcome: 'inconclusive' }, submitted);
 }
 /**
  * @param {import('@playwright/test').Page} page
@@ -67,7 +58,7 @@ export async function cancelReconnect(page, authored) {
  */
 export async function deleteRun(page, run) {
   await page.goto(run);
-  await page.getByRole('button', { name: 'Delete this run…', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete run…', exact: true }).click();
   await page.getByRole('button', { name: 'Preview this run deletion', exact: true }).click();
   await page.getByRole('button', { name: 'Apply deletion of 1 runs', exact: true }).click();
   // Native cleanup and transport backoff can outlast one 60-second browser wait.
@@ -75,4 +66,14 @@ export async function deleteRun(page, run) {
   await page.getByRole('button', { name: 'Acknowledge completed batch', exact: true }).click();
   await page.reload();
   await expect(page.getByText('Resource not found', { exact: true })).toBeVisible();
+}
+
+/** Require an actual recorded figure, not merely the mounted loading view.
+ * @param {import('@playwright/test').Page} page */
+async function currentWindow(page) {
+  const progress = page.getByRole('region', { name: 'Progress', exact: true });
+  await expect(progress).toBeVisible({ timeout: 15000 });
+  const first = progress.locator('dd').first();
+  await expect(first).toBeVisible();
+  await expect(first).not.toHaveText(/^[–—-]$/, { timeout: 15000 });
 }

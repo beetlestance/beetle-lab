@@ -4,7 +4,7 @@ export async function keyboard(page, origin) {
   await page.goto(origin);
   await expect(page.getByRole('heading', { name: 'Organizations', exact: true })).toBeVisible();
   const skip = page.getByRole('link', { name: 'Skip to content' });
-  // The session toolbar precedes the app shell in document order.
+  // Find the skip link through keyboard order, without assuming a session toolbar.
   for (let tabs = 0; tabs < 3; tabs++) {
     await page.keyboard.press('Tab');
     if (await skip.evaluate((node) => node === globalThis.document.activeElement)) break;
@@ -12,8 +12,11 @@ export async function keyboard(page, origin) {
   await expect(skip).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('#main')).toBeFocused();
-  await page.keyboard.press('Tab');
   const invoker = page.getByRole('button', { name: 'Search commands', exact: true });
+  for (let tabs = 0; tabs < 12; tabs++) {
+    await page.keyboard.press('Shift+Tab');
+    if (await invoker.evaluate((node) => node === globalThis.document.activeElement)) break;
+  }
   await expect(invoker).toBeFocused();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search commands', exact: true });
@@ -47,24 +50,23 @@ export async function themesAndViewports(page, workspace) {
   const section = page.locator('.content-section').first();
   await expect(section).toBeVisible();
   expect(await section.evaluate((node) => globalThis.getComputedStyle(node).animationName)).not.toBe('none');
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('light');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  const light = await page
+  await page.getByRole('radio', { name: 'Scarab', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'scarab');
+  const scarab = await page
     .locator('html')
-    .evaluate((node) => globalThis.getComputedStyle(node).getPropertyValue('--canvas'));
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('dark');
+    .evaluate((node) => globalThis.getComputedStyle(node).getPropertyValue('--bg'));
   await page.reload();
-  await expect(page.getByRole('combobox', { name: 'Theme', exact: true })).toHaveValue('dark');
-  const dark = await page
+  await expect(page.getByRole('radio', { name: 'Scarab', exact: true })).toBeChecked();
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'scarab');
+  await page.getByRole('radio', { name: 'Darkroom', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('radio', { name: 'Darkroom', exact: true })).toBeChecked();
+  const darkroom = await page
     .locator('html')
-    .evaluate((node) => globalThis.getComputedStyle(node).getPropertyValue('--canvas'));
-  expect(dark).not.toBe(light);
-  await page.getByRole('combobox', { name: 'Theme', exact: true }).selectOption('system');
-  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'system');
-  expect(
-    await page.locator('html').evaluate((node) => globalThis.getComputedStyle(node).getPropertyValue('--canvas')),
-  ).toBe(dark);
+    .evaluate((node) => globalThis.getComputedStyle(node).getPropertyValue('--bg'));
+  expect(darkroom).not.toBe(scarab);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const viewport of [
     { width: 375, height: 812 },
     { width: 768, height: 1024 },
@@ -72,11 +74,13 @@ export async function themesAndViewports(page, workspace) {
   ]) {
     await page.setViewportSize(viewport);
     await page.reload();
-    await expect(page.getByRole('button', { name: 'Create folder', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Suites', exact: true })).toBeVisible();
     expect(
       await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.window.innerWidth + 1),
     ).toBe(true);
-    const theme = page.getByRole('combobox', { name: 'Theme', exact: true });
+    const menu = page.getByRole('button', { name: 'Menu', exact: true });
+    if (await menu.isVisible()) await menu.click();
+    const theme = page.getByRole('radio', { name: 'Darkroom', exact: true });
     await theme.scrollIntoViewIfNeeded();
     const box = await theme.boundingBox();
     if (!box) throw Error('Theme control has no layout box');
@@ -85,7 +89,19 @@ export async function themesAndViewports(page, workspace) {
     await page.getByRole('button', { name: 'Search commands', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Search commands', exact: true });
     await expect(dialog).toBeVisible();
-    expect(await section.evaluate((node) => globalThis.getComputedStyle(node).animationName)).toBe('none');
+    const motion = await section.evaluate((node) => {
+      const style = globalThis.getComputedStyle(node);
+      return {
+        duration: parseFloat(style.animationDuration),
+        iterations: style.animationIterationCount,
+        transition: parseFloat(style.transitionDuration),
+        scroll: style.scrollBehavior,
+      };
+    });
+    expect(motion.duration).toBeLessThanOrEqual(0.00001);
+    expect(motion.iterations).toBe('1');
+    expect(motion.transition).toBeLessThanOrEqual(0.00001);
+    expect(motion.scroll).toBe('auto');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   }

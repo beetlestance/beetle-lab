@@ -44,7 +44,13 @@ The synthetic target permits at most 128 requests per path. This does not qualif
 maximum load or resource enforcement. A full passing outcome is required; separate
 feature probes do not establish that this entire sequence passed.
 
-Current evidence: unmodified candidate `5ee8d12` completed all twelve phases on
+The UI-adapted harness has not yet completed a current-image run. Its source checks
+cover scope/state binding and cleanup; they do not qualify installed images. Run
+submission captures the suite/workspace and selected revision before accepting the
+202 response, checks the exact 8 MiB budget, and binds later UI/API reads to it.
+The `test:cleanup` command also runs these state-boundary tests.
+
+Historical evidence before the UI redesign: unmodified candidate `5ee8d12` completed all twelve phases on
 ARM64 in a private timed run, with verified cleanup. Deletion took 79 seconds,
 exceeding the original browser wait of 60 seconds. The harness now allows up to
 180 seconds for deletion, retaining every settlement, acknowledgment and 404
@@ -59,7 +65,7 @@ variable and `BEETLE_BROWSER_EVIDENCE=ABSENT_ABSOLUTE_DIRECTORY` on the same
 explicit-image command above. Ownership is saved before Compose and the
 installation identity before authoring, so the existing native `cold/cleanup.ts`
 can independently clean exact owned resources after interruption. It tests skip-to-content,
-command shortcut/focus trapping/Escape/navigation, persistent light/dark/system
+command shortcut/focus trapping/Escape/navigation, persistent Darkroom/Scarab
 preferences, reduced motion, controls at 375/768/1440px, and real wrong-organisation
 404/cache isolation through visible navigation. It creates no performance runs.
 This is a finite functional matrix, not a complete accessibility certification.
