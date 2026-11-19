@@ -44,6 +44,12 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
     ),
   ).toBeVisible();
   expect(screen.getByText(/steady-1\.2k \(k6 load test\), run/)).toHaveTextContent('revision 4, started');
+  const selected = recent();
+  const { organizationId, workspaceId } = selected.scope;
+  expect(screen.getByRole('link', { name: 'revision 4' })).toHaveAttribute(
+    'href',
+    `/organizations/${organizationId}/workspaces/${workspaceId}/suites/${selected.suiteId}/revisions/${selected.revisionId}/script?run=${selected.id}`,
+  );
   expect(screen.getByText('Running')).toBeVisible();
   const progress = screen.getByRole('region', { name: 'Progress' });
   expect(within(progress).getByText('1,200')).toBeVisible();
