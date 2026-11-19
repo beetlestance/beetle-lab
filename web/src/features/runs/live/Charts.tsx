@@ -36,10 +36,12 @@ function stageTicks(plan: RunPlan, domain: Domain, nowT: number | null) {
   const ticks: ChartTick[] = [{ at: domain[0], label: clock(domain[0]) }];
   const warm = warmStage(plan);
   if (warm) ticks.push({ at: warm.durationMs, label: `Warm up ends ${clock(warm.durationMs)}`, detail: true });
-  if (nowT !== null) ticks.push({ at: nowT, label: `now ${clock(nowT)}` });
   const drain = drainStage(plan);
   if (drain) ticks.push({ at: drain.startMs, label: `Drain ${clock(drain.startMs)}`, detail: true });
   ticks.push({ at: domain[1], label: clock(domain[1]) });
+  const clearance = (domain[1] - domain[0]) * 0.08;
+  if (nowT !== null && ticks.every((tick) => Math.abs(tick.at - nowT) > clearance))
+    ticks.push({ at: nowT, label: `now ${clock(nowT)}` });
   return ticks;
 }
 

@@ -155,10 +155,11 @@ function Guides({ props, scale }: { props: ChartProps; scale: Scale }) {
 function Ticks({ props, scale }: { props: ChartProps; scale: Scale }) {
   return (
     <span className="live-ticks" aria-hidden="true">
-      {(props.ticks ?? defaultTicks(props.domain)).map((tick) => (
+      {distinctTicks(props.ticks ?? defaultTicks(props.domain), props.domain).map((tick) => (
         <span
           className={tick.detail ? 'live-tick-detail' : undefined}
-          key={tick.label + tick.at}
+          key={tick.at}
+          data-edge={tick.at === props.domain[0] ? 'start' : tick.at === props.domain[1] ? 'end' : undefined}
           style={{ left: `${(scale.x(tick.at) / W) * 100}%` }}
         >
           {tick.label}
@@ -253,6 +254,20 @@ export function LiveChart(props: ChartProps) {
       )}
     </figure>
   );
+}
+
+/** Clock formatting rounds subsecond positions. Give boundary labels priority. */
+function distinctTicks(ticks: readonly ChartTick[], [from, to]: readonly [number, number]): ChartTick[] {
+  const within = ticks.filter((tick) => Number.isFinite(tick.at) && tick.at >= from && tick.at <= to);
+  const ordered = within.sort((a, b) => a.at - b.at);
+  const selected: ChartTick[] = [];
+  for (const tick of ordered) {
+    const previous = selected.at(-1);
+    if (previous && (previous.at === tick.at || previous.label === tick.label)) {
+      if (tick.at === to && previous.at !== from) selected[selected.length - 1] = tick;
+    } else selected.push(tick);
+  }
+  return selected;
 }
 
 function defaultTicks([from, to]: readonly [number, number]): ChartTick[] {
