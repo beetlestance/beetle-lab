@@ -77,7 +77,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const archiveMissing = incompleteArchiveMissing(run, reads, engine);
   const plan = readPlan(reads.revision?.config);
   const charts = useRecordedCharts(reads.chartHistory, plan.totalMs, run.state);
-  const { showTarget, nativeLayout, beforeNote, afterNote } = resultLayout({
+  const { showTarget, recordedTarget, nativeLayout, beforeNote, afterNote } = resultLayout({
     run,
     engine,
     phone,
@@ -85,7 +85,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
     phaseView,
     samplingIntervalMs: plan.samplingIntervalMs,
   });
-  const sections = resultSections(reads, showTarget);
+  const sections = resultSections(reads, showTarget, recordedTarget);
   const context = { readOnly, rules: plan.rules, measurements: ready, phone };
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, context);
   return (
@@ -126,6 +126,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         overview={ready}
         phone={phone}
         archiveMissing={archiveMissing}
+        recoveredTarget={sections.recoveredTarget}
       />
       <SupplementaryResult
         target={{ run, engine, status: view.status, charts, plan, phaseView, togglePhases }}
@@ -152,6 +153,7 @@ function ResultMeasurements({
   overview,
   phone,
   archiveMissing,
+  recoveredTarget,
 }: {
   reads: ResultReads;
   run: Run;
@@ -161,15 +163,21 @@ function ResultMeasurements({
   overview: RunMetricOverview | null;
   phone: boolean;
   archiveMissing: boolean;
+  recoveredTarget: boolean;
 }) {
   const recovered = recoveredHistoryState(reads);
   return (
     <>
-      {recovered && <RecoveredHistory query={recovered} plan={plan} phone={phone} />}
+      {recovered && <RecoveredHistory query={recovered} plan={plan} phone={phone} showTarget={recoveredTarget} />}
       {!archiveMissing && !recovered && (
         <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />
       )}
-      <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
+      <div className="result-split">
+        <ThresholdSection reads={reads} engine={engine} variant={variantOf(run)} />
+        {!phone && (
+          <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
+        )}
+      </div>
       {archiveMissing ? (
         <p className="result-muted">
           {recovered ? 'Endpoint detail requires' : 'Charts and endpoint detail require'} a verified metrics archive.
@@ -305,11 +313,12 @@ function SupplementaryResult({
   onSelect: (tab: ReportTab) => void;
 }) {
   const { run, charts, plan } = target;
+  const showCharts = !archiveMissing && !recoveredHistoryState(reads) && !stoppedMeasurementsAbsent(reads);
   return (
     <>
       {!phone && (
         <>
-          {!archiveMissing && !recoveredHistoryState(reads) && !stoppedMeasurementsAbsent(reads) && (
+          {showCharts && (
             <>
               <RecordedMetrics view={charts} p95Limit={recordedLimit(plan)} />
               <AdvancedMetrics run={run} />
@@ -338,7 +347,7 @@ function SupplementaryResult({
             </PhoneDisclosure>
           )
         }
-        phoneExtras={<PhoneExtras target={target} reads={reads} archiveMissing={archiveMissing} />}
+        phoneExtras={<PhoneExtras target={target} reads={reads} showCharts={showCharts} />}
       />
     </>
   );
@@ -346,15 +355,15 @@ function SupplementaryResult({
 function PhoneExtras({
   target,
   reads,
-  archiveMissing,
+  showCharts,
 }: {
   target: Parameters<typeof TargetRuntime>[0];
   reads: ResultReads;
-  archiveMissing: boolean;
+  showCharts: boolean;
 }) {
   return (
     <>
-      {!archiveMissing && (
+      {showCharts && (
         <PhoneDisclosure
           id="result-chart-details"
           hashId="result-charts"
@@ -374,26 +383,5 @@ function PhoneExtras({
         />
       </PhoneDisclosure>
     </>
-  );
-}
-
-function ResultThresholds({
-  reads,
-  engine,
-  run,
-  phone,
-}: {
-  reads: ResultReads;
-  engine: EngineResult | null;
-  run: Run;
-  phone: boolean;
-}) {
-  return (
-    <div className="result-split">
-      <ThresholdSection reads={reads} engine={engine} variant={variantOf(run)} />
-      {!phone && (
-        <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
-      )}
-    </div>
   );
 }

@@ -114,13 +114,32 @@ async function memoryEvidence(page, base, attempt) {
   const retained = await page.request.get(path + 'stopped-history');
   if (retained.ok()) {
     const history = validateApi('LiveMetricHistory', await retained.json());
-    assert(history.ok && history.value.scope.attemptId === attempt);
+    assert(history.ok && history.value.scope.attemptId === attempt && history.value.samples.length > 0);
     await expect(page.getByRole('heading', { name: 'Recovered before the stop' })).toBeVisible();
-    return { source: 'checkpoint', windows: history.value.samples.length };
+    const report = source?.artifacts.find((artifact) => artifact.kind === 'performance-report');
+    if (!source || !report) return { source: 'checkpoint', windows: history.value.samples.length };
+    assert(source.completeness !== 'complete');
+    await expect(page.getByRole('region', { name: 'Verified performance report', exact: true })).toBeVisible();
+    return {
+      source: 'checkpoint-and-report',
+      windows: history.value.samples.length,
+      completeness: source.completeness,
+      reportSha256: report.sha256,
+    };
   }
   assert.equal(retained.status(), 404);
   const error = validateApi('ApiError', await retained.json());
   assert(error.ok && error.value.code === 'not_found');
+  return partialMemoryReport(page, source, path, attempt);
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@beetle/contracts/api').RunResultSnapshot['result']} source
+ * @param {string} path
+ * @param {string} attempt
+ */
+async function partialMemoryReport(page, source, path, attempt) {
   assert(source && source.completeness !== 'complete', 'Expected a sealed result whose measurements are incomplete');
   assert(
     source.artifacts.some((artifact) => artifact.kind === 'performance-report'),

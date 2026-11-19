@@ -33,5 +33,11 @@ export function resultLayout({
       <RunNote run={run} readOnly={readOnly} />
     </PhoneDisclosure>
   );
-  return { showTarget, nativeLayout, beforeNote: incomplete ? null : note, afterNote: incomplete ? note : null };
+  return {
+    showTarget,
+    recordedTarget,
+    nativeLayout,
+    beforeNote: incomplete ? null : note,
+    afterNote: incomplete ? note : null,
+  };
 }
