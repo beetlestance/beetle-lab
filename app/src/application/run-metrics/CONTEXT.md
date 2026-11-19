@@ -25,4 +25,4 @@ insufficiency is a fixed reason with rise null, never a guess.
 reader.getRunChartHistory reuses scan.ts with the same full-SHA 3,600-window / 32 MiB
 bound. <= 900 actual points retain endpoints; known-window count and observed peak
 include all originals. Unknowns/gaps stay explicit, > 64 request labels refuse.
-Reply <= 1 MiB / 65,536 nodes; no window corpus or new native admission. UI pending.
+Reply <= 1 MiB / 65,536 nodes; no window corpus or new native admission.

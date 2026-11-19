@@ -14,6 +14,10 @@ export class RequestLifetimes {
   private readonly signals = new WeakMap<AbortSignal, RequestContext>();
   register(server: FastifyInstance): void {
     server.addHook('onRequest', async (request, reply) => {
+      // Authorization may have awaited IO before this hook; terminal events can already be gone.
+      // IncomingMessage completion alone is healthy and must not retire a request.
+      if (request.raw.aborted || reply.raw.destroyed || reply.raw.writableFinished)
+        throw new ApiFault('storage_unavailable');
       if (this.closed || this.active.size >= this.limit) throw new ApiFault('capacity_unavailable');
       const context = new RequestContext(request, reply, () => this.active.delete(context), this.lifetimeMs);
       this.active.add(context);
