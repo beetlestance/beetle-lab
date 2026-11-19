@@ -50,8 +50,9 @@ No host credentials or Docker configuration directory are mounted into services.
 
 The directory contains `setup/options.json`, `setup/request.json`,
 `setup/compose.env` and `data/`. Deployment files share the same instance name,
-port, owner, paths and image tags. The default instance is a stable hash of the
-canonical deployment directory. The data root keeps exactly the same absolute
+port, owner, paths and image tags. The default instance is `lab-` plus a 12-character
+stable hash of the canonical deployment directory, so containers, networks and
+images are named `beetle-lab-…`. The data root keeps exactly the same absolute
 host/container path for daemon-resolved staging mounts. Compose reads the explicit
 environment file; the launcher never sources/evaluates it or reads a repository
 `.env` file.

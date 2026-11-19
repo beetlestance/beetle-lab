@@ -1,5 +1,5 @@
 # Offline maintenance only. Existing home must match the source installation.
-name: beetle-recovery-${BEETLE_INSTANCE:-local}
+name: beetle-recovery-${BEETLE_INSTANCE:-lab}
 x-maintenance: &maintenance
   image: ${BEETLE_INSTALLER_IMAGE:-beetle-lab-installer:rewrite}
   build: {context: ., dockerfile: tools/install/Dockerfile}

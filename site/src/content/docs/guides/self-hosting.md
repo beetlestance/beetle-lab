@@ -44,7 +44,7 @@ Without `BEETLE_HOME`, Compose looks under `.beetle/` in the checkout instead.
 | --- | --- | --- |
 | `BEETLE_HOME` | `.beetle` in the checkout | Installation directory |
 | `BEETLE_PORT` | `4567` | UI port, published on the server's loopback only |
-| `BEETLE_INSTANCE` | `local` | Compose project name; use another for a second installation |
+| `BEETLE_INSTANCE` | `lab` | Compose project name; use another for a second installation |
 
 ## Start it
 

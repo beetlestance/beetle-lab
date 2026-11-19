@@ -1,5 +1,5 @@
 # Separate installation view: BEETLE_HISTORY_ROOT must be the final restored path.
-name: beetle-history-${BEETLE_HISTORY_INSTANCE:-local}
+name: beetle-history-${BEETLE_HISTORY_INSTANCE:-lab}
 x-runtime: &runtime
   read_only: true
   init: true

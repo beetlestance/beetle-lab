@@ -47,7 +47,7 @@ export function parseLocalOptions(argv: readonly string[]): LocalOptions {
   valid(uid === process.getuid?.() && gid === process.getgid?.());
   const revision = args.get('--revision')!;
   valid(/^[a-z0-9][a-z0-9_.-]{0,95}$/u.test(revision));
-  const instance = args.get('--instance') ?? digest(directory).slice(0, 16);
+  const instance = args.get('--instance') ?? `lab-${digest(directory).slice(0, 12)}`;
   valid(/^[a-z0-9][a-z0-9-]{0,47}$/u.test(instance));
   return {
     directory,
@@ -61,7 +61,7 @@ export function parseLocalOptions(argv: readonly string[]): LocalOptions {
   };
 }
 export function image(revision: string, component: string): string {
-  return `beetle-local-${component}:${revision}`;
+  return `beetle-lab-${component}:${revision}`;
 }
 export function deployment(options: LocalOptions): ReadonlyMap<string, string> {
   const o = options;

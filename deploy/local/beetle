@@ -92,7 +92,7 @@ if [ "$command" = up ]; then
   # Fresh dirty builds use the identity already selected above.
   if [ ! -f "$env_file" ]; then source_revision=$revision; fi
 fi
-installer=beetle-local-installer:$revision
+installer=beetle-lab-installer:$revision
 if [ -z "$socket" ]; then
   endpoint=${DOCKER_HOST:-$(docker context inspect --format '{{.Endpoints.docker.Host}}')}
   case "$endpoint" in unix:///*) socket=${endpoint#unix://} ;; *) fail 'only local Unix Docker daemons are supported' ;; esac
@@ -153,10 +153,10 @@ wait_ready() {
 }
 case "$command" in
   up)
-    ensure_image frontend web/Dockerfile "beetle-local-frontend:$revision"
-    ensure_image backend app/Dockerfile "beetle-local-backend:$revision"
-    ensure_image agent agent/Dockerfile "beetle-local-agent:$revision"
-    ensure_image engine engines/k6/Dockerfile "beetle-local-engine:$revision"
+    ensure_image frontend web/Dockerfile "beetle-lab-frontend:$revision"
+    ensure_image backend app/Dockerfile "beetle-lab-backend:$revision"
+    ensure_image agent agent/Dockerfile "beetle-lab-agent:$revision"
+    ensure_image engine engines/k6/Dockerfile "beetle-lab-engine:$revision"
     case "$state" in *_fresh) dc --profile setup run --rm --no-deps --pull never installer ;; esac
     dc up -d --no-build --pull never frontend backend agent
     wait_ready

@@ -1,6 +1,6 @@
 # Rewrite source installation: run from the canonical checkout directory.
 # docker compose up --build -d
-name: beetle-${BEETLE_INSTANCE:-local}
+name: beetle-${BEETLE_INSTANCE:-lab}
 
 x-runtime: &runtime
   read_only: true
@@ -68,7 +68,7 @@ services:
       export-image: {condition: service_completed_successfully}
     environment:
       BEETLE_COMPOSE_HOME: ${BEETLE_HOME:-${PWD}/.beetle}
-      BEETLE_COMPOSE_INSTANCE: ${BEETLE_INSTANCE:-local}
+      BEETLE_COMPOSE_INSTANCE: ${BEETLE_INSTANCE:-lab}
       BEETLE_COMPOSE_PORT: ${BEETLE_PORT:-4567}
       BEETLE_COMPOSE_AGENT_IMAGE: ${BEETLE_AGENT_IMAGE:-beetle-lab-agent:rewrite}
       BEETLE_COMPOSE_ENGINE_IMAGE: ${BEETLE_ENGINE_IMAGE:-beetle-lab-k6:rewrite}
@@ -85,7 +85,7 @@ services:
     init: false
     image: ${BEETLE_AGENT_IMAGE:-beetle-lab-agent:rewrite}
     build: {<<: *build, dockerfile: agent/Dockerfile}
-    container_name: beetle-${BEETLE_INSTANCE:-local}-agent
+    container_name: beetle-${BEETLE_INSTANCE:-lab}-agent
     # The packaging entry drops identity before existing agent code starts.
     user: "0:0"
     cap_add: [SETUID, SETGID]
@@ -163,4 +163,4 @@ services:
 networks:
   ingress: {driver: bridge}
   control: {internal: true}
-  targets: {name: "beetle-${BEETLE_INSTANCE:-local}-targets", driver: bridge}
+  targets: {name: "beetle-${BEETLE_INSTANCE:-lab}-targets", driver: bridge}

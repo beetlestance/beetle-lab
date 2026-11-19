@@ -29,7 +29,7 @@ it('creates coherent private options/request/Compose files and replays without c
   }
   const request = JSON.parse(deployment(o).get('request.json')!);
   expect(request).toMatchObject({ root: join(o.directory, 'data'), uid: o.uid, gid: o.gid,
-    dockerSocket: '/var/run/docker.sock', agentContainer: `beetle-${o.instance}-agent`, agentImage: 'beetle-local-agent:abc123',
+    dockerSocket: '/var/run/docker.sock', agentContainer: `beetle-${o.instance}-agent`, agentImage: 'beetle-lab-agent:abc123',
     externalOrigin: 'http://127.0.0.1:8890', targetNetwork: `beetle-${o.instance}-targets` });
   expect(await fs.readdir(join(o.directory, 'data'))).toEqual([]);
   expect(await prepareLocalDeployment(o, operation())).toBe('local_unchanged_fresh');

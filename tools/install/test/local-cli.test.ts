@@ -8,7 +8,7 @@ const args = (directory = '/synthetic/local'): string[] => ['--directory', direc
   '--gid', String(process.getgid!()), '--docker-gid', '0', '--docker-socket', '/synthetic/docker.sock', '--port', '8080', '--revision', 'abc123'];
 afterEach(async () => { vi.restoreAllMocks(); await Promise.all(roots.splice(0).map(path => fs.rm(path, { recursive: true, force: true }))); });
 it('accepts reordered exact pairs, deterministic default instance and explicit instance', () => {
-  const first = parseLocalOptions(args()); expect(first.instance).toMatch(/^[a-f0-9]{16}$/);
+  const first = parseLocalOptions(args()); expect(first.instance).toMatch(/^lab-[a-f0-9]{12}$/);
   const input = args(); const reordered = [...input.slice(2), ...input.slice(0, 2)];
   expect(parseLocalOptions(reordered)).toEqual(first);
   expect(parseLocalOptions([...input, '--instance', 'synthetic-two']).instance).toBe('synthetic-two');
