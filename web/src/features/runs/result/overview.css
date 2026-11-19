@@ -63,3 +63,45 @@
     font-size: var(--fs-3xl);
   }
 }
+
+@media (max-width: 759px) {
+  .result-endpoint-table .data-table {
+    width: 760px;
+    table-layout: fixed;
+  }
+  .result-endpoint-table th:first-child {
+    width: 150px;
+  }
+  .result-endpoint-table tbody th {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .result-endpoint-table th:nth-child(2) {
+    width: 88px;
+  }
+  .result-endpoint-table th:nth-child(3) {
+    width: 80px;
+  }
+  .result-endpoint-table :is(th, td):nth-child(2),
+  .result-endpoint-table :is(th, td):nth-child(3) {
+    position: sticky;
+    z-index: 1;
+    background: var(--bg);
+    padding-inline: var(--s-8);
+    white-space: nowrap;
+  }
+  .result-endpoint-table :is(th, td):nth-child(2) {
+    left: 0;
+  }
+  .result-endpoint-table :is(th, td):nth-child(3) {
+    left: 88px;
+  }
+  .result-endpoint-table tbody tr:nth-child(even) :is(th, td):nth-child(2),
+  .result-endpoint-table tbody tr:nth-child(even) :is(th, td):nth-child(3) {
+    background: var(--zebra);
+  }
+  .result-endpoint-table thead :is(th):nth-child(2),
+  .result-endpoint-table thead :is(th):nth-child(3) {
+    background: var(--panel);
+  }
+}

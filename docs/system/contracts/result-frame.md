@@ -28,7 +28,10 @@ Artifacts, Notes and Diagnostics, plus retained Report/charts/script access. The
 mount readers on first open and retain visited children; the single Notes owner
 survives collapse and resize, including unresolved identical-replay saves. Hashes
 open the addressed section. Phase comparison keeps its target and Back control
-visible. Header, summary, chart and endpoint phone board matching remains open.
+visible. Phone endpoint columns put p95/failed first and keep them visible while other
+columns scroll in a named keyboard region. Desktop order, filters and exact
+source values survive resize; long paths wrap and nulls/zeros remain distinct.
+Header, summary and chart phone board matching remains open.
 
 ## Anchors
 
@@ -41,4 +44,6 @@ visible. Header, summary, chart and endpoint phone board matching remains open.
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `587774070696` |
 | `web/src/features/runs/result/phone.css` | `ba4a5771ad8d` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
-| `web/src/features/runs/result/index.tsx` | `0072e7ccce8c` |
+| `web/src/features/runs/result/EndpointTable.tsx` | `f7bd8fa29dec` |
+| `web/src/features/runs/result/overview.css` | `133e5e0c8d70` |
+| `web/src/features/runs/result/index.tsx` | `420ebb869b1f` |

@@ -42,3 +42,23 @@ it('uses an observed peak only from the same sealed numeric original',()=>{
  view.rerender(<MetricSummary overview={value} history={wrong} />);
  expect(screen.getByText('a second on average')).toBeVisible();expect(screen.getByText(/Observed peak is unavailable/)).toBeVisible();
 });
+
+it('keeps the same endpoint facts and active filter when phone columns move p95 and failed first', () => {
+ const value=overview();const endpoint=value.endpoints[0]!;
+ const requests=[{label:endpoint.request,name:'checkout',method:'POST',path:'/checkout'}];
+ const view=render(<ResultEndpoints overview={value} requests={requests} />);
+ const headings=()=>within(screen.getByRole('table')).getAllByRole('columnheader').map(cell=>cell.textContent);
+ const facts=()=>{
+  const row=within(screen.getByRole('table')).getAllByRole('row')[1]!;
+  const cells=within(row).getAllByRole('cell').map(cell=>cell.textContent);
+  return Object.fromEntries(headings().slice(1).map((label,index)=>[label,cells[index]]));
+ };
+ expect(headings()).toEqual(['Endpoint','Share','Requests a second','p50','p95 ↓','Failed']);
+ const desktopFacts=facts();
+ fireEvent.change(screen.getByRole('searchbox',{name:'Filter endpoints'}),{target:{value:'checkout'}});
+ view.rerender(<ResultEndpoints overview={value} requests={requests} phone />);
+ expect(headings()).toEqual(['Endpoint','p95 ↓','Failed','Share','Requests a second','p50']);
+ expect(facts()).toEqual(desktopFacts);
+ expect(screen.getByRole('searchbox',{name:'Filter endpoints'})).toHaveValue('checkout');
+ expect(screen.getByRole('region',{name:'Endpoint measurements, scroll for more columns'})).toHaveAttribute('tabindex','0');
+});
