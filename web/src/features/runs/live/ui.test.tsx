@@ -67,6 +67,7 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(screen.getByText('Checked at the end')).toBeVisible();
   expect(screen.getByText('over 99%')).toBeVisible();
   expect(screen.getByRole('img', { name: /^Live windows received since this page opened:/ })).toBeVisible();
+  expect(screen.getByText('History coverage · since opening')).toBeInTheDocument();
   expect(screen.queryByText('Since the run started')).toBeNull();
   expect(screen.getByRole('heading', { name: 'Target runtime' })).toBeVisible();
   expect(screen.getByRole('img', { name: /Heap and RSS: heap \(raw\) 399, RSS \(raw\) 570/ })).toBeVisible();
@@ -396,6 +397,7 @@ it('loads recorded metric and target windows once and keeps later live polls ind
   const read = vi.mocked(HistoryReads.prototype.read).mockResolvedValue(history);
   await running(current);
   expect(await screen.findByRole('img', { name: /^Recorded history through 05:00 · 3 of 300 windows shown · sampled:/ })).toBeVisible();
+  expect(screen.getByText('History coverage · sampled')).toBeInTheDocument();
   expect(screen.getByText(/3 recorded observations, plus live readings/)).toBeVisible();
   await act(async () => new Promise((resolve) => setTimeout(resolve, 2200)));
   expect(read).toHaveBeenCalledTimes(1);

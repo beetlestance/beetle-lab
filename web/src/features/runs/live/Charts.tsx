@@ -121,7 +121,7 @@ export function WholeRun({
         ticks={history.fromStart ? stageTicks(plan, domain, xs.at(-1) ?? null) : undefined}
       />
       <details className="live-history-details">
-        <summary>History coverage{sampledHistory(history) ? ' · sampled' : ''}</summary>
+        <summary>{historySummary(history)}</summary>
         <p>{historyCaption(history, bootstrap?.status)}</p>
       </details>
       {bootstrap?.status === 'unavailable' && (
@@ -136,8 +136,10 @@ export function WholeRun({
   );
 }
 
-function sampledHistory(history: LiveHistory): boolean {
-  return history.liveSampled || (history.coverage !== null && recordedCount(history) < history.coverage.windows);
+function historySummary(history: LiveHistory): string {
+  const sampled =
+    history.liveSampled || (history.coverage !== null && recordedCount(history) < history.coverage.windows);
+  return `History coverage${history.coverage === null ? ' · since opening' : ''}${sampled ? ' · sampled' : ''}`;
 }
 
 function historyCaption(history: LiveHistory, status: BootstrapState['status'] | undefined): string {
