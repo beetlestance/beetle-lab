@@ -13,6 +13,7 @@ COPY tsconfig.base.json tsconfig.node.json ./
 COPY tools/build-api.ts ./tools/build-api.ts
 COPY contracts/src ./contracts/src
 COPY contracts/engines ./contracts/engines
+COPY contracts/runner/v1/target-runtime-units.schema.json ./contracts/runner/v1/target-runtime-units.schema.json
 COPY app/src ./app/src
 RUN npm run build:api
 

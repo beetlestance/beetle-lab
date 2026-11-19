@@ -13,6 +13,7 @@ COPY tsconfig.base.json tsconfig.node.json ./
 COPY tools/build-agent.ts ./tools/build-agent.ts
 COPY contracts/src ./contracts/src
 COPY contracts/engines ./contracts/engines
+COPY contracts/runner/v1/target-runtime-units.schema.json ./contracts/runner/v1/target-runtime-units.schema.json
 COPY agent/src ./agent/src
 RUN npm run build:agent
 

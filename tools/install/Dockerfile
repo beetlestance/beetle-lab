@@ -15,6 +15,7 @@ COPY tools/install ./tools/install
 COPY tools/recovery ./tools/recovery
 COPY contracts/src ./contracts/src
 COPY contracts/engines ./contracts/engines
+COPY contracts/runner/v1/target-runtime-units.schema.json ./contracts/runner/v1/target-runtime-units.schema.json
 COPY agent/src ./agent/src
 COPY app/src ./app/src
 RUN node --import tsx tools/build-install.ts

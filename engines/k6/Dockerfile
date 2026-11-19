@@ -18,6 +18,7 @@ COPY tsconfig.base.json tsconfig.node.json ./
 COPY tools/build-k6.ts ./tools/build-k6.ts
 COPY contracts/src ./contracts/src
 COPY contracts/engines ./contracts/engines
+COPY contracts/runner/v1/target-runtime-units.schema.json ./contracts/runner/v1/target-runtime-units.schema.json
 COPY engines/k6/bootstrap ./engines/k6/bootstrap
 COPY engines/k6/build ./engines/k6/build
 COPY engines/k6/export ./engines/k6/export
