@@ -2,6 +2,8 @@ import { checkHistoricalNative } from './historical-native.js';
 import { markHistorical } from './historical.js';
 import { migration032 } from './migration032.js';
 import { registerStoppedHistory } from './output-absence/stopped-history.js';
+import { migration042 } from './migration042.js';
+import { registerSourceStoppedHistory } from './output-finalization/stopped-history.js';
 import { migration041 } from './migration041.js';
 import { migration040 } from './migration040.js';
 import { migration039 } from './migration039.js';
@@ -51,7 +53,7 @@ import { migration002 } from './migration002.js';
 import { DatabaseSync } from 'node:sqlite';
 import { StorageError } from './protocol.js';
 
-export const METADATA_SCHEMA_VERSION = 41;
+export const METADATA_SCHEMA_VERSION = 42;
 
 // Application migration 001; independent of the agent journal schema.
 export const migration001 = `
@@ -166,6 +168,7 @@ function applyMigrations(db: DatabaseSync, version: number): void {
     () => db.exec(migration039),
     () => db.exec(migration040),
     () => db.exec(migration041),
+    () => db.exec(migration042),
   ];
   steps.forEach((step, index) => {
     if (version <= index) transaction(db, step);
@@ -175,6 +178,7 @@ function applyMigrations(db: DatabaseSync, version: number): void {
 function registerConnection(db: DatabaseSync): void {
   registerBackendSettlement(db);
   registerStoppedHistory(db);
+  registerSourceStoppedHistory(db);
   registerRetentionAccounting(db);
   registerCleanupAckValidation(db);
   registerAbsenceValidation(db);

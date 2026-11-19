@@ -9,7 +9,7 @@ import { deletionOperation, captureDeletionOperation, deletionReplyLimit } from 
 import { executionOperation, captureExecutionOperation } from './execution-binding/index.js';
 import { artifactReadOperation, captureArtifactReadOperation } from './run-artifacts/index.js';
 import { runEventsOperation, captureRunEventsOperation } from './run-events/index.js';
-import { hasStoppedHistoryPayload, STOPPED_HISTORY_RPC_BYTES } from './output-absence/wire.js';
+import { hasStoppedHistoryPayload, STOPPED_HISTORY_RPC_BYTES } from './stopped-history-rpc.js';
 import { absenceOperation, captureAbsenceOperation } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationOperation } from './output-finalization/index.js';
 import { resultOperation, captureResultOperation } from './run-results/index.js';

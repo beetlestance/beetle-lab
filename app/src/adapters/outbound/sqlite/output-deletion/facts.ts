@@ -7,6 +7,7 @@ import type { OutputDeletionCommand } from '../../../../ports/output-deletion-me
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { RUN_OUTPUT_METADATA_BYTES } from '../../../../ports/dispatch.js';
 import { loadOutput } from '../output-custody/index.js';
+import { readSourceStoppedHistory, sourceStoppedHistoryCharge } from '../output-finalization/stopped-history.js';
 import { requireAbsenceCharge } from '../output-absence/stopped-history.js';
 import { OutputAbsences } from '../output-absence/index.js';
 import { StorageError } from '../protocol.js';
@@ -72,7 +73,7 @@ export function captureFacts(
   if (row.execution_charged !== 0 || row.event_pending !== 0 || Number(!!source) + Number(!!absent) !== 1)
     throw new StorageError('conflict');
   const owned = binding(db, lower(run.id), run.activeAttemptId);
-  if (source) return sourceFacts(db, run, owned, source);
+  if (source) return sourceFacts(db, run, owned, source, command.verifyHistory === true);
   return absenceFacts(db, run, owned, absent, command.verifyHistory === true);
 }
 function absenceFacts(
@@ -105,7 +106,13 @@ function absenceFacts(
     versions: [],
   };
 }
-function sourceFacts(db: DatabaseSync, run: Run, owned: EventBinding, receipt: Record<string, unknown>): DeletionFacts {
+function sourceFacts(
+  db: DatabaseSync,
+  run: Run,
+  owned: EventBinding,
+  receipt: Record<string, unknown>,
+  verifyHistory: boolean,
+): DeletionFacts {
   const output = loadOutput(db, owned);
   if (
     output.kind !== 'adopted' ||
@@ -125,6 +132,12 @@ function sourceFacts(db: DatabaseSync, run: Run, owned: EventBinding, receipt: R
     )
   )
     throw new StorageError('conflict');
+  const artifactBytes = output.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0);
+  requireSourceCharge(db, owned, output.sourceDigest, {
+    artifacts: artifactBytes,
+    charged: receipt.retained_payload_bytes,
+    verifyHistory,
+  });
   return {
     retirement: {
       binding: owned,
@@ -142,4 +155,28 @@ function sourceFacts(db: DatabaseSync, run: Run, owned: EventBinding, receipt: R
     metadataBytes: RUN_OUTPUT_METADATA_BYTES,
     versions: output.artifacts.map((artifact) => artifact.version),
   };
+}
+
+function requireSourceCharge(
+  db: DatabaseSync,
+  owned: EventBinding,
+  sourceDigest: string,
+  charge: { artifacts: number; charged: unknown; verifyHistory: boolean },
+): void {
+  const history = charge.verifyHistory
+    ? (readSourceStoppedHistory(db, owned, sourceDigest)?.bytes ?? 0)
+    : sourceStoppedHistoryCharge(db, owned, sourceDigest);
+  const custody = db
+    .prepare(
+      `SELECT length(CAST(canonical_json AS BLOB)) AS manifest,
+    coalesce((SELECT retained_bytes FROM event_cursors WHERE attempt_id=p.attempt_id AND generation=1),0) AS events
+    FROM execution_output_payloads p WHERE attempt_id=? AND kind='manifest'`,
+    )
+    .get(owned.key.attempt.attemptId);
+  if (
+    typeof custody?.manifest !== 'number' ||
+    typeof custody.events !== 'number' ||
+    charge.charged !== custody.manifest + custody.events + charge.artifacts + history
+  )
+    throw new StorageError('unavailable');
 }

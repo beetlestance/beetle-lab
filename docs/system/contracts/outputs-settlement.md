@@ -11,13 +11,13 @@ are in [output collection](outputs-collection.md); agent native cleanup is in [r
 
 | Kind | Agent closure | Backend receipt | Retained after finalisation | Permanent floor |
 | --- | --- | --- | --- | --- |
-| Source-backed | source + delivery closure (Journal 012–013) | `execution_output_finalizations` (backend 011) | C + M + A + 65536 metadata + 65536 control | backend 2560, agent 4096 |
-| Source-free | `OutputAbsence` (Journal 014) | absence proof and receipt (backend 012) | C + R + 65536 metadata + 65536 control | backend 2560, agent 4096 |
+| Source-backed | source + delivery closure (Journal 012–013) | `execution_output_finalizations` (backend 011) | C + M + A + H + 65536 metadata + 65536 control | backend 2560, agent 4096 |
+| Source-free | `OutputAbsence` (Journal 014) | absence proof and receipt (backend 012) | C + R + H + 65536 metadata + 65536 control | backend 2560, agent 4096 |
 | Positive unsent | none | unsent witness only | 65536 control | backend 2560 |
 
 C is charged event bytes (canonical + 128 per row), M the manifest, A declared artifact bytes, R the
-provisional result (or zero), P the original `Offer.budget.outputBytes`. Receipt families and their proofs
-mutually exclude. A missing source never proves absence, and missing evidence never yields a passed Run.
+provisional result, H retained stopped history (each or zero), and P the original output budget.
+Receipt families mutually exclude. Missing evidence never yields absence or a passed Run.
 
 ## Public source values
 
@@ -114,8 +114,8 @@ pending; corrupt or contradictory evidence fails. It requires, in order:
 
 A `stop_evidence` wait refreshes the scope-bound snapshot after the agent closes delivery.
 The first durable stop leaves the exit witness intact. Completed execution passes validation.
-Sealed `invalid_config` fails it. Migration 039 credits P − (C + M + A) once, projects the
-Run and closes `event_pending`, fencing events, cursors, slots and snapshots.
+Sealed `invalid_config` fails it. The refund is P − (C + M + A + H), including [verified stopped history](active-history.md#internal-stopped-checkpoint-read).
+One receipt projects the Run and fences events, cursors, slots and snapshots.
 
 ## Source-free closure
 
@@ -214,7 +214,7 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 | --- | --- |
 | `contracts/src/output-source/` | `3c46ca08d6f0` |
 | `agent/src/journal/output-delivery-protocol.ts` | `9c029c3752ab` |
-| `app/src/adapters/outbound/sqlite/output-finalization/` | `fa47885187b8` |
-| `app/src/adapters/outbound/sqlite/output-absence/` | `07399ae8a09f` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `081c1165b71f` |
-| `app/src/adapters/outbound/sqlite/backend-settlement/` | `a99634b02749` |
+| `app/src/adapters/outbound/sqlite/output-finalization/` | `3e695ef5851f` |
+| `app/src/adapters/outbound/sqlite/output-absence/` | `9bada888516d` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `1b41d5b10521` |
+| `app/src/adapters/outbound/sqlite/backend-settlement/` | `83a061e649a5` |

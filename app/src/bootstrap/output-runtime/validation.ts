@@ -59,13 +59,19 @@ export function finalizationValue(
   input: OutputFinalizationReply,
   request: OutputFinalizationRequest,
   run: Run,
-): 'refresh' | 'done' {
+): 'refresh' | 'history' | 'done' {
   const kind = discriminator(input);
   if (kind === 'pending') {
     const value = fields(input, ['kind', 'reason']);
     requireValue(
-      ['source', 'execution', 'events', 'artifacts', 'stop_evidence', 'exit_evidence'].includes(value.reason as string),
+      ['source', 'execution', 'events', 'artifacts', 'stop_evidence', 'exit_evidence', 'history'].includes(
+        value.reason as string,
+      ),
     );
+    if (value.reason === 'history') {
+      requireValue(request.stoppedHistory === 'fetch');
+      return 'history';
+    }
     return value.reason === 'stop_evidence' ? 'refresh' : 'done';
   }
   requireValue(kind === 'finalized');

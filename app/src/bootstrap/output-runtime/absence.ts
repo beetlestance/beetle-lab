@@ -10,7 +10,7 @@ import { OutputTransferError } from '../../ports/output-transfer.js';
 import { absenceFinalization, absenceState, boundSnapshot, observationValue } from './absence-values.js';
 import { fields, requireValue } from './validation.js';
 
-function remoteValue<T>(reply: ClientResult<T>): T {
+export function remoteValue<T>(reply: ClientResult<T>): T {
   const ok = Object.getOwnPropertyDescriptor(reply, 'ok');
   requireValue(ok && 'value' in ok && typeof ok.value === 'boolean');
   fields(reply, ok.value ? ['ok', 'value'] : ['ok', 'error']);

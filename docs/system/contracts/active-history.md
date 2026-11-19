@@ -109,8 +109,9 @@ also commit an observation alongside the delivery closure. The runner route
 immutable source and manifest digests, final event sequence and matching intent
 digest, with the observation or `null`. Before delivery it returns
 `source_pending`, or `source_absent` when an absence receipt has been committed.
-The backend runner client validates this response. Source-backed finalisation
-does not yet adopt it.
+Source-backed finalisation adopts it only after matching the retained source,
+manifest, sequence, settled header, all output slots and full event ACK.
+The stopped-history read accepts either matching finalisation receipt.
 
 The backend waits for the exact released snapshot and full event acknowledgement
 before fetching a stopped observation. It compares the companion proof to the

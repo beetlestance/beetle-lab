@@ -32,8 +32,9 @@ export function fixture(count = 1) {
     adopt: vi.fn<OutputAbsenceStore['adopt']>(async () => {throw new Error('Unexpected adoption');}),
     finalize: vi.fn<OutputAbsenceStore['finalize']>(async () => ({kind: 'pending', reason: 'events'}))};
   const observations = {observe: vi.fn<DispatchStore['observe']>(async () => {throw new Error('Unexpected observation');})};
-  const options: OutputRuntimeOptions = {dataRoot: '/synthetic', outputs, absences, observations, gateway: {...transferFixture().gateway,
-    output: vi.fn(() => {throw new Error('Unexpected absence client');}),
+  const gateway = transferFixture().gateway;
+  const options: OutputRuntimeOptions = {dataRoot: '/synthetic', outputs, absences, observations, gateway: {...gateway,
+    output: vi.fn(() => ({...gateway.output(), absence: async () => {throw new Error('Unexpected absence read');}})),
     attempt: vi.fn(() => {throw new Error('Unexpected snapshot client');})},
     runs: {getRun}, finalizations: {finalize}, freeSpaceReserveBytes: 0, intervalMs: 25, onFailure: vi.fn(async () => {})};
   const scheduler = new OutputScheduler(options, transfers, files);

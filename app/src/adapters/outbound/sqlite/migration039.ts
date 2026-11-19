@@ -11,7 +11,7 @@ const systemStop = `coalesce(${knownReason},CASE WHEN ${wrapper} IN ${reasons} T
 
 const proof = `json_type(e.snapshot_json,'${property}')`;
 const stopReady = `${proof} IS NOT NULL AND json_extract(e.snapshot_json,'$.lastSeq') IS s.final_agent_seq`;
-const projection = finalProjection
+export const systemStopProjection = finalProjection
   .replace(' retained_payload_bytes,', ` retained_payload_bytes, (${stopReady}) stop_ready,`)
   .replace(
     "CASE WHEN json_extract(e.snapshot_json,'$.exitEvidence.oomKilled')=1 THEN 'errored'",
@@ -48,7 +48,7 @@ const headerUpdate = headerGuards
 
 export const migration039 = `
 DROP VIEW output_finalization_evidence;
-${projection}
+${systemStopProjection}
 DROP TRIGGER output_header_update;
 ${headerUpdate}
 PRAGMA user_version=39;

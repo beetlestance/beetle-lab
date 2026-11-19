@@ -5,7 +5,7 @@ import type { absenceFixture } from './fixture.js';
 import { uuid } from '../storage/fixture.js';
 
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
-type Fixture = ReturnType<typeof absenceFixture>;
+type Fixture = Pick<ReturnType<typeof absenceFixture>, 'binding'>;
 export function observed(f: Fixture) {
   const { organizationId, workspaceId, attemptId, generation } = f.binding.key.attempt;
   const scope = { organizationId, workspaceId, attemptId, generation };

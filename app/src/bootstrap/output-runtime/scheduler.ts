@@ -7,7 +7,8 @@ import type { OutputByteStore } from '../../ports/output-bytes.js';
 import type { OutputRuntime, OutputRuntimeOptions, OutputRuntimeState } from '../../ports/output-runtime.js';
 import { OutputTransferError } from '../../ports/output-transfer.js';
 import type { OutputTransfers, OutputTransferOutcome } from '../../ports/output-transfer.js';
-import { finalizationValue, requireValue, sameBinding, transferValue } from './validation.js';
+import { finalizeWithSourceHistory } from './source-history.js';
+import { requireValue, sameBinding, transferValue } from './validation.js';
 
 /** Private composition seam: production always supplies the real transfer/files owners. */
 export class OutputScheduler implements OutputRuntime {
@@ -168,9 +169,10 @@ export class OutputScheduler implements OutputRuntime {
     };
     let value;
     try {
-      value = finalizationValue(await this.options.finalizations.finalize(request), request, run);
+      value = await finalizeWithSourceHistory(this.options, request, run, signal);
     } catch (error) {
-      if (error instanceof Error && Object.getOwnPropertyDescriptor(error, 'code')?.value === 'conflict') return;
+      const code = error instanceof Error ? Object.getOwnPropertyDescriptor(error, 'code')?.value : undefined;
+      if (code === 'conflict' || code === 'queue_full') return;
       throw error;
     }
     if (value === 'refresh' && !signal.aborted) await refreshOutputSnapshot(this.options, binding, signal);

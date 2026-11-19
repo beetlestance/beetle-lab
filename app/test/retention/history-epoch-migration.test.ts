@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { initialize, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
+import { initialize, METADATA_SCHEMA_VERSION, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { migration038 } from '../../src/adapters/outbound/sqlite/migration038.js';
 import { seedFoundation, enqueue } from '../storage/execution-foundation-fixtures.js';
 import { shipped } from '../storage/legacy027.js';
@@ -48,8 +48,12 @@ it('upgrades populated shipped schema 37 with no row, receipt or accounting drif
     prior.close();
     const upgraded = initialize(path);
     try {
-      expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(41);
-      expect(rows(upgraded).filter((entry) => entry.name !== 'execution_stopped_history')).toEqual(before);
+      expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
+      expect(
+        rows(upgraded).filter(
+          (entry) => !['execution_stopped_history', 'execution_source_stopped_history'].includes(entry.name),
+        ),
+      ).toEqual(before);
       const beforeByName = new Map(schema.map((row) => [row.name, row.sql]));
       const current = graph(upgraded).filter((row) => !String(row.name).includes('stopped_history'));
       expect(current.map((row) => row.name)).toEqual(schema.map((row) => row.name));

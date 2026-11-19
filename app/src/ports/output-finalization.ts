@@ -1,3 +1,4 @@
+import type { StoppedObservation } from '@beetle/contracts/output-source';
 import type { Run } from '@beetle/contracts/api';
 import type { EventBinding } from './events.js';
 
@@ -9,6 +10,12 @@ export interface OutputFinalizationRequest {
   readonly sourceDigest: string;
   readonly manifestDigest: string;
   readonly expectedRunVersion: number;
+  readonly stoppedHistory?: 'fetch' | SourceFinalizationHistory;
+}
+
+export interface SourceFinalizationHistory {
+  readonly finalAgentSeq: number;
+  readonly observation: StoppedObservation | null;
 }
 /** Immutable credit and terminal projection; never another copy of the result. */
 export interface OutputFinalizationReceipt {
@@ -28,7 +35,7 @@ export type OutputFinalizationReply =
   | { readonly kind: 'finalized'; readonly receipt: OutputFinalizationReceipt }
   | {
       readonly kind: 'pending';
-      readonly reason: 'source' | 'execution' | 'events' | 'artifacts' | 'stop_evidence' | 'exit_evidence';
+      readonly reason: 'source' | 'execution' | 'events' | 'artifacts' | 'stop_evidence' | 'exit_evidence' | 'history';
     };
 /** One immediate metadata transaction. Matching committed receipts precede version
  * checks on retry. No file/network work, engine retry, source deletion or purge.
