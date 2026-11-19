@@ -52,6 +52,11 @@ An incomplete run whose chart and overview reads confirm a missing archive
 shows one explanation in place of chart and endpoint sections. The report,
 diagnostics and artifact tabs retain their usual publication checks.
 
+An incomplete result can display whole-run figures from the verified native k6
+summary. They carry native provenance, with the chart and endpoint section absent
+when no verified archive exists. Threshold readings remain visible without a
+run-level pass or fail label.
+
 ## Anchors
 
 | Code | Reviewed |
@@ -68,5 +73,5 @@ diagnostics and artifact tabs retain their usual publication checks.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `1e848688809d` |
+| `web/src/features/runs/result/index.tsx` | `56b61015a624` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

@@ -44,4 +44,4 @@ does not claim that a later download or OS save has been verified.
 | `web/src/lib/response-body.ts` | `253992da68f6` |
 | `web/src/features/runs/artifacts/ArtifactViewer.tsx` | `a523d5fbe171` |
 | `web/src/features/runs/artifacts/preview.ts` | `ed499f014a55` |
-| `web/src/features/runs/artifacts/index.tsx` | `4402d673af2d` |
+| `web/src/features/runs/artifacts/index.tsx` | `e84419dbf44d` |

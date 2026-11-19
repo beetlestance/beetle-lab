@@ -20,6 +20,7 @@ export interface K6ResultInput {
   readonly terminalObservedAt: string;
   readonly summary: SummaryEvidence | null;
   readonly metrics: MetricSnapshot | null;
+  readonly nativeOverview?: NonNullable<EngineResult['nativeOverview']>;
   readonly artifacts: readonly EngineResult['artifacts'][number][];
 }
 export type K6ResultMapping =

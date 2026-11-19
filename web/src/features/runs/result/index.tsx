@@ -21,11 +21,12 @@ import { ReportTabs, useReportTab } from './ReportTabs.js';
 import type { ReportTab } from './ReportTabs.js';
 import { ResultHeader } from './ResultHeader.js';
 import { RunNote } from './RunNote.js';
-import { ScriptVersion, SummaryTiles, Thresholds } from './Sections.js';
-import { MetricSummary, ResultEndpoints, OverviewStatus, readyOverview } from './Overview.js';
+import { ScriptVersion, Thresholds } from './Sections.js';
+import { ResultEndpoints, readyOverview } from './Overview.js';
 import type { RunPlan } from '../live/plan.js';
 import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
+import { ResultSummary } from './Summary.js';
 import { ResultReadProblem } from './ResultReadProblem.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
@@ -66,10 +67,10 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const { readOnly, restoredBackup: restored } = useSessionAccess();
   const view = reads.result.view;
   const ready = readyOverview(reads.overview);
-  const archiveMissing = incompleteArchiveMissing(run, reads);
+  const engine = view.status === 'ready' ? view.result : null;
+  const archiveMissing = incompleteArchiveMissing(run, reads, engine);
   const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
-  const engine = view.status === 'ready' ? view.result : null;
   const context = { readOnly, rules: plan.rules, measurements: ready, phone };
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, context);
   return (
@@ -100,7 +101,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         <RunNote run={run} readOnly={readOnly} />
       </PhoneDisclosure>
       {!phone && <ResultSectionNav onSelect={selectSection} archiveMissing={archiveMissing} />}
-      <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} />
+      <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} archiveMissing={archiveMissing} />
       <ResultMeasurements
         reads={reads}
         run={run}
@@ -160,9 +161,10 @@ function ResultMeasurements({
   );
 }
 
-function incompleteArchiveMissing(run: Run, reads: ResultReads): boolean {
+function incompleteArchiveMissing(run: Run, reads: ResultReads, engine: EngineResult | null): boolean {
+  if (run.reason !== 'artifact_incomplete') return false;
+  if (engine?.nativeOverview) return true;
   return (
-    run.reason === 'artifact_incomplete' &&
     reads.chartHistory.isSuccess &&
     reads.chartHistory.data.reason === 'not_recorded' &&
     reads.overview.isSuccess &&
@@ -347,32 +349,6 @@ function PhoneExtras({
         />
       </PhoneDisclosure>
     </>
-  );
-}
-
-function ResultSummary({
-  reads,
-  charts,
-  ready,
-  phone,
-}: {
-  reads: ResultReads;
-  charts: ReturnType<typeof useRecordedCharts>;
-  ready: RunMetricOverview | null;
-  phone: boolean;
-}) {
-  return (
-    <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
-      <h2 id="result-summary-title" className="sr-only">
-        Summary
-      </h2>
-      <OverviewStatus query={reads.overview} />
-      {ready ? (
-        <MetricSummary overview={ready} history={charts.data} phone={phone} />
-      ) : (
-        <SummaryTiles summary={reads.summary} status={reads.summaryStatus} phone={phone} />
-      )}
-    </section>
   );
 }
 

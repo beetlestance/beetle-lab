@@ -1,4 +1,5 @@
 import type { TargetRuntimeReport } from '@beetle/contracts/target-runtime';
+import { appendNativeOverview } from './native-overview.js';
 import { appendTargetReport } from './target.js';
 import { encodeJson, validate } from '@beetle/contracts';
 import type { EngineResult } from '@beetle/contracts';
@@ -62,10 +63,7 @@ function render(options: Options): PerformanceReports {
   text.line(
     `Required assertion definitions: ${assertions.required}; passed=${assertions.passed}; failed=${assertions.failed}; unknown=${assertions.unknown}`,
   );
-  for (const threshold of result.thresholds)
-    text.line(`Threshold ${threshold.id} [${threshold.purpose}]: ${threshold.passed ? 'passed' : 'failed'}`);
-  if (result.mode === 'discovery')
-    text.line(`Discovery rule ${result.expectedAbort.ruleId}: reached=${result.expectedAbort.reached}`);
+  appendResultEvidence(text, result);
   text.line(`Observed metric series: ${series.length}. Missing series/statistics are unknown, not zero.`);
   text.line('Scopes: execute workload and engine resources; readiness/control and target sensors are separate.');
   text.line(
@@ -136,4 +134,14 @@ function writeCsvHeader(csv: ReportWriter): void {
       .map(csvCell)
       .join(','),
   );
+}
+
+function appendResultEvidence(text: ReportWriter, result: EngineResult): void {
+  if (result.nativeOverview) appendNativeOverview(text, result.nativeOverview);
+  for (const threshold of result.thresholds) {
+    const verdict = result.nativeOverview ? 'not judged' : threshold.passed ? 'passed' : 'failed';
+    text.line(`Threshold ${threshold.id} [${threshold.purpose}]: ${verdict}`);
+  }
+  if (result.mode === 'discovery')
+    text.line(`Discovery rule ${result.expectedAbort.ruleId}: reached=${result.expectedAbort.reached}`);
 }

@@ -314,7 +314,7 @@ class Attempt {
       1,
       artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0) - historyWork.published + historyWork.produced,
     );
-    return { artifacts, evidence };
+    return { artifacts, evidence, native: mapped.body.nativeOverview };
   }
   private artifactQuiescence(): 'confirmed' | 'failed' {
     return this.quiet.artifacts === 'failed' ||
@@ -330,12 +330,12 @@ class Attempt {
     this.fence.check();
     const initial = mapK6Result(resultEvidence(this.state, compiled, []));
     if (!initial.ok) this.fail('mapping');
-    const { artifacts, evidence } = await this.collectArtifacts(initial, compiled);
+    const { artifacts, evidence, native } = await this.collectArtifacts(initial, compiled);
     this.stage = 'seal';
     await this.phases!.start('seal');
     await this.notifications.quiesce();
     this.fence.check();
-    const mapped = mapK6Result(resultEvidence(evidence, compiled, artifacts));
+    const mapped = mapK6Result(resultEvidence(evidence, compiled, artifacts, native));
     if (!mapped.ok) this.fail('mapping');
     const sealed = sealResult(mapped.body, this.fence.timestamp());
     if (!sealed.ok) this.fail('seal');
