@@ -118,7 +118,7 @@ P95, requests, failures and measured active-VU curves keep independent native-
 marker-relative coordinates on a
 common scale; they never fill a union grid, stretch phases or align wall clocks.
 The shared renderer accepts optional per-series source coordinates and gap flags.
-Its default shared-timeline behavior stays unchanged. Recorded legends use each
+Its default shared-timeline behavior stays unchanged; CSS height affects only presentation. Recorded legends use each
 series' own nearest source position, hide values outside coverage/across gaps,
 and retain known zero. An overlay cursor denotes requested time, not a new sample.
 Observed peaks require matching overview numeric generation, version, manifest,
@@ -202,7 +202,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `fe6f0666d203` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
-| `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
+| `web/src/features/runs/live/LiveChart.tsx` | `651a2449b402` |
 | `app/src/application/run-comparison/failed-slo.ts` | `6e0a7894448f` |
 | `app/src/application/run-comparison/serialize.ts` | `0afc9d598903` |
 | `contracts/api/v2/run-comparison.schema.json` | `894f2795a40b` |
