@@ -9,7 +9,7 @@ import type { ArtifactRead } from '../../../lib/verified-artifact.js';
 import type { ArtifactReader } from '../../../lib/use-artifact-report.js';
 import { RunPerformanceReport } from './index.js';
 import { artifact, deferred, input, params, report } from './fixtures.js';
-afterEach(() => {cleanup(); vi.useRealTimers(); vi.restoreAllMocks();});
+afterEach(() => {cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals();});
 function session() {return testClient(async () => {throw new Error('Unexpected API request');}).client;}
 function surface(api: ReturnType<typeof session>, reads: ArtifactReader<string>, selection = input()) {
   return <ApiContext.Provider value={api}><RunPerformanceReport {...selection} reads={reads} /></ApiContext.Provider>;
@@ -18,9 +18,21 @@ it('renders plain text, never executes report HTML, and exposes only scoped fixe
   render(surface(session(), {read: async () => report}));
   const body = await screen.findByRole('region', {name: 'Verified performance report'});
   expect(body.textContent).toBe(report); expect(body.querySelector('script')).toBeNull();
-  const link = screen.getByRole('link', {name: 'Download text report'});
+  const link = screen.getByRole('link', {name: 'Download report'});
   expect(link).toHaveAttribute('download', `artifact-${artifact.artifactId}.txt`);
   expect(link.getAttribute('href')).toContain(`/runs/${params.runId}/attempts/${params.attemptId}/artifacts/${artifact.artifactId}/content`);
+});
+it('copies the verified text and reports clipboard refusals', async () => {
+  const writeText = vi.fn<(text: string) => Promise<void>>().mockRejectedValueOnce(new Error()).mockResolvedValueOnce(undefined);
+  vi.stubGlobal('navigator', { clipboard: { writeText } });
+  render(surface(session(), {read: async () => report}));
+  const copy = await screen.findByRole('button', {name: 'Copy'});
+  expect(screen.queryByRole('button', {name: 'Reload performance report'})).toBeNull();
+  fireEvent.click(copy);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not copy');
+  fireEvent.click(copy);
+  expect(await screen.findByRole('status')).toHaveTextContent('Report copied');
+  expect(writeText.mock.calls).toEqual([[report], [report]]);
 });
 it.each(['scope', 'attempt', 'session'] as const)('retires previous values and late replies across %s changes', async kind => {
   const held = deferred<string>(); const signals: AbortSignal[] = []; let count = 0;
