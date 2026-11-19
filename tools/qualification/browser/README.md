@@ -133,3 +133,9 @@ active-metric (SSE) reconnect and cancellation, then raw requests through the pr
 the exact origin opens a session, while a wrong `Host`, a wrong `Origin`, a missing
 CSRF header and the loopback frontend port are each `403`. It does not cover a
 browser-trusted certificate, another host's network path or more than one user.
+
+`BEETLE_BROWSER_PROFILE=run-deletion` is a three-phase author/run/delete check with
+explicit evidence. It checks the real scoped preview contains exactly that run
+before applying, then waits for authoritative cleanup, acknowledges the batch and
+confirms the run is gone after reload. Its pass covers deletion only; it does not
+replace the run-results or full functional profiles.

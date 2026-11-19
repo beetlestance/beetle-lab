@@ -1,7 +1,9 @@
 import { expect } from '@playwright/test';
+import assert from 'node:assert/strict';
+import { validateApi } from '@beetle/contracts/api';
 import { execute, start } from './results.mjs';
 import { revision } from './authoring.mjs';
-import { assertRunState } from './run-state.mjs';
+import { assertRunState, runRoute } from './run-state.mjs';
 /**
  * @param {import('@playwright/test').Page} page
  * @param {Awaited<ReturnType<import('./authoring.mjs').author>>} authored
@@ -21,14 +23,16 @@ export async function historyComparison(page, authored, first) {
     await row.getByRole('checkbox', { name: /^Compare run / }).check();
   }
   await page.getByRole('link', { name: 'Compare 2', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /^2 runs, baseline Synthetic k6 suite / })).toBeVisible();
-  await expect(page.getByText('Loading comparison…', { exact: true })).toHaveCount(0);
-  if (
-    await page
-      .getByText('Comparison could not be loaded. Use Refresh comparison to retry.', { exact: true })
-      .isVisible()
-  )
+  const ready = page.getByRole('heading', { name: /^2 runs, baseline Synthetic k6 suite / });
+  const failed = page.getByText('Comparison could not be loaded. Use Refresh comparison to retry.', { exact: true });
+  // The service owns 30 s; allow the existing 5 s browser admission before expecting its outcome.
+  await expect(ready.or(failed)).toBeVisible({ timeout: 35000 });
+  if (await failed.isVisible()) {
+    console.log(JSON.stringify({ format: 'beetle-browser-read-recovery', read: 'comparison', explicitRetry: true }));
     await page.getByRole('button', { name: 'Refresh comparison', exact: true }).click();
+  }
+  await expect(ready).toBeVisible({ timeout: 35000 });
+  await expect(page.getByText('Loading comparison…', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: `Baseline: ${ids[0]}`, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Run 2: ${ids[1]}`, exact: true })).toBeVisible();
   const catalogue = page.getByRole('combobox', { name: /^Baseline metric\b/ });
@@ -67,13 +71,34 @@ export async function cancelReconnect(page, authored) {
  * @param {string} run
  */
 export async function deleteRun(page, run) {
+  const key = runRoute(run);
   await page.goto(run);
   await page.getByRole('button', { name: 'Delete run…', exact: true }).click();
-  await page.getByRole('button', { name: 'Preview this run deletion', exact: true }).click();
-  await page.getByRole('button', { name: 'Apply deletion of 1 runs', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: `Delete run ${key.id.slice(0, 4)}?`, exact: true });
+  await dialog.getByRole('button', { name: 'Delete this run…', exact: true }).click();
+  const path = `/api/v2/organizations/${key.organizationId}/workspaces/${key.workspaceId}/runs/${key.id}/deletion-preview`;
+  const response = page.waitForResponse(
+    (reply) => new URL(reply.url()).pathname === path && reply.request().method() === 'POST',
+  );
+  void response.catch(() => undefined);
+  await dialog.getByRole('button', { name: 'Preview this run deletion', exact: true }).click();
+  const previewReply = await response;
+  assert.equal(previewReply.status(), 200);
+  const preview = validateApi('RetentionPreview', await previewReply.json());
+  assert(preview.ok, 'Expected the real scoped deletion preview');
+  assert.deepEqual(preview.value.scope, {
+    kind: 'workspace',
+    organizationId: key.organizationId,
+    workspaceId: key.workspaceId,
+  });
+  assert.deepEqual(
+    preview.value.candidates.map((candidate) => candidate.id),
+    [key.id],
+  );
+  await dialog.getByRole('button', { name: `Delete run ${key.id.slice(0, 4)}`, exact: true }).click();
   // Native cleanup and transport backoff can outlast one 60-second browser wait.
-  await expect(page.getByRole('heading', { name: 'completed', exact: true })).toBeVisible({ timeout: 180000 });
-  await page.getByRole('button', { name: 'Acknowledge completed batch', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: 'Removed 1 run', exact: true })).toBeVisible({ timeout: 180000 });
+  await dialog.getByRole('button', { name: 'Acknowledge completed batch', exact: true }).click();
   await page.reload();
   await expect(page.getByText('Resource not found', { exact: true })).toBeVisible();
 }
