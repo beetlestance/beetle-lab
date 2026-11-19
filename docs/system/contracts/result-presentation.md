@@ -82,7 +82,9 @@ request/failure/check values and dropped iterations. Missing fields remain unkno
 no history field fills a ready overview's null. Without a ready overview, existing
 accepted history scalars can remain, with a per-run error/availability note.
 Existing exact-ID history responses also supply bound suite/revision metadata.
-Only the captured run/suite/revision match can grant a comparison label; missing
+The settings comparison uses the same suite name and saved revision ordinal;
+equal display labels never imply equal revision identities. Full digests stay in
+recorded fingerprints. Only the captured run/suite/revision match grants labels; missing
 or mismatched records remain unknown. All metadata shares the same scoped owner.
 Selected IDs with colliding four-character prefixes expand to prefix plus suffix,
 then the complete source UUID if needed; labels never invent a run ordinal.
@@ -160,7 +162,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
 | `web/src/features/runs/comparison/useComparison.ts` | `3b122992b6fc` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `3d3b4ae2f47c` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `3643df66d465` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `fe6f0666d203` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |

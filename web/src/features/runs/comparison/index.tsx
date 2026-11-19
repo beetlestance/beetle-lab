@@ -73,7 +73,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
           />
           <section className="compare-section" aria-labelledby="compare-different">
             <h2 id="compare-different">What was different</h2>
-            <WhatWasDifferent items={snapshot.items} />
+            <WhatWasDifferent items={snapshot.items} contexts={state.contexts} />
           </section>
           <RecordedComparisonCharts
             key={ids.join(',')}

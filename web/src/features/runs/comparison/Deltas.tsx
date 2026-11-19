@@ -4,7 +4,7 @@ import { formatBytes, formatDuration, formatNumber, formatPercent } from '../../
 import { comparisonRunLabels } from './run-labels.js';
 import { comparisonFigures } from './figures.js';
 import type { ComparisonFigures } from './figures.js';
-import type { Summaries, Overviews, ComparisonHistories } from './useComparison.js';
+import type { Summaries, Overviews, ComparisonHistories, ComparisonContexts } from './useComparison.js';
 
 type Row = {
   label: string;
@@ -217,10 +217,22 @@ function ComparisonReadNotes({
 }
 
 /** "What was different": recorded run settings side by side; equal values say same. */
-export function WhatWasDifferent({ items }: { items: readonly RunComparisonItem[] }) {
+export function WhatWasDifferent({
+  items,
+  contexts,
+}: {
+  items: readonly RunComparisonItem[];
+  contexts: ComparisonContexts | undefined;
+}) {
   const labels = comparisonRunLabels(items.map((item) => item.run.id));
   const facts: readonly [string, (item: RunComparisonItem) => string][] = [
-    ['Revision', (item) => item.run.revisionDigest.slice(0, 8)],
+    [
+      'Revision',
+      (item) => {
+        const context = contexts?.get(item.run.id.toLowerCase());
+        return context ? `${context.suiteName} rev ${context.revisionOrdinal}` : 'Revision unknown';
+      },
+    ],
     ['Engine profile', (item) => `${item.run.engine.id} / ${item.run.engine.profileId}`],
     ['Memory limit', (item) => formatBytes(item.run.budget.memoryBytes) ?? '—'],
     ['Time limit', (item) => formatDuration(item.run.budget.timeoutMs) ?? '—'],
@@ -244,8 +256,12 @@ export function WhatWasDifferent({ items }: { items: readonly RunComparisonItem[
             <Th scope="row">{label}</Th>
             {items.map((item, index) => {
               const value = read(item);
+              const same =
+                label === 'Revision'
+                  ? item.run.revisionId.toLowerCase() === items[0]!.run.revisionId.toLowerCase()
+                  : value === base;
               return (
-                <Td key={item.run.id} muted={index > 0 && value === base && label !== 'Note'}>
+                <Td key={item.run.id} muted={index > 0 && same && label !== 'Note'}>
                   {value}
                 </Td>
               );
