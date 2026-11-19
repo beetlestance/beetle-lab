@@ -98,6 +98,8 @@ note even after a later edit. Neither a second POST nor an engine Offer carries 
   candidates; each candidate's current note is then checked against the whole
   folded query. When every trigram exceeds the budget, the request fails 422
   `search_too_broad`; there are no partial results.
+- Pinned-only reads check their bounded pin notes directly; unrelated global note
+  postings cannot reject the page. Wider optional counts follow [their own contract](history-counts.md).
 - Note matches and suite/folder/workspace matches are merged and deduplicated
   by run before ordering, filters and the cursor apply. `search_indexing` still
   reflects only the name backfill: every note postdates migration 031, so note
@@ -136,5 +138,5 @@ unchanged and that a late failure rolls back to the exact schema 030.
 | `app/src/adapters/outbound/sqlite/migration031.ts` | `b0feac9a7325` |
 | `app/src/adapters/outbound/sqlite/run-annotations.ts` | `f334af303d32` |
 | `app/src/adapters/outbound/sqlite/run-notes.ts` | `5b21f305661c` |
-| `app/src/adapters/outbound/sqlite/run-search/notes.ts` | `672f43ba4f19` |
+| `app/src/adapters/outbound/sqlite/run-search/notes.ts` | `417df874f6f1` |
 | `app/src/application/runs/note.ts` | `bd77e030a8ae` |

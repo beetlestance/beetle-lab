@@ -126,10 +126,15 @@ function appendRunQuery(query: URLSearchParams, input: NonNullable<PreparedInput
   if ('outcome' in input && input.outcome !== undefined) query.set('outcome', input.outcome);
   appendRunSearch(query, input);
   if ('order' in input && input.order !== undefined) query.set('order', input.order);
+  appendCounts(query, input);
 }
 
 function appendRunSearch(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
   if ('name' in input && input.name !== undefined) query.set('name', input.name);
   if ('runIdPrefix' in input && input.runIdPrefix !== undefined) query.set('runIdPrefix', input.runIdPrefix);
   if ('pinned' in input && input.pinned === true) query.set('pinned', 'true');
+}
+
+function appendCounts(query: URLSearchParams, input: NonNullable<PreparedInput['query']>): void {
+  if ('includeCounts' in input && input.includeCounts === true) query.set('includeCounts', 'true');
 }

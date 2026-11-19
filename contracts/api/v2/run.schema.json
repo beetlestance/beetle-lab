@@ -209,7 +209,9 @@
     "RunPage": {
       "type": "object",
       "properties": {
-        "workspaceName": {"$ref":"https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"},
+        "workspaceName": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+        },
         "scope": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
         },
@@ -243,6 +245,12 @@
           "items": {
             "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunListContext"
           }
+        },
+        "counts": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/run-history-counts#/$defs/RunHistoryCounts"
+        },
+        "countsUnavailable": {
+          "const": "search_too_broad"
         }
       },
       "required": [

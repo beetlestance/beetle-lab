@@ -16,6 +16,7 @@ import type { HistoryFilter } from './HistoryFilters.js';
 import { HistoryTable } from './HistoryTable.js';
 import { useSuiteNames } from './HistorySuites.js';
 import { HistoryHeader } from './HistoryHeader.js';
+import { historyRange } from './history-range.js';
 import { HistoryEmpty } from './HistoryEmpty.js';
 import type { RunScope } from './types.js';
 import './history.css';
@@ -75,14 +76,17 @@ function HistoryPage({
 }) {
   const { selected, setSelected, toggle, query, page, refresh } = useHistoryPage(scope, filters);
   const filtered = filtersActive(filters);
+  const current = currentHistoryPage(query);
   const empty = query.isSuccess && query.data.items.length === 0 && !page.hasBack && !filtered;
   return (
     <div className="history">
       <div className="history-intro">
         <HistoryHeader
           scope={scope}
-          workspaceName={query.isError ? undefined : query.data?.workspaceName}
+          workspaceName={current.workspaceName}
           pending={query.isPending}
+          counts={current.counts}
+          countsUnavailable={current.countsUnavailable}
           suiteId={controls.suiteId}
           suiteName={controls.suiteId ? controls.suites.name(controls.suiteId) : undefined}
         />
@@ -92,6 +96,7 @@ function HistoryPage({
         <>
           <HistoryFilters
             applied={filters}
+            counts={current.counts}
             apply={controls.apply}
             suites={controls.suites.suites}
             suiteLocked={controls.suiteId !== undefined}
@@ -102,6 +107,7 @@ function HistoryPage({
             clear={() => setSelected([])}
             refresh={refresh}
             fetching={query.isFetching}
+            counted={current.counts !== undefined}
           />
         </>
       )}
@@ -157,8 +163,8 @@ function HistoryRows({
         caption={filtered ? 'Matching runs' : 'Workspace runs'}
       />
       {data.items.length === 0 && <p className="history-cell-note">No more runs.</p>}
-      {(page.hasBack || data.nextCursor) && (
-        <Pagination page={page} next={data.nextCursor} order={order} label="Run pages" />
+      {(page.hasBack || data.nextCursor || data.counts) && (
+        <Pagination page={page} next={data.nextCursor} order={order} label="Run pages" summary={historyRange(data)} />
       )}
     </>
   );
@@ -170,18 +176,22 @@ function HistoryToolbar({
   clear,
   refresh,
   fetching,
+  counted,
 }: {
   scope: RunScope;
   selected: readonly string[];
   clear(): void;
   refresh(): void;
   fetching: boolean;
+  counted: boolean;
 }) {
   return (
     <div className="history-toolbar">
       <p className="history-compare-hint" aria-live="polite">
         {selected.length === 0
-          ? 'Tick two to four finished runs to compare them. The first you tick is the baseline.'
+          ? counted
+            ? ''
+            : 'Tick two to four finished runs to compare them. The first you tick is the baseline.'
           : `${selected.length} selected. The first is the baseline.`}
       </p>
       <div className="history-toolbar-actions">
@@ -229,9 +239,9 @@ function useHistoryPage(scope: RunScope, filters: HistoryFilter) {
   }
   const key = queryKeys.runs(scope.organizationId, scope.workspaceId);
   const page = usePage(key);
-  const applied = { ...page.query, ...filters };
+  const applied = { ...page.query, ...filters, includeCounts: true as const };
   const query = useQuery({
-    // The unfiltered first page is the exact key command search and the overview share.
+    // Enriched history pages cannot reuse an uncounted overview/search page.
     queryKey: queryKeys.runsPage(scope.organizationId, scope.workspaceId, page.cursor, applied),
     queryFn: ({ signal }) => readResult(api.listRuns({ params: scope, query: applied, signal })),
   });
@@ -240,4 +250,11 @@ function useHistoryPage(scope: RunScope, filters: HistoryFilter) {
     else void query.refetch();
   }
   return { selected, setSelected, toggle, query, page, refresh };
+}
+
+function currentHistoryPage(query: {
+  isError: boolean;
+  data: RunPage | undefined;
+}): Pick<RunPage, 'workspaceName' | 'counts' | 'countsUnavailable'> {
+  return query.isError ? {} : (query.data ?? {});
 }

@@ -47,12 +47,15 @@ export function Pagination({
   order,
   label = 'Pages',
   limit = 100,
+  summary,
 }: {
   page: ReturnType<typeof usePage>;
   next: string | null;
   order?: 'newest' | 'oldest' | undefined;
   label?: string | undefined;
   limit?: number | undefined;
+  /** Caller-supplied exact snapshot range; omitted for lists without count authority. */
+  summary?: string | undefined;
 }) {
   const [back, forward] = !order ? ['Back', 'Next'] : order === 'newest' ? ['Newer', 'Older'] : ['Older', 'Newer'];
   return (
@@ -60,9 +63,7 @@ export function Pagination({
       <Button size="sm" disabled={!page.hasBack} onClick={page.back}>
         {back}
       </Button>
-      <span aria-live="polite">
-        Page {page.position} · up to {limit} items per page
-      </span>
+      <span aria-live="polite">{summary ?? `Page ${page.position} · up to ${limit} items per page`}</span>
       <Button
         size="sm"
         disabled={!next}

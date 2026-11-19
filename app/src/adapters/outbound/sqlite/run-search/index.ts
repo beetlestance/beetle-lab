@@ -1,34 +1,34 @@
-import { captureHistoryKey, capturePrefixKey, prefixKeyColumns } from './rows.js';
+import { captureHistoryKey } from './rows.js';
 import type { HistoryKey, PrefixKey } from './rows.js';
 export type { HistoryKey } from './rows.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { compareRunListPosition, normalizeRunListQuery, runListPosition } from '@beetle/contracts/api';
 import type { RunList } from '../../../../ports/runs.js';
-import { StorageError } from '../protocol.js';
 import { runListStatement } from '../run-list-query.js';
 import { prepareNameSearch } from './backfill.js';
-import { matchingSuites, workspaceNameMatches } from './names.js';
-import { noteRunKeys } from './notes.js';
-import { pinnedRunsSql } from '../run-pins/index.js';
-import { RUN_PIN_LIMIT } from '../migration033.js';
+import { workspaceNameMatches } from './names.js';
+import { historySelection, inHistoryContext } from './selection.js';
 export function prepareHistorySearch(db: DatabaseSync, input: RunList): void {
   if (input.name !== undefined && !workspaceNameMatches(db, input.scope, input.name))
     prepareNameSearch(db, input.scope);
 }
 /** Scalar selection only; caller owns one read transaction and bounded Run projection. */
-export function historyKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
-  if (input.pinned === true) return pinnedKeys(db, input);
-  if (input.runIdPrefix !== undefined) return prefixKeys(db, input);
-  if (input.name === undefined || workspaceNameMatches(db, input.scope, input.name)) return suiteKeys(db, input);
+export function historyKeys(db: DatabaseSync, input: RunList, selection = historySelection(db, input)): HistoryKey[] {
   const query = normalizeRunListQuery(inputPage(input));
   const position = runListPosition(input.scope, query);
-  const suites = matchingSuites(db, input.scope, input.name);
+  const rows = input.pinned === true ? selection.pinned : selection.prefix;
+  if (rows !== undefined)
+    return top(
+      rows.filter((row) => inHistoryContext(row, input, selection) && accepts(row, query, position)),
+      query,
+    );
+  if (selection.suites === null) return suiteKeys(db, input);
   let result = top(
-    noteRunKeys(db, input.scope, input.name).filter((row) => accepts(row, query, position)),
+    selection.notes.filter((row) => accepts(row, query, position)),
     query,
   );
-  for (const id of suites) {
-    if (query.suiteId !== undefined && id.toLowerCase() !== query.suiteId) continue;
+  for (const id of selection.suites) {
+    if (query.suiteId !== undefined && id !== query.suiteId) continue;
     result = top([...result, ...suiteKeys(db, input, id)], query);
   }
   return result;
@@ -56,48 +56,6 @@ function suiteKeys(db: DatabaseSync, input: RunList, suiteId?: string): HistoryK
     .prepare(statement.sql)
     .all(...statement.values)
     .map(captureHistoryKey);
-}
-/** Prefix bound applies before lifecycle/cursor filtering; pagination cannot hide overflow. */
-function prefixKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
-  const query = normalizeRunListQuery(inputPage(input));
-  const prefix = query.runIdPrefix!;
-  const rows = db
-    .prepare(
-      `SELECT ${prefixKeyColumns} FROM runs INDEXED BY runs_page
-    WHERE organization_id=? AND workspace_id=? AND id>=? AND id<? ORDER BY runs.id LIMIT 257`,
-    )
-    .all(input.scope.organizationId, input.scope.workspaceId, prefix, prefix + '~')
-    .map(capturePrefixKey);
-  if (rows.length > 256) throw new StorageError('search_too_broad');
-  const position = runListPosition(input.scope, query);
-  return top(
-    rows.filter((row) => accepts(row, query, position)),
-    query,
-  );
-}
-/** Pinned rows are bounded by the workspace pin limit; every other filter applies in memory. */
-function pinnedKeys(db: DatabaseSync, input: RunList): HistoryKey[] {
-  const query = normalizeRunListQuery(inputPage(input));
-  const rows = db
-    .prepare(
-      `SELECT ${prefixKeyColumns} FROM runs WHERE organization_id=? AND workspace_id=? AND id IN (${pinnedRunsSql})
-    LIMIT ${RUN_PIN_LIMIT + 1}`,
-    )
-    .all(input.scope.organizationId, input.scope.workspaceId, input.scope.organizationId, input.scope.workspaceId)
-    .map(capturePrefixKey);
-  if (rows.length > RUN_PIN_LIMIT) throw new StorageError('unavailable');
-  const suites =
-    query.name === undefined || workspaceNameMatches(db, input.scope, query.name)
-      ? null
-      : new Set(matchingSuites(db, input.scope, query.name).map((id) => id.toLowerCase()));
-  const prefix = query.runIdPrefix;
-  const position = runListPosition(input.scope, query);
-  return rows
-    .filter((row) => prefix === undefined || row.id.toLowerCase().startsWith(prefix))
-    .filter((row) => suites === null || suites.has(row.suite_id.toLowerCase()))
-    .filter((row) => accepts(row, query, position))
-    .sort((a, b) => orderKeys(a, b, query.order))
-    .slice(0, query.limit + 1);
 }
 function accepts(
   row: PrefixKey,

@@ -198,7 +198,7 @@ Wide history tables retain readable columns in a named, keyboard-scrollable regi
 | Code                                           | Reviewed       |
 | ---------------------------------------------- | -------------- |
 | `web/src/app/routes.ts` | `e76ff2493fa2` |
-| `web/src/app/queries.ts` | `3ec14ef5ff88` |
+| `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `e7e83db9f347` |
 | `web/src/features/command-search/model.ts` | `6d1867832757` |

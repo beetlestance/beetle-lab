@@ -89,3 +89,27 @@ it('accepts optional scoped workspace names and rejects malformed names or forei
  expect((await read({...page,workspaceName:'x'.repeat(129)})).ok).toBe(false);
  expect((await read({...page,scope:{...page.scope,workspaceId:otherId},workspaceName:'Foreign workspace'})).ok).toBe(false);
 });
+
+it('sends count enrichment explicitly and rejects contradictory snapshot counts/ranges',async()=>{
+ const page=await load('run-page','RunPage');
+ const counts={all:page.items.length,running:page.items.filter(r=>r.state==='active').length,passed:page.items.filter(r=>r.outcome==='passed').length,failed:page.items.filter(r=>r.outcome==='failed').length,cancelled:page.items.filter(r=>r.state==='cancelled').length,pinned:0,matched:page.items.length,before:0};
+ const fetcher=reply({...page,counts});const client=createApiClient({baseUrl,fetch:fetcher});
+ expect((await client.listRuns({params,query:{limit:10,includeCounts:true}})).ok).toBe(true);
+ expect(String(fetcher.mock.calls[0]![0])).toContain('includeCounts=true');
+ for(const changed of [{...counts,before:1},{...counts,matched:0},{...counts,all:0},{...counts,pinned:257}]){
+  expect((await createApiClient({baseUrl,fetch:reply({...page,counts:changed})}).listRuns({params,query:{limit:10,includeCounts:true}})).ok).toBe(false);
+ }
+ expect((await createApiClient({baseUrl,fetch:reply(page)}).listRuns({params,query:{limit:10,includeCounts:true}})).ok).toBe(true);
+});
+
+it('binds matched counts to a known lifecycle chip and accepts explicit optional count unavailability',async()=>{
+ const page=await load('run-page','RunPage');const active={...page.items[0]!,state:'active' as const,outcome:'pending' as const};
+ const counts={all:100,running:1,passed:0,failed:0,cancelled:0,pinned:0,matched:100,before:0};
+ const {encodeRunListCursor}=await import('../../../src/api/index.js');
+ const cursor=encodeRunListCursor({scope:page.scope,query:{limit:1,state:'active',order:'newest'},requestedAt:active.requestedAt,id:active.id});
+ const invalid={...page,items:[active],summaries:[pendingRunHistorySummary(active)],contexts:undefined,counts,nextCursor:cursor};
+ expect((await createApiClient({baseUrl,fetch:reply(invalid)}).listRuns({params,query:{limit:1,state:'active',includeCounts:true}})).ok).toBe(false);
+ const empty={...page,items:[],summaries:[],contexts:[],countsUnavailable:'search_too_broad',nextCursor:null};
+ expect((await createApiClient({baseUrl,fetch:reply(empty)}).listRuns({params,query:{limit:10,pinned:true,includeCounts:true}})).ok).toBe(true);
+ expect((await createApiClient({baseUrl,fetch:reply({...empty,counts})}).listRuns({params,query:{limit:10,pinned:true,includeCounts:true}})).ok).toBe(false);
+});

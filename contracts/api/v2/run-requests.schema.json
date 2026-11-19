@@ -27,8 +27,12 @@
         "note": {
           "description": "Optional initial run note, saved atomically with run admission. Omitted or null leaves the note unwritten.",
           "anyOf": [
-            { "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunNote" },
-            { "type": "null" }
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunNote"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -141,6 +145,9 @@
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
         },
         "pinned": {
+          "const": true
+        },
+        "includeCounts": {
           "const": true
         }
       },

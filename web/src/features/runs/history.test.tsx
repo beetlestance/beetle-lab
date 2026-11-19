@@ -85,10 +85,10 @@ it('uses fresh organization scope for the same workspace/run IDs and removes old
   const link = await runLink();
   expect(link).toHaveAttribute('href', routes.run(ids.b, ids.workspace, runId));
   expect(fixture.records.filter(record => record.path.includes('/runs?limit=100')).map(record => record.path)).toEqual([
-    `/api/v2/organizations/${ids.a}/workspaces/${ids.workspace}/runs?limit=100&order=newest`,
+    `/api/v2/organizations/${ids.a}/workspaces/${ids.workspace}/runs?limit=100&order=newest&includeCounts=true`,
     `/api/v2/organizations/${ids.b}/workspaces/${ids.workspace}/runs?limit=100&order=newest`,
     // The new workspace overview reads its first page before history refreshes it.
-    `/api/v2/organizations/${ids.b}/workspaces/${ids.workspace}/runs?limit=100&order=newest`,
+    `/api/v2/organizations/${ids.b}/workspaces/${ids.workspace}/runs?limit=100&order=newest&includeCounts=true`,
   ]);
 });
 it('aborts detail ownership and ignores a late old reply after changing scope', async () => {

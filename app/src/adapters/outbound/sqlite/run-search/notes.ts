@@ -50,3 +50,16 @@ export function noteRunKeys(db: DatabaseSync, scope: WorkspaceScope, name: strin
     return capturePrefixKey(row);
   });
 }
+
+/** Pinned selection can check its bounded rows directly, without global note postings. */
+export function matchingPinnedNotes(
+  db: DatabaseSync,
+  scope: WorkspaceScope,
+  name: string,
+  pins: readonly PrefixKey[],
+): PrefixKey[] {
+  return pins.filter((row) => {
+    const note = currentNote(db, scope, row.id);
+    return note !== null && foldRunSearchName(note).includes(name);
+  });
+}
