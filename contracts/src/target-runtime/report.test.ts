@@ -80,3 +80,17 @@ it('binds ordered request landmarks to the detached report and accepts legacy re
   expect(() => captureTargetRuntimeReport({ ...fixture(), requestSpan: { ...requestSpan, firstDispatchMs: 2401 } }))
     .toThrow(expect.objectContaining({ code: 'invalid_report' }));
 });
+
+it('keeps optional GC evidence detached and rejects impossible sequence coverage', () => {
+  const baseline = fixture();
+  const gcWindow = { generation: 1, through: 10, recentMs: [5, 2] };
+  const source = { ...baseline, samples: [{ ...baseline.samples[0]!, gcWindow }] };
+  const report = decodeTargetRuntimeReport(encodeTargetRuntimeReport(source));
+  gcWindow.recentMs[0] = 999;
+  expect(report.samples[0]?.gcWindow).toEqual({ generation: 1, through: 10, recentMs: [5, 2] });
+  expect(Object.isFrozen(report.samples[0]?.gcWindow?.recentMs)).toBe(true);
+  expect(() => captureTargetRuntimeReport({ ...baseline, samples: [{ ...source.samples[0], gcWindow: { ...gcWindow, through: 1 } }] })).toThrow();
+  const unavailable = { ...source.samples[0], status: 'unavailable', reason: 'timeout',
+    values: Object.fromEntries(targetMetricNames.map(metric => [metric, null])) };
+  expect(() => captureTargetRuntimeReport({ ...baseline, missed: 1, samples: [unavailable] })).toThrow();
+});

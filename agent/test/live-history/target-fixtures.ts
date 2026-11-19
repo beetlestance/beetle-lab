@@ -12,7 +12,8 @@ export async function targetFixture(f: Fixture, count = 3) {
     const values = Object.fromEntries(targetMetricNames.map(name => [name, unavailable ? null : index + 1]));
     return captureTargetRuntimeReport({ format: 'beetle-target-runtime', version: 1, scope: 'target-reported',
       samples: [{ observedAt: new Date(index * 1000).toISOString(), phase: index === 0 ? 'before' : index === count - 1 ? 'after' : 'during',
-        status: unavailable ? 'unavailable' : 'ready', reason: unavailable ? 'http' : null, values }],
+        status: unavailable ? 'unavailable' : 'ready', reason: unavailable ? 'http' : null, values,
+        ...(!unavailable ? { gcWindow: { generation: 1, through: index + 1, recentMs: Array(Math.min(16, index + 1)).fill(3) } } : {}) }],
       missed: Number(unavailable), limited: false }).samples[0]!;
   });
   const prefix = { scope: f.options.scope, samples: count, intervalMs: 1000,

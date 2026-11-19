@@ -261,3 +261,19 @@ describe('target sampling ownership and bounds', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+it.each([
+  [{ generation: 7, through: 42, recentMs: [5, 8] }, { generation: 7, through: 42, recentMs: [5, 8] }],
+  [{ generation: 7, through: 1, recentMs: [5, 8] }, undefined],
+  [{ generation: 7, through: 42, recentMs: Array(17).fill(10) }, undefined],
+])('retains bounded pause evidence and preserves other observations when the extension is invalid', async (pauseWindow, expected) => {
+  const owner = await startTargetSampling(options(async () => json({ rss: 1024, gc: { pauseWindow } }),
+    { config: { ...config, cooldownMs: 0 } }));
+  try {
+    const sample = (await owner.finish()).samples[0];
+    expect(sample?.values.rss).toBe(1024);
+    expect(sample?.gcWindow).toEqual(expected);
+  } finally {
+    await owner.close();
+  }
+});

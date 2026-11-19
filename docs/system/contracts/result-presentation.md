@@ -60,7 +60,8 @@ GC rate, time share and average pause require declared cumulative count/time uni
 two usable phase endpoints and ordered, reset-free observations. Their intervals
 stay within each recorded phase. Missing endpoints/units, overflow and positive
 underflow produce unknowns, never zero. Lifetime GC maximum/average readings are
-not substituted for phase-local data; the phase-local maximum remains unavailable.
+not substituted for phase-local data. A complete reported pause sequence supplies
+the phase-local maximum between its recorded endpoints.
 Methods and original observations stay inspectable without a second artifact read.
 
 ## Report navigation
@@ -176,8 +177,8 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/charts/` | `c7ae083dc754` |
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
-| `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
-| `web/src/features/runs/result/TargetPhases.tsx` | `d895c5d92fdf` |
+| `web/src/features/runs/result/phase-model.ts` | `f0f27e592159` |
+| `web/src/features/runs/result/TargetPhases.tsx` | `5f21f10508ab` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |

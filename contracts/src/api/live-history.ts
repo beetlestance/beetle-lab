@@ -1,3 +1,4 @@
+import { captureTargetGcWindow } from '../target-runtime/gc-window.js';
 import { encodeCanonicalJson, jsonNodeCount } from '../json.js';
 import { validateApi } from './validate.js';
 import {
@@ -87,6 +88,9 @@ function samplesMatch(value: LiveMetricHistory, subset: LiveMetricHistory['subse
 
 function targetsMatch(value: LiveMetricHistory): boolean {
   return value.prefix.target
-    ? value.targetSamples?.length === value.prefix.target.samples
+    ? value.targetSamples?.length === value.prefix.target.samples &&
+        value.targetSamples.every(
+          (sample) => sample.gcWindow === undefined || captureTargetGcWindow(sample.gcWindow) !== undefined,
+        )
     : value.targetSamples === undefined;
 }

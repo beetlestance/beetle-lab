@@ -10,7 +10,7 @@
     "runner/v1/event-envelope.schema.json": "bae38be39e49c90793ffa73bb514f5bed15139a1dc14e3a15e34c93ad8f6e7b3",
     "runner/v1/wrapper-events.schema.json": "3a9dfb19a15dee2d5a05d0d6036f644bb43102f72e36e2fcf91280da52edd1bc",
     "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
-    "runner/v1/target-runtime-report.schema.json": "dff536bd1f0196c3ec9817cba91af23e5dbe1abd1c07824774e6725503d367f4",
+    "runner/v1/target-runtime-report.schema.json": "57771e3c2d2448194f32a30ac9e75e0886f6311857fb37ebdea382aed1883c40",
     "runner/v1/target-runtime-units.schema.json": "061efb4a78d48ed632df848959cded132dce847a9991f1e6917e5e00f71b158b",
     "api/v2/common.schema.json": "370fcbef515512168721e13fe17c02a282fb9446a55b6619224383262481f7a4",
     "api/v2/export-jobs.schema.json": "1bdc13dcae8eaf8993fc76851b0247670e164f261c248ac77dd4384436d38e25",

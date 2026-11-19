@@ -1,3 +1,4 @@
+import { captureTargetGcWindow } from '@beetle/contracts/target-runtime';
 import { targetMetricNames } from './types.js';
 import type {
   TargetMetricName,
@@ -115,7 +116,15 @@ export async function observe(
     if (controller.signal.aborted) throw new ObservationFailure('cancelled');
     const source = await request(options, controller.signal);
     if (!record(source)) throw new ObservationFailure('invalid_json');
-    return Object.freeze({ observedAt, phase, status: 'ready', reason: null, values: values(source) });
+    const gcWindow = record(source.gc) ? captureTargetGcWindow(source.gc.pauseWindow) : undefined;
+    return Object.freeze({
+      observedAt,
+      phase,
+      status: 'ready',
+      reason: null,
+      values: values(source),
+      ...(gcWindow ? { gcWindow } : {}),
+    });
   } catch (error) {
     if (error instanceof ObservationCleanupFailure) throw error;
     return Object.freeze({

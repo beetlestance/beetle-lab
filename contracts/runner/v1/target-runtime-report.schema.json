@@ -195,6 +195,21 @@
       ],
       "additionalProperties": false
     },
+    "gcWindow": {
+      "type": "object",
+      "description": "Recent completed GC pauses in milliseconds, oldest first, ending at the collection identified by through. Generation changes on collector reset.",
+      "properties": {
+        "generation": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "through": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "recentMs": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "type": "number", "minimum": 0, "maximum": 1.7976931348623157e+308 }
+        }
+      },
+      "required": ["generation", "through", "recentMs"],
+      "additionalProperties": false
+    },
     "sample": {
       "type": "object",
       "properties": {
@@ -228,6 +243,9 @@
             "cancelled"
           ]
         },
+        "gcWindow": {
+          "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/gcWindow"
+        },
         "values": {
           "$ref": "https://beetle-lab.dev/contracts/runner/v1/target-runtime-report#/$defs/values"
         }
@@ -258,6 +276,7 @@
           },
           "else": {
             "properties": {
+              "gcWindow": false,
               "reason": {
                 "enum": [
                   "http",
@@ -269,117 +288,8 @@
                 ]
               },
               "values": {
-                "properties": {
-                  "heapAlloc": {
-                    "type": "null"
-                  },
-                  "heapInuse": {
-                    "type": "null"
-                  },
-                  "heapIdle": {
-                    "type": "null"
-                  },
-                  "heapSys": {
-                    "type": "null"
-                  },
-                  "heapReleased": {
-                    "type": "null"
-                  },
-                  "heapObjects": {
-                    "type": "null"
-                  },
-                  "stackInuse": {
-                    "type": "null"
-                  },
-                  "rss": {
-                    "type": "null"
-                  },
-                  "external": {
-                    "type": "null"
-                  },
-                  "arrayBuffers": {
-                    "type": "null"
-                  },
-                  "totalHeapSize": {
-                    "type": "null"
-                  },
-                  "usedHeapSize": {
-                    "type": "null"
-                  },
-                  "heapSizeLimit": {
-                    "type": "null"
-                  },
-                  "mallocedMemory": {
-                    "type": "null"
-                  },
-                  "peakMallocedMemory": {
-                    "type": "null"
-                  },
-                  "goroutines": {
-                    "type": "null"
-                  },
-                  "activeRequests": {
-                    "type": "null"
-                  },
-                  "numCPU": {
-                    "type": "null"
-                  },
-                  "totalMemory": {
-                    "type": "null"
-                  },
-                  "freeMemory": {
-                    "type": "null"
-                  },
-                  "uptime": {
-                    "type": "null"
-                  },
-                  "cpuPercent": {
-                    "type": "null"
-                  },
-                  "systemCpuPercent": {
-                    "type": "null"
-                  },
-                  "uvThreadpoolSize": {
-                    "type": "null"
-                  },
-                  "cppHeap.allocated_size": {
-                    "type": "null"
-                  },
-                  "cppHeap.used_size": {
-                    "type": "null"
-                  },
-                  "eventLoopDelay.mean": {
-                    "type": "null"
-                  },
-                  "eventLoopDelay.p90": {
-                    "type": "null"
-                  },
-                  "eventLoopDelay.p99": {
-                    "type": "null"
-                  },
-                  "eventLoopDelay.max": {
-                    "type": "null"
-                  },
-                  "gc.count": {
-                    "type": "null"
-                  },
-                  "gc.duration": {
-                    "type": "null"
-                  },
-                  "activeHandles": {
-                    "type": "null"
-                  },
-                  "gc.totalMs": {
-                    "type": "null"
-                  },
-                  "gc.maxMs": {
-                    "type": "null"
-                  },
-                  "gc.avgMs": {
-                    "type": "null"
-                  }
-                },
-                "type": "object"
+                "type": "object",
+                "additionalProperties": { "type": "null" }
               }
             }
           }

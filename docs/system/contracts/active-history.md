@@ -48,7 +48,7 @@ With an approved [target prefix](target-recording.md#prefix-transport), the same
 owner opens the fixed target file and verifies scope, UUID, interval, contiguous
 sequence/count, complete hash/extent and final name. The response's `targetSamples`
 exists iff that prefix exists, with its exact sample count and the full shared
-36-key target values, units, phases and nulls. No cross-peer UTC comparison drops
+36-key target values, phases, nulls and optional GC pause windows. No cross-peer UTC comparison drops
 recorded samples. Target metadata bytes/nodes are reserved before metric windows;
 pressure thins only metric windows. No new route, read credit, queue or retry.
 The shared sample schema is the existing runner `target-runtime-report` definition.
@@ -95,6 +95,6 @@ gaps, missing values and zeroes. Final artifacts remain a separate sealed path.
 | `app/src/adapters/inbound/http/run-live-history/` | `5f005441d44a` |
 | `app/src/adapters/outbound/runner/live-history.ts` | `3565a7c2df1a` |
 | `agent/src/collection/live-history/` | `602b4e92daa8` |
-| `contracts/src/api/live-history.ts` | `5eb979384e3d` |
+| `contracts/src/api/live-history.ts` | `019e342ddd15` |
 | `web/src/features/runs/live/current.ts` | `3b7b190f7469` |
 | `web/src/features/runs/live/target-history.ts` | `bffc0d996bc2` |
