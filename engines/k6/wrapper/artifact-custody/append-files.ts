@@ -103,7 +103,7 @@ export class AppendFiles {
     if (!this.identity || named.dev !== this.identity.dev || named.ino !== this.identity.ino)
       throw new AttemptError('artifact');
   }
-  async verify(lane: Lane, expected: { bytes: number; sha256: string }): Promise<BigIntStats> {
+  async verify(lane: Lane, expected: { bytes: number; sha256: string }) {
     const file = this.files.get(lane);
     if (!file || file.bytes !== expected.bytes) throw new AttemptError('artifact');
     await this.verifyRoot();
@@ -111,12 +111,11 @@ export class AppendFiles {
     const before = await this.checked(() => file.handle.stat({ bigint: true }));
     regular(before, this.options.uid, expected.bytes);
     const digest = await this.hash(file);
-    if (digest !== expected.sha256) throw new AttemptError('artifact');
     const after = await this.checked(() => file.handle.stat({ bigint: true }));
     regular(after, this.options.uid, expected.bytes);
     if (!same(before, after)) throw new AttemptError('artifact');
     await this.verifyRoot();
-    return after;
+    return { stat: after, digestMatches: digest === expected.sha256 };
   }
   private hash(file: OwnedFile): Promise<string> {
     return hashArtifactFile({

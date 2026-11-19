@@ -9,6 +9,7 @@ import {
   targetReportWithSpan,
   artifactBytes,
   presentArtifacts,
+  finishMetricEvidence,
 } from './result-evidence.js';
 import { captureOptions } from './options.js';
 import { blank, type Quiet } from './state.js';
@@ -23,7 +24,7 @@ import { publishK6Result, type ResultPublication } from '../publication/index.js
 import { Artifacts, outputRoot } from '../artifact-custody/index.js';
 import { AttemptTarget } from './target.js';
 import { executionLimits } from './reservation.js';
-import { MetricArchive, type ArchiveEvidence } from './archive/index.js';
+import { MetricArchive } from './archive/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
 import { AttemptLive } from './live.js';
 import { AttemptFence, Notifications, Phases } from '../lifecycle/index.js';
@@ -270,27 +271,23 @@ class Attempt {
     await this.options.onWindow?.(window, signal);
     this.fence.check();
   }
-  private async archiveEvidence(): Promise<ArchiveEvidence | null> {
-    if (this.state.execution!.metrics) return (await this.ensureArchive()).finish();
-    await this.archive?.close();
-    return null;
-  }
-  private async collectArtifacts(mapped: MappedResult, compiled: CompiledInput): Promise<EngineResult['artifacts']> {
+  private async collectArtifacts(initial: MappedResult, compiled: CompiledInput) {
     this.stage = 'artifact';
     this.quiet.artifacts = 'unknown';
-    const summary = this.state.execution!.summary;
+    const archive = this.state.execution!.metrics ? await this.ensureArchive() : this.archive;
+    const { history, evidence, mapped } = await finishMetricEvidence(archive, this.state, compiled, initial);
+    const summary = evidence.execution!.summary;
     const collectOutputBytes = this.input!.manifest.phases.find((phase) => phase.phase === 'collect')!.outputBytes;
-    const history = await this.archiveEvidence();
     const historyWork = archiveAccounting(this.archive, this.historyAtCollect, history);
-    const targetReport = targetReportWithSpan(this.target.report, this.state.execution!);
+    const targetReport = targetReportWithSpan(this.target.report, evidence.execution!);
     const target = targetReport ? await this.artifacts!.target(targetReport, this.reservation!.target) : undefined;
-    const evidence = warningArtifact(compiled, this.state.execution!, this.state.scope!);
-    const warnings = evidence ? await this.artifacts!.warnings(evidence, this.reservation!.warnings) : undefined;
-    const diagnosticReport = diagnosticArtifact(this.state.execution!, { ...this.state.scope!, generation: 1 });
+    const warning = warningArtifact(compiled, evidence.execution!, this.state.scope!);
+    const warnings = warning ? await this.artifacts!.warnings(warning, this.reservation!.warnings) : undefined;
+    const diagnosticReport = diagnosticArtifact(evidence.execution!, { ...this.state.scope!, generation: 1 });
     const diagnostics = diagnosticReport
       ? await this.artifacts!.diagnostics(diagnosticReport, this.reservation!.diagnostics)
       : undefined;
-    const reports = performanceReports(mapped, this.state, this.reservation!, this.target.report);
+    const reports = performanceReports(mapped, evidence, this.reservation!, this.target.report);
     const numericBytes = numericAllowance(
       this.reservation!,
       collectOutputBytes -
@@ -305,7 +302,7 @@ class Attempt {
     const artifacts: EngineResult['artifacts'] = [...historyWork.artifacts];
     artifacts.push(...presentArtifacts(warnings, diagnostics, target));
     if (summary?.ok) artifacts.push(await this.artifacts!.summary(summary.evidence));
-    artifacts.push(await writeNumericEvidence(this.artifacts!, this.state, mapped.diagnostics, history, numericBytes));
+    artifacts.push(await writeNumericEvidence(this.artifacts!, evidence, mapped.diagnostics, history, numericBytes));
     const reportAllowance = this.reservation!.reports / 2;
     artifacts.push(await this.artifacts!.report('performance-report', reports.text, reportAllowance));
     artifacts.push(await this.artifacts!.report('metrics-csv', reports.csv, reportAllowance));
@@ -317,7 +314,7 @@ class Attempt {
       1,
       artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0) - historyWork.published + historyWork.produced,
     );
-    return artifacts;
+    return { artifacts, evidence };
   }
   private artifactQuiescence(): 'confirmed' | 'failed' {
     return this.quiet.artifacts === 'failed' ||
@@ -333,12 +330,12 @@ class Attempt {
     this.fence.check();
     const initial = mapK6Result(resultEvidence(this.state, compiled, []));
     if (!initial.ok) this.fail('mapping');
-    const artifacts = await this.collectArtifacts(initial, compiled);
+    const { artifacts, evidence } = await this.collectArtifacts(initial, compiled);
     this.stage = 'seal';
     await this.phases!.start('seal');
     await this.notifications.quiesce();
     this.fence.check();
-    const mapped = mapK6Result(resultEvidence(this.state, compiled, artifacts));
+    const mapped = mapK6Result(resultEvidence(evidence, compiled, artifacts));
     if (!mapped.ok) this.fail('mapping');
     const sealed = sealResult(mapped.body, this.fence.timestamp());
     if (!sealed.ok) this.fail('seal');

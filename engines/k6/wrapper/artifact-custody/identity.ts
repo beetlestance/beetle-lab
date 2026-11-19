@@ -15,12 +15,12 @@ export function regular(stat: BigIntStats, uid: number, bytes: number): void {
     !stat.isFile() ||
     stat.nlink !== 1n ||
     stat.uid !== BigInt(uid) ||
-    (stat.mode & 0o777n) !== 0o600n ||
+    (stat.mode & 0o7777n) !== 0o600n ||
     stat.size !== BigInt(bytes)
   )
     throw new AttemptError('artifact');
 }
 export function directory(stat: BigIntStats, uid: number): void {
-  if (!stat.isDirectory() || stat.uid !== BigInt(uid) || (stat.mode & 0o777n) !== 0o700n)
+  if (!stat.isDirectory() || stat.uid !== BigInt(uid) || (stat.mode & 0o7777n) !== 0o700n)
     throw new AttemptError('profile');
 }

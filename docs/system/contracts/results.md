@@ -50,10 +50,10 @@ and no speculative unlink runs. Only the atomic published manifest authorises re
 Unoccupied intervals are never written as zero observations. Readiness-scoped values
 never enter history. Every frame, header and footer byte is charged before its write;
 an excess is `output_limit`, never silently truncated history. Footer room is reserved
-before records are accepted. Crash prefixes are not evidence. A partial archive never
-gets a sealed descriptor or `windowsRetained: true`, and a failed archive cleanup
-fails the attempt. Enforced by
-`engines/k6/wrapper/attempt/archive`.
+before new records. A partial archive never gets a sealed descriptor or
+`windowsRetained: true`. If only its digest differs
+after successful custody checks and close, a verified native summary can still
+publish with a partial `artifact_incomplete` result. Archive bytes remain charged. Custody and cleanup failures remain fatal.
 
 Its internal `completedPrefix()` retains the last complete data/index pair's IDs,
 extents, hashes, scope, count and end time, without extra IO or sync. It is withdrawn
@@ -213,7 +213,7 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/attempt/archive/` | `b2c32badd893` |
+| `engines/k6/wrapper/attempt/archive/` | `4f37ee503143` |
 | `app/src/application/run-metrics/` | `58d640006ba7` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
 | `contracts/src/k6-live/` | `74dfd693e7e1` |

@@ -1,15 +1,49 @@
 import { createHash } from 'node:crypto';
 import { sealEngineResult } from '@beetle/contracts';
+import { ArchiveDigestMismatch } from './archive/index.js';
 import type { MetricArchive, ArchiveEvidence } from './archive/index.js';
 import { renderPerformanceReports, ReportError } from '../../report/index.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { CompiledInput } from '../input/index.js';
+import { mapK6Result } from '../result/index.js';
 import type { K6ResultInput, K6ResultMapping } from '../result/index.js';
 import type { TargetSamplingReport } from '../target-sampling/index.js';
 import type { OutputReservation } from './reservation.js';
 import { AttemptError } from './types.js';
 import type { State } from './state.js';
 import type { Artifacts } from '../artifact-custody/index.js';
+export async function finishMetricEvidence(
+  archive: MetricArchive | undefined,
+  state: State,
+  compiled: CompiledInput,
+  mapped: MappedResult,
+) {
+  const receipt = state.execution!;
+  if (receipt.metrics === null) {
+    await archive?.close();
+    return { history: null, evidence: state, mapped };
+  }
+  try {
+    return { history: await archive!.finish(), evidence: state, mapped };
+  } catch (error) {
+    if (!(error instanceof ArchiveDigestMismatch) || !canRetainNativeSummary(receipt, mapped)) throw error;
+    const evidence: State = { ...state, execution: { ...receipt, ok: false, code: 'metrics', metrics: null } };
+    const partial = mapK6Result(resultEvidence(evidence, compiled, []));
+    if (!partial.ok) throw new AttemptError('mapping');
+    return { history: null, evidence, mapped: partial };
+  }
+}
+
+function canRetainNativeSummary(receipt: NonNullable<State['execution']>, mapped: MappedResult): boolean {
+  return (
+    receipt.ok &&
+    receipt.summary?.ok === true &&
+    receipt.summary.evidence.nativeCollection === 'complete' &&
+    mapped.body.completeness === 'complete' &&
+    mapped.body.execution.status === 'completed'
+  );
+}
+
 export function resultEvidence(
   state: State,
   compiled: CompiledInput,

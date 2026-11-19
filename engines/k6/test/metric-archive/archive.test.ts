@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { DurationHistogram } from '../../aggregation/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
-import { MetricArchive } from '../../wrapper/attempt/archive/index.js';
+import { ArchiveDigestMismatch, MetricArchive } from '../../wrapper/attempt/archive/index.js';
 import { MetricFiles } from '../../wrapper/attempt/archive/files.js';
 import { AttemptFence } from '../../wrapper/lifecycle/index.js';
 
@@ -92,7 +92,7 @@ it.each(['data', 'index'] as const)('rejects changed %s bytes during streamed se
   const f = await fixture(); await f.archive.append(window());
   const handle = await realFs.open(join(f.root, lane === 'data' ? 'metric-windows.ndjson' : 'metric-index.ndjson'), 'r+');
   await handle.write(Buffer.from('X'), 0, 1, 0); await handle.close();
-  await expect(f.archive.finish()).rejects.toMatchObject({ reason: 'artifact' });
+  await expect(f.archive.finish()).rejects.toBeInstanceOf(ArchiveDigestMismatch);
 });
 function partialWrites(handle: FileHandle): FileHandle {
   return new Proxy(handle, { get(target, key) {
@@ -256,4 +256,35 @@ it('seals a sparse p95 preview without connecting across empty or missing window
     [0, false], [4, false], [8, true], [12, false], [16, false], [20, true], [24, false], [28, false],
   ]);
   expect(result.httpP95Preview?.every(({ p95Ms }) => p95Ms >= 4 && p95Ms <= 9)).toBe(true);
+});
+
+it.each([0o644, 0o4600])('refuses invalid archive mode %i even when the other lane has a digest mismatch', async (mode) => {
+  let verifyMode = false;
+  vi.mocked(fs.open).mockImplementation(async (...args) => {
+    const handle = await realFs.open(...args);
+    if (!String(args[0]).endsWith('metric-index.ndjson')) return handle;
+    // Some host filesystems strip special mode bits. Inject the stat observation
+    // at the native seam, keeping actual descriptors, digest reads and close.
+    return new Proxy(handle, { get(target, key) {
+      if (key === 'stat') return async (options: { bigint: true }) => {
+        const facts = await target.stat(options);
+        if (verifyMode) facts.mode = (facts.mode & ~0o7777n) | BigInt(mode);
+        return facts;
+      };
+      const value: unknown = Reflect.get(target, key, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+  });
+  const f = await fixture();
+  await f.archive.append(window());
+  const data = await realFs.open(join(f.root, 'metric-windows.ndjson'), 'r+');
+  try {
+    await data.write(Buffer.from('X'), 0, 1, 0);
+  } finally {
+    await data.close();
+  }
+  verifyMode = true;
+  const error = await f.archive.finish().catch((failure: unknown) => failure);
+  expect(error).toMatchObject({ reason: 'artifact' });
+  expect(error).not.toBeInstanceOf(ArchiveDigestMismatch);
 });

@@ -34,6 +34,12 @@ interface Position {
   bytes: number;
   hash: Hash;
 }
+/** Both members remain safely owned and charged, but one or more digests disagree. */
+export class ArchiveDigestMismatch extends AttemptError {
+  constructor() {
+    super('artifact');
+  }
+}
 class ArchiveBusy extends AttemptError {
   readonly code = 'busy';
   constructor() {
@@ -235,20 +241,7 @@ export class MetricArchive {
         this.record({ kind: 'end', windows: this.count, dataBytes: this.positions.data.bytes, dataSha256 }, 256),
         true,
       );
-      const stats = new Map<Lane, BigIntStats>();
-      for (const lane of ['data', 'index'] as const) {
-        stats.set(
-          lane,
-          await this.files!.verify(lane, {
-            bytes: this.positions[lane].bytes,
-            sha256: this.positions[lane].hash.copy().digest('hex'),
-          }),
-        );
-      }
-      await this.files!.syncParent();
-      await this.files!.close();
-      await this.files!.verifyNames(stats);
-      this.check();
+      await this.verifyArchive();
       this.sealed = Object.freeze({
         windows: this.count,
         httpP95Preview: this.p95Preview.finish(),
@@ -259,6 +252,23 @@ export class MetricArchive {
       });
       return this.sealed;
     });
+  }
+  private async verifyArchive(): Promise<void> {
+    const stats = new Map<Lane, BigIntStats>();
+    let matches = true;
+    for (const lane of ['data', 'index'] as const) {
+      const checked = await this.files!.verify(lane, {
+        bytes: this.positions[lane].bytes,
+        sha256: this.positions[lane].hash.copy().digest('hex'),
+      });
+      stats.set(lane, checked.stat);
+      matches = matches && checked.digestMatches;
+    }
+    await this.files!.syncParent();
+    await this.files!.close();
+    await this.files!.verifyNames(stats);
+    this.check();
+    if (!matches) throw new ArchiveDigestMismatch();
   }
   private descriptors(): EngineResult['artifacts'] {
     return (['data', 'index'] as const).map((lane) =>
