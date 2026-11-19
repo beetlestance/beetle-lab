@@ -2,6 +2,7 @@ import { expect,it } from 'vitest';
 import { fixture } from '../no-task-receipt/fixtures.js';
 import { initialize,JOURNAL_SCHEMA_VERSION } from '../../src/journal/schema.js';
 import { prior025 } from './prior025.js';
+import { revert027 } from '../staging-namespace/legacy027.js';
 const f=fixture();
 it('preserves an actual pending rejected receipt, funding debt, original bytes and FK/trigger protection from025',async()=>{
  const e=await f.ready();const work=e.native.finalizeWithPorts(e.token,{deadline:performance.now()+10000},e.ports);
@@ -13,7 +14,7 @@ it('preserves an actual pending rejected receipt, funding debt, original bytes a
   expect(current.length).toBeLessThanOrEqual(16);
   for(const row of current)db.exec(`DROP TRIGGER "${String(row.name).replaceAll('"','""')}"`);
   db.exec('ALTER TABLE output_no_task_cleanup_receipts RENAME TO rejected_cleanup_receipts');
-  for(const row of oldTriggers)db.exec(String(row.sql));db.exec('PRAGMA user_version=25');
+  for(const row of oldTriggers)db.exec(String(row.sql));revert027(db);db.exec('PRAGMA user_version=25');
   const receipt=db.prepare('SELECT * FROM rejected_cleanup_receipts').all();const originals=db.prepare('SELECT * FROM accepted_attempts').all();
   const controls=db.prepare('SELECT * FROM rejected_cleanup_controls').all();const counters=db.prepare('SELECT * FROM rejected_cleanup_storage').all();
   const page=db.prepare("SELECT rootpage FROM sqlite_schema WHERE name='rejected_cleanup_receipts'").get()?.rootpage;

@@ -4,7 +4,7 @@ import type { RuntimeAbsent } from '../runtime-retirement/index.js';
 import { retirementRoot } from '../staging/index.js';
 import type { VerifiedRoot } from '../staging/index.js';
 import type { Journal } from '../journal/index.js';
-import { captureTaskNamespaceState } from '../staging-namespace/index.js';
+import { captureTaskNamespaceState, effectiveTaskDirectories } from '../staging-namespace/index.js';
 import { runtimeName } from '../backends/docker/index.js';
 import { requireInventory } from './checks.js';
 import type { OutputIO } from '../collection/output/index.js';
@@ -38,5 +38,11 @@ export async function inventoryAnchor(options: InventoryAuthority, token: Runtim
   );
   if (scope.facts.runtime.kind === 'absent')
     requireInventory(task.intent.specDigest === scope.facts.runtime.specDigest);
-  return Object.freeze({ ...scope, anchor: task.anchor });
+  // Reconciled facts (decision 030) replace the anchor's directory facts; the anchor itself is unchanged.
+  const reconciliation = await io.io(() => options.journal.stagingNamespace.readTaskReconciliation(key));
+  requireInventory(
+    reconciliation === null || reconciliation.retirementRequestDigest === scope.facts.intent.requestDigest,
+  );
+  const directories = effectiveTaskDirectories(task.anchor, reconciliation);
+  return Object.freeze({ ...scope, anchor: task.anchor, directories });
 }

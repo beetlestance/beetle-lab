@@ -8,6 +8,7 @@ import { nativeCleanupPlanIdentity,cleanupControl } from '../../src/cleanup-cont
 import type { NativeCleanupPlan } from '../../src/cleanup-control/index.js';
 import { fixture } from './fixtures.js';
 import { asSchema17 } from './legacy.js';
+import { withoutReconciliation } from '../staging-namespace/legacy027.js';
 const f=fixture();
 function insert(db:DatabaseSync,plan:NativeCleanupPlan,verb='INSERT'){
  const json=encodeCanonicalJson(plan,cleanupControl.planBytes);const bytes=Buffer.byteLength(json);
@@ -15,13 +16,13 @@ function insert(db:DatabaseSync,plan:NativeCleanupPlan,verb='INSERT'){
   .run(plan.original.attemptId,nativeCleanupPlanIdentity(plan),json,bytes,bytes+512);
 }
 const retained=['accepted_attempts','reservations','disk_holds','disk_retention_stats','event_spool','output_collection_intents','output_sources','output_delivery_closures','output_absence_closures','installed_staging_namespace','task_staging_namespaces','output_retirement_intents'] as const;
-function rows(db:DatabaseSync){return Object.fromEntries(retained.map(table=>[table,db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()]));}
+function rows(db:DatabaseSync){return Object.fromEntries(retained.map(table=>[table,db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all().map(withoutReconciliation)]));}
 it('migrates schema17 and persists exact worker plan without changing previous rows, schema roots, spool or holds',async()=>{
  const e=await f.prepared();await e.owner.close();let db=initialize(e.journalPath);asSchema17(db);
  const before=rows(db);const schema=db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();verifyUnchangedThrough21(db,schema);db.close();
  const journal=await f.open(e.journalPath);const stored=await journal.cleanupPlans.store(e.plan);await journal.close();db=initialize(e.journalPath);
  try{
-  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);expect(rows(db)).toEqual(before);
+  expect(db.prepare('PRAGMA user_version').get()?.user_version).toBe(JOURNAL_SCHEMA_VERSION);expect(rows(db)).toEqual(before);expect(db.prepare('SELECT COUNT(*) AS n FROM task_staging_namespaces WHERE reconciliation_json IS NOT NULL').get()?.n).toBe(0);
   const actual=db.prepare('SELECT plan_identity,encoded_bytes,charged_bytes FROM output_cleanup_plans').get();
   expect(actual).toEqual({plan_identity:stored.planIdentity,encoded_bytes:Buffer.byteLength(encodeCanonicalJson(e.plan,cleanupControl.planBytes)),charged_bytes:Buffer.byteLength(encodeCanonicalJson(e.plan,cleanupControl.planBytes))+512});
   expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);

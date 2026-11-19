@@ -29,7 +29,7 @@ root facts recorded with the namespace; physical checks use the live ones.
 Task folders keep their recorded directory facts. A folder prepared before its
 inodes changed no longer matches, so inventory and cleanup refuse it and leave
 it in place. Re-establishing ownership of such folders is a separate offline
-reconciliation: it must prove the attempts that wrote them have stopped and
+reconciliation ([decision 030](030-task-folder-reconciliation.md)): it must prove the attempts that wrote them have stopped and
 check each folder against its recorded ownership. The namespace marker and the
 deterministic folder name are not enough on their own, and old cleanup receipts
 never gain authority over files observed later.

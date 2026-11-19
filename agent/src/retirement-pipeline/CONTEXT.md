@@ -13,3 +13,5 @@ Focusedtests retirement-pipeline; realJournal/files/fakeDocker scope, notnativeH
 
 Sharedcleanup-access lease spans actual pipeline lifetime; settlement fence refuses
 newticks as retryable capacity. Native helper entrypoints independently share thegate.
+reconcile.ts: operator-only entry, never coalesced with a tick. Producer/runtime
+retirement, refuse settled/no task/any plan, observe, record via Journal (decision 030).

@@ -10,6 +10,7 @@ export type {
   TaskNamespaceAnchor,
   TaskNamespaceState,
   TaskNamespaceKey,
+  TaskReconciliation,
   StagingNamespaceJournal,
 } from './types.js';
 export {
@@ -31,3 +32,4 @@ export {
   captureTaskNamespaceAnchor,
   captureTaskNamespaceState,
 } from './task.js';
+export { captureTaskReconciliation, effectiveTaskDirectories } from './reconciliation.js';

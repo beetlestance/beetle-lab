@@ -8,9 +8,10 @@ import {producerBarrierFacts} from '../../src/producer-retirement/index.js';
 import {fixture} from '../runtime-retirement/fixtures.js';
 import {asSchema20} from './legacy.js';
 import {operation} from '../staging/fixtures.js';
+import { withoutReconciliation } from '../staging-namespace/legacy027.js';
 const f=fixture();
 function graph(db:DatabaseSync){return db.prepare("SELECT name,type,sql,rootpage FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all();}
-function rows(db:DatabaseSync){return ['accepted_attempts','reservations','disk_holds','disk_retention_stats','output_retirement_intents','task_staging_namespaces'].map(table=>({table,rows:db.prepare(`SELECT * FROM ${table} LIMIT 128`).all()}));}
+function rows(db:DatabaseSync){return ['accepted_attempts','reservations','disk_holds','disk_retention_stats','output_retirement_intents','task_staging_namespaces'].map(table=>({table,rows:db.prepare(`SELECT * FROM ${table} LIMIT 128`).all().map(withoutReconciliation)}));}
 it('migrates a real schema20 prefix with unchanged prior rows, charges and guards and no invented association',async()=>{
  const e=await f.ready(true);await f.close(e.owner);let db=initialize(e.journalPath);asSchema20(db);const before=rows(db);const schema=graph(db);
  transaction(db,()=>db.exec(migration021));

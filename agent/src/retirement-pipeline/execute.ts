@@ -15,10 +15,10 @@ export interface PipelineExecution {
   readonly ports?: PipelineNativePorts;
   closed(): boolean;
 }
-function check(context: PipelineExecution): void {
+export function check(context: PipelineExecution): void {
   checkWindow(context.operation, context.closed());
 }
-async function retireProducer(context: PipelineExecution): Promise<ProducerBarrier> {
+export async function retireProducer(context: PipelineExecution): Promise<ProducerBarrier> {
   const { options, request, entry } = context;
   check(context);
   const producer = options.producer.retire(request);
@@ -120,7 +120,7 @@ async function retiredNoTask(context: PipelineExecution, producer: ProducerBarri
   if (!result.ok) throw new RetirementPipelineError('unavailable');
   return noTaskPipelineReply(context.request, result.stored);
 }
-async function metadata<T>(context: PipelineExecution, issue: () => Promise<T>): Promise<T> {
+export async function metadata<T>(context: PipelineExecution, issue: () => Promise<T>): Promise<T> {
   try {
     return await issue();
   } catch (error) {

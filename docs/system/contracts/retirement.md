@@ -95,6 +95,12 @@ Conflicts, corrupt state, deadline and cancellation fail, never `pending`; no
 background continuation. Shutdown awaits issued calls, refuses unknown retained
 entries, then closes receipt, removal, inventory, runtime and producer owners.
 
+An operator-only reconcile entry, never coalesced with a tick, handles a prepared task whose
+folder facts went stale after a renumbered root ([decision 030](../../decisions/030-task-folder-reconciliation.md)):
+producer and runtime retirement, refusal once settled or once any plan exists, an inventory-style read
+under the live root with unchanged owner, group and mode, then Journal 027 `reconciliation_json`, which
+later plans must match. It creates no plan, removal or receipt.
+
 ## Fencing and ordering
 
 - Producer gate (`agent/src/producer-gate`): one gate per Journal shared by
@@ -136,8 +142,8 @@ Owned by `agent/src/cleanup-control/limits.ts`; enforced by `task-inventory`,
 | Inventory descriptors / cached-close records | 71 / 1539 per operation |
 
 Inventory runs on Linux only. It derives the task path from the `RuntimeAbsent` token
-and verified installed root (never a caller path), requires all four role anchors and
-prepared task state, opens through held-parent `/proc/self/fd` paths with `NOFOLLOW`,
+and verified installed root (never a caller path), requires all four role folders to match
+the anchor (or reconciled) facts and prepared task state, opens through held-parent `/proc/self/fd` paths with `NOFOLLOW`,
 compares `mnt_id` to refuse nested mounts, and refuses links, special files, invalid
 UTF-8, foreign ownership and unexpected modes (directories 0700, files 0400 or 0600).
 Directory size and times are not identity. Over-bound work stays pending and
@@ -200,7 +206,7 @@ recovery reuses only an exactly matching record and still proves absence first.
 ## Related
 
 - [Recovery](recovery.md), [outputs settlement](outputs-settlement.md), [namespaces](namespaces.md)
-- [Decision 018: Docker host trust boundary](../../decisions/018-docker-host-trust-boundary.md)
+- [Decision 018: Docker host trust boundary](../../decisions/018-docker-host-trust-boundary.md), [decision 030: task folder reconciliation](../../decisions/030-task-folder-reconciliation.md)
 
 ## Anchors
 
@@ -208,6 +214,6 @@ recovery reuses only an exactly matching record and still proves absence first.
 | --- | --- |
 | `contracts/src/output-retirement/` | `43a6df3cf8bc` |
 | `agent/src/cleanup-control/` | `df348f0e5282` |
-| `agent/src/retirement-pipeline/` | `36636df26427` |
+| `agent/src/retirement-pipeline/` | `fd680b9ef3ea` |
 | `agent/src/transport/retirement.ts` | `01fa56695d4b` |
 | `app/src/adapters/outbound/sqlite/output-deletion/` | `9c4e8dc70ef4` |

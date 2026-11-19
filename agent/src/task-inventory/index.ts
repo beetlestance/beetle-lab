@@ -20,6 +20,10 @@ import { InventoryTree } from './tree.js';
 import { inventoryPorts } from './ports.js';
 import type { InventoryPorts } from './ports.js';
 import { requireInventory, sameNative } from './checks.js';
+import type { TaskDirectoryFacts } from '../staging-namespace/index.js';
+import { observeReconciliation, refusedReconcile } from './reconcile.js';
+import type { ReconcileObservation, ReconcileOutcome, TaskReconcileOperation } from './reconcile.js';
+export type { ReconcileOutcome, TaskReconcileOperation } from './reconcile.js';
 export interface TaskInventoryOperation {
   readonly result: Promise<
     | { readonly ok: true; readonly plan: NativeCleanupPlan; readonly observation: TaskPlanObservation }
@@ -32,15 +36,15 @@ function refused(reason: OutputCollectionReason = 'busy'): TaskInventoryOperatio
   const done = Promise.resolve();
   return { result: Promise.resolve({ ok: false, reason }), quiesced: done, close: () => done };
 }
-function roles(entries: readonly CleanupEntry[], anchor: Awaited<ReturnType<typeof inventoryAnchor>>['anchor']): void {
+function roles(entries: readonly CleanupEntry[], directories: TaskDirectoryFacts): void {
   for (const role of ['task', 'input', 'output', 'secrets'] as const) {
     const found = entries.find((row) => row.path === (role === 'task' ? '' : role));
-    requireInventory(found?.kind === 'directory' && sameNative(found.native, anchor.directories[role]));
+    requireInventory(found?.kind === 'directory' && sameNative(found.native, directories[role]));
   }
 }
 /** Read-only checked observation. It grants no unlink/receipt/refund permission. */
 export class TaskInventory {
-  private readonly operations = new Map<TaskInventoryOperation, Promise<void>>();
+  private readonly operations = new Map<Pick<TaskInventoryOperation, 'close'>, Promise<void>>();
   private closed = false;
   private closing: Promise<void> | undefined;
   private readonly options: InventoryAuthority;
@@ -54,45 +58,17 @@ export class TaskInventory {
   }
   /** Trusted private fault seam; packaging always supplies the real Linux ports. */
   prepareWithPorts(token: RuntimeAbsent, operation: Operation, ports: InventoryPorts): TaskInventoryOperation {
-    if (this.closed) return refused('closed');
-    let access: CleanupLease;
-    try {
-      access = cleanupAccess(this.options.journal.retirements).acquire(
-        inventoryScope(this.options, token).facts.intent.request,
-      );
-    } catch (error) {
-      return refused(error instanceof CleanupAccessError ? 'busy' : 'invalid_options');
-    }
-    const lease = nativeCustody.reserve('cleanup');
-    if (!lease) {
-      access.release();
-      return refused();
-    }
-    const owner = new OutputLifetime<{ readonly ok: true; readonly plan: NativeCleanupPlan }>(nodePorts, () =>
-      lease.release(),
-    );
-    lease.own(owner);
-    let carrierUnknown = false;
     let tree: InventoryTree;
     let candidate: NativeCleanupPlan;
     let observation: TaskPlanObservation | undefined;
-    const check = () => {
-      owner.check();
-      inventoryScope(this.options, token);
-      if (this.closed) throw new OutputFailure('closed');
-    };
-    const io = this.metadataIO(owner, check, () => {
-      carrierUnknown = true;
-    });
-    owner.start(
-      () => this.inventoryWindow(token, operation, (directory) => lease.bind(directory)),
-      async () => {
+    const started = this.run<{ readonly ok: true; readonly plan: NativeCleanupPlan }>(token, operation, {
+      body: async (io, check) => {
         const scope = await inventoryAnchor(this.options, token, io);
         check();
-        tree = new InventoryTree(scope.directory, scope.anchor.directories.task, io, ports, scope.root);
+        tree = new InventoryTree(scope.directory, scope.directories.task, io, ports, scope.root);
         const entries = await tree.read();
         check();
-        roles(entries, scope.anchor);
+        roles(entries, scope.directories);
         const intent = scope.facts.intent;
         const plan = captureNativeCleanupPlan({
           protocolVersion: 1,
@@ -108,7 +84,7 @@ export class TaskInventory {
         candidate = plan;
         return { ok: true, plan };
       },
-      async () => {
+      after: async (check) => {
         await tree.namedCheck();
         check();
         observation = mintObservation({
@@ -120,13 +96,81 @@ export class TaskInventory {
         });
         check();
       },
+    });
+    if (!started.ok) return refused(started.reason);
+    const result: TaskInventoryOperation = {
+      ...started.operation,
+      result: started.operation.result.then((outcome) => {
+        if (!outcome.ok) return outcome;
+        const observed = observation;
+        if (!observed) return { ok: false, reason: 'custody' };
+        return { ...outcome, observation: observed };
+      }),
+    };
+    return result;
+  }
+  reconcile(token: RuntimeAbsent, operation: Operation): TaskReconcileOperation {
+    return this.reconcileWithPorts(token, operation, inventoryPorts);
+  }
+  /**
+   * Observes the task folders again for reconciliation (decision 030): same custody, lease and
+   * tree checks as prepare, rooted at the folder found under this start's verified root. The
+   * result is an observation only; the caller records it through the Journal, which refuses once
+   * a cleanup plan exists. No unlink, plan or receipt authority is granted here.
+   */
+  reconcileWithPorts(token: RuntimeAbsent, operation: Operation, ports: InventoryPorts): TaskReconcileOperation {
+    let observed: ReconcileObservation | undefined;
+    const started = this.run<{ readonly ok: true; readonly outcome: ReconcileOutcome }>(token, operation, {
+      body: async (io, check) => {
+        observed = await observeReconciliation(this.options, token, io, ports, check);
+        return { ok: true, outcome: observed.outcome };
+      },
+      after: async (check) => {
+        await observed?.tree.namedCheck();
+        check();
+      },
+    });
+    if (!started.ok) return refusedReconcile(started.reason);
+    return started.operation;
+  }
+  private run<T extends { readonly ok: true }>(
+    token: RuntimeAbsent,
+    operation: Operation,
+    steps: { body(io: OutputIO, check: () => void): Promise<T>; after(check: () => void): Promise<void> },
+  ):
+    | { readonly ok: true; readonly operation: OutputLifetime<T>['public'] }
+    | { readonly ok: false; readonly reason: OutputCollectionReason } {
+    if (this.closed) return { ok: false, reason: 'closed' };
+    let access: CleanupLease;
+    try {
+      access = cleanupAccess(this.options.journal.retirements).acquire(
+        inventoryScope(this.options, token).facts.intent.request,
+      );
+    } catch (error) {
+      return { ok: false, reason: error instanceof CleanupAccessError ? 'busy' : 'invalid_options' };
+    }
+    const lease = nativeCustody.reserve('cleanup');
+    if (!lease) {
+      access.release();
+      return { ok: false, reason: 'busy' };
+    }
+    const owner = new OutputLifetime<T>(nodePorts, () => lease.release());
+    lease.own(owner);
+    let carrierUnknown = false;
+    const check = () => {
+      owner.check();
+      inventoryScope(this.options, token);
+      if (this.closed) throw new OutputFailure('closed');
+    };
+    const io = this.metadataIO(owner, check, () => {
+      carrierUnknown = true;
+    });
+    owner.start(
+      () => this.inventoryWindow(token, operation, (directory) => lease.bind(directory)),
+      () => steps.body(io, check),
+      () => steps.after(check),
     );
-    return this.trackOperation(
-      owner,
-      () => observation,
-      () => carrierUnknown,
-      access,
-    );
+    return { ok: true, operation: this.trackOperation(owner, () => carrierUnknown, access) };
   }
   persist(token: TaskPlanObservation, operation: Operation) {
     return this.persistence.persist(token, operation);
@@ -171,21 +215,12 @@ export class TaskInventory {
       },
     };
   }
-  private trackOperation(
-    owner: OutputLifetime<{ readonly ok: true; readonly plan: NativeCleanupPlan }>,
-    observation: () => TaskPlanObservation | undefined,
+  private trackOperation<T extends { readonly ok: true }>(
+    owner: OutputLifetime<T>,
     carrierUnknown: () => boolean,
     access: CleanupLease,
-  ): TaskInventoryOperation {
-    const result: TaskInventoryOperation = {
-      ...owner.public,
-      result: owner.public.result.then((outcome) => {
-        if (!outcome.ok) return outcome;
-        const observed = observation();
-        if (!observed) return { ok: false, reason: 'custody' };
-        return { ...outcome, observation: observed };
-      }),
-    };
+  ): OutputLifetime<T>['public'] {
+    const result = owner.public;
     const completion = result.quiesced.then(async () => {
       await result.close();
       if (carrierUnknown()) throw new OutputFailure('io');

@@ -31,10 +31,10 @@ Existing source/release owners validate authority; native guards fence late even
 high-water changes and charge forgery. ACK/prune never refund closure metadata.
 Delivery discovery captures a finite upper ID and reads indexed released markers,
 never source/Offer history. Producer quiescence and scheduler fairness remain callers'
-responsibility. Contract: docs/system/contracts/outputs-settlement.md.
-Focused proof: `vitest run agent/test/output-delivery --maxWorkers=1`.
+responsibility. Contract: docs/system/contracts/outputs-settlement.md; proof:
+`vitest run agent/test/output-delivery --maxWorkers=1`.
 
 Schema 021 retains exact runtime/mailbox association before container DELETE, in a
-named2048-byte cell inside unchanged C1 capacity. Private client accepts opaque
-Docker observations, and worker joins actual failed termination; it is not IO proof
-by itself. Contract: docs/system/contracts/execution-protocol.md.
+named2048-byte cell inside unchanged C1 capacity; opaque Docker observations and joined
+failed termination are not IO proof. Contract: docs/system/contracts/execution-protocol.md.
+Schema 027 task `reconciliation_json` (decision 030): no clear/other retirement/post-plan write.

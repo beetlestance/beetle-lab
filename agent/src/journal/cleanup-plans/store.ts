@@ -13,6 +13,7 @@ import { sourceScope } from '../output-source-input.js';
 import { readRetirementIntent } from '../retirement/index.js';
 import { eligibleRetirement } from '../retirement/index.js';
 import { readTaskNamespace } from '../staging-namespace/tasks.js';
+import { readTaskReconciliation } from '../staging-namespace/reconciliation.js';
 import { Failure, transaction } from '../sql.js';
 import type { CleanupPlanOperation, CleanupPlanValue } from '../cleanup-plan-protocol.js';
 import { cleanupPlanOperation } from '../cleanup-plan-protocol.js';
@@ -56,7 +57,7 @@ function store(db: DatabaseSync, plan: NativeCleanupPlan): StoredCleanupPlan {
     encodeCanonicalJson(eligible, cleanupControl.intentBytes) !==
       encodeCanonicalJson(intent, cleanupControl.intentBytes) ||
     task?.state !== 'prepared' ||
-    !matchesPlan(plan, intent, task.anchor)
+    !matchesPlan(plan, intent, task.anchor, readTaskReconciliation(db, key))
   )
     throw new Failure('conflict');
   const existing = readCleanupPlan(db, key);

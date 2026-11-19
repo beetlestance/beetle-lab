@@ -135,7 +135,7 @@ export class NativeRemoval {
     const native = startNativeStep(
       {
         directory: scope.directory,
-        root: scope.anchor.directories.task,
+        root: scope.directories.task,
         installation: scope.root,
         plan: stored.plan,
         progress,

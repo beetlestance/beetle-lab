@@ -48,6 +48,13 @@ export interface TaskNamespaceAnchor {
   readonly directories: TaskDirectoryFacts;
   readonly taskNamespaceIdentity: string;
 }
+/** Reconciled directory facts for a prepared task after a renumbered root (decision 030). */
+export interface TaskReconciliation {
+  readonly protocolVersion: 1;
+  readonly taskNamespaceIdentity: string;
+  readonly retirementRequestDigest: string;
+  readonly directories: TaskDirectoryFacts;
+}
 export type TaskNamespaceState =
   | { readonly state: 'preparing'; readonly intent: TaskNamespaceIntent }
   | { readonly state: 'prepared'; readonly intent: TaskNamespaceIntent; readonly anchor: TaskNamespaceAnchor };
@@ -70,6 +77,9 @@ export interface StagingNamespaceJournal {
     readonly directories: TaskDirectoryFacts;
   }): Promise<TaskNamespaceAnchor>;
   readTask(key: TaskNamespaceKey): Promise<TaskNamespaceState | null>;
+  /** Records reconciled facts; the Journal refuses once any cleanup plan exists for the attempt. */
+  reconcileTask(key: TaskNamespaceKey, reconciliation: TaskReconciliation): Promise<TaskReconciliation>;
+  readTaskReconciliation(key: TaskNamespaceKey): Promise<TaskReconciliation | null>;
 }
 /** Frozen protocol1 sizes; do not revise applied-schema limits in place. */
 export const namespaceCaps = Object.freeze({

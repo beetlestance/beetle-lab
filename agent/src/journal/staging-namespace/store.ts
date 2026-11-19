@@ -21,13 +21,16 @@ import type {
 } from '../../staging-namespace/index.js';
 import { readInstalledNamespace, beginInstalledNamespace, commitInstalledNamespace } from './installed.js';
 import { readTaskNamespace, beginTaskNamespace, commitTaskNamespace } from './tasks.js';
+import { readTaskReconciliation, reconcileTaskNamespace } from './reconciliation.js';
 type Checked =
   | { kind: 'namespaceRead' }
   | { kind: 'namespaceBegin'; root: InstalledRootFacts }
   | { kind: 'namespaceCommit'; request: { intent: NamespaceIntent; marker: NamespaceMarker } }
   | { kind: 'taskNamespaceRead'; key: TaskNamespaceKey }
   | { kind: 'taskNamespaceBegin'; intent: TaskNamespaceIntent }
-  | { kind: 'taskNamespaceCommit'; request: { intent: TaskNamespaceIntent; directories: TaskDirectoryFacts } };
+  | { kind: 'taskNamespaceCommit'; request: { intent: TaskNamespaceIntent; directories: TaskDirectoryFacts } }
+  | { kind: 'taskReconciliationRead'; key: TaskNamespaceKey }
+  | { kind: 'taskReconciliationCommit'; key: TaskNamespaceKey; reconciliation: unknown };
 function parse(json: string): Record<string, unknown> {
   if (typeof json !== 'string' || json.length > namespaceCaps.state || Buffer.byteLength(json) > namespaceCaps.state)
     throw new Error('Invalid namespace JSON');
@@ -42,9 +45,18 @@ function pair(row: Record<string, unknown>, second: string): void {
 function capture(operation: NamespaceOperation & { id: number }): Checked {
   const cap = namespaceCaps.state * 2;
   const copy = JSON.parse(encodeJson(operation, cap)) as NamespaceOperation & { id: number };
-  const payload = copy.kind === 'namespaceRead' ? null : copy.kind === 'taskNamespaceRead' ? 'key' : 'json';
+  const payload: readonly string[] =
+    copy.kind === 'namespaceRead'
+      ? []
+      : copy.kind === 'taskNamespaceRead' || copy.kind === 'taskReconciliationRead'
+        ? ['key']
+        : copy.kind === 'taskReconciliationCommit'
+          ? ['key', 'json']
+          : ['json'];
+  const fields = Object.keys(copy);
   if (
-    !Object.keys(copy).every((field) => field === 'kind' || field === 'id' || (payload !== null && field === payload))
+    fields.length !== payload.length + 2 ||
+    !fields.every((field) => field === 'kind' || field === 'id' || payload.includes(field))
   )
     throw new Error('Invalid namespace command');
   if (!Number.isSafeInteger(copy.id) || copy.id < 1) throw new Error('Invalid namespace command ID');
@@ -52,8 +64,10 @@ function capture(operation: NamespaceOperation & { id: number }): Checked {
 }
 function capturePayload(operation: NamespaceOperation): Checked {
   if (operation.kind === 'namespaceRead') return { kind: operation.kind };
-  if (operation.kind === 'taskNamespaceRead')
-    return { kind: operation.kind, key: captureTaskNamespaceKey(operation.key) };
+  if (!('json' in operation)) return { kind: operation.kind, key: captureTaskNamespaceKey(operation.key) };
+  if (operation.kind === 'taskReconciliationCommit')
+    // The reconciliation is captured against the stored anchor inside the transaction.
+    return { kind: operation.kind, key: captureTaskNamespaceKey(operation.key), reconciliation: parse(operation.json) };
   const row = parse(operation.json);
   switch (operation.kind) {
     case 'namespaceBegin':
@@ -103,6 +117,14 @@ export class NamespaceStore {
         return beginTaskNamespace(this.db, operation.intent);
       case 'taskNamespaceCommit':
         return commitTaskNamespace(this.db, operation.request);
+      case 'taskReconciliationRead':
+        return readTaskReconciliation(this.db, operation.key);
+      case 'taskReconciliationCommit':
+        return reconcileTaskNamespace(
+          this.db,
+          operation.key,
+          operation.reconciliation as Parameters<typeof reconcileTaskNamespace>[2],
+        );
     }
   }
 }

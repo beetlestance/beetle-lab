@@ -4,6 +4,7 @@ import {
   captureNamespaceAnchor,
   captureTaskNamespaceIntent,
   captureTaskNamespaceAnchor,
+  captureTaskReconciliation,
   namespaceCaps,
 } from '../../staging-namespace/index.js';
 function parse(value: unknown, cap: number): unknown {
@@ -44,6 +45,18 @@ export function registerNamespaceValidation(db: DatabaseSync): void {
       captureTaskNamespaceAnchor(
         parse(value, namespaceCaps.task),
         captureTaskNamespaceIntent(parse(intent, namespaceCaps.task)),
+      );
+      return 1;
+    } catch {
+      return 0;
+    }
+  });
+  db.function('task_reconciliation_valid', { deterministic: true }, (value, anchor, intent) => {
+    try {
+      const task = captureTaskNamespaceIntent(parse(intent, namespaceCaps.task));
+      captureTaskReconciliation(
+        parse(value, namespaceCaps.task),
+        captureTaskNamespaceAnchor(parse(anchor, namespaceCaps.task), task),
       );
       return 1;
     } catch {

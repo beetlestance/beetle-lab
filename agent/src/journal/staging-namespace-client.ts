@@ -11,6 +11,7 @@ import {
   captureTaskNamespaceState,
   captureTaskNamespaceKey,
   captureTaskDirectories,
+  captureTaskReconciliation,
   namespaceCaps,
 } from '../staging-namespace/index.js';
 import type {
@@ -19,6 +20,7 @@ import type {
   NamespaceMarker,
   TaskNamespaceIntent,
   TaskDirectoryFacts,
+  TaskNamespaceKey,
 } from '../staging-namespace/index.js';
 import type { NamespaceOperation } from './staging-namespace-protocol.js';
 interface ClientOptions {
@@ -39,7 +41,7 @@ function checked<T>(options: ClientOptions, pending: Promise<unknown>, capture: 
 }
 /** Capture requests inside Journal's queue admission; validate replies against that captured intent. */
 export function createStagingNamespaceClient(options: ClientOptions): StagingNamespaceJournal {
-  return { ...installationClient(options), ...taskClient(options) };
+  return { ...installationClient(options), ...taskClient(options), ...reconciliationClient(options) };
 }
 
 function installationClient(options: ClientOptions): Pick<StagingNamespaceJournal, 'begin' | 'commit' | 'read'> {
@@ -134,6 +136,40 @@ function taskClient(options: ClientOptions): Pick<StagingNamespaceJournal, 'begi
             }
           return state;
         },
+      );
+    },
+  };
+}
+
+/** Replies are checked against the stored anchor, read in the same queue before and after the write. */
+function reconciliationClient(
+  options: ClientOptions,
+): Pick<StagingNamespaceJournal, 'reconcileTask' | 'readTaskReconciliation'> {
+  const read = (key: TaskNamespaceKey) => taskClient(options).readTask(key);
+  return {
+    async reconcileTask(input, reconciliation) {
+      const key = captureTaskNamespaceKey(input);
+      const task = await read(key);
+      if (task?.state !== 'prepared') return options.invalidReply();
+      const expected = captureTaskReconciliation(reconciliation, task.anchor);
+      return checked(
+        options,
+        options.send(() => ({ kind: 'taskReconciliationCommit', key, json: encodeJson(expected, namespaceCaps.task) })),
+        (value) => {
+          const result = captureTaskReconciliation(value, task.anchor);
+          if (!same(result, expected, namespaceCaps.task)) throw new Error('Task reconciliation reply mismatch');
+          return result;
+        },
+      );
+    },
+    async readTaskReconciliation(input) {
+      const key = captureTaskNamespaceKey(input);
+      const task = await read(key);
+      if (task?.state !== 'prepared') return null;
+      return checked(
+        options,
+        options.send(() => ({ kind: 'taskReconciliationRead', key })),
+        (value) => (value === null ? null : captureTaskReconciliation(value, task.anchor)),
       );
     },
   };

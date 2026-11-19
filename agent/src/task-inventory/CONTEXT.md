@@ -11,3 +11,6 @@ All auxiliaries owned, no asynciteration close. Failedclose retains scope/credit
 observation.ts binds post-close provenance; persistence.ts owns bounded exactJournal018
 plan carriers. No unlink/ACK/refund; observed/storedplan is not future removalpermission.
 Tests task-inventory and native-check.ts; Linuxnativeleaf not fullcleanup qualification.
+Role folders match effective facts: Journal reconciliation if present, else anchor.
+reconcile.ts re-observes the folder under the live root with the same tree checks for
+an operator reconciliation (decision 030); refuses with a stored plan; no authority.
