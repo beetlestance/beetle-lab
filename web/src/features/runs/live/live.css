@@ -84,6 +84,13 @@
   color: var(--mute);
   margin-right: var(--s-6);
 }
+.live-endpoints .numeric {
+  white-space: nowrap;
+}
+.live-endpoints .data-table-scroll:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
 .live-endpoints .live-note {
   margin-top: var(--s-10);
 }

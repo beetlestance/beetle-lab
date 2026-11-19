@@ -60,6 +60,7 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(within(progress).getByText('236 ms')).toBeVisible();
   expect(within(progress).getByText('p95 latency, slowest endpoint, limit 250 ms')).toBeVisible();
   expect(within(progress).getByText('virtual users busy of 300')).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Live endpoint metrics' })).toHaveAttribute('tabindex', '0');
   const table = screen.getByRole('table', { name: 'Endpoints in the latest live window' });
   expect(within(table).getAllByRole('row')[1]).toHaveTextContent('POST /checkout75%900');
   expect(screen.getByText(/3 more series are recorded but not in the live view/)).toBeVisible();

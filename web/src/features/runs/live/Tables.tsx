@@ -68,7 +68,7 @@ export function Endpoints({ figures }: { figures: LiveFigures }) {
       <h2 id="live-endpoints">
         Where the requests go <span className="live-count">{rows.length} endpoints</span>
       </h2>
-      <Table caption="Endpoints in the latest live window" columns={columns}>
+      <Table caption="Endpoints in the latest live window" columns={columns} scrollLabel="Live endpoint metrics">
         {rows.map((row) => (
           <tr key={row.label}>
             <Th scope="row">
