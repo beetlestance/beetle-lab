@@ -14,7 +14,7 @@ import { scopeHeaders } from './identity.js';
 import { nativeCall } from './native.js';
 import { chunkReply, envelopeReply } from './source-replies.js';
 import type { Connection } from './transport.js';
-import { absence } from './absence.js';
+import { absence, stoppedHistory } from './absence.js';
 
 function requestBody(
   input: SourceChunkRequest,
@@ -54,6 +54,7 @@ export function createSourceClient(
 ): RunnerOutputClient & RunnerOutputAbsenceClient {
   return Object.freeze({
     absence: (signal) => absence(connection, identity, signal),
+    stoppedHistory: (signal) => stoppedHistory(connection, identity, signal),
     source: (signal) =>
       connection.credits.run('source', signal, async (original) => {
         if (identity.generation !== 1) return { ok: false, error: { kind: 'request' } };

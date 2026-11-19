@@ -1,6 +1,11 @@
+import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { encodeJson } from '@beetle/contracts';
-import { captureOutputAbsence, OUTPUT_ABSENCE_BYTES } from '@beetle/contracts/output-source';
+import {
+  captureOutputAbsence,
+  encodeStoppedHistoryClosure,
+  OUTPUT_ABSENCE_BYTES,
+} from '@beetle/contracts/output-source';
 import type { AbsenceIdentity } from '@beetle/contracts/output-source';
 import type { FastifyReply } from 'fastify';
 import type { GenerationKey } from '../journal/index.js';
@@ -47,4 +52,49 @@ export function sendAbsence(reply: FastifyReply, value: NonNullable<Awaited<Retu
     .type('application/json; charset=utf-8')
     .serializer(() => text)
     .send(value);
+}
+
+function requireStoppedObservation(
+  snapshot: ReturnType<typeof snapshotBody>,
+  proof: NonNullable<Awaited<ReturnType<typeof readAbsence>>>,
+  available: boolean,
+): void {
+  if (proof.finalAgentSeq !== snapshot.lastSeq) throw new AgentHttpError(500, 'invalid_protocol');
+  if (!available) return;
+  if (
+    snapshot.state !== 'exited' ||
+    !snapshot.exitEvidence ||
+    snapshot.admission?.state !== 'released' ||
+    snapshot.admission.disposition !== 'settled'
+  )
+    throw new AgentHttpError(500, 'invalid_protocol');
+}
+
+export async function readStoppedHistory(services: Services, scope: GenerationKey, budget: Operation): Promise<string> {
+  const reader = services.absences;
+  if (!reader?.readStoppedHistoryClosure) throw new AgentHttpError(503, 'execution_lost', 'transport');
+  check(budget);
+  const record = await reader.readStoppedHistoryClosure(scope);
+  check(budget);
+  const snapshot = snapshotBody(await services.journal.get(scope), scope);
+  check(budget);
+  if (record === null) throw new AgentHttpError(409, 'source_pending', 'transport');
+  const expected = {
+    ...scope,
+    generation: 1 as const,
+    intentDigest: snapshot.intentDigest,
+    journalAuthority: services.journalAuthority,
+  };
+  const proof = captureProof(record.absence, expected);
+  requireStoppedObservation(snapshot, proof, record.observation !== null);
+  try {
+    const json = encodeStoppedHistoryClosure({ absence: proof, observation: record.observation }, expected, (text) =>
+      createHash('sha256').update(text).digest('hex'),
+    );
+    check(budget);
+    return json;
+  } catch (error) {
+    if (error instanceof AgentHttpError) throw error;
+    throw new AgentHttpError(500, 'invalid_protocol');
+  }
 }

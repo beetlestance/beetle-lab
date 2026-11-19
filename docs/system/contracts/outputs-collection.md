@@ -64,7 +64,7 @@ intake and a committed collection intent.
 | --- | --- |
 | Output-native registry (`agent/src/collection/native-custody`) | 4 lifetimes: collection ≤ 2, range ≤ 2, cleanup ≤ 2 borrowed from free credits |
 | Advisory prefix history ([native owner](../../../agent/src/collection/live-history/CONTEXT.md)) | shares range credits; metric/target samples grant no source, publication or release authority |
-| Agent source routes | 2 source originals, each with one of 32 server request slots, reserved before body parse |
+| Agent source routes | 2 source originals including stopped history, each with one of 32 request slots reserved before body parse |
 | Backend runner client | source calls use at most 2 of the 8 ordinary gateway credits |
 | Backend byte store (`app/src/adapters/outbound/files/outputs`) | 2 jobs, one original per upload token |
 | Transfer owner / output runtime / downloads | 2 run transfers / 2 active bindings / 1 HTTP download, no queues |
@@ -214,7 +214,7 @@ numbers are per-start checks only ([decision 029](../../decisions/029-durable-st
 | --- | --- |
 | `agent/src/collection/` | `20a932208af4` |
 | `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
-| `agent/src/transport/sources.ts` | `a1e3149482d3` |
+| `agent/src/transport/sources.ts` | `daae3e5bcdfa` |
 | `app/src/ports/output-bytes.ts` | `10c5f59ca356` |
 | `app/src/adapters/outbound/sqlite/output-artifacts/` | `b0175dc3d649` |
 | `agent/src/guard/` | `4b7dff6c413a` |

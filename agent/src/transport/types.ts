@@ -29,7 +29,8 @@ export interface AgentHttpOptions {
   readonly liveMetrics?: (key: Scope, operation: Operation) => Promise<LiveMetricRead>;
   readonly outputs?: OutputSourceReader;
   /** Read-only durable closure capability; transport cannot create absence authority. */
-  readonly absences?: Pick<JournalOutputAbsence, 'readOutputAbsence'>;
+  readonly absences?: Pick<JournalOutputAbsence, 'readOutputAbsence'> &
+    Partial<Pick<Journal, 'readStoppedHistoryClosure'>>;
   capabilities(): Promise<Capabilities>;
 }
 export interface HttpScope {

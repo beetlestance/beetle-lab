@@ -46,7 +46,7 @@ carry a shell command, host path, mount option, environment map or Docker flag.
 | `GET /attempts/{id}/events?after=N` | Ordered batch of at most 100 events / 256 KiB |
 | `POST /attempts/{id}/ack` | Confirms an application-durable cursor; never a test result |
 | `GET /attempts/{id}/live-metrics`, `/live-history` | Advisory window (64 KiB, 5 s) or verified sampled prefix (2 MiB, 65536 nodes, 30 s); neither grants output custody |
-| `source`, `source/chunk`, `source/absence`, `output-retirement`, `output-settlement` | Output custody routes; see [outputs collection](outputs-collection.md) and [retirement](retirement.md) |
+| `source`, `source/chunk`, `source/absence`, `source/absence/history`, `output-retirement`, `output-settlement` | Output custody routes; see [outputs collection](outputs-collection.md) and [retirement](retirement.md) |
 
 Paths are under `/runner/v1`. The initial Offer always uses generation 1; later
 ownership generations cannot be requested through an Offer.
@@ -213,8 +213,8 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 | Code | Reviewed |
 | --- | --- |
 | `contracts/runner/v1/` | `483deb2235be` |
-| `agent/src/transport/` | `ef7b3981fc9b` |
+| `agent/src/transport/` | `8b41f36b4830` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |
 | `agent/src/supervisor/time.ts` | `9594485cfc76` |
-| `app/src/adapters/outbound/runner/` | `5ab2b31155a9` |
+| `app/src/adapters/outbound/runner/` | `0d8d59eb4972` |
