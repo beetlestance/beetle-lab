@@ -12,7 +12,13 @@ import type {
   WorkspaceScope,
 } from '@beetle/contracts/api';
 import { immutableSnapshot, requireRule, sameScope, sameUuid } from '../namespaces/index.js';
-import { budgetKeys, validateInstallation, validateRetention, validateRunDefaults } from './validation.js';
+import {
+  budgetKeys,
+  validateInstallation,
+  validateInstallationPolicy,
+  validateRetention,
+  validateRunDefaults,
+} from './validation.js';
 import type { RuntimeCeilings } from './validation.js';
 
 export type InstallationRecord = Omit<InstallationSettings, 'effective'>;
@@ -59,11 +65,9 @@ function scopedLayers(scope: SettingsScope, chain: SettingsChain): Layer[] {
 function resolveDefaults(input: {
   chain: SettingsChain;
   layers: readonly { scope: ResolutionSource; overrides: RunDefaultOverrides }[];
-  runtime: RuntimeCeilings | null;
 }): RunResolution {
-  const { chain, layers, runtime } = input;
+  const { chain, layers } = input;
   const values = chain.installation.values;
-  validateInstallation(values, runtime);
   const defaults = { ...values.runDefaults, budget: { ...values.runDefaults.budget } };
   const installation = chain.installation.scope;
   const sources: RunResolution['sources'] = {
@@ -111,6 +115,7 @@ export function resolveEffectiveSettings(input: {
   chain: SettingsChain;
   runtime: RuntimeCeilings | null;
 }): EffectiveSettings {
+  validateInstallation(input.chain.installation.values, input.runtime);
   const layers = scopedLayers(input.scope, input.chain);
   const resolved = resolveDefaults({
     ...input,
@@ -146,10 +151,10 @@ export function resolveEffectiveSettings(input: {
 export function resolveRunSettings(input: {
   scope: WorkspaceScope;
   chain: SettingsChain;
-  runtime: RuntimeCeilings | null;
   suiteRevision?: RunDefaultOverrides;
   run?: RunDefaultOverrides;
 }): RunResolution {
+  validateInstallationPolicy(input.chain.installation.values);
   const scoped = scopedLayers(input.scope, input.chain);
   const layers: { scope: ResolutionSource; overrides: RunDefaultOverrides }[] = scoped.map((layer) => ({
     scope: layer.scope,

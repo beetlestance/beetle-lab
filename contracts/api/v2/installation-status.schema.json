@@ -182,6 +182,12 @@
         "generatedAt": { "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp" },
         "runId": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" },
         "state": { "enum": ["queued", "dispatching", "active", "finalizing", "finished", "cancelled", "errored"] },
+        "capacityBlockReason": {
+          "anyOf": [
+            { "enum": ["capacity_unknown", "profile_unavailable", "per_run_ceiling", "budget_unavailable", "staging_unavailable", "storage_unavailable", "ownership_unknown"] },
+            { "type": "null" }
+          ]
+        },
         "waiting": { "enum": ["backend_queue", "agent_admission", "not_waiting"] },
         "position": { "$ref": "https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/OptionalPositive" },
         "slots": { "$ref": "https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/SlotUsage" },

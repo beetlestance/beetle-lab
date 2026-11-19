@@ -1,3 +1,4 @@
+import type { Run } from '@beetle/contracts/api';
 import type { DatabaseSync } from 'node:sqlite';
 import type { PoolUsageFacts, RunQueueFacts } from '../../../../ports/installation-status.js';
 import type { RunKey } from '../../../../ports/runs.js';
@@ -58,6 +59,8 @@ class InstallationStatusReads {
     private readonly db: DatabaseSync,
     private readonly settings: Settings,
     private readonly runReads: RunReads,
+    private readonly capacityReason:
+      ((run: Run) => Exclude<RunQueueFacts['capacityBlockReason'], undefined>) | undefined,
   ) {}
   private charged(): { runs: ChargedRun[]; exports: { cpu: number; memory: number }[] } {
     const runs = this.db.prepare(chargedRunsSql).all() as unknown as ChargedRun[];
@@ -111,6 +114,9 @@ class InstallationStatusReads {
       runId: lower(run.id),
       state: run.state,
       waiting,
+      ...(this.capacityReason
+        ? { capacityBlockReason: waiting === 'backend_queue' ? this.capacityReason(run) : null }
+        : {}),
       position: waiting === 'backend_queue' ? this.position(lower(run.id), scope) : null,
       slots: this.pool(charged).pool.slots,
       holders: charged.runs
@@ -138,7 +144,8 @@ export function readInstallationStatus(
   settings: Settings,
   runReads: RunReads,
   operation: StatusOperation,
+  capacityReason?: (run: Run) => Exclude<RunQueueFacts['capacityBlockReason'], undefined>,
 ): PoolUsageFacts | RunQueueFacts {
-  const reads = new InstallationStatusReads(db, settings, runReads);
+  const reads = new InstallationStatusReads(db, settings, runReads, capacityReason);
   return transaction(db, () => (operation.kind === 'getPoolUsage' ? reads.pool() : reads.queue(operation.key)));
 }

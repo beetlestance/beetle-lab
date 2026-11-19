@@ -1,3 +1,4 @@
+import type { Run, RunQueueStatus } from '@beetle/contracts/api';
 import type { ExportConfiguration } from '../../../ports/exports.js';
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeJson, RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
@@ -11,7 +12,15 @@ import { transaction } from './transaction.js';
 import { captureDispatchKey } from './dispatch-values.js';
 import { captureDispatchOfferReply } from './dispatch-offer-reply.js';
 import { boundedCopy } from './input-values.js';
-import { originalFact, pendingFacts, chargedFacts, factKey, retainedClaim, orderOf } from './dispatch-candidates.js';
+import {
+  originalFact,
+  runCapacityFact,
+  pendingFacts,
+  chargedFacts,
+  factKey,
+  retainedClaim,
+  orderOf,
+} from './dispatch-candidates.js';
 import type { DispatchFact } from './dispatch-candidates.js';
 import { DispatchEligibilityOwner } from './dispatch-eligibility.js';
 import { captureScan, comparePosition, encodeCursor, decodeCursor } from './dispatch-cursors.js';
@@ -32,6 +41,14 @@ export class DispatchClaims {
     private readonly exports: ExportConfiguration = { profiles: [], pendingLimit: 4096 },
   ) {
     this.config = checkedRunConfiguration(config);
+  }
+  /** Advisory individual capacity only; the queue read owns the transaction, never a claim. */
+  capacityReason(run: Run): Exclude<RunQueueStatus['capacityBlockReason'], undefined> {
+    const row = runCapacityFact(this.db, run);
+    if (!row || row.foundation_owned !== 1 || row.queue_order === null) return 'ownership_unknown';
+    const policy = new DispatchEligibilityOwner(this.db, this.settings, this.config, this.exports);
+    const decision = policy.individual(row);
+    return decision.kind === 'blocked' ? decision.reason : null;
   }
   scan(input: DispatchScan): DispatchPage {
     const query = captureScan(input);

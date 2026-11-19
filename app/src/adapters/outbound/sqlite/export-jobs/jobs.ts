@@ -38,7 +38,7 @@ export class ExportJobs {
     checkRevisionPins(this.db, revision);
     const pin = this.configuration.profiles.find((entry) => entry.sourceProfileId === command.request.engineProfile);
     requireRule(pin !== undefined, 'capacity_unavailable');
-    const resolved = this.settings.resolveRun(scope, {
+    const resolved = this.settings.resolveExport(scope, {
       engineProfile: command.request.engineProfile,
       budget: command.request.budget,
     });

@@ -51,7 +51,7 @@ Folder fields: [refusals](namespaces.md#mutation-refusals); input delete adds bo
 
 Creating a run returns 202 with `validationStatus: pending`. Semantic engine validation runs
 under admission before target contact; a rejection becomes a durable run outcome, never a
-later HTTP 422. An initial note commits atomically ([authoring](authoring.md#run-notes)).
+later HTTP 422. Missing live capacity waits in the queue. An initial note commits atomically ([authoring](authoring.md#run-notes)).
 
 ## Authentication and authority
 
@@ -95,7 +95,7 @@ removing one to inherit; revisions and runs carry explicit values snapshotted
 at acceptance and never changed afterwards.
 
 - Resolution: installation → organisation → workspace → revision → run, then the
-  installation ceilings and runtime capability. Effective leaves carry their
+  installed ceilings; effective settings also require live runtime capability. Leaves carry their
   source. Installation PATCH groups replace whole groups; omitted groups stay.
 - PATCH takes `expectedVersion` and returns effective settings and the new
   version. Out-of-range values fail; nothing silently clamps. A ceiling lowered
@@ -212,7 +212,7 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `adea4f145b1c` |
+| `contracts/api/v2/` | `7cf0f2c30f70` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
