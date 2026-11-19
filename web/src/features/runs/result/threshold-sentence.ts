@@ -1,7 +1,7 @@
 import type { EngineResult } from '@beetle/contracts';
 import type { PlanRule } from '../live/plan.js';
 import { ruleName } from '../live/model.js';
-import { ruleUnit, ruleValue } from '../live/rule-units.js';
+import { observedRuleValue, ruleUnit, ruleValue } from '../live/rule-units.js';
 
 const operators = { '<': 'under', '<=': 'at most', '>': 'over', '>=': 'at least' } as const;
 /** Only SLO verdicts describe pass/fail; discovery comparisons have inverted native semantics. */
@@ -27,7 +27,7 @@ function failedSentence(threshold: EngineResult['thresholds'][number], rules: re
   if (!rule || !reading || reading.metric !== rule.metric || reading.stat !== rule.stat)
     return `Threshold ${threshold.id} failed.`;
   const unit = ruleUnit(rule);
-  return `${ruleName(rule)} failed: ${ruleValue(unit, reading.value)}; ${thresholdLimitText(rule)}.`;
+  return `${ruleName(rule)} failed: ${observedRuleValue(unit, reading.value, rule.value)}; ${thresholdLimitText(rule)}.`;
 }
 
 export function thresholdLimitText(rule: Pick<PlanRule, 'metric' | 'stat' | 'operator' | 'value'>): string {

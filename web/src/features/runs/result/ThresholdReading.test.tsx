@@ -29,3 +29,16 @@ it('shows discovery trigger meaning without calling its inverse failed compariso
  expect(screen.getByText('Reached')).toBeVisible();expect(screen.queryByText('Failed')).not.toBeInTheDocument();
  expect(screen.getByText('186 ms; saved limit unavailable.')).toBeVisible();
 });
+
+it.each([
+  [337 / 712940, '0.05%', true],
+  [0.010001, '1.0001%', false],
+] as const)('displays the failure rate compactly without crossing its limit (%s)', (value, label, passed) => {
+  const failure: PlanRule = { id: 'failure', metric: 'http_req_failed', stat: 'rate', operator: '<', value: 0.01 };
+  render(<ul><ThresholdReading rules={[failure]} threshold={{
+    id: 'failure', purpose: 'slo', passed,
+    reading: { source: 'native-summary', metric: 'http_req_failed', stat: 'rate', value },
+  }} /></ul>);
+  expect(screen.getByText(`${label}; limit under 1%`)).toBeVisible();
+  expect(screen.getByText(passed ? 'Passed' : 'Failed')).toBeVisible();
+});

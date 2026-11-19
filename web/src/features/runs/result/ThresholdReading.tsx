@@ -2,7 +2,7 @@ import type { EngineResult } from '@beetle/contracts';
 import { Status } from '../../../components/Badge.js';
 import type { PlanRule } from '../live/plan.js';
 import { ruleName } from '../live/model.js';
-import { ruleUnit, ruleValue } from '../live/rule-units.js';
+import { observedRuleValue, ruleUnit, ruleValue } from '../live/rule-units.js';
 import './threshold.css';
 type Threshold = EngineResult['thresholds'][number];
 const operator = { '<': 'under', '<=': 'at most', '>': 'over', '>=': 'at least' } as const;
@@ -22,7 +22,8 @@ function readingText(threshold: Threshold, rule: PlanRule | undefined): string {
       : 'Native reading not recorded.';
   if (rule && (reading.metric !== rule.metric || reading.stat !== rule.stat))
     return 'Native reading does not match the saved rule.';
-  const value = ruleValue(ruleUnit(reading), reading.value);
+  const unit = ruleUnit(reading);
+  const value = rule ? observedRuleValue(unit, reading.value, rule.value) : ruleValue(unit, reading.value);
   return rule
     ? `${value}; limit ${operator[rule.operator]} ${ruleValue(ruleUnit(rule), rule.value)}`
     : `${value}; saved limit unavailable.`;
