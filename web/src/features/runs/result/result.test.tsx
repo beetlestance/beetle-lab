@@ -62,7 +62,7 @@ it('shows the verdict title, whole-run tiles and actions for a passed run', asyn
   const f = fixture(finished());
   mount(f.client, path);
   expect(await screen.findByRole('heading', { name: 'checkout-steady passed' })).toBeVisible();
-  expect(await screen.findByText('Held 4 requests a second for 2 seconds.', { exact: false })).toBeVisible();
+  expect(await screen.findByText('Averaged 4 requests a second over 2 seconds.', { exact: false })).toBeVisible();
   const tiles = await screen.findByText('requests');
   expect(tiles.parentElement).toHaveTextContent('8');
   expect(screen.getByRole('button', { name: 'Run again' })).toBeEnabled();
