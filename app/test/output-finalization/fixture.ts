@@ -37,9 +37,16 @@ export function finalizationFixture(options: Options = {}) {
       organizationId: f.key.attempt.organizationId, workspaceId: f.key.attempt.workspaceId } }).version });
   const finalize = () => finalizations.execute({ kind: 'outputFinalize', request: command() });
   const adopt = () => outputs.execute({ kind: 'outputAdopt', request: { binding: f.binding, envelope } });
-  const release = (patch: Partial<AttemptSnapshot> = {}) => f.observe({ state: 'exited', lastSeq: count === 0 ? 0 : 2,
-    admission: { state: 'released', disposition: 'settled' },
-    exitEvidence, ...patch });
+  const release = (patch: Omit<Partial<AttemptSnapshot>, 'systemStopReason'> & {
+    systemStopReason?: AttemptSnapshot['systemStopReason'];
+  } = {}) => {
+    const defaultStop = patch.admission && (patch.admission.state !== 'released' || patch.admission.disposition !== 'settled')
+      ? undefined : null;
+    const { systemStopReason, ...rest } = { systemStopReason: defaultStop, ...patch };
+    return f.observe({ state: 'exited', lastSeq: count,
+      admission: { state: 'released', disposition: 'settled' }, exitEvidence, ...rest,
+      ...(systemStopReason === undefined ? {} : { systemStopReason }) });
+  };
   const ingest = () => { if (count) events.ingest(request(f.binding, 0, count)); };
   const confirm = () => { if (count) events.confirmAck({ binding: f.binding, throughSeq: count, receipt: ack(f.binding, count) }); };
   const ready = () => { adopt(); release(); ingest(); confirm(); };

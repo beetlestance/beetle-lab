@@ -1,3 +1,4 @@
+import { outputDeliveryClosed } from './output-delivery-closed.js';
 import { captureClockRow, clockColumns } from './clock-row.js';
 import type { ClockRow } from './clock-row.js';
 import { sqlIntegerColumn } from './sql-columns.js';
@@ -113,6 +114,11 @@ export function superviseAtomic(db: DatabaseSync, input: SupervisionCommand): Su
   const global = storedInteger(
     db.prepare(`SELECT ${sqlIntegerColumn('last_clock')} FROM admission_settings WHERE id=1`).get()?.last_clock,
   );
+  if (systemStopAfterDelivery(db, row.attempt_id, input))
+    return clockState(prior, global, row.cancel_requested === 1, {
+      key: input.key,
+      now: Math.max(prior?.high_water ?? 0, global),
+    });
   const state = clockState(prior, global, row.cancel_requested === 1, input);
   if (input.cancel) cancel(db, row.id, row.attempt_id);
   db.prepare(
@@ -129,4 +135,8 @@ export function superviseAtomic(db: DatabaseSync, input: SupervisionCommand): Su
     Number(state.immediateStop),
   );
   return state;
+}
+
+function systemStopAfterDelivery(db: DatabaseSync, attemptId: string, input: SupervisionCommand): boolean {
+  return input.reason !== undefined && input.reason !== 'cancelled' && outputDeliveryClosed(db, attemptId);
 }

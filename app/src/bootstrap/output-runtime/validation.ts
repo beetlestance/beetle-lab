@@ -55,12 +55,18 @@ export function transferValue(input: unknown, expected: EventBinding): OutputTra
 export function integer(value: unknown, minimum = 0): asserts value is number {
   requireValue(Number.isSafeInteger(value) && (value as number) >= minimum);
 }
-export function finalizationValue(input: OutputFinalizationReply, request: OutputFinalizationRequest, run: Run): void {
+export function finalizationValue(
+  input: OutputFinalizationReply,
+  request: OutputFinalizationRequest,
+  run: Run,
+): 'refresh' | 'done' {
   const kind = discriminator(input);
   if (kind === 'pending') {
     const value = fields(input, ['kind', 'reason']);
-    requireValue(['source', 'execution', 'events', 'artifacts', 'exit_evidence'].includes(value.reason as string));
-    return;
+    requireValue(
+      ['source', 'execution', 'events', 'artifacts', 'stop_evidence', 'exit_evidence'].includes(value.reason as string),
+    );
+    return value.reason === 'stop_evidence' ? 'refresh' : 'done';
   }
   requireValue(kind === 'finalized');
   const value = fields(input, ['kind', 'receipt']);
@@ -100,6 +106,7 @@ export function finalizationValue(input: OutputFinalizationReply, request: Outpu
       reason: receipt.reason,
     }).ok,
   );
+  return 'done';
 }
 function terminal(receipt: Record<string, unknown>, run: Run): void {
   if (receipt.state === 'finished') {

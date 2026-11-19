@@ -1,3 +1,4 @@
+import type { RunnerLiveHistoryGateway } from '../../src/ports/run-live-history.js';
 import type { RunnerLiveMetricGateway } from '../../src/ports/run-live-metrics.js';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { openAgentRuntime } from '../../src/bootstrap/agent-runtime.js';
@@ -25,7 +26,12 @@ function configuration() {
 }
 async function setup() {
   const metadata = await fixture.open(); const f = outputOwnerFixture(mocks.delivery);
-  const gateway: RunnerOutputAbsenceGateway & RunnerLiveMetricGateway = { ...f.gateway,liveMetrics:vi.fn(async()=>{throw new Error('Unexpected synthetic live metric read');}), output: vi.fn(() => { throw new Error('Synthetic output client'); }) };
+  const gateway: RunnerOutputAbsenceGateway & RunnerLiveHistoryGateway & RunnerLiveMetricGateway = {
+    ...f.gateway,
+    liveMetrics: vi.fn(async () => { throw new Error('Unexpected synthetic live metric read'); }),
+    liveHistory: vi.fn(async () => { throw new Error('Unexpected synthetic live history read'); }),
+    output: vi.fn(() => { throw new Error('Synthetic output client'); }),
+  };
   mocks.gateway.mockReturnValue(gateway); mocks.source.mockResolvedValue(f.source);
   mocks.outputs.mockResolvedValue(f.output);
   return { f, metadata, gateway, options: configuration() };

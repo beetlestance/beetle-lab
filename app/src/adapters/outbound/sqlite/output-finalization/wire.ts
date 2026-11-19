@@ -65,7 +65,7 @@ export function captureFinalizationReply(operation: FinalizationOperation, input
   const copy = boundedCopy(input, OUTPUT_FINALIZATION_REPLY_BYTES) as OutputFinalizationReply;
   if (copy.kind === 'pending') {
     closed(copy, ['kind', 'reason']);
-    requireRule(['source', 'execution', 'events', 'artifacts', 'exit_evidence'].includes(copy.reason));
+    requireRule(['source', 'execution', 'events', 'artifacts', 'stop_evidence', 'exit_evidence'].includes(copy.reason));
     return copy;
   }
   closed(copy, ['kind', 'receipt']);

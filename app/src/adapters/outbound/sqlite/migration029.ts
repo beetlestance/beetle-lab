@@ -17,7 +17,7 @@ const finalState = replace(
     AND ${header('exitEvidence.oomKilled')}=0 THEN 'errored' ELSE NULL END
   WHEN r.cancellation_requested=1 THEN 'cancelled'`,
 );
-const finalProjection = replace(
+export const finalProjection = replace(
   finalState,
   `CASE WHEN r.cancellation_requested=1 THEN 'cancelled'\n  WHEN ${header('exitEvidence.oomKilled')}=1 THEN 'memory_limit'`,
   `CASE WHEN ${header('exitEvidence.oomKilled')}=1 THEN 'memory_limit'

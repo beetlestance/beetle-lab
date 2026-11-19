@@ -104,6 +104,7 @@ export class OutputFinalizations {
     const output = loadOutput(this.db, request.binding);
     if (output.kind !== 'adopted') throw new StorageError('unavailable');
     if (row.artifacts_ready !== 1) return { kind: 'pending', reason: 'artifacts' };
+    if (row.stop_ready !== 1) return { kind: 'pending', reason: 'stop_evidence' };
     if (row.state === null) return { kind: 'pending', reason: 'exit_evidence' };
     return null;
   }

@@ -89,3 +89,31 @@ it('holds only two absence originals and retains both through close', async () =
   const closing = f.scheduler.close(); reads[0]!.resolve(null); await tick(); expect(f.files.close).not.toHaveBeenCalled();
   reads[1]!.resolve(null); await closing; f.dispose();
 });
+
+it('refreshes the authenticated snapshot for source-backed finalization without reading absence evidence', async () => {
+  const f = absenceFixture();
+  f.transfers.transfer.mockImplementation(() => ({
+    result: Promise.resolve(published(f.binding)),
+    settled: Promise.resolve(),
+  }));
+  f.finalize.mockResolvedValueOnce({ kind: 'pending', reason: 'stop_evidence' });
+  f.scheduler.start();
+  try {
+    await tick();
+    expect(f.options.gateway.attempt).toHaveBeenCalledWith({
+      ...f.binding.key.attempt,
+      journalAuthority: f.binding.journalAuthority,
+    });
+    expect(f.snapshotCall).toHaveBeenCalledOnce();
+    expect(f.observations.observe).toHaveBeenCalledWith({
+      key: f.binding.key, journalAuthority: f.binding.journalAuthority, snapshot: f.snapshot,
+    });
+    expect(f.absences.read).not.toHaveBeenCalled();
+    await tick(100);
+    expect(f.finalize.mock.calls.length).toBeGreaterThan(1);
+    expect(f.snapshotCall).toHaveBeenCalledOnce();
+  } finally {
+    await f.scheduler.close();
+    f.dispose();
+  }
+});

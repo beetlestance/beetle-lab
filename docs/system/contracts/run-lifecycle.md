@@ -95,7 +95,7 @@ input envelope at most 148608 bytes, exact identity and generation 1.
 - Independent facts: remote cancel flag ORs inside the snapshot; retained-start
   cursor takes the maximum; admission merges by its partial order below.
 - Public `cancellationRequested` stays backend user intent; the remote flag (also
-  set by system stops) is never copied into it.
+  set by system stops) is separate. `systemStopReason` is immutable (including null) and can arrive at the same sequence.
 
 The `observe` transaction requires a prior possible-delivery record and matching
 journal authority, stores generation 1 and the merged snapshot, projects the Run,
@@ -215,6 +215,6 @@ ordering are in [run delivery](run-delivery.md).
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/application/runs/pin.ts` | `7883e8e6d0eb` |
 | `app/src/domain/runs/index.ts` | `a0f48647f5b4` |
-| `app/src/domain/attempt-observation/` | `35bf6874e6aa` |
+| `app/src/domain/attempt-observation/` | `83555f76b2f3` |
 | `contracts/runner/v1/attempt-admission.schema.json` | `b63de455d6f6` |
 | `agent/src/journal/cancel-original.ts` | `21cddd6e5807` |

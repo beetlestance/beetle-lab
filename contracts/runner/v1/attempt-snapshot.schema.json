@@ -43,6 +43,9 @@
     "cancelRequested": {
       "type": "boolean"
     },
+    "systemStopReason": {
+      "enum": [null, "timeout", "output_limit", "artifact_incomplete", "clock_integrity"]
+    },
     "exitEvidence": {
       "type": "object",
       "properties": {
@@ -100,6 +103,26 @@
   ],
   "additionalProperties": false,
   "allOf": [
+    {
+      "if": { "required": ["systemStopReason"], "properties": { "systemStopReason": {} } },
+      "then": {
+        "required": ["admission"],
+        "properties": {
+          "admission": {
+            "type": "object",
+            "required": ["state", "disposition"],
+            "properties": {
+              "state": { "const": "released" },
+              "disposition": { "const": "settled" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "required": ["systemStopReason"], "properties": { "systemStopReason": { "type": "string" } } },
+      "then": { "properties": { "cancelRequested": { "const": true } } }
+    },
     {
       "not": {
         "required": [
