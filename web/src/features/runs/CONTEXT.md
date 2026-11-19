@@ -1,13 +1,13 @@
 # Runs
 Public entries: `Runs({organizationId, workspaceId, runId?})` and
 `RunSavedRevision({revision})`. Only immutable saved revisions can launch runs.
-Generated ApiClient owns request/response validation and scope bindings.
-History requests exact contextual counts/ranges; uncounted pages stay unknown. Chips, pinned
+Generated ApiClient validates requests/responses and scope. History requests exact contextual counts/ranges; uncounted pages stay unknown. Chips, pinned
 (runsPage key slot), suite, sort apply at once; search on Enter sends 8+ hex characters as
 runIdPrefix, else name (names and notes). Changes reset paging/selection.
 History frame/rows use scoped page metadata; failures hide names/counts. Counts cache separately.
 HistorySuites reads 100 filter/fallback names; failed reads retire cached names;
-HistorySummaryCells keeps missing values unknown. Empty authoring is absent in restored history.
+History rows expand colliding IDs; the pin column shares receipt-only PinControl.
+No row reads are added; restored pins show Pinned at backup; no empty authoring.
 Details poll every two seconds while nonterminal, stop on errors/terminal states,
 and suspend interval work when hidden. Unmount cancels/removes scoped run queries.
 Submission fetches effective settings only after explicit opening; form state

@@ -1,5 +1,4 @@
 # Run result (Penpot "Run result" boards)
-
 Public entry: `RunResultView({run, scope, runId})`, chosen once by RunDetail for a
 terminal/restored record; owns RunReads admission. Restored unfinished state stays labelled at backup; no current-work owners mount,
 and run/artifact/metric/timeline polling stops. Stored state and outcome stay exact.
@@ -18,6 +17,7 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
   sessions hide writes; Refresh run and published downloads remain available.
 - ResultDownloads: metadata only on open, at most two pages/128 files, one
   manifest. Native UUID links only; errors hide links. Script opens its saved revision.
+- PinControl is shared by result/header and history; hides unfinished writes, restored badge only.
 - usePin: pinRun/unpinRun from the receipt only, never optimistic; toast, then
   re-reads the run and history pages. pin_limit and cleanup_in_progress explained.
 - RunNote: setRunNote with expectedNoteVersion; conflict re-reads the run.
