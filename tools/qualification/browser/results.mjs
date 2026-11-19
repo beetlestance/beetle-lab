@@ -56,8 +56,11 @@ export async function execute(page, checkLiveRate = false) {
  * @param {string} root
  */
 export async function results(page, root) {
-  await page.getByRole('button', { name: 'Reload performance report', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Verified performance report', exact: true })).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download report', exact: true }).click();
+  const path = join(root, 'performance-report.txt');
+  await (await download).saveAs(path);
   await page.getByText('Browse individual recorded metrics', { exact: true }).click();
   await page.getByRole('button', { name: 'Refresh metrics', exact: true }).click();
   await expect(page.getByLabel('Metric series', { exact: true })).toBeVisible();
@@ -72,10 +75,6 @@ export async function results(page, root) {
   const row = link.locator('xpath=ancestor::tr');
   const expected = (await row.locator('.artifact-sha').getAttribute('title'))?.match(/^SHA-256 ([a-f0-9]{64})$/);
   if (!expected) throw Error('Published digest is missing');
-  const download = page.waitForEvent('download');
-  await link.click();
-  const path = join(root, 'performance-report.txt');
-  await (await download).saveAs(path);
   const bytes = await readFile(path);
   expect(bytes.length).toBeGreaterThan(0);
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(expected[1]);

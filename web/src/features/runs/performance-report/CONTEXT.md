@@ -6,6 +6,7 @@ VerifiedArtifactReads: two originals across target/performance,5 s whole read,
 exact bytes/SHA and original fetch/body/hash cleanup custody. No renderer/math here.
 useArtifactReport fences session/selection and late display, adds 5 s UI watchdog,
 manual retry and StrictMode retirement. Timeout never releases physical credits.
-Text renders in pre, never HTML; fixed-UUID txt download uses published content
-route and shared artifactDownload. Generic inventory supplies CSV/numericJSON.
+Verified text renders in pre, and Copy writes that same text to the clipboard.
+The fixed-UUID txt download uses the published content route and artifactDownload.
+Generic inventory supplies CSV/numericJSON.
 Checks: performance-report and affected target/result/artifact tests, web types.
