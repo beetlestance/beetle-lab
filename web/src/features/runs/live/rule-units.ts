@@ -31,3 +31,13 @@ export function ruleValue(unit: RuleUnit, value: number): string {
   if (unit === null) return `${scalar(value)} (unit unknown)`;
   return `${scalar(value)} ${unit}`;
 }
+
+/** Keep a compact observed ratio without rounding it across the configured threshold. */
+export function observedRuleValue(unit: RuleUnit, value: number, limit: number): string {
+  if (unit !== 'ratio') return ruleValue(unit, value);
+  const display = Number((value * 100).toFixed(2));
+  if (display === 0 && value > 0 && limit >= 0.0001) return '<0.01%';
+  if (Math.sign(display - limit * 100) !== Math.sign(value - limit) || (display === 0 && value > 0))
+    return ruleValue(unit, value);
+  return `${display}%`;
+}

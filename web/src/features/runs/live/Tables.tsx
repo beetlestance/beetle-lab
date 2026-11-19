@@ -1,4 +1,4 @@
-import { ruleValue } from './rule-units.js';
+import { observedRuleValue, ruleValue } from './rule-units.js';
 import { Status } from '../../../components/Badge.js';
 import { Table, Td, Th } from '../../../components/Table.js';
 import type { LiveFigures, RuleReading } from './model.js';
@@ -30,7 +30,7 @@ export function Thresholds({ readings }: { readings: readonly RuleReading[] }) {
                   {reading.value !== null && (
                     <>
                       {reading.bound === 'at-most' ? '≤ ' : ''}
-                      {fmt(reading.value)}{' '}
+                      {observedRuleValue(reading.unit, reading.value, reading.rule.value)}{' '}
                     </>
                   )}
                   {opText[reading.rule.operator]} {fmt(reading.rule.value)}

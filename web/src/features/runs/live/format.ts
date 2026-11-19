@@ -36,6 +36,7 @@ export function ms(value: number): string {
 export function percent(ratio: number): string {
   const value = ratio * 100;
   if (value === 0) return '0%';
+  if (value > 0 && value < 0.005) return '<0.01%';
   return `${trim(value.toFixed(value >= 10 ? 1 : 2))}%`;
 }
 
