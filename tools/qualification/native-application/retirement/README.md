@@ -109,7 +109,8 @@ recurred. One `createRun` returned retryable `503 capacity_unavailable` after th
 organization, workspace, suite and revision were stored: the only time-dependent
 refusal there is settings resolution against the live runtime observation, which
 the metadata worker drops about 1 s after the agent sampled, while
-`waitForCapacity` checks only that the poller once published. The other was a raw
+`waitForCapacity` checks only that the poller once published. Since commit
+acafc82d run creation no longer reads that observation; the run queues instead. The other was a raw
 `StorageError not_found` after the run had finished and passed, surfaced by
 `app.close()` from a background owner; which owner is unknown, so the smoke now
 records `runtimeAtClose` (that owner's fixed reason).
