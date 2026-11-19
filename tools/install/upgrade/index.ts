@@ -14,8 +14,9 @@ import type { BackupLimits } from './backup.js';
 import { privateDirectory, stat, syncDirectory, upgradeNative } from './files.js';
 import type { Operation } from './files.js';
 import { acquireLeases, dockerBlockers } from './quiescence.js';
-import { operationDirectory, readUpgradeReceipt, writeUpgradeReceipt } from './receipt.js';
+import { operationDirectory, readUpgradeReceipt, terminal, writeUpgradeReceipt } from './receipt.js';
 import { publishSelector } from './steps.js';
+import { originChangePending } from '../origin/records.js';
 import type { UpgradeReceipt } from './receipt.js';
 export { UpgradeBlockedError } from '../types.js';
 export type { UpgradeReceipt, UpgradePhase } from './receipt.js';
@@ -28,6 +29,8 @@ export interface UpgradeInput {
   readonly upgradeDirectory: string;
   readonly extras?: readonly { readonly name: string; readonly path: string }[];
   readonly limits?: BackupLimits;
+  /** Origin-change records; a pending origin change blocks a new upgrade. */
+  readonly originDirectory?: string;
 }
 /** `context.deadline` bounds the whole operation; each configuration step still gets at most 30 s. */
 export interface UpgradeResult {
@@ -162,9 +165,17 @@ async function dispatch(session: Session): Promise<UpgradeResult> {
       throw new ProvisionError('invalid_input');
   }
 }
+/** An interrupted `setup origin` finishes first; its records live outside the root. */
+async function refuseOriginChange(session: Session): Promise<void> {
+  if (!session.input.originDirectory) return;
+  const { installationId } = await installedReceipt(session.fresh());
+  if (await originChangePending(session.input.originDirectory, installationId))
+    throw new UpgradeBlockedError(['origin_change']);
+}
 async function prepare(session: Session, existing: UpgradeReceipt | undefined): Promise<UpgradeResult> {
   if (existing?.phase === 'awaiting_activation') return describe(existing);
   if (existing?.phase === 'rolling_back') throw new UpgradeBlockedError(['rollback_pending']);
+  if (terminal(existing)) await refuseOriginChange(session);
   const prepared = await prepareUpgrade(
     {
       directory: session.directory,

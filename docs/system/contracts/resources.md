@@ -198,7 +198,7 @@ stopped installation. Operator steps are in the guide.
 - Replay with the same UUID after completion is unchanged; an unfinished selector
   requires the same UUID, kind and amount and an identical derived generation.
 - A selector carrying an offline upgrade fence refuses every capacity change with
-  `upgrade_blocked` until the upgrade is activated or rolled back ([upgrade](upgrade.md)).
+  `upgrade_blocked` until activation or rollback ([upgrade](upgrade.md)); an `origin` field ([origin change](origin-change.md)) is carried unchanged.
 
 ## Related
 
@@ -217,4 +217,4 @@ stopped installation. Operator steps are in the guide.
 | `agent/src/bootstrap/capacity-observation.ts` | `27f2ea73be1f` |
 | `agent/src/timeout/` | `d08c24a94279` |
 | `agent/src/telemetry/` | `adae7a0b7973` |
-| `tools/install/capacity/` | `7db787363727` |
+| `tools/install/capacity/` | `194ee990a5b7` |

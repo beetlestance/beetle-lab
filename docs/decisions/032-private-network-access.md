@@ -18,8 +18,8 @@ proxy. This is an explicit opt-in:
 - Authentication does not change: automatic access (decision 015) gives anyone who
   reaches the UI full administrator rights. The private network is the access control.
 - An existing installation keeps the origin it was set up with. Setup refuses a changed
-  origin with `binding_changed external_origin` until a supported origin-change command
-  exists. Only new installations can use network access.
+  origin with `binding_changed external_origin` unless the offline `setup origin` command
+  recorded it ([decision 033](033-origin-change-selector.md)).
 - The local launcher and the history viewer stay loopback-only.
 
 ## Why
@@ -46,8 +46,8 @@ private network.
 - Derive network access from the origin alone: rejected. A mistyped origin or bind
   would silently expose the port.
 - Add password login first: deferred. It belongs with multi-user deployment (phase R7).
-- Rewrite the origin of an existing installation in setup: deferred. The origin is part
-  of the request digest, so changing it needs the same audited path as other bindings.
+- Rewrite the origin of an existing installation in setup: rejected. The origin is part
+  of the request digest; decision 033 adds an explicit offline command instead.
 
 ## Consequences
 
@@ -62,5 +62,5 @@ and the constrained Docker broker first.
 
 ## Review triggers
 
-Revisit for more than one administrator, a public internet address, an origin-change
-command, or browser changes to secure-context rules.
+Revisit for more than one administrator, a public internet address, or browser changes
+to secure-context rules.

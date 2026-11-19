@@ -6,7 +6,9 @@ import { captureInstallationRecord } from '../../../app/src/bootstrap/configurat
 import { BindingChangedError, ProvisionError } from '../types.js';
 import type { ProvisionContext, ProvisionRequest } from '../types.js';
 import { canonical, capture, digest } from './capture.js';
-import { paths } from './configuration.js';
+import { configurationStatePath, paths } from './configuration.js';
+import { captureOriginSelector } from './origin-selector.js';
+import type { OriginSelector } from './origin-selector.js';
 import { PrivateFiles } from './files.js';
 import { parse } from './receipt.js';
 
@@ -15,7 +17,13 @@ const decode = (value: Uint8Array) => new TextDecoder('utf-8', { fatal: true }).
 function valid(condition: unknown): asserts condition {
   if (!condition) throw new ProvisionError('recovery_required');
 }
-type Baseline = { receipt: Record<string, unknown>; agent: string; installation: string; backendAgent: string };
+type Baseline = {
+  receipt: Record<string, unknown>;
+  agent: string;
+  installation: string;
+  backendAgent: string;
+  origin?: OriginSelector;
+};
 /** The provisioned receipt without the selector-only fields, so only baseline files are selected. */
 function baselineReceipt(value: unknown): Record<string, unknown> | undefined {
   valid(value !== null && typeof value === 'object' && !Array.isArray(value));
@@ -41,7 +49,26 @@ async function readBaseline(files: PrivateFiles, root: string): Promise<Baseline
   const [agent, installation, backendAgent] = await Promise.all(
     [p.agent, p.installation, p.backendAgent].map(async (path) => decode(await files.read(path))),
   );
-  return { receipt, agent: agent!, installation: installation!, backendAgent: backendAgent! };
+  const origin = await selectedOrigin(files, root);
+  return {
+    receipt,
+    agent: agent!,
+    installation: installation!,
+    backendAgent: backendAgent!,
+    ...(origin ? { origin } : {}),
+  };
+}
+/** The selector's changed origin, if any; an absent selector (older installation) has none. */
+async function selectedOrigin(files: PrivateFiles, root: string): Promise<OriginSelector | undefined> {
+  let bytes: Uint8Array;
+  try {
+    bytes = await files.read(configurationStatePath(root), INSTALLATION_RECEIPT_BYTES);
+  } catch (cause) {
+    if (absent(cause)) return undefined;
+    throw cause;
+  }
+  const selector = record(parse(bytes));
+  return Object.hasOwn(selector, 'origin') ? captureOriginSelector(selector.origin) : undefined;
 }
 function record(value: unknown): Record<string, unknown> {
   valid(value !== null && typeof value === 'object' && !Array.isArray(value));
@@ -77,6 +104,7 @@ export async function installedRequest(
   request: ProvisionRequest,
   context: ProvisionContext,
   formerOrigin?: string,
+  originCandidates?: readonly string[],
 ): Promise<ProvisionRequest> {
   // Upgrade actions carry a longer overall deadline; each configuration step gets at most 30 s.
   const step = { ...context, deadline: Math.min(context.deadline, performance.now() + 30_000) };
@@ -90,7 +118,10 @@ export async function installedRequest(
   }
   if (!baseline) return c.request;
   try {
-    return originChecked(pinned(c.request, baseline, step), baseline, step, formerOrigin);
+    const request = pinned(c.request, baseline, step);
+    return originCandidates
+      ? recordedOrigin(request, baseline, step, originCandidates)
+      : originChecked(request, baseline, step, formerOrigin);
   } catch (cause) {
     if (cause instanceof ProvisionError) throw cause;
     throw new ProvisionError('recovery_required', { cause });
@@ -107,8 +138,33 @@ function pinned(request: ProvisionRequest, baseline: Baseline, context: Provisio
   return capture({ ...request, installationValues: installation.values, agentPolicy: agent.configuration }, context)
     .request;
 }
-/** Decision 032: until an origin-change command exists, an installation keeps its origin. */
+/**
+ * For `setup origin`: the request as recorded, whichever origin it was recorded with. The
+ * baseline is the selector's when a change exists, else the candidate (`--from`, or the
+ * target when an earlier change returned to the baseline) whose digest matches.
+ */
+function recordedOrigin(
+  request: ProvisionRequest,
+  baseline: Baseline,
+  context: ProvisionContext,
+  candidates: readonly string[],
+): ProvisionRequest {
+  if (baseline.origin) return capture({ ...request, externalOrigin: baseline.origin.baseline }, context).request;
+  for (const externalOrigin of candidates) {
+    const recorded = capture({ ...request, externalOrigin }, context).request;
+    if (digest(canonical(recorded)) === baseline.receipt.requestDigest) return recorded;
+  }
+  throw new BindingChangedError(['external_origin']);
+}
+/**
+ * Decision 032: an installation serves its recorded origin unless `setup origin` changed it.
+ * A changed origin is resolved back to the baseline the request digest was recorded with.
+ */
 function originChecked(request: ProvisionRequest, baseline: Baseline, context: ProvisionContext, former?: string) {
+  if (baseline.origin) {
+    if (request.externalOrigin !== baseline.origin.current) throw new BindingChangedError(['external_origin']);
+    return capture({ ...request, externalOrigin: baseline.origin.baseline }, context).request;
+  }
   const recorded = baseline.receipt.requestDigest;
   if (!former || former === request.externalOrigin || digest(canonical(request)) === recorded) return request;
   const before = capture({ ...request, externalOrigin: former }, context).request;

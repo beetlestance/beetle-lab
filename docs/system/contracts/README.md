@@ -25,6 +25,7 @@ rereads the contract, corrects it and runs `npm run docs:stamp -- <file>`.
 | Capacity, reservations, resource observations, timeouts | [Resources](resources.md) |
 | Installing, packaging, starting and identity binding | [Installation](installation.md) |
 | Offline image upgrade, upgrade fence, pre-activation rollback | [Upgrade](upgrade.md) |
+| Changing an installation's browser origin offline | [Origin change](origin-change.md) |
 | Metadata, journal and file stores; administrator session | [Storage](storage.md) |
 | Results, metrics, reports, comparison and live snapshots | [Results](results.md) |
 | Recorded comparison charts, resting aggregates and hover values | [Comparison charts](comparison-charts.md) |

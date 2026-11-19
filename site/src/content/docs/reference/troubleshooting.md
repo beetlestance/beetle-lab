@@ -84,7 +84,8 @@ with `docker compose logs setup`.
 | `upgrade_blocked ITEMS` | An upgrade command refused; each item names a reason | See below |
 | `conflict` | A running service still holds the installation | Stop the services with `docker compose down` and run the command again |
 | `binding_changed ITEMS` | The instance name, installation folder or Docker socket differs from the ones the installation was set up with; items name each one (`agent_container`, `target_network`, `root`, `docker_socket`, `agent_origin`) | Start it with its original `BEETLE_INSTANCE` and `BEETLE_HOME`. Renaming an installation is not supported; set up a new one in another folder instead |
-| `binding_changed external_origin` | `BEETLE_ORIGIN` differs from the address the installation was set up with | Start it with its original address (unset `BEETLE_ORIGIN` for the default). Changing the address of an existing installation is not supported yet; set up a new one in another folder |
+| `binding_changed external_origin` | `BEETLE_ORIGIN`, or `--from` of `setup origin`, differs from the address the installation serves | Start it with the address it serves (unset `BEETLE_ORIGIN` for the default), or [change the address](/guides/private-network/#change-the-address-of-an-existing-installation) |
+| `origin_blocked ITEMS` | `setup origin` refused; each item names a reason | See below |
 | `network_access_required` | `BEETLE_ORIGIN` or `BEETLE_BIND` is not a loopback address, but `BEETLE_ACCESS` is not `network` | Set `BEETLE_ACCESS=network` only if one person uses it over a private network; see [Open it over a private network](/guides/private-network/) |
 | `invalid_input` | A setting is malformed, for example an `http://` origin on another host, a trailing slash, or a `BEETLE_BIND` that is not an IPv4 address | Use one `https://` origin with no path, and an IPv4 bind address |
 | `recovery_required` | Something other than the images differs from what the installation expects, or an upgrade found state it cannot trust | Keep the installation directory and any upgrade backup exactly as they are |
@@ -100,6 +101,19 @@ with `docker compose logs setup`.
 | `activated` | The upgrade was activated; rollback is no longer possible |
 | `rollback_pending` | A rollback was interrupted; run `rollback` again to finish it |
 | `images_moved` | The images were rebuilt while an upgrade was open; roll back, then prepare again |
+| `origin_change` | An address change was interrupted; run `setup origin` again with its operation ID to finish it |
 
-Do not delete `.beetle/` or its `upgrade/` directory to get past one of these
+`origin_blocked` items:
+
+| Item | What to do |
+| --- | --- |
+| `engine_containers`, `agent_container` | Stop the services and wait for engine containers to exit |
+| `upgrade` | Activate or roll back the open upgrade first |
+| `capacity_change` | Run the interrupted resource change again with its operation ID to finish it |
+| `origin_change_pending` | Run the interrupted `setup origin` again with its operation ID to finish it |
+| `origin_history_full` | The installation has recorded 256 address changes; set up a new one in another folder |
+
+`setup origin` reusing an operation ID with other addresses stops with `conflict`.
+
+Do not delete `.beetle/` or its `upgrade/` or `origin/` directories to get past one of these
 codes. They hold your data and, during an upgrade, the only way back.

@@ -66,7 +66,7 @@ it('fails closed when a baseline configuration no longer matches its receipt dig
   expect(refusal).not.toBeInstanceOf(BindingChangedError);
 });
 
-it('refuses a changed origin by fixed name until an origin-change command exists (decision 032)', async () => {
+it('refuses a changed origin by fixed name unless `setup origin` recorded it (decision 032)', async () => {
   const e = await f.setup();
   await provisionFreshInstallation(e.request, e.context);
   const moved = { ...e.request, externalOrigin: 'https://lab.example.internal' };

@@ -16,11 +16,11 @@ access, so the private network is your only access control. Never expose the
 address to the internet, and do not share it with other people.
 :::
 
-Choose the setting before the **first** start. An installation keeps the address
-it was set up with: starting it with a different `BEETLE_ORIGIN` stops setup with
-`binding_changed external_origin`. Changing the address of an existing installation
-is not supported yet: set up a new one in another folder, and keep the old one's
-results readable with [backup and restore](/guides/backup-and-restore/).
+An installation keeps the address it serves: starting it with a different
+`BEETLE_ORIGIN` stops setup with `binding_changed external_origin`. To move an
+existing installation to a new address, follow
+[Change the address](#change-the-address-of-an-existing-installation) instead of
+the steps below.
 
 1. Pick one hostname for this installation, such as `beetle.example.internal`, and
    get a certificate your browsers trust for it. Tailscale can issue one with
@@ -96,3 +96,33 @@ differs from `BEETLE_ORIGIN`, often by the port, or the proxy rewrote `Host`.
 Setup refuses an address or bind on another host without `BEETLE_ACCESS=network`
 (`network_access_required`). The local launcher and the
 [history viewer](/guides/backup-and-restore/) stay on loopback.
+
+## Change the address of an existing installation
+
+Suites, runs, credentials and resource settings stay as they are. Set up the new
+hostname, certificate and proxy first, then:
+
+1. Stop the services and finish any upgrade or resource change:
+   `docker compose down`.
+2. Pick an operation ID and keep it until the change is done: `uuidgen`.
+3. Run the change with the new address in `BEETLE_ORIGIN` and the address the
+   installation serves now in `--from` (`http://127.0.0.1:4567` if you never set one):
+
+   ```sh
+   export BEETLE_ACCESS=network
+   export BEETLE_ORIGIN=https://beetle.example.internal
+   docker compose run --rm setup origin \
+     --from http://127.0.0.1:4567 --operation-id <operation ID>
+   ```
+
+4. Start it with the same variables: `docker compose up -d`.
+
+If the command is interrupted, run it again with the same ID; a finished change
+prints `unchanged`. Browsers keep the session per address, so the new address
+starts a new one by itself. To go back to loopback, run the command with
+`BEETLE_ORIGIN` unset, a new ID and the HTTPS address as `--from`.
+
+Releases older than this command cannot start an installation whose address was
+changed; they stop with `recovery_required` instead of serving the wrong address.
+That protects the installation but does not roll it back: before running an older
+release, change the address back to the one it was first set up with.

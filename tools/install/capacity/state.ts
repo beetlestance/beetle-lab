@@ -41,6 +41,7 @@ export async function readState(c: Captured, files: PrivateFiles): Promise<State
     parse(await files.read(join(c.request.root, 'installation.json'), INSTALLATION_RECEIPT_BYTES)),
     c,
   );
+  requireInput(baseline.origin === undefined);
   let input: unknown;
   try {
     input = parse(await files.read(configurationStatePath(c.request.root), INSTALLATION_RECEIPT_BYTES));
