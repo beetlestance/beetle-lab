@@ -94,7 +94,7 @@
 .compare-breadcrumb { display: flex; flex-wrap: wrap; gap: var(--s-8); color: var(--mute); overflow-wrap: anywhere; font-size: var(--fs-sm); }
 .compare-breadcrumb a { color: inherit; min-width: 0; }
 
-.compare-empty-body { width: 100%; margin-top: var(--s-24); display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 560px); gap: var(--s-80); align-items: center; }
+.compare-empty-body { width: 100%; margin-top: var(--s-24); display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 560px); gap: var(--s-40); align-items: center; }
 .compare-empty-text { display: grid; gap: var(--s-14); }
 .compare-empty-text h1 { font-size: var(--fs-4xl); letter-spacing: var(--tracking-display); }
 .compare-empty-text p { margin: 0; font-size: var(--fs-xl); line-height: var(--lh-lede); }
