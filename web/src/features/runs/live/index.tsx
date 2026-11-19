@@ -32,6 +32,7 @@ import { positions, useLiveStream } from './stream.js';
 import type { LiveStream } from './stream.js';
 import { Endpoints, Thresholds } from './Tables.js';
 import './live.css';
+import './responsive.css';
 
 export type LiveRunViewProps = RunSnapshotProps & {
   /** Hands off to the result view (remounts and re-reads). Call only for a terminal run. */
@@ -295,19 +296,21 @@ function Board(props: {
           failedLimit={props.failedLimit}
         />
       )}
-      <WholeRun
-        history={props.history}
-        hover={hover}
-        bootstrap={props.bootstrap}
-        historyEnabled={props.historyEnabled}
-        plan={props.plan}
-        domain={domain}
-        p95Limit={props.p95Limit}
-        slowest={props.figures.p95?.slowest ?? false}
-      />
-      <div className="live-split">
-        <Thresholds readings={props.readings} />
-        <Endpoints figures={props.figures} />
+      <div className="live-overview">
+        <WholeRun
+          history={props.history}
+          hover={hover}
+          bootstrap={props.bootstrap}
+          historyEnabled={props.historyEnabled}
+          plan={props.plan}
+          domain={domain}
+          p95Limit={props.p95Limit}
+          slowest={props.figures.p95?.slowest ?? false}
+        />
+        <div className="live-split">
+          <Thresholds readings={props.readings} />
+          <Endpoints figures={props.figures} />
+        </div>
       </div>
       <MetricsGrid history={props.history} domain={domain} hover={hover} />
       <TargetRuntime
