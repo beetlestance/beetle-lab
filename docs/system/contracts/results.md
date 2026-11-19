@@ -102,10 +102,10 @@ SHA and count. No pair is `unavailable/not_recorded`; an unknown private version
 `unavailable/unsupported_format`; a broken pair is a storage failure. Sample pages
 walk backwards from the newest window, points within a page ascend, and a null
 cursor means the requested range is exhausted, not that capture was complete.
-Missing samples are absent points or null ratios, never zero. Public metrics/comparison share one
-operation; indexing owns another. Overlap is busy; abort fails early and retains native settlement.
-Without byte or hash capability, ready reads fail 503.
-Owner: `app/src/application/run-metrics`; [result overview](result-presentation.md) adds one compact read.
+Missing samples are absent points or null ratios, never zero. Public metrics, comparison and
+indexing share one physical parser. One foreground successor may wait behind indexing within
+its original 30 s deadline; other overlap is busy. Abort retains native settlement.
+Without byte or hash capability, ready reads fail 503. Owner: `app/src/application/run-metrics`; [result overview](result-presentation.md) adds one compact read.
 
 The browser chart holds ≤ 1000 points and ≤ 1 MiB, issues ≤ 10 sequential page
 requests per action, polls a pending catalogue every 2 s only while visible, and
@@ -214,7 +214,7 @@ a failed revocation keeps ownership and rejects close.
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/attempt/archive/` | `93c22f858025` |
-| `app/src/application/run-metrics/` | `a0a2d9057f6d` |
+| `app/src/application/run-metrics/` | `b66c6b6a4935` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
 | `contracts/src/k6-live/` | `324516855159` |
 | `agent/src/live-metrics/` | `feac352cffc7` |

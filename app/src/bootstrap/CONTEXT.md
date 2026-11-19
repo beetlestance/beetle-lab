@@ -15,7 +15,8 @@ its handle and pending startup; subsequent initialization is fenced, without ret
 `close` retires session authority, drains HTTP/agent/file originals before metadata,
 and retains its original promise. Closing the returned server also closes storage.
 Startup failure retires authority and awaits cleanup; no successful partial handle.
-No generic service container, fake capacity or legacy app dependency is introduced.
+`api.ts` lends its public metrics parser to history indexing; the indexer owns no
+second parser and closes only its scheduler. No generic service container is introduced.
 `configuration.ts` reads settings plus required BEETLE_AGENT_CONFIG_FILE and its private token;
 it requires a canonical owned mode 0700 data root and validated installed-profile pins.
 BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.

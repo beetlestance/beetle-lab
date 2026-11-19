@@ -1,7 +1,8 @@
 # Historical metrics
 
 Public entry: createRunMetricsService with frozen RunMetricServiceOptions.
-One metadata/native read operation, no queue; caller abort returns failure while
+One shared metadata/native operation; one foreground successor may wait behind
+indexing within its original deadline. Other overlap is busy; caller abort returns failure while
 original metadata/native result AND settlement remain owned. close fences and
 drains without closing shared adapters. One original <=30 s monotonic budget via shared metric-read-lifetime.
 Private archive codec transforms sealed k6 v3 numeric and v1 NDJSON pair into
