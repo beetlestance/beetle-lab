@@ -16,6 +16,7 @@ import type { ComparisonTargets, ComparisonTargetRead } from './target-read.js';
 interface Command {
   metric: RunMetricKey | null;
   catalogue: boolean;
+  refreshFacts?: boolean;
   cursor?: string;
 }
 interface View {
@@ -36,6 +37,7 @@ interface CapturedReads {
   overviews: Overviews;
   contexts: ComparisonContexts;
   histories: ComparisonHistories;
+  workspaceName: string | null;
   targets: ComparisonTargets;
 }
 interface SavedReads {
@@ -62,6 +64,7 @@ interface ReadContext {
 async function readComparison(context: ReadContext, ids: readonly string[], command: Command) {
   const { api, params, signal, alive } = context;
   if (!alive()) return undefined;
+  if (ids.length === 0) return workspaceOnly(context);
   const snapshot = await readResult(
     api.compareRuns({
       params,
@@ -71,7 +74,7 @@ async function readComparison(context: ReadContext, ids: readonly string[], comm
   );
   if (!alive()) return undefined;
   const page = command.catalogue ? await readCatalogue(context, snapshot, command.cursor) : undefined;
-  const firstLoad = command.catalogue && !command.cursor;
+  const firstLoad = command.refreshFacts === true || (command.catalogue && !command.cursor);
   const read = firstLoad ? await readSummaries(context, snapshot) : undefined;
   return { snapshot, page, read };
 }
@@ -90,6 +93,7 @@ function readCatalogue({ api, params, signal }: ReadContext, snapshot: RunCompar
 /** Sequential; stops as soon as the read is no longer wanted, and the caller then discards it. */
 async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapshot) {
   const read = new Map<string, RunHistorySummary | null>();
+  let workspaceName: string | null = null;
   const overviews = new Map<string, OverviewRead>();
   const contexts = new Map<string, RunListContext | null>();
   const histories = new Map<string, ChartRead>();
@@ -97,6 +101,7 @@ async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapsh
   for (const item of snapshot.items) {
     if (!context.alive()) break;
     const record = await summaryOf(context, item.run);
+    if (read.size === 0) workspaceName = record.workspaceName;
     read.set(item.run.id.toLowerCase(), record.summary);
     contexts.set(item.run.id.toLowerCase(), record.context);
     if (!context.alive()) break;
@@ -106,7 +111,7 @@ async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapsh
     if (!context.alive()) break;
     targets.set(item.run.id.toLowerCase(), await readComparisonTarget(context, item));
   }
-  return { summaries: read, overviews, contexts, histories, targets };
+  return { summaries: read, overviews, contexts, histories, targets, workspaceName };
 }
 
 /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
@@ -117,9 +122,9 @@ async function summaryOf({ api, params, signal }: ReadContext, run: ComparedRun)
     const value = index < 0 ? undefined : page.summaries[index];
     const summary = value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
     const metadata = page.contexts?.[index];
-    return { summary, context: boundContext(metadata, run) };
+    return { summary, context: boundContext(metadata, run), workspaceName: page.workspaceName ?? null };
   } catch {
-    return { summary: null, context: null };
+    return { summary: null, context: null, workspaceName: null };
   }
 }
 
@@ -184,14 +189,24 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
         if (!result || !alive()) return;
         if (result.read) setCaptured({ owner: lease.owner, value: result.read });
         const { snapshot, page } = result;
-        setSaved({ lease, view: { snapshot, ...(page ? { page } : {}), error: false, busy: false } });
+        setSaved({
+          lease,
+          view: { ...(snapshot ? { snapshot } : {}), ...(page ? { page } : {}), error: false, busy: false },
+        });
       });
       if (!action) throw new Error('Comparison read busy');
       token = action.token;
       await action.original;
     }
     void load().catch(() => {
-      if (current) setSaved({ lease, view: { error: true, busy: false } });
+      if (current) {
+        setCaptured((saved) =>
+          saved?.owner === lease.owner
+            ? { ...saved, value: { ...saved.value, contexts: new Map(), workspaceName: null } }
+            : saved,
+        );
+        setSaved({ lease, view: { error: true, busy: false } });
+      }
     });
     return () => {
       current = false;
@@ -209,20 +224,35 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
     setChoice({ owner, command: { metric: null, catalogue: true, ...(cursor ? { cursor } : {}) } });
   }
   function retry() {
-    setChoice({ owner, command: { ...command } });
+    setChoice({ owner, command: { ...command, refreshFacts: true } });
   }
   const recorded = ownedReads(captured, owner);
+  return { view, ...presentReads(recorded, view.error), admission, busy: busy || view.busy, select, page, retry };
+}
+
+/** Empty selection still resolves its real workspace, without comparison or metric reads. */
+async function workspaceOnly({ api, params, signal, alive }: ReadContext) {
+  const page = await readResult(api.listRuns({ params, query: { limit: 1 }, signal }));
+  if (!alive()) return undefined;
+  const read: CapturedReads = {
+    workspaceName: page.workspaceName ?? null,
+    summaries: new Map(),
+    overviews: new Map(),
+    contexts: new Map(),
+    histories: new Map(),
+    targets: new Map(),
+  };
+  return { snapshot: undefined, page: undefined, read };
+}
+
+/** Failed reads retire mutable names while preserving immutable captured evidence. */
+function presentReads(recorded: CapturedReads | undefined, failed: boolean) {
   return {
-    view,
     summaries: recorded?.summaries,
     overviews: recorded?.overviews,
-    contexts: recorded?.contexts,
+    contexts: failed ? undefined : recorded?.contexts,
+    workspaceName: failed ? null : (recorded?.workspaceName ?? null),
     histories: recorded?.histories,
     targets: recorded?.targets,
-    admission,
-    busy: busy || view.busy,
-    select,
-    page,
-    retry,
   };
 }

@@ -40,6 +40,7 @@ suite name and immutable revision ordinal. One bounded scalar join inside the sa
 read transaction supplies at most 100 entries; no configuration is read. Schema,
 digest and exact page ownership are checked. Missing/corrupt joins fail the read.
 Clients reject misaligned metadata; omitted enrichment stays explicitly unknown.
+Optional workspace names come from the validated workspace guard in that transaction.
 
 One immediate transaction in the metadata worker, receipt first:
 
@@ -208,7 +209,7 @@ ordering are in [run delivery](run-delivery.md).
 | --- | --- |
 | `app/src/adapters/outbound/sqlite/runs.ts` | `220f7fbfb541` |
 | `app/src/adapters/outbound/sqlite/run-list-context.ts` | `6cd619fdff36` |
-| `contracts/api/v2/run.schema.json` | `332c4f112ebf` |
+| `contracts/api/v2/run.schema.json` | `dbaa17429083` |
 | `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/application/runs/pin.ts` | `7883e8e6d0eb` |

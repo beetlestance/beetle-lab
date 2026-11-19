@@ -19,14 +19,13 @@ function measured(run: Run, rps: number, p95: number, ratio: number): RunHistory
     publishedArtifactBytes: 1536, retainedLogicalBytes: 67584, metadataAllowanceBytes: 65536 };
 }
 
-it('shows Compare / Empty without any read when no runs are picked', async () => {
-  const f = testClient(() => {
-    throw new Error('Unexpected read');
-  });
+it('shows Compare / Empty with one workspace-context read and no comparison or metric reads', async () => {
+  const f = testClient(() => json({scope:{kind:'workspace',...scope},workspaceName:'checkout-workspace',items:[],summaries:[],contexts:[],nextCursor:null}));
   mountComparison(f.client, false, '/');
   expect(await screen.findByRole('heading', { name: 'Pick runs to compare' })).toBeVisible();
   expect(screen.getByRole('link', { name: 'Go to runs' })).toHaveAttribute('href', routes.runs(scope.organizationId, scope.workspaceId));
-  expect(f.records).toHaveLength(0);
+  await screen.findByRole('link',{name:'checkout-workspace'});
+  expect(f.records).toHaveLength(1);expect(f.records[0]!.path).toContain('/runs?limit=1');
 });
 
 it('labels client deltas from the baseline, offers Make baseline and lists what was different', async () => {

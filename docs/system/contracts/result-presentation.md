@@ -151,6 +151,17 @@ not. The existing two-attempt 256 KiB serializer omits all optional projections 
 overflow, including for runs without a native result. Missing legacy intent stays
 unknown; the UI never fills it from observed or installed values. No new reads.
 
+## Comparison frame and workspace context
+
+History pages optionally return the workspace name once, from the existing
+validated workspace guard inside the same transaction. No extra DB query.
+Comparison retains the baseline page name under its session/scope/selection owner.
+A failed refresh retires mutable names; explicit retries refresh facts even while
+a metric is selected. Pending retries cannot resurrect retired names.
+An empty selection resolves its breadcrumb with one history page (limit 1), never
+comparison or metric reads. Its illustration is the exported Penpot asset. Figures,
+thresholds, workload charts, target charts and configuration follow board order.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -179,7 +190,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
-| `web/src/features/runs/comparison/useComparison.ts` | `3b122992b6fc` |
+| `web/src/features/runs/comparison/useComparison.ts` | `fae69b8c7304` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `8668f89aa562` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
@@ -200,3 +211,5 @@ history can read it without starting work. No mutation or current-work polling.
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
+| `app/src/adapters/outbound/sqlite/run-reads.ts` | `4bac9e44538f` |
+| `web/src/features/runs/comparison/index.tsx` | `e989f6b5cf6b` |

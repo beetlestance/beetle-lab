@@ -14,6 +14,7 @@ import { RecordedComparisonCharts } from './RecordedCharts.js';
 import { ComparisonTargetRuntime } from './TargetRuntime.js';
 import { ComparisonSlos } from './Slos.js';
 import { ComparisonFailedSlos } from './FailedSlos.js';
+import compareArt from '../../../assets/illustrations/compare.svg';
 import './comparison.css';
 
 export function RunComparison(scope: RunScope) {
@@ -35,17 +36,33 @@ export function RunComparison(scope: RunScope) {
 
 /** Compare / Empty: no runs were picked. */
 function CompareEmpty({ scope }: { scope: RunScope }) {
+  const state = useComparison(scope, []);
   return (
     <section className="compare compare-empty">
-      <h1>Pick runs to compare</h1>
-      <p>
-        Tick two to four finished runs in Runs. The first one is the baseline, and every other run shows how far it
-        moved from it.
-      </p>
-      <Link className={buttonClass('primary')} to={routes.runs(scope.organizationId, scope.workspaceId)}>
-        Go to runs
-      </Link>
-      <p className="compare-muted">Only finished runs can be compared. A running one joins when it ends.</p>
+      <ComparisonBreadcrumb scope={scope} workspaceName={state.workspaceName} />
+      {state.view.error && (
+        <div role="alert">
+          Workspace name could not be loaded.{' '}
+          <Button size="sm" onClick={state.retry}>
+            Retry workspace name
+          </Button>
+        </div>
+      )}
+      <div className="compare-empty-body">
+        <div className="compare-empty-text">
+          <h1>Pick runs to compare</h1>
+          <p>
+            Tick two to four finished runs in Runs. The first one is the baseline, and every other run shows how far it
+            moved from it.
+          </p>
+          <div>
+            <Link className={buttonClass('primary')} to={routes.runs(scope.organizationId, scope.workspaceId)}>
+              Go to runs
+            </Link>
+          </div>
+        </div>
+        <img className="compare-empty-art" src={compareArt} width="560" height="392" alt="" />
+      </div>
     </section>
   );
 }
@@ -59,6 +76,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
   const { organizationId, workspaceId } = scope;
   return (
     <section className="compare">
+      <ComparisonBreadcrumb scope={scope} workspaceName={state.workspaceName} />
       <ComparisonHeader scope={scope} ids={ids} state={state} />
       {state.view.busy && <p role="status">Loading comparison…</p>}
       {state.view.error && <p role="alert">Comparison could not be loaded. Use Refresh comparison to retry.</p>}
@@ -72,13 +90,6 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
             overviews={state.overviews}
             histories={state.histories}
           />
-          <section className="compare-section" aria-labelledby="compare-different">
-            <h2 id="compare-different">What was different</h2>
-            <p className="compare-muted">
-              Saved configuration intent, per scenario; not observed traffic, engine admission or combined concurrency.
-            </p>
-            <WhatWasDifferent items={snapshot.items} contexts={state.contexts} />
-          </section>
           <ComparisonSlos key={ids.join(',')} items={snapshot.items} />
           <RecordedComparisonCharts
             key={ids.join(',')}
@@ -92,6 +103,13 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
             targets={state.targets}
             histories={state.histories}
           />
+          <section className="compare-section" aria-labelledby="compare-different">
+            <h2 id="compare-different">What was different</h2>
+            <p className="compare-muted">
+              Saved configuration intent, per scenario; not observed traffic, engine admission or combined concurrency.
+            </p>
+            <WhatWasDifferent items={snapshot.items} contexts={state.contexts} />
+          </section>
           <MetricSection state={state} snapshot={snapshot} />
           {snapshot.items.map((item, index) => (
             <article key={item.run.id} className="compare-section">
@@ -210,5 +228,19 @@ function MetricSection({ state, snapshot }: { state: ComparisonState; snapshot: 
         Charts use each run’s own UTC source time and independent vertical scale; timelines are not aligned.
       </p>
     </section>
+  );
+}
+
+function ComparisonBreadcrumb({ scope, workspaceName }: { scope: RunScope; workspaceName: string | null }) {
+  return (
+    <nav className="compare-breadcrumb" aria-label="Breadcrumb">
+      <Link to={routes.workspace(scope.organizationId, scope.workspaceId)}>
+        {workspaceName ?? 'Workspace name unavailable'}
+      </Link>
+      <span aria-hidden="true">/</span>
+      <Link to={routes.runs(scope.organizationId, scope.workspaceId)}>Runs</Link>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">Compare</span>
+    </nav>
   );
 }

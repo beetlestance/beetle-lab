@@ -157,7 +157,7 @@ Codecs: `contracts/src/api/run-list.ts`, `run-search.ts`, `run-history-summary.t
   Listing never reads metrics or configs per row ([producer](results.md#derived-presentation)).
 - `pinned=true` reads at most 257 pinned rows of the workspace, then applies the other
   filters; its cursor is a distinct tuple version, so it never continues an unfiltered list.
-
+History pages may include the current workspace name from the same read snapshot.
 ## Run event reads
 
 `listRunEvents` reads durable events of the run's active attempt.
@@ -212,7 +212,7 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `776faa569dfa` |
+| `contracts/api/v2/` | `e114a99b2681` |
 | `contracts/src/api/client/` | `c3f0d1ca243e` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |

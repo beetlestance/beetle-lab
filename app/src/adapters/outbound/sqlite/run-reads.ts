@@ -42,7 +42,7 @@ export class RunReads {
       prepareHistorySearch(this.db, search);
     }
     return transaction(this.db, () => {
-      this.suites.workspace(scope);
+      const workspace = this.suites.workspace(scope);
       const rows = historyKeys(this.db, search);
       const selected = rows.slice(0, query.limit);
       const last = selected.at(-1);
@@ -53,6 +53,7 @@ export class RunReads {
       const items = selected.map((row) => this.get({ scope, id: row.id }));
       const result = {
         scope,
+        workspaceName: workspace.name,
         items,
         summaries: readHistorySummaries(this.db, scope, items),
         contexts: readRunListContexts(this.db, scope, items),

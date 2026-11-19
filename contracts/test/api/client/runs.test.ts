@@ -82,3 +82,10 @@ it('binds an initial note to the creation receipt while preserving omitted-note 
   for(const value of [{...run,note:null},{...run,note:'Wrong'},{...run,noteVersion:2}])
     expect((await createApiClient({baseUrl,fetch:reply(value,202)}).createRun({params,body})).ok).toBe(false);
 });
+
+it('accepts optional scoped workspace names and rejects malformed names or foreign page scope',async()=>{
+ const page=await load('run-page','RunPage');const read=(body:unknown)=>createApiClient({baseUrl,fetch:reply(body)}).listRuns({params,query:{limit:10}});
+ expect((await read({...page,workspaceName:'Current workspace'})).ok).toBe(true);expect((await read(page)).ok).toBe(true);
+ expect((await read({...page,workspaceName:'x'.repeat(129)})).ok).toBe(false);
+ expect((await read({...page,scope:{...page.scope,workspaceId:otherId},workspaceName:'Foreign workspace'})).ok).toBe(false);
+});

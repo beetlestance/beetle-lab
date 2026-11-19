@@ -1,18 +1,21 @@
 import { expect, it } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 import { readRunListContexts } from '../../src/adapters/outbound/sqlite/run-list-context.js';
-import { scope, seed, storageFixture } from './fixture.js';
+import { scope, seed, storageFixture, command, requestId } from './fixture.js';
 import { append, createSuite } from './suites-fixture.js';
 import { runCommand, runOptions } from './runs-fixture.js';
 
 const fixture = storageFixture();
 it('joins candidate names and exact revision ordinals without exposing revision configuration', async () => {
   const metadata = await fixture.open(undefined, runOptions());
-  await seed(metadata);
+  const namespace=await seed(metadata);
   const suite = await createSuite(metadata);
   const revision = await append(metadata, suite);
   const run = await metadata.runs.execute(runCommand(revision.id));
   const page = await metadata.runs.listRuns({ scope, limit: 10 });
+  expect(page.workspaceName).toBe(namespace.workspace.name);
+  await metadata.namespaces.execute(command({kind:'patchWorkspace',id:namespace.workspace.id,request:{requestId:requestId(),scope:{kind:'organization',organizationId:scope.organizationId},expectedVersion:namespace.workspace.version,name:'Renamed workspace'}}));
+  expect((await metadata.runs.listRuns({scope,limit:10})).workspaceName).toBe('Renamed workspace');
   expect(page.contexts).toEqual([
     {
       runId: run.id,

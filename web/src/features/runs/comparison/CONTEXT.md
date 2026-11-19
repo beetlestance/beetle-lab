@@ -4,7 +4,7 @@ query parameter containing two through four distinct ordered UUIDs. First run is
 baseline. Same-page history contexts supply suite/revision labels only when
 run/suite/revision bind to the captured run; no extra metadata requests. Colliding
 four-character IDs expand to source prefix+suffix or the full UUID.
-Missing runs shows empty with no read; invalid runs rejects. At most four terminal runs.
+Empty selection reads one history page for its workspace name; invalid runs rejects.
 Layout: run strip (status, short ID, Baseline badge or Make baseline, which only
 reorders the URL), whole-run figures with labelled client deltas from the
 baseline (Deltas.tsx: relative %, percentage points, duration; "same" when equal,
@@ -28,12 +28,12 @@ source as overview (generation/version/hash/manifest/marker), never configured l
 The optional legacy selector still keeps <=1,000 points/1 MiB per run with its own
 UTC timestamps and vertical scale; those advanced timelines are not aligned.
 Overview supplies p50/p95/p99 estimates, invocation checks and dropped counts.
-Each ready overview is one source; its nulls never backfill from saved summaries.
+Ready overviews never backfill nulls. The frame uses board section order.
 When it is unavailable, only the existing accepted history scalars can fall back.
 Average rate stays average; overflowed deltas stay unknown. Native firstFailedSlo
 shows failure/reading with a matched saved limit;
 legacy missing details stay explicit. No regrading, new reads or polling.
-Named focusable table regions retain readable widths on phones; run cards wrap.
+Named table scroll regions wrap on phones. Failed refresh retires mutable names.
 Configured target reads bind sole sealed descriptors and numeric ID/hash timing.
 Shared verified byte admission, same metric/declared units; no raw-unit overlay.
 Strict target time and original retirement; full board acceptance remains. Checks:

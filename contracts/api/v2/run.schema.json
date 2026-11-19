@@ -209,6 +209,7 @@
     "RunPage": {
       "type": "object",
       "properties": {
+        "workspaceName": {"$ref":"https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"},
         "scope": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
         },
