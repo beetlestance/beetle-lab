@@ -18,15 +18,16 @@ export function normalizedRunNote(note: string | null): string | null {
 /** Route run identity and the full request participate in the intent; no clock does. */
 export function prepareRunNoteCommand(operation: SetRunNoteOperation, digest: IntentDigest): SetRunNoteCommand {
   const copy = JSON.parse(encodeJson(operation, 65536)) as SetRunNoteOperation & { intentDigest?: string };
-  requireRule(Object.keys(copy).every((key) => ['kind', 'id', 'request', 'intentDigest'].includes(key)));
+  requireRule(Object.keys(copy).every((key) => ['kind', 'id', 'request', 'updatedAt', 'intentDigest'].includes(key)));
   requireRule(
     copy.kind === 'setRunNote' && validateApi('Uuid', copy.id).ok && validateApi('SetRunNoteRequest', copy.request).ok,
   );
+  requireRule(validateApi('RunTimestamp', copy.updatedAt).ok);
   normalizedRunNote(copy.request.note);
   const { kind, id, request } = copy;
   const intentDigest = digestMutationIntent({ kind, id, request }, digest);
   requireRule(copy.intentDigest === undefined || copy.intentDigest === intentDigest);
-  return immutableSnapshot({ kind, id, request, intentDigest });
+  return immutableSnapshot({ kind, id, request, updatedAt: copy.updatedAt, intentDigest });
 }
 
 /** A replay returns the original Run read; later lifecycle or note changes stay in reads. */

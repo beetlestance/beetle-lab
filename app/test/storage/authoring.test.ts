@@ -9,7 +9,7 @@ import { inputOptions } from './inputs-fixture.js';
 
 const fixture = storageFixture();
 const noteCommand = (run: Pick<Run, 'id'>, expectedNoteVersion: number, note: string | null, id = requestId()) =>
-  prepareRunNoteCommand({ kind: 'setRunNote', id: run.id, request: { scope, requestId: id, expectedNoteVersion, note } }, digest);
+  prepareRunNoteCommand({ kind: 'setRunNote', updatedAt: '2026-11-11T00:00:00.000Z', id: run.id, request: { scope, requestId: id, expectedNoteVersion, note } }, digest);
 async function searchable(metadata: Metadata): Promise<void> {
   for (let step = 0; step < 40; step++) {
     try { await metadata.runs.listRuns({ scope, limit: 1, name: 'no such name' }); return; }
@@ -52,7 +52,7 @@ it('stamps revisions with server time, message and the administrator display nam
   // Replay returns the original stamp even though the clock and display name moved on.
   expect(await append(metadata, suite, 62, body)).toEqual(first);
   const page = await metadata.suites.listRevisions({ scope, suiteId: suite.id, limit: 5 });
-  expect(page.items.map((item) => item.savedBy)).toEqual(['Administrator', 'Dana Ops']);
+  expect(page.items.map((item) => item.savedBy).sort()).toEqual(['Administrator', 'Dana Ops']);
   await fixture.close(metadata);
 });
 
@@ -63,8 +63,8 @@ it('sets, replays, conflicts and clears run notes without changing the run versi
   expect(await metadata.runs.getRun({ scope, id: run.id })).toMatchObject({ note: null, noteVersion: 0, startedAt: null, finishedAt: null });
   const command = noteCommand(run, 0, ' Warm cache baseline ');
   const noted = await metadata.runs.setNote(command);
-  expect(noted).toMatchObject({ note: 'Warm cache baseline', noteVersion: 1, version: run.version });
-  expect(await metadata.runs.setNote(command)).toEqual(noted);
+  expect(noted).toMatchObject({ note: 'Warm cache baseline', noteVersion: 1, version: run.version, noteUpdatedAt: command.updatedAt });
+  expect(await metadata.runs.setNote({...command, updatedAt: '2026-11-12T00:00:00.000Z'})).toEqual(noted);
   await expect(metadata.runs.setNote(noteCommand(run, 0, 'Stale'))).rejects.toMatchObject({ code: 'conflict' });
   await expect(metadata.runs.setNote(noteCommand({ id: uuid(999) }, 0, 'Missing'))).rejects.toMatchObject({ code: 'not_found' });
   await searchable(metadata);

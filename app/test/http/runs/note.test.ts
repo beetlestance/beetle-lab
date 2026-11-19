@@ -7,15 +7,15 @@ function setup() { const value = fixture(); fixtures.push(value); return value; 
 afterEach(async () => { await Promise.all(fixtures.splice(0).map(value => value.close())); });
 const url = (f: ReturnType<typeof fixture>) => `${f.base}/${runValue().id}/note`;
 
-it('sets a versioned note through one store call without clock or allocation', async () => {
+it('sets a versioned note through one store call with a server edit time and no allocation', async () => {
   const f = setup(); const headers = await f.paired();
   const body = { scope: f.body.scope, requestId: otherId, expectedNoteVersion: 0, note: 'Warm cache' };
   const response = await f.server.inject({ method: 'PATCH', url: url(f), headers, payload: body });
   expect(response.statusCode).toBe(200);
   expect(response.json()).toMatchObject({ id: runValue().id, note: 'Note', noteVersion: 1 });
   expect(f.setNote).toHaveBeenCalledTimes(1);
-  expect(f.setNote.mock.calls[0]![0]).toMatchObject({ kind: 'setRunNote', id: runValue().id, request: body });
-  expect(f.newId).not.toHaveBeenCalled(); expect(f.now).not.toHaveBeenCalled();
+  expect(f.setNote.mock.calls[0]![0]).toMatchObject({ kind: 'setRunNote', id: runValue().id, request: body, updatedAt: '2026-11-10T00:00:00.000Z' });
+  expect(f.newId).not.toHaveBeenCalled(); expect(f.now).toHaveBeenCalledTimes(1);
   expect(f.execute).not.toHaveBeenCalled(); expect(f.cancel).not.toHaveBeenCalled();
 });
 

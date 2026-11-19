@@ -76,7 +76,7 @@ export function registerRunRoutes(server: FastifyInstance, options: Options): vo
       ({ params, body }) => {
         requireRule(sameScope(scope(params), body.scope), 'not_found');
         return setRunNote({
-          operation: { kind: 'setRunNote', id: params.runId, request: body },
+          operation: { kind: 'setRunNote', id: params.runId, request: body, updatedAt: options.now() },
           digest: options.digest,
           store: options.store,
         });

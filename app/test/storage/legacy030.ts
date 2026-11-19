@@ -64,7 +64,7 @@ export function asSchema33(db: DatabaseSync): void {
   });
 }
 /**
- * Test-only projection of a synthetic schema31-36 fixture to schema30, peeling 036 (only without report times), 035, 034, 033, 032
+ * Test-only projection of a synthetic schema31-37 fixture to schema30, peeling 036 (only without report times), 035, 034, 033, 032
  * then 031. Derived 034 listing state is dropped; run pins, authored
  * notes, descriptions, messages and input facts can never be rewound; server-stamped
  * savedAt/savedBy did not exist before 031, so they are dropped with their columns.
@@ -73,7 +73,7 @@ export function asSchema33(db: DatabaseSync): void {
 export function asSchema30(db: DatabaseSync): void {
   const initial = version(db);
   if (initial === 30) return;
-  assert([31, 32, 33, 34, 35, 36].includes(initial), 'Cannot project fixture to schema30');
+  assert([31, 32, 33, 34, 35, 36, 37].includes(initial), 'Cannot project fixture to schema30');
   if (initial >= 33) assert(!db.prepare('SELECT 1 FROM run_pins LIMIT 1').get(), 'Cannot project fixture with run pins');
   assert(!db.prepare('SELECT 1 FROM run_notes LIMIT 1').get(), 'Cannot project fixture with run notes');
   assert(!db.prepare('SELECT 1 FROM suites WHERE description IS NOT NULL LIMIT 1').get(), 'Cannot project descriptions');

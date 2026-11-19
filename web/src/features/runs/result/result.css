@@ -146,10 +146,30 @@
   gap: var(--s-8);
 }
 .run-note-view {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  gap: var(--s-12);
+  gap: var(--s-8);
+  max-width: 60ch;
+  padding: var(--s-12);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+}
+.run-note-view > .run-note-text {
+  grid-column: 1 / -1;
+}
+.run-note-view > .btn {
+  justify-self: end;
+}
+.run-note-view:not(:has(.run-note-text)) > .btn {
+  justify-self: start;
+}
+.run-note-conflict {
+  display: grid;
+  gap: var(--s-8);
+  max-width: 60ch;
+  overflow-wrap: anywhere;
 }
 .run-note-text {
   margin: 0;
@@ -160,10 +180,29 @@
   display: grid;
   gap: var(--s-8);
   max-width: 60ch;
+  padding: var(--s-12);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+}
+.run-note-form:focus-within {
+  border-color: var(--accent);
+}
+.run-note-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-12);
+}
+.run-note-footer > .result-row {
+  margin-inline-start: auto;
 }
 .run-note-input {
   width: 100%;
   resize: vertical;
+  border: 0;
+  background: transparent;
 }
 .result-delete-pinned {
   display: grid;

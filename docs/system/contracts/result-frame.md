@@ -18,9 +18,9 @@ no reading or mutation ownership.
 Run notes live below the title group, outside the pooled summary/chart flow.
 A missing writable note offers Add a note; restored history offers no writes.
 The run-note classes are distinct from the engine-result panel's diagnostic note
-styles. Mutation versions, unknown-outcome replay and retirement remain unchanged.
-The designed note edit timestamp and explicit conflict-resolution controls are
-not qualified by this frame change; they remain separate implementation gaps.
+styles. Note edit stamps and explicit conflict choices follow
+[authoring](authoring.md#run-notes), with frozen drafts and receipt-only replay.
+Legacy timestamps remain unrecorded; restored views have no note controls.
 
 Source browser checks do not prove packaged/native delivery or whole-family
 visual acceptance. Full result/phone disclosure matching remains in the goal.
@@ -32,5 +32,5 @@ visual acceptance. Full result/phone disclosure matching remains in the goal.
 | `web/src/features/runs/result/headline.ts` | `ef62bb206bed` |
 | `web/src/features/runs/result/SectionNav.tsx` | `2781bcc519ff` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `23f6b9adf58a` |
-| `web/src/features/runs/result/RunNote.tsx` | `498d9df6a95a` |
+| `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/index.tsx` | `143a0fd991a7` |

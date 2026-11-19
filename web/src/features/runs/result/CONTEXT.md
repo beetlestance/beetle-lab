@@ -20,8 +20,9 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
 - PinControl is shared by result/header and history; hides unfinished writes, restored badge only.
 - usePin: pinRun/unpinRun from the receipt only, never optimistic; toast, then
   re-reads the run and history pages. pin_limit and cleanup_in_progress explained.
-- RunNote: setRunNote with expectedNoteVersion; conflict re-reads the run.
-- useWrite: single-flight write, identical replay only on an unknown outcome.
+- RunNote: frozen edit version, recorded noteUpdatedAt; useRunNote owns receipt replay,
+  useNoteConflict owns scoped refresh and explicit conflict choices, including clears.
+  useWrite is single-flight, with identical replay only on unknown outcomes.
 - Overview: five pooled summary tiles and a <=64-row endpoint table, p95 order,
   name filter, explicit missing values/omissions. Histogram estimates stay labelled.
 - Sections: fallback history tiles, exact native threshold readings with verified
@@ -29,12 +30,11 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
 - What happened: recorded milestones and source-bound native rise; source clocks stay separate.
 - ReportTabs: one selected desktop tab shared with top section links; permanent
   anchors target Report/Artifacts/Diagnostics. Under 760px, separate sections.
-- DeleteRun: dialog composing retention's RetentionControls; a pinned run offers
-  Unpin first.
+- DeleteRun: RetentionControls dialog; a pinned run offers Unpin first.
 RecordedCharts reads workload history once; peak binds to the summary source.
 ResultTargetReport shares one verified report across four cards and lazy details.
 Declared groups normalize; incomplete units remain raw. Source gaps/nulls/zero stay
 exact; only safe native chronology shares hover. ?target=phases keeps the same
 reader for observed phase comparisons; missing phase GC maxima stay unavailable.
 ResultCompare: 20 candidates/page, suite/all, verified names/ordinals, no row reads; chosen candidate is baseline.
-Checks: npx vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx
+Checks: vitest run web/src/features/runs/result web/src/features/runs/detail.test.tsx
