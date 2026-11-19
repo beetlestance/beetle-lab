@@ -96,14 +96,19 @@ it('shows reconnecting with stale figures and retries at once', async () => {
   mountLive(routesFor(() => current).client, { run: current });
   await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
   fail = true;
-  const banner = await screen.findByText(/^No word for \d+ s$/, undefined, { timeout: 4000 });
-  expect(banner).toBeVisible();
+  const heading = await screen.findByRole('heading', { name: /^No word from the agent for \d+ s$/ }, { timeout: 4000 });
+  expect(heading).toBeVisible();
+  expect(screen.getByText('Reconnecting', { exact: true })).toBeVisible();
+  const progress = within(screen.getByRole('region', { name: 'Progress' }));
+  expect(progress.getByText(/Last update at/)).toHaveTextContent('Last update at 05:16');
+  expect(progress.queryByText(/left/)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Pause stream' })).not.toBeInTheDocument();
   expect(within(screen.getByRole('region', { name: 'Progress' })).getByText('1,200')).toBeVisible();
   const calls = read.mock.calls.length;
   fail = false;
   fireEvent.click(screen.getByRole('button', { name: 'Retry now' }));
   await waitFor(() => expect(read.mock.calls.length).toBeGreaterThan(calls));
-  await waitFor(() => expect(screen.queryByText(/^No word for/)).not.toBeInTheDocument());
+  await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
 });
 
 it('cancels from the header through the shared owner and then shows cancelling', async () => {

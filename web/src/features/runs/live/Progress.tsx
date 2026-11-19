@@ -50,23 +50,27 @@ function TimeLine({
   totalMs,
   elapsedMs,
   originMs,
+  stalled,
 }: {
   totalMs: number | null;
   elapsedMs: number | null;
   originMs: number | null;
+  stalled: boolean;
 }) {
   if (elapsedMs === null)
     return (
       <div className="live-time">
-        <span>Elapsed time unavailable</span>
+        <span>{stalled ? 'Last update time unavailable' : 'Elapsed time unavailable'}</span>
       </div>
     );
   const known = totalMs !== null && totalMs > 0;
   return (
     <div className="live-time">
       <span>
-        <span className="number">{clock(elapsedMs)}</span> elapsed
-        {known && originMs !== null && (
+        {stalled ? 'Last update at ' : null}
+        <span className="number">{clock(elapsedMs)}</span>
+        {!stalled && ' elapsed'}
+        {!stalled && known && originMs !== null && (
           <>
             {' '}
             <span className="live-left">
@@ -132,8 +136,10 @@ export function Progress({
   p95Limit,
   failedLimit,
   compact = false,
+  stalled = false,
 }: {
   compact?: boolean | undefined;
+  stalled?: boolean | undefined;
   plan: RunPlan;
   elapsedMs: number | null;
   originMs: number | null;
@@ -144,7 +150,7 @@ export function Progress({
   return (
     <section className="live-progress" aria-label="Progress">
       <Stages plan={plan} elapsedMs={elapsedMs} />
-      <TimeLine totalMs={plan.totalMs} elapsedMs={elapsedMs} originMs={originMs} />
+      <TimeLine totalMs={plan.totalMs} elapsedMs={elapsedMs} originMs={originMs} stalled={stalled} />
       <Kpis compact={compact} figures={figures} p95Limit={p95Limit} failedLimit={failedLimit} />
     </section>
   );

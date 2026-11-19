@@ -28,6 +28,7 @@ export interface HeaderProps {
   status: { label: string; tone: StatusTone; note?: string | undefined };
   /** Null hides the control (stream not running and not paused). */
   stream: { paused: boolean; toggle: () => void } | null;
+  retryStream?: (() => void) | undefined;
   cancel: Cancellation | undefined;
   readOnly: boolean;
   early?: boolean | undefined;
@@ -196,7 +197,11 @@ export function LiveHeader(props: HeaderProps) {
             <div className="live-actions">
               <CompareButton />
               <LiveDownloads ordinal={props.revisionOrdinal} snapshot={props.snapshot} onScript={props.onScript} />
-              {stream && <Button onClick={stream.toggle}>{stream.paused ? 'Resume stream' : 'Pause stream'}</Button>}
+              {props.retryStream ? (
+                <Button onClick={props.retryStream}>Retry now</Button>
+              ) : (
+                stream && <Button onClick={stream.toggle}>{stream.paused ? 'Resume stream' : 'Pause stream'}</Button>
+              )}
               <LiveCancelButton run={props.run} cancel={props.cancel} readOnly={props.readOnly} />
             </div>
           </div>
