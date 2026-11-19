@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ApiContext } from '../../../app/api.js';
-import { testClient, json } from '../../../app/test-fixtures.js';
+import { testClient, json, deferred } from '../../../app/test-fixtures.js';
 import { fixture, report } from '../target-observations/read-fixtures.js';
 import { ResultTargetReport } from './TargetReport.js';
 
@@ -53,4 +53,20 @@ it('reloads through the same report owner and hides accepted charts after a fail
  expect(await screen.findByRole('button',{name:'Retry target observations'})).toBeVisible();
  expect(screen.queryAllByRole('img')).toHaveLength(0);expect(f.read).toHaveBeenCalledTimes(2);
  expect(read).toHaveBeenNthCalledWith(2,expect.objectContaining({params:fixture().params}));
+});
+
+it('keeps advanced values expanded across a successful explicit reload', async () => {
+ const next=deferred<ReturnType<typeof report>>();
+ const read=vi.fn().mockResolvedValueOnce(report()).mockImplementationOnce(()=>next.promise);
+ const f=mount(read);await screen.findByText(/recorded target observations/);
+ const details=screen.getByText('Recorded target values and checkpoints').closest('details')!;
+ details.open=true;fireEvent(details,new Event('toggle'));
+ expect(await screen.findByRole('combobox',{name:'Target metric'})).toBeVisible();
+ fireEvent.click(screen.getByRole('button',{name:'Reload target report'}));
+ expect(await screen.findByText('Reading verified target observations…')).toBeVisible();
+ expect(screen.queryAllByRole('img')).toHaveLength(0);
+ next.resolve(report());
+ expect(await screen.findByRole('combobox',{name:'Target metric'})).toBeVisible();
+ expect(screen.getByText('Recorded target values and checkpoints').closest('details')).toHaveAttribute('open');
+ expect(f.read).toHaveBeenCalledTimes(2);
 });

@@ -44,8 +44,8 @@ Unplottable UTC observations are counted and retained in advanced source details
 Native marker time shares workload hover only with safe target chronology;
 otherwise target cards use their own cursor and disclose the available time origin.
 Hover outside coverage or within gaps never substitutes a nearby reading.
-All retained phases are shown. Advanced details mount on demand and reuse the
-same verified report; explicit Reload uses that owner, with no automatic polling.
+All retained phases are shown. Details mount on demand; Reload preserves expansion
+and reuses the verified report and its existing owner, without polling.
 
 ## Target phase comparison
 
@@ -190,7 +190,7 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/chart-model.ts` | `1887a2817681` |
 | `web/src/features/runs/charts/` | `7df1caa86595` |
-| `web/src/features/runs/result/TargetReport.tsx` | `e0013a30bb10` |
+| `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
