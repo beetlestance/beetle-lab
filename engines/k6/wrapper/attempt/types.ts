@@ -1,13 +1,19 @@
 import type { AttemptReason } from '../failure/index.js';
 export type { AttemptReason } from '../failure/index.js';
 export { AttemptError } from '../failure/index.js';
-import type { AttemptLiveState } from './live.js';
 import type { ControlEvent, EngineResult } from '@beetle/contracts';
 import type { MetricWindow } from '../../aggregation/index.js';
 import type { ExecutionReceipt } from '../execution/index.js';
 import type { InputFailure, OpenStagedOptions } from '../input/index.js';
 import type { JournalScope } from '../control/index.js';
 import type { PublicationResult } from '../publication/index.js';
+
+export interface AttemptLiveState {
+  readonly status: 'disabled' | 'open' | 'closed' | 'unavailable';
+  readonly reason: string | null;
+  readonly producedBytes: number;
+  readonly quiescence: 'confirmed' | 'failed' | 'unknown';
+}
 
 /** Trusted packaging arguments. No options are read from the staged payload. */
 export interface StagedK6Options extends Omit<OpenStagedOptions, 'wallNow' | 'headerTimeoutMs'> {

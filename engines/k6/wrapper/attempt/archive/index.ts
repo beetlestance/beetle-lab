@@ -107,6 +107,13 @@ export class MetricArchive {
       return undefined;
     }
   }
+  async syncPrefix(check: () => void): Promise<void> {
+    check();
+    this.check();
+    await this.files!.sync('data');
+    check();
+    await this.files!.sync('index');
+  }
   get failure(): AttemptError | undefined {
     return this.fault;
   }

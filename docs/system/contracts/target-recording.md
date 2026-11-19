@@ -65,6 +65,9 @@ equal counts keep exact bytes/hash, increasing counts require growing bytes.
 Returned frame mutation cannot change this baseline. Metadata hints grant no
 sealed-result authority. Target-file reads additionally require the existing
 approved actor, native custody and [active-history verification](active-history.md).
+The stopped-run checkpoint writer may include the same approved target prefix.
+It syncs the captured extent before committing the slot and drains before the
+target archive closes.
 
 ## GC pause evidence
 
@@ -95,14 +98,14 @@ The numeric archive keeps its existing format. No execution outcome changes.
 
 | Code | Reviewed |
 | --- | --- |
-| `engines/k6/wrapper/attempt/attempt.ts` | `46a26c661552` |
-| `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
+| `engines/k6/wrapper/attempt/attempt.ts` | `34ef16d4e053` |
+| `engines/k6/wrapper/attempt/target.ts` | `fd78520678d8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/target-sampling/` | `6afe70750068` |
-| `engines/k6/wrapper/target-archive/` | `7bc3a5dba7c2` |
+| `engines/k6/wrapper/target-archive/` | `f3ed71774788` |
 | `contracts/runner/v1/target-runtime-units.schema.json` | `05a6a5565ff1` |
 | `contracts/src/target-runtime/` | `cc1c391100f1` |
-| `engines/k6/wrapper/artifact-custody/append-files.ts` | `8a8fa01783bd` |
+| `engines/k6/wrapper/artifact-custody/append-files.ts` | `1f2f174f427d` |
 | `contracts/api/v2/live-history-prefix.schema.json` | `995b549a49d8` |
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |
 | `contracts/src/api/live-metrics.ts` | `49964b8426b1` |

@@ -26,12 +26,11 @@ import { AttemptTarget } from './target.js';
 import { executionLimits } from './reservation.js';
 import { MetricArchive } from './archive/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
-import { AttemptLive } from './live.js';
+import { AttemptLive, syncHistory } from './live.js';
 import { AttemptFence, Notifications, Phases } from '../lifecycle/index.js';
 import { numericAllowance, phaseReservation, reserveOutput, type OutputReservation } from './reservation.js';
 import type { AttemptPorts } from './ports.js';
 import { AttemptError, type AttemptReason, type StagedK6Options, type StagedK6Receipt } from './types.js';
-/** Composition root: no compiler/parser/outcome or publication implementation here. */
 class Attempt {
   private readonly state = blank();
   private readonly live = new AttemptLive();
@@ -182,6 +181,7 @@ class Attempt {
       },
       collectStarted: async (receipt) => {
         if (this.collecting) this.fail('execution');
+        await this.live.closeCheckpoint();
         await this.target.finish();
         this.fence.check();
         await this.closeLive();
@@ -232,6 +232,10 @@ class Attempt {
         signal: this.fence.controller.signal,
         clock: this.ports.clock,
         archivePrefix: () => this.archive?.completedPrefix(),
+        checkpoint: {
+          root: this.options.outputRoot,
+          sync: (target, check) => syncHistory(this.archive!, this.target, target, check),
+        },
         ...(this.target.source ? { target: this.target.source } : {}),
       },
       this.ports.openMailbox,
@@ -356,7 +360,6 @@ class Attempt {
     });
     const published = await this.publication.result;
     this.state.publication = published;
-    // Preserve a confirmed publication even if later notification/journal/close work fails.
     if (published.ok) this.state.result = published.value;
     await this.settle('publication', [this.publication.quiesced, this.publication.close()]);
     if (!published.ok) this.fail('publication');
@@ -381,6 +384,7 @@ class Attempt {
       artifacts: this.artifacts,
       liveMetricMailbox: this.options.liveMetricMailbox,
       closeLive: () => this.closeLive(),
+      closeCheckpoint: () => this.live.closeCheckpoint(),
       artifactQuiescence: () => this.artifactQuiescence(),
     });
   }

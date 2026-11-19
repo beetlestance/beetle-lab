@@ -19,3 +19,9 @@ Checks: approval.test.ts and engine raw/compiled parity plus attempt publisher c
 K6_LIVE_METRIC_IMAGE_ENV names the versioned trusted image marker shared by
 packaging/install inspection. It is not a user configuration field or new wire DTO.
 targetIntervalMs comes only from source.targetSampling (validated config), else null.
+
+The internal k6 history checkpoint stores a complete metric prefix with an
+optional approved target prefix. It uses two fixed names, canonical JSON and a
+SHA-256 checksum, each bounded to 4 KiB. Decode independently binds the launch,
+scope, subset and interval. The agent still needs to verify the referenced
+files and physical stop before use.

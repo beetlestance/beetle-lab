@@ -1,10 +1,8 @@
 # Results
 
-The k6 wrapper (`engines/k6/wrapper`, `engines/k6/report`) writes sealed result
-artefacts inside the admitted container; the agent carries them; the application
-(`app/src/application/run-*`) verifies and serves scoped reads; the browser renders
-them. Advisory live metrics take a separate, unsealed path. Numeric meaning lives
-once in `contracts/src/metrics`; request and response shapes live in `contracts/api/v2`.
+The k6 wrapper writes sealed artefacts inside the admitted container. The agent
+carries them and the application verifies and serves scoped reads. Advisory live
+metrics are unsealed. Numeric semantics and API shapes live in `contracts/`.
 
 ## Sealed artefact set
 
@@ -137,10 +135,12 @@ mis-hashed mailbox image, plaintext payload, regression or overlap is `unavailab
 without retry. A safe producer failure leaves the outcome alone; failed producer
 cleanup prevents sealing. Advisory producers never throw into the native drain or
 the authoritative metric callback. A duplicate, overlapping or out-of-order window,
-or a counter or clock overflow, permanently disables the live producer with a fixed
-status. Publication starts after the measured-phase transition and drains before
-collect begins. The image marker `BEETLE_K6_LIVE_METRICS_V2=1` enables the
-profile; a suite or Offer cannot.
+or a counter or clock overflow, disables the live producer. The installed image marker
+`BEETLE_K6_LIVE_METRICS_V2=1` enables publication during execute; collect drains it.
+The k6 wrapper also writes two alternating, checksummed 4 KiB prefix slots from
+the live allowance. One advisory write starts at the first complete window, then
+at most once per 5 s until the phase fence. It syncs complete archive prefixes
+before the slot. The 8 KiB charge covers peak retained extent. Collection stops and drains the writer before closing archives.
 
 ## Derived presentation
 
@@ -213,8 +213,8 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/attempt/archive/` | `4f37ee503143` |
+| `engines/k6/wrapper/attempt/archive/` | `7683fd6aee33` |
 | `app/src/application/run-metrics/` | `58d640006ba7` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
-| `contracts/src/k6-live/` | `74dfd693e7e1` |
+| `contracts/src/k6-live/` | `3b8aa2acc2e3` |
 | `agent/src/live-metrics/` | `feac352cffc7` |
