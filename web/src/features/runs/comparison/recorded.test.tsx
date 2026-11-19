@@ -3,11 +3,12 @@ import '@testing-library/jest-dom/vitest';
 import chartData from '../../../../../contracts/fixtures/api/valid/run-chart-history.json' with {type:'json'};
 import overviewData from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with {type:'json'};
 import { afterEach, expect, it } from 'vitest';
-import { act, cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, screen, waitFor, render, fireEvent } from '@testing-library/react';
 import { validateApi } from '@beetle/contracts/api';
 import type { ApiClient, Run } from '@beetle/contracts/api';
 import { historyPage } from '../test-fixtures.js';
 import { catalogue, deferred, json, mountComparison, snapshot, testClient } from './fixtures.js';
+import { RecordedComparisonCharts } from './RecordedCharts.js';
 import { comparisonPlot } from './overlay-model.js';
 import { comparisonPeak } from './recorded-source.js';
 afterEach(cleanup);
@@ -67,4 +68,28 @@ it('retains a retired chart original and stops its old peer work before the next
  await act(async()=>held.resolve({ok:true,value:history(snapshot().items[0]!.run)}));await screen.findByLabelText('Baseline metric');
  expect(calls).toBe(1);expect(first.records.filter(record=>record.path.includes('/runs?'))).toHaveLength(1);
  expect(next.records.filter(record=>record.path.endsWith('/metrics/chart-history'))).toHaveLength(2);
+});
+
+it('keeps healthy window provenance inspectable in details without expanding the overview', () => {
+ const items=snapshot().items;
+ const histories=new Map(items.map(item=>[item.run.id,{status:'loaded' as const,value:history(item.run)}]));
+ const overviews=new Map(items.map(item=>[item.run.id,{status:'loaded' as const,value:overview(item.run)}]));
+ render(<RecordedComparisonCharts items={items} histories={histories} overviews={overviews}/>);
+ for(const note of screen.getAllByText(/plotted of .* verified source windows/))expect(note).not.toBeVisible();
+ expect(screen.getAllByRole('img')).toHaveLength(4);
+ fireEvent.click(screen.getByText('Recorded source details',{selector:'summary'}));
+ for(const note of screen.getAllByText(/plotted of .* verified source windows/))expect(note).toBeVisible();
+});
+for(const condition of ['partial','downsampled','peak','error'] as const)it(`keeps ${condition} source uncertainty visible without opening details`,()=>{
+ const items=snapshot().items;const first=items[0]!.run;const value=history(first);
+ if(condition==='partial')value.source!.coverage={...value.source!.coverage,complete:false,latePoints:1};
+ if(condition==='downsampled')value.windows+=1;
+ const histories=new Map(items.map(item=>[item.run.id,condition==='error'&&item.run.id===first.id
+  ? {status:'error' as const} : {status:'loaded' as const,value:item.run.id===first.id?value:history(item.run)}]));
+ const overviews=new Map(items.map(item=>[item.run.id,condition==='peak'&&item.run.id===first.id
+  ? {status:'error' as const} : {status:'loaded' as const,value:overview(item.run)}]));
+ render(<RecordedComparisonCharts items={items} histories={histories} overviews={overviews}/>);
+ const text=condition==='partial'?/Window coverage is partial/:condition==='peak'?/Observed peak is unavailable/
+  :condition==='error'?/recorded charts could not be loaded/:/3 plotted of 4 verified/;
+ expect(screen.getByText(text)).toBeVisible();
 });

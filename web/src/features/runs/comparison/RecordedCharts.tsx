@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import type { RunComparisonItem } from '@beetle/contracts/api';
+import type { RunComparisonItem, RunChartHistory } from '@beetle/contracts/api';
 import { LiveChart } from '../live/LiveChart.js';
 import { ms, whole } from '../live/format.js';
 import type { ComparisonHistories, Overviews } from './useComparison.js';
 import { comparisonPlot } from './overlay-model.js';
 import type { ComparisonPlot } from './overlay-model.js';
 import { comparisonPeak } from './recorded-source.js';
+import { ComparisonSourceNotes } from './SourceNotes.js';
 import { comparisonRunLabels } from './run-labels.js';
 import '../live/live.css';
 
@@ -92,34 +93,42 @@ function RecordedNotes({
   overviews: Overviews | undefined;
 }) {
   const labels = comparisonRunLabels(items.map((item) => item.run.id));
-  return (
-    <div className="compare-muted">
-      {items.map((item) => {
-        const id = item.run.id.toLowerCase(),
-          label = labels.get(id);
-        const read = histories.get(id);
-        if (!read || read.status === 'error')
-          return (
-            <p role="alert" key={id}>
-              {label}: recorded charts could not be loaded. Refresh comparison to retry.
-            </p>
-          );
-        const value = read.value;
-        if (value.reason !== null)
-          return (
-            <p key={id}>
-              {label}: recorded charts {value.reason.replaceAll('_', ' ')}.
-            </p>
-          );
-        return (
-          <p key={id}>
-            {label}: {value.points.length} plotted of {value.windows} verified source windows.
-            {value.source?.coverage.complete === false && ' Window coverage is partial.'}
-            {comparisonPeak(overviews?.get(id), read) === null &&
-              ' Observed peak is unavailable for these whole-run measurements.'}
+  const notes = items.map((item) => {
+    const id = item.run.id.toLowerCase(),
+      label = labels.get(id),
+      read = histories.get(id);
+    if (!read || read.status === 'error')
+      return {
+        id,
+        attention: true,
+        content: <p role="alert">{label}: recorded charts could not be loaded. Refresh comparison to retry.</p>,
+      };
+    const value = read.value;
+    if (value.reason !== null)
+      return {
+        id,
+        attention: true,
+        content: (
+          <p>
+            {label}: recorded charts {value.reason.replaceAll('_', ' ')}.
           </p>
-        );
-      })}
-    </div>
-  );
+        ),
+      };
+    return windowNote(id, label, value, comparisonPeak(overviews?.get(id), read) === null);
+  });
+  return <ComparisonSourceNotes notes={notes} />;
+}
+
+function windowNote(id: string, label: string | undefined, value: RunChartHistory, peakMissing: boolean) {
+  return {
+    id,
+    attention: value.source?.coverage.complete === false || value.points.length < value.windows || peakMissing,
+    content: (
+      <p>
+        {label}: {value.points.length} plotted of {value.windows} verified source windows.
+        {value.source?.coverage.complete === false && ' Window coverage is partial.'}
+        {peakMissing && ' Observed peak is unavailable for these whole-run measurements.'}
+      </p>
+    ),
+  };
 }

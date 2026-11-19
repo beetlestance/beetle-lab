@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, act } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { validate } from '@beetle/contracts';
 import { comparisonWarnings, validateApi, type RunResultSnapshot } from '@beetle/contracts/api';
@@ -50,7 +50,7 @@ it('binds native timing to the sealed numeric descriptor and compares declared s
 });
 it('renders four target plots with linked source-unit labels and explicit inspection links',()=>{
  const f=measured();render(<MemoryRouter><ComparisonTargetRuntime items={f.items} targets={f.targets} histories={f.histories}/></MemoryRouter>);
- expect(screen.getAllByRole('img')).toHaveLength(4);expect(screen.getAllByRole('link',{name:'Inspect this run’s target evidence'})).toHaveLength(2);expect(screen.getByText(/Source metric: usedHeapSize/)).toBeVisible();
+ expect(screen.getAllByRole('img')).toHaveLength(4);fireEvent.click(screen.getByText('Recorded source details',{selector:'summary'}));expect(screen.getAllByRole('link',{name:'Inspect this run’s target evidence'})).toHaveLength(2);expect(screen.getByText(/Source metric: usedHeapSize/)).toBeVisible();
 });
 it('retains a retired target-byte original and stops old peer work until actual settlement',async()=>{
  const f=setup();const value=snapshot();value.items[0]=f.item;
@@ -59,4 +59,17 @@ it('retains a retired target-byte original and stops old peer work until actual 
  const first=mountComparison(api.client);await waitFor(()=>expect(read).toHaveBeenCalledTimes(1));first.unmount();expect(read.mock.calls[0]![0].signal.aborted).toBe(true);
  const next=testClient(req=>req.path.endsWith('/comparisons')?json(snapshot()):json(catalogue()));mountComparison(next.client);await act(async()=>{await Promise.resolve()});expect(next.records).toHaveLength(0);
  await act(async()=>original.resolve(report()));await screen.findByLabelText('Baseline metric');expect(api.records.filter(r=>r.path.endsWith('/result'))).toHaveLength(1);expect(next.records.length).toBeGreaterThan(0);
+});
+
+for(const condition of ['missed','limited'] as const)it(`keeps ${condition} target collection visible outside details`,()=>{
+ const f=measured();if(condition==='missed')f.r.missed=1;else f.r.limited=true;
+ render(<MemoryRouter><ComparisonTargetRuntime items={f.items} targets={f.targets} histories={f.histories}/></MemoryRouter>);
+ const notes=screen.getAllByText(condition==='missed'?/1 missed/:/Collection was limited/);
+ expect(notes).toHaveLength(2);for(const note of notes)expect(note).toBeVisible();
+ expect(screen.getAllByRole('link',{name:'Inspect this run’s target evidence'})).toHaveLength(2);
+});
+it('does not show empty source details when no compatible target source exists',()=>{
+ const f=measured();render(<MemoryRouter><ComparisonTargetRuntime items={f.items} targets={undefined} histories={f.histories}/></MemoryRouter>);
+ expect(screen.queryByText('Recorded source details',{selector:'summary'})).not.toBeInTheDocument();
+ expect(screen.getAllByText(/target report unavailable/)).toHaveLength(2);
 });
