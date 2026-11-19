@@ -14,8 +14,8 @@ export function RunNote({ run, readOnly }: { run: Run; readOnly: boolean }) {
   const [draft, setDraft] = useState<string | null>(null);
   const { note, write, save } = useNoteSave(run, () => setDraft(null));
   return (
-    <section className="result-note" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="result-note-title">
+    <section className="run-note" aria-labelledby={`${id}-title`}>
+      <h2 id={`${id}-title`} className="sr-only">
         Note
       </h2>
       {draft === null ? (
@@ -65,8 +65,10 @@ function useNoteSave(run: Run, saved: () => void) {
 
 function NoteView({ note, readOnly, edit }: { note: string | null; readOnly: boolean; edit: () => void }) {
   return (
-    <div className="result-note-view">
-      <p className={note ? 'result-note-text' : 'result-muted'}>{note ?? 'No note on this run.'}</p>
+    <div className="run-note-view">
+      {(note || readOnly) && (
+        <p className={note ? 'run-note-text' : 'result-muted'}>{note ?? 'No note on this run.'}</p>
+      )}
       {!readOnly && (
         <Button variant="text" size="sm" onClick={edit}>
           {note ? 'Edit note' : 'Add a note'}
@@ -94,7 +96,7 @@ function NoteForm({
   const trimmed = draft.trim();
   return (
     <form
-      className="result-note-form"
+      className="run-note-form"
       onSubmit={(event) => {
         event.preventDefault();
         if (trimmed) save(trimmed);
@@ -105,7 +107,7 @@ function NoteForm({
       </label>
       <textarea
         id={id}
-        className="input result-note-input"
+        className="input run-note-input"
         value={draft}
         maxLength={1000}
         rows={3}

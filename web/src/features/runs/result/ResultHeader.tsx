@@ -41,7 +41,6 @@ export function ResultHeader({
       <ResultContext run={run} suiteName={suiteName} ordinal={ordinal} />
       <div className="result-head-main">
         <h1 className="result-title">{title}</h1>
-        {sentence && <p className="result-sentence">{sentence}</p>}
       </div>
       <div className="result-head-side">
         <div className="result-row">
@@ -70,6 +69,7 @@ export function ResultHeader({
           </div>
         )}
       </div>
+      {sentence && <p className="result-sentence">{sentence}</p>}
     </header>
   );
 }
