@@ -89,6 +89,9 @@ export function Endpoints({ figures }: { figures: LiveFigures }) {
           </tr>
         ))}
       </Table>
+      <p className="live-note live-endpoint-scroll-note">
+        p95 and Failed stay in view. Scroll sideways for share, request rate and p50.
+      </p>
       {figures.excludedSeries > 0 && (
         <p className="live-note">
           {figures.excludedSeries} more series are recorded but not in the live view; all of them are in the result.

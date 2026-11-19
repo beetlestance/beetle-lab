@@ -1,0 +1,60 @@
+.live-overview {
+  display: grid;
+  gap: var(--s-40);
+  min-width: 0;
+}
+.live-endpoint-scroll-note {
+  display: none;
+}
+
+@media (min-width: 2000px) {
+  .live-overview {
+    grid-template-columns: minmax(0, 0.39fr) minmax(0, 0.61fr);
+    align-items: start;
+  }
+  .live-whole {
+    --live-plot-height: 300px;
+  }
+  .live-split {
+    grid-template-columns: minmax(0, 0.65fr) minmax(0, 1fr);
+  }
+  .live-charts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .live-endpoints .data-table-scroll {
+    container-type: inline-size;
+  }
+  .live-endpoints .data-table {
+    --fixed-metric-width: 4.5rem;
+    width: max-content;
+    min-width: 100%;
+  }
+  .live-endpoints .data-table tr > :first-child {
+    width: calc(100cqw - 2 * var(--fixed-metric-width));
+    max-width: calc(100cqw - 2 * var(--fixed-metric-width));
+    overflow-wrap: anywhere;
+  }
+  .live-endpoints .data-table tr > :nth-last-child(-n + 2) {
+    position: sticky;
+    min-width: var(--fixed-metric-width);
+    padding-inline: var(--s-10);
+  }
+  .live-endpoints .data-table tr > :nth-last-child(2) {
+    right: var(--fixed-metric-width);
+  }
+  .live-endpoints .data-table tr > :last-child {
+    right: 0;
+  }
+  .live-endpoints .data-table tbody td:nth-last-child(-n + 2) {
+    background: var(--bg);
+  }
+  .live-endpoints .data-table tbody tr:nth-child(even) td:nth-last-child(-n + 2) {
+    background: var(--zebra);
+  }
+  .live-endpoints .live-endpoint-scroll-note {
+    display: block;
+  }
+}

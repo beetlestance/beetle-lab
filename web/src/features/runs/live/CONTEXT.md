@@ -9,14 +9,13 @@ Starting art and skeleton figures. Queue reads share a scoped query; errors hide
 cached holders/capacity and expose retry. Preflight needs the verified revision;
 compilation needs phase.started prepare/execute, never validate.finished alone.
 Steps never invent progress, initiators or elapsed time. Phone whole chart retains source geometry, hover and sampled coverage.
-Desktop retains its caption. Engine labels use one scoped status read with exact selector matching and retry.
+Ultrawide aligns the whole-run chart, thresholds and endpoints. Phone endpoint
+tables pin p95 and Failed. Engine labels use one scoped status read and exact matching.
 
 plan reads pinned stages/requests/rules/target units; rN is request index N.
 target-charts normalizes fully declared groups to MB/%/ms/count; otherwise the
 group stays raw with source labels. Shared target formatting preserves tiny values.
-model derives one
-window, using the slowest endpoint when pooled latency is absent, never averaged
-percentiles. Unknown dimensions/values and missing/future/unparseable starts stay
+model derives one window and uses the slowest endpoint when pooled latency is absent. Unknown dimensions/values and missing/future/unparseable starts stay
 explicit; they never become zero elapsed time or invalid geometry.
 
 Feed validates Run and UUIDs case-insensitively. stream owns leases/pause/retry;
