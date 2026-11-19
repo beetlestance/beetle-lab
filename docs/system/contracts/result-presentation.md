@@ -142,6 +142,8 @@ thresholds, workload charts, target charts and configuration follow board order.
 per-series exploration and fingerprints use a disclosure; catalogue errors open it.
 Expansion survives reads and resets with the scoped selection; toggling adds no reads.
 The headline uses the table's recorded p95 estimates. Missing, zero-baseline and overflowing percentages stay explicit;
+A peer's single complete native threshold failure can share its headline line;
+baseline, partial and multiple failures retain their separate evidence list.
 subpercent differences are never called unchanged. It infers neither statistical confidence nor a native verdict.
 
 ## Ownership
@@ -159,7 +161,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 
 | Source | SHA-256 |
 | --- | --- |
-| `web/src/features/runs/comparison/Headline.tsx` | `79e1062ea90d` |
+| `web/src/features/runs/comparison/Headline.tsx` | `a9cc39fffa62` |
 | `web/src/features/runs/HistoryP95Sparkline.tsx` | `3f3dd9a8639b` |
 | `app/src/application/run-metrics/history.ts` | `a91fb64f3a31` |
 | `contracts/api/v2/run-history.schema.json` | `4daeaa42000e` |
@@ -195,7 +197,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `app/src/application/run-comparison/serialize.ts` | `0afc9d598903` |
 | `contracts/api/v2/run-comparison.schema.json` | `894f2795a40b` |
 | `contracts/src/api/client/comparison-facts.ts` | `3aced93caa5b` |
-| `web/src/features/runs/comparison/FailedSlos.tsx` | `642283e7f56d` |
+| `web/src/features/runs/comparison/FailedSlos.tsx` | `fd572c421024` |
 | `web/src/features/runs/comparison/target-read.ts` | `8f7dda58498c` |
 | `web/src/features/runs/comparison/target-model.ts` | `69929b3e4eda` |
 | `web/src/features/runs/comparison/TargetRuntime.tsx` | `3d842b27be6c` |
@@ -206,4 +208,4 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
 | `web/src/features/runs/comparison/Advanced.tsx` | `76c8a8aa6442` |
-| `web/src/features/runs/comparison/index.tsx` | `f4f9cd0de831` |
+| `web/src/features/runs/comparison/index.tsx` | `fedbcb877fad` |

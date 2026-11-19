@@ -83,7 +83,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
       {state.view.error && <p role="alert">Comparison could not be loaded. Use Refresh comparison to retry.</p>}
       {snapshot && (
         <>
-          <ComparisonFailedSlos items={snapshot.items} />
+          <ComparisonFailedSlos items={snapshot.items} inlinePeers />
           <ComparisonDeltas
             key={'summary:' + ids.join(',')}
             headers={snapshot.items.map((item, index) => (

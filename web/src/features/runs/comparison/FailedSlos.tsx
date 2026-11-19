@@ -3,9 +3,18 @@ import { thresholdSentence, thresholdLimitText } from '../result/threshold-sente
 import { ruleUnit, ruleValue } from '../live/rule-units.js';
 import { comparisonRunLabels } from './run-labels.js';
 
-export function ComparisonFailedSlos({ items }: { items: readonly RunComparisonItem[] }) {
+export function ComparisonFailedSlos({
+  items,
+  inlinePeers = false,
+}: {
+  items: readonly RunComparisonItem[];
+  inlinePeers?: boolean;
+}) {
   const labels = comparisonRunLabels(items.map((item) => item.run.id));
-  const failed = items.filter((item) => item.result && item.result.failedSloCount > 0);
+  const failed = items.filter(
+    (item, index) =>
+      item.result && item.result.failedSloCount > 0 && (!inlinePeers || index === 0 || !inlineComparisonFailure(item)),
+  );
   if (failed.length === 0) return null;
   return (
     <ul className="compare-native-failures" aria-label="Native failed SLOs">
@@ -27,6 +36,15 @@ export function ComparisonFailedSlos({ items }: { items: readonly RunComparisonI
     </ul>
   );
 }
+/** The comparison header can incorporate one complete native threshold failure per peer. */
+export function inlineComparisonFailure(item: RunComparisonItem): string | null {
+  const result = item.result;
+  const detail = result?.firstFailedSlo;
+  if (result?.completeness !== 'complete' || result.failedSloCount !== 1 || !detail?.reading || !detail.limit)
+    return null;
+  return failureText(detail);
+}
+
 function failureText(detail: RunComparisonFailedSlo): string {
   const { reading, limit, id } = detail;
   if (reading && limit)
