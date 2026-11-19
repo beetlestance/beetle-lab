@@ -43,6 +43,10 @@ coverage details remain expandable, with partial-source coverage in the summary.
 Advanced target details retain explicit Reload through the same bounded owner;
 a failed reload hides previous charts. Whole-family and packaged proof remain open.
 
+Result-detail failures offer an explicit read-only retry, separate from Refresh run.
+Its pending control stays disabled; reads never retry automatically. Suite and
+revision metadata share the existing one-original/four-waiter read admission.
+
 ## Anchors
 
 | Code | Reviewed |
@@ -59,4 +63,5 @@ a failed reload hides previous charts. Whole-family and packaged proof remain op
 | `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `71b19479dde2` |
+| `web/src/features/runs/result/index.tsx` | `2fef96a27969` |
+| `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |
