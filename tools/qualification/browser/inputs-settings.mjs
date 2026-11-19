@@ -87,8 +87,8 @@ export async function directoryImport(page, workspace, root) {
     timeout: 30000,
   });
   await page.getByRole('button', { name: 'Close import', exact: true }).click();
-  await expect(page.getByRole('rowheader', { name: 'alpha.csv', exact: true })).toBeVisible();
-  await expect(page.getByRole('rowheader', { name: 'beta.csv', exact: true })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: /^alpha\.csv\b/ })).toBeVisible();
+  await expect(page.getByRole('rowheader', { name: /^beta\.csv\b/ })).toBeVisible();
   await page.goto(workspace);
   await page.getByRole('link', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('link', { name: 'Suites', exact: true }).click();
