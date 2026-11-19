@@ -52,6 +52,9 @@ const outcome = {
 /** @type {import('@playwright/test').Browser | undefined} */ let browser;
 /** @type {import('@playwright/test').Page | undefined} */ let page;
 /** @type {string | undefined} */ let installation;
+/** @type {Promise<void>[]} */ const resultEvidence = [];
+let resultEvidenceError = '';
+
 /** @template T @param {string} name @param {() => Promise<T>} run */
 async function phase(name, run) {
   outcome.phase = name;
@@ -81,6 +84,32 @@ try {
   const context = await browser.newContext({ acceptDownloads: true });
   const appPage = await context.newPage();
   page = appPage;
+  appPage.on('response', (response) => {
+    const url = new URL(response.url());
+    if (
+      url.origin !== f.origin ||
+      !/^\/api\/v2\/organizations\/[^/]+\/workspaces\/[^/]+\/runs\/[^/]+\/result$/.test(url.pathname) ||
+      resultEvidence.length >= 16
+    )
+      return;
+    const ordinal = resultEvidence.length + 1;
+    resultEvidence.push(
+      (async () => {
+        const record = { path: url.pathname, status: response.status(), body: '', readError: '' };
+        try {
+          record.body = (await response.text()).slice(0, 262144);
+        } catch (error) {
+          record.readError = String(error).slice(0, 2048);
+        }
+        await writeFile(join(f.root, `result-response-${ordinal}.json`), JSON.stringify(record), {
+          flag: 'wx',
+          mode: 0o600,
+        });
+      })().catch((error) => {
+        resultEvidenceError = String(error);
+      }),
+    );
+  });
   appPage.setDefaultTimeout(15000);
   /** @type {number[]} */ const contentStatuses = [];
   let contentOverflow = false;
@@ -157,6 +186,8 @@ try {
   const closed = await cleanupBrowserInstallation(
     async () => {
       await browser?.close();
+      await Promise.all(resultEvidence);
+      if (resultEvidenceError) throw Error(resultEvidenceError);
     },
     () => cleanup(f, installation),
   );
