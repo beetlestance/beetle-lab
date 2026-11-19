@@ -25,7 +25,7 @@ export function EndedBanner({
         </Button>
       }
     >
-      The result is sealed and ready to read. The figures below are the last live window this page received.
+      Open the result to see what was retained. The figures below are from the last live window this page received.
       <LatencyRise run={run} requests={requests} />
     </Banner>
   );

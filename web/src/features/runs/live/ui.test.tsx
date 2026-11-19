@@ -59,7 +59,7 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(screen.getByRole('region', { name: 'Live endpoint metrics' })).toHaveAttribute('tabindex', '0');
   const table = screen.getByRole('table', { name: 'Endpoints in the latest live window' });
   expect(within(table).getAllByRole('row')[1]).toHaveTextContent('POST /checkout75%900');
-  expect(screen.getByText(/3 more series are recorded but not in the live view/)).toBeVisible();
+  expect(screen.getByText(/The live view omits 3 series. Open the metrics archive in Results when it is available/)).toBeVisible();
   expect(screen.getByText('Checked at the end')).toBeVisible();
   expect(screen.getByText('over 99%')).toBeVisible();
   expect(screen.getByRole('img', { name: /^Live windows received since this page opened:/ })).toBeVisible();
@@ -232,6 +232,7 @@ it('ends with a hand-off and the p95-rise line mapped to the request name', asyn
   expect(
     await screen.findByText('p95 rose for about 30 s, from 42.5 ms to 180 ms, mostly POST /checkout.'),
   ).toBeVisible();
+  expect(screen.getByText(/Open the result to see what was retained/)).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Open result' }));
   expect(showResult).toHaveBeenCalledTimes(1);
 });

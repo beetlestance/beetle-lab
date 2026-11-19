@@ -101,7 +101,7 @@ export function Endpoints({ figures }: { figures: LiveFigures }) {
       </p>
       {figures.excludedSeries > 0 && (
         <p className="live-note">
-          {figures.excludedSeries} more series are recorded but not in the live view; all of them are in the result.
+          The live view omits {figures.excludedSeries} series. Open the metrics archive in Results when it is available.
         </p>
       )}
     </section>
