@@ -77,3 +77,16 @@ it('decodes exact run filters and direction while preserving read-only behavior'
   expect(f.execute).not.toHaveBeenCalled(); expect(f.cancel).not.toHaveBeenCalled();
   expect(f.newId).not.toHaveBeenCalled(); expect(f.now).not.toHaveBeenCalled();
 });
+
+it('returns the captured requester in validated replies but refuses a caller-supplied requester', async () => {
+  const f=setup();const headers=await f.paired();
+  f.execute.mockResolvedValueOnce({...runValue(),requestedBy:'Meera Ops'});
+  const created=await f.server.inject({method:'POST',url:f.base,headers,payload:f.body});
+  expect(created.statusCode).toBe(202);expect(created.json().requestedBy).toBe('Meera Ops');
+  const before=f.execute.mock.calls.length;
+  const spoof=await f.server.inject({method:'POST',url:f.base,headers,payload:{...f.body,requestedBy:'Forged person'}});
+  expect(spoof.statusCode).toBe(400);expect(f.execute.mock.calls).toHaveLength(before);
+  f.getRun.mockResolvedValueOnce({...runValue(),requestedBy:'Meera Ops'});
+  const detail=await f.server.inject({url:`${f.base}/${runValue().id}`,headers:{host,cookie:headers.cookie}});
+  expect(detail.statusCode).toBe(200);expect(detail.json().requestedBy).toBe('Meera Ops');
+});

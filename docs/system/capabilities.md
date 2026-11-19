@@ -5,7 +5,7 @@ measurements live in [evidence](../evidence/README.md).
 
 - Docker Compose starts separate frontend, backend, agent and k6 engine containers.
 - Administrator browser sessions, organisations/workspaces, suites and immutable inputs;
-  suite descriptions, stamped revisions and editable run notes; folder-first suite
+  suite descriptions, stamped revisions, captured run-requester labels and editable run notes; folder-first suite
   listing by latest run, with inline current names, recorded timing, group counts,
   filters and suite-name search; ordinal revision history with exact predecessors.
 - Revision authoring saves suite details and config atomically; Run setup edits
@@ -35,4 +35,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `829db207d841` |
+| `contracts/api/v2/` | `0aba33b43aa4` |

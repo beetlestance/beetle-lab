@@ -53,7 +53,7 @@ One immediate transaction in the metadata worker, receipt first:
    configuration from the revision.
 3. Resolve installation, organisation and workspace settings against the current
    runtime observation. Budget and profile must fit; unknown capacity refuses.
-   The three settings versions are snapshotted into the run.
+   The three settings versions and [requester label](authoring.md#run-requester) are snapshotted into the run.
 4. Bind the trusted installed profile to the revision engine and config version,
    then build the complete immutable Offer. Its `intentDigest` is canonical JSON
    of the Offer without that field, prefixed `beetle-lab.run-offer.v1\n`; secrets
@@ -208,9 +208,9 @@ ordering are in [run delivery](run-delivery.md).
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `220f7fbfb541` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `2d79e7059ede` |
 | `app/src/adapters/outbound/sqlite/run-list-context.ts` | `6cd619fdff36` |
-| `contracts/api/v2/run.schema.json` | `1bfc10257537` |
+| `contracts/api/v2/run.schema.json` | `e20439ea8877` |
 | `app/src/adapters/outbound/sqlite/run-cancellations.ts` | `60e439b897cb` |
 | `app/src/adapters/outbound/sqlite/run-pins/` | `5b6f4e05f29b` |
 | `app/src/application/runs/pin.ts` | `7883e8e6d0eb` |

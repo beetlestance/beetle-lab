@@ -183,6 +183,17 @@
         },
         "pinnedAt": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp"
+        },
+        "requestedBy": {
+          "description": "Configured administrator display name captured at admission, not an authenticated person identity. Missing or null means not recorded.",
+          "anyOf": [
+            {
+              "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Name"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

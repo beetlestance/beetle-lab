@@ -1,3 +1,4 @@
+import { RunRequester } from '../RunRequester.js';
 import { Link } from 'react-router-dom';
 import type { Run } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
@@ -26,6 +27,8 @@ export function ResultContext({
       {suiteName ?? 'Suite'} ({run.engine.id} load test), run <span className="number">{shortId(run.id)}</span>
       {ordinal !== undefined && `, revision ${ordinal}`}, {run.startedAt ? 'started' : 'requested'}{' '}
       <time dateTime={time}>{formatTime(time)}</time>
+      {' · '}
+      <RunRequester run={run} />
     </p>
   );
 }
