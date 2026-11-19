@@ -38,9 +38,18 @@ export async function cancelArchive(page, authored, fixture, evidence) {
   await cancel.click();
   const open = page.getByRole('button', { name: 'Open result', exact: true });
   await expect(open).toBeVisible({ timeout: 60000 });
+  const chartResponse = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.origin === submitted.origin &&
+      url.pathname.startsWith('/api/v2' + submitted.path + '/attempts/') &&
+      url.pathname.endsWith('/metrics/chart-history')
+    );
+  });
+  void chartResponse.catch(() => undefined);
   await open.click();
   await assertRunState(page, { state: 'cancelled', outcome: 'inconclusive' }, submitted);
-  const measured = await sealedResult(page, submitted, evidence);
+  const measured = await sealedResult(page, submitted, evidence, await chartResponse);
   const observed = targetCounts(fixture);
   assert(observed.work >= 10 && observed.work < 40 && observed.runtime >= 4 && observed.unexpected === 0);
   await writeFile(join(evidence, 'cancel-archive-coverage.json'), JSON.stringify({ measured, observed }), {
@@ -54,8 +63,9 @@ export async function cancelArchive(page, authored, fixture, evidence) {
  * @param {import('@playwright/test').Page} page
  * @param {Awaited<ReturnType<import('./results.mjs').start>>} submitted
  * @param {string} evidence
+ * @param {import('@playwright/test').Response} archive
  */
-async function sealedResult(page, submitted, evidence) {
+async function sealedResult(page, submitted, evidence, archive) {
   const base = submitted.origin + '/api/v2' + submitted.path;
   const reply = await page.request.get(base + '/result');
   const snapshot = validateApi('RunResultSnapshot', await reply.json());
@@ -64,11 +74,12 @@ async function sealedResult(page, submitted, evidence) {
   assert(result, 'No sealed result survived cancellation');
   assert.equal(result.execution.status, 'cancelled');
   assert.equal(result.completeness, 'partial');
-  const archive = await page.request.get(
-    base + '/attempts/' + snapshot.value.activeAttemptId + '/metrics/chart-history',
-  );
+  assert.equal(archive.status(), 200, 'Expected the browser chart history read to succeed');
   const chart = validateApi('RunChartHistory', await archive.json());
-  assert(archive.ok() && chart.ok && chart.value.attemptId === snapshot.value.activeAttemptId);
+  assert(
+    chart.ok && chart.value.attemptId === snapshot.value.activeAttemptId,
+    'Expected chart history for this attempt',
+  );
   assert.equal(chart.value.reason, null);
   assert(chart.value.points.length > 0);
   assert(result.artifacts.some((entry) => entry.kind === 'target-runtime'));
