@@ -3,6 +3,7 @@ import type {
   RunComparisonSnapshot,
   RunHistorySummary,
   RunMetricOverview,
+  RunListContext,
   RunMetricKey,
   RunMetricSeriesPage,
 } from '@beetle/contracts/api';
@@ -23,6 +24,7 @@ interface View {
 export type OverviewRead =
   { readonly status: 'error' } | { readonly status: 'loaded'; readonly value: RunMetricOverview };
 export type Overviews = ReadonlyMap<string, OverviewRead>;
+export type ComparisonContexts = ReadonlyMap<string, RunListContext | null>;
 export type Summaries = ReadonlyMap<string, RunHistorySummary | null>;
 // Physical admission outlives routes and sessions; it retains no result cache.
 const comparisonAdmission = new ReadAdmission();
@@ -70,13 +72,16 @@ function readCatalogue({ api, params, signal }: ReadContext, snapshot: RunCompar
 async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapshot) {
   const read = new Map<string, RunHistorySummary | null>();
   const overviews = new Map<string, OverviewRead>();
+  const contexts = new Map<string, RunListContext | null>();
   for (const item of snapshot.items) {
     if (!context.alive()) break;
-    read.set(item.run.id.toLowerCase(), await summaryOf(context, item.run));
+    const record = await summaryOf(context, item.run);
+    read.set(item.run.id.toLowerCase(), record.summary);
+    contexts.set(item.run.id.toLowerCase(), record.context);
     if (!context.alive()) break;
     overviews.set(item.run.id.toLowerCase(), await overviewOf(context, item.run));
   }
-  return { summaries: read, overviews };
+  return { summaries: read, overviews, contexts };
 }
 
 /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
@@ -85,10 +90,21 @@ async function summaryOf({ api, params, signal }: ReadContext, run: ComparedRun)
     const page = await readResult(api.listRuns({ params, query: { limit: 1, runIdPrefix: run.id }, signal }));
     const index = page.items.findIndex((item) => item.id.toLowerCase() === run.id.toLowerCase());
     const value = index < 0 ? undefined : page.summaries[index];
-    return value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
+    const summary = value && value.attemptId.toLowerCase() === run.activeAttemptId.toLowerCase() ? value : null;
+    const metadata = page.contexts?.[index];
+    return { summary, context: boundContext(metadata, run) };
   } catch {
-    return null;
+    return { summary: null, context: null };
   }
+}
+
+function boundContext(value: RunListContext | undefined, run: ComparedRun): RunListContext | null {
+  return value &&
+    value.runId.toLowerCase() === run.id.toLowerCase() &&
+    value.suiteId.toLowerCase() === run.suiteId.toLowerCase() &&
+    value.revisionId.toLowerCase() === run.revisionId.toLowerCase()
+    ? value
+    : null;
 }
 
 /** A bounded projection per run, sequenced within the same original admission. */
@@ -117,7 +133,7 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   // Whole-run summaries are read with the first catalogue load and kept per selection.
   const [summaries, setSummaries] = useState<{
     owner: object;
-    value: { summaries: Summaries; overviews: Overviews };
+    value: { summaries: Summaries; overviews: Overviews; contexts: ComparisonContexts };
   }>();
   useEffect(() => admission.subscribe(() => setBusy(admission.busy)), [admission]);
   useEffect(() => {
@@ -166,6 +182,7 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
     view,
     summaries: recorded?.summaries,
     overviews: recorded?.overviews,
+    contexts: recorded?.contexts,
     admission,
     busy: busy || view.busy,
     select,

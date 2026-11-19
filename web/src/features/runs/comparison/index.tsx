@@ -2,12 +2,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { routes } from '../../../app/routes.js';
 import { Badge, Status } from '../../../components/Badge.js';
 import { Button, buttonClass } from '../../../components/Button.js';
-import { runStatus, shortId } from '../../run-results/format.js';
+import { runStatus } from '../../run-results/format.js';
 import type { RunScope } from '../types.js';
 import { ComparisonDeltas, WhatWasDifferent } from './Deltas.js';
 import { ComparisonFacts } from './Facts.js';
 import { ComparedMetric, MetricSelection } from './Metric.js';
 import { comparisonRunIds } from './selection.js';
+import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
 import './comparison.css';
 
@@ -59,7 +60,7 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
       {state.view.error && <p role="alert">Comparison could not be loaded. Use Refresh comparison to retry.</p>}
       {snapshot && (
         <>
-          <RunStrip scope={scope} ids={ids} snapshot={snapshot} />
+          <RunStrip scope={scope} ids={ids} snapshot={snapshot} contexts={state.contexts} />
           <ComparisonDeltas items={snapshot.items} summaries={state.summaries} overviews={state.overviews} />
           <section className="compare-section" aria-labelledby="compare-different">
             <h2 id="compare-different">What was different</h2>
@@ -86,13 +87,19 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
 }
 
 function ComparisonHeader({ scope, ids, state }: { scope: RunScope; ids: string[]; state: ComparisonState }) {
+  const context = state.contexts?.get(ids[0]!.toLowerCase());
+  const label = comparisonRunLabels(ids).get(ids[0]!)!;
   return (
     <header className="compare-head">
       <div>
-        <h1>Compare runs</h1>
+        <h1>{context ? `${ids.length} runs, baseline ${context.suiteName} ${label}` : 'Compare runs'}</h1>
         <p className="compare-lede">
-          {ids.length} runs, baseline <span className="number">{shortId(ids[0]!)}</span>. Differences describe recorded
-          evidence, not a statistical comparability verdict.
+          {!context && (
+            <>
+              {ids.length} runs, baseline <span className="number">{label}</span>.{' '}
+            </>
+          )}
+          Differences describe recorded evidence, not a statistical comparability verdict.
         </p>
       </div>
       <div className="compare-head-actions">
@@ -107,27 +114,44 @@ function ComparisonHeader({ scope, ids, state }: { scope: RunScope; ids: string[
   );
 }
 
-function RunStrip({ scope, ids, snapshot }: { scope: RunScope; ids: string[]; snapshot: Snapshot }) {
+function RunStrip({
+  scope,
+  ids,
+  snapshot,
+  contexts,
+}: {
+  scope: RunScope;
+  ids: string[];
+  snapshot: Snapshot;
+  contexts: ComparisonState['contexts'];
+}) {
   const { organizationId, workspaceId } = scope;
+  const labels = comparisonRunLabels(ids);
   return (
     <ul className="compare-runs" aria-label="Compared runs">
       {snapshot.items.map((item, index) => {
         const status = runStatus(item.run);
+        const context = contexts?.get(item.run.id.toLowerCase());
+        const label = labels.get(item.run.id.toLowerCase())!;
         const others = ids.filter((id) => id !== item.run.id.toLowerCase());
         return (
           <li key={item.run.id} className="compare-run">
             <Status tone={status.tone}>{status.label}</Status>
-            <Link to={routes.run(organizationId, workspaceId, item.run.id)} className="number">
-              {shortId(item.run.id)}
+            <Link to={routes.run(organizationId, workspaceId, item.run.id)}>
+              {context?.suiteName && <span>{context.suiteName} </span>}
+              <span className="number">{label}</span>
               <span className="sr-only">, run {item.run.id}</span>
             </Link>
+            <span className="compare-muted">
+              {context ? `revision ${context.revisionOrdinal}` : 'Revision unknown'}
+            </span>
             {index === 0 ? (
               <Badge tone="amber">Baseline</Badge>
             ) : (
               <Link
                 className={buttonClass('text', 'sm')}
                 to={routes.comparison(organizationId, workspaceId, [item.run.id.toLowerCase(), ...others])}
-                aria-label={`Make ${shortId(item.run.id)} the baseline`}
+                aria-label={`Make ${label} the baseline`}
               >
                 Make baseline
               </Link>

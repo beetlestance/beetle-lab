@@ -2,7 +2,10 @@
 
 Public entry: RunComparison({organizationId,workspaceId}), routed with one runs
 query parameter containing two through four distinct ordered UUIDs. First run is
-baseline. No runs parameter shows Compare / Empty with no read; a malformed one
+baseline. Same-page history contexts supply suite/revision labels only when
+run/suite/revision bind to the captured run; no extra metadata requests. Colliding
+four-character IDs expand to source prefix+suffix or the full UUID.
+No runs parameter shows Compare / Empty with no read; a malformed one
 shows Invalid comparison. History selects at most four terminal runs.
 Layout: run strip (status, short ID, Baseline badge or Make baseline, which only
 reorders the URL), whole-run figures with labelled client deltas from the

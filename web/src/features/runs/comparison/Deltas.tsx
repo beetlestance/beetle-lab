@@ -1,6 +1,7 @@
 import type { RunComparisonItem } from '@beetle/contracts/api';
 import { Table, Td, Th } from '../../../components/Table.js';
-import { formatBytes, formatDuration, formatNumber, formatPercent, shortId } from '../../run-results/format.js';
+import { formatBytes, formatDuration, formatNumber, formatPercent } from '../../run-results/format.js';
+import { comparisonRunLabels } from './run-labels.js';
 import { comparisonFigures } from './figures.js';
 import type { ComparisonFigures } from './figures.js';
 import type { Summaries, Overviews } from './useComparison.js';
@@ -110,6 +111,7 @@ function FiguresTable({
   items: readonly RunComparisonItem[];
   values: readonly (ComparisonFigures | null)[];
 }) {
+  const labels = comparisonRunLabels(items.map((item) => item.run.id));
   return (
     <Table
       caption="Whole-run figures, with each run's difference from the baseline"
@@ -118,7 +120,7 @@ function FiguresTable({
         { key: 'metric', label: 'Measure' },
         ...items.map((item, index) => ({
           key: item.run.id,
-          label: `${shortId(item.run.id)}${index === 0 ? ' (baseline)' : ''}`,
+          label: `${labels.get(item.run.id.toLowerCase())}${index === 0 ? ' (baseline)' : ''}`,
           numeric: true,
         })),
       ]}
@@ -172,6 +174,7 @@ function ComparisonReadNotes({
   items: readonly RunComparisonItem[];
   overviews: Overviews | undefined;
 }) {
+  const labels = comparisonRunLabels(items.map((item) => item.run.id));
   return (
     <div className="compare-muted">
       <p>Request rates are whole-run averages; latency values are histogram estimates.</p>
@@ -181,19 +184,19 @@ function ComparisonReadNotes({
         if (read.status === 'error')
           return (
             <p role="alert" key={item.run.id}>
-              {shortId(item.run.id)}: detailed measurements could not be loaded. Available saved history figures remain
-              below.
+              {labels.get(item.run.id.toLowerCase())}: detailed measurements could not be loaded. Available saved
+              history figures remain below.
             </p>
           );
         if (read.value.availability !== 'ready')
           return (
             <p key={item.run.id}>
-              {shortId(item.run.id)}: detailed measurements {read.value.availability.replaceAll('_', ' ')}. Unknown
-              fields stay missing.
+              {labels.get(item.run.id.toLowerCase())}: detailed measurements{' '}
+              {read.value.availability.replaceAll('_', ' ')}. Unknown fields stay missing.
             </p>
           );
         return read.value.source?.coverage.complete === false ? (
-          <p key={item.run.id}>{shortId(item.run.id)}: partial window coverage.</p>
+          <p key={item.run.id}>{labels.get(item.run.id.toLowerCase())}: partial window coverage.</p>
         ) : null;
       })}
     </div>
@@ -202,6 +205,7 @@ function ComparisonReadNotes({
 
 /** "What was different": recorded run settings side by side; equal values say same. */
 export function WhatWasDifferent({ items }: { items: readonly RunComparisonItem[] }) {
+  const labels = comparisonRunLabels(items.map((item) => item.run.id));
   const facts: readonly [string, (item: RunComparisonItem) => string][] = [
     ['Revision', (item) => item.run.revisionDigest.slice(0, 8)],
     ['Engine profile', (item) => `${item.run.engine.id} / ${item.run.engine.profileId}`],
@@ -216,7 +220,7 @@ export function WhatWasDifferent({ items }: { items: readonly RunComparisonItem[
       className="compare-different"
       columns={[
         { key: 'fact', label: 'Setting' },
-        ...items.map((item) => ({ key: item.run.id, label: shortId(item.run.id) })),
+        ...items.map((item) => ({ key: item.run.id, label: labels.get(item.run.id.toLowerCase())! })),
       ]}
     >
       {facts.map(([label, read]) => {

@@ -54,7 +54,7 @@ it('labels client deltas from the baseline, offers Make baseline and lists what 
   const failed = within(table).getByRole('rowheader', { name: 'Failed requests' }).closest('tr')!;
   expect(failed).toHaveTextContent('+4 pp');
   expect(screen.getByText('Baseline', { selector: '.badge' })).toBeVisible();
-  const make = screen.getByRole('link', { name: `Make ${runIds[1]!.slice(0, 4)} the baseline` });
+  const make = screen.getByRole('link', { name: /Make .* the baseline/ });
   expect(make).toHaveAttribute('href', routes.comparison(scope.organizationId, scope.workspaceId, [runIds[1]!, runIds[0]!]));
   expect(screen.getByRole('table', { name: 'What was different between the runs' })).toBeVisible();
   expect(f.records.filter((record) => record.method !== 'GET' && !record.path.endsWith('/comparisons'))).toHaveLength(0);

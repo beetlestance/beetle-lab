@@ -70,3 +70,8 @@
 }
 
 .compare-deltas .numeric { white-space: nowrap; }
+
+.compare-run a { min-width: 0; overflow-wrap: anywhere; }
+
+.compare-head > div:first-child { min-width: 0; }
+.compare h1 { overflow-wrap: anywhere; }
