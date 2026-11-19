@@ -24,12 +24,14 @@ export class RunNotes {
     const note = normalizedRunNote(command.request.note);
     if (current.noteVersion === 0)
       this.db
-        .prepare('INSERT INTO run_notes(run_id,organization_id,workspace_id,version,note) VALUES(?,?,?,1,?)')
-        .run(run.id, run.scope.organizationId, run.scope.workspaceId, note);
+        .prepare(
+          'INSERT INTO run_notes(run_id,organization_id,workspace_id,version,note,updated_at) VALUES(?,?,?,1,?,?)',
+        )
+        .run(run.id, run.scope.organizationId, run.scope.workspaceId, note, command.updatedAt);
     else
       this.db
-        .prepare('UPDATE run_notes SET note=?,version=? WHERE run_id=? AND version=?')
-        .run(note, nextVersion(current.noteVersion), run.id, current.noteVersion);
+        .prepare('UPDATE run_notes SET note=?,version=?,updated_at=? WHERE run_id=? AND version=?')
+        .run(note, nextVersion(current.noteVersion), command.updatedAt, run.id, current.noteVersion);
     return this.reads.get(key);
   }
 }

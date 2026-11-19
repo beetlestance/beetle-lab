@@ -33,6 +33,7 @@ export interface RunCancellationStore {
 /** Replaces the run's optional note when `expectedNoteVersion` is current; lifecycle stays untouched. */
 export interface SetRunNoteOperation {
   kind: 'setRunNote';
+  updatedAt: string;
   id: string;
   request: SetRunNoteRequest;
 }

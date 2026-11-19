@@ -100,6 +100,15 @@ note even after a later edit. Neither a second POST nor an engine Offer carries 
   written before migration 031 omit them, so the fields are optional in the
   schema; clients treat absence as `null`/0.
 
+- New note writes record server `noteUpdatedAt`, including clears; initial notes use
+  admission time. It is display data, never ordering/CAS authority or caller input.
+  Migration 037 leaves older notes null; original receipts keep their original stamp.
+- The browser freezes its opened version and draft through pending/unknown saves.
+  Unknown outcomes allow identical replay only. Conflicts keep the attempted value
+  (including clear), read the latest note, then offer Use theirs or a new
+  version-checked Replace with mine; a failed read keeps the draft and offers retry.
+  Restored history shows recorded notes and timestamps without editing controls.
+
 ### Note search
 
 - The run-history `name` filter also matches a substring of the run's current
@@ -147,12 +156,15 @@ unchanged and that a late failure rolls back to the exact schema 030.
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/runs.ts` | `2d79e7059ede` |
+| `app/src/adapters/outbound/sqlite/migration037.ts` | `3c3834e4839f` |
+| `web/src/features/runs/result/useRunNote.ts` | `e594c44a97e6` |
+| `web/src/features/runs/result/useNoteConflict.ts` | `d798ff0bbcd6` |
+| `app/src/adapters/outbound/sqlite/runs.ts` | `65bcf86f1368` |
 | `web/src/features/runs/RunRequester.tsx` | `355e1373a20b` |
-| `contracts/api/v2/run.schema.json` | `e20439ea8877` |
+| `contracts/api/v2/run.schema.json` | `15d4a6199c19` |
 | `app/src/adapters/outbound/sqlite/suites.ts` | `d70508594376` |
 | `app/src/adapters/outbound/sqlite/migration031.ts` | `b0feac9a7325` |
-| `app/src/adapters/outbound/sqlite/run-annotations.ts` | `f334af303d32` |
-| `app/src/adapters/outbound/sqlite/run-notes.ts` | `5b21f305661c` |
+| `app/src/adapters/outbound/sqlite/run-annotations.ts` | `5f43a315db31` |
+| `app/src/adapters/outbound/sqlite/run-notes.ts` | `071cca795034` |
 | `app/src/adapters/outbound/sqlite/run-search/notes.ts` | `417df874f6f1` |
-| `app/src/application/runs/note.ts` | `bd77e030a8ae` |
+| `app/src/application/runs/note.ts` | `f121f12fc4d4` |

@@ -68,10 +68,20 @@ export class Runs {
     const note = normalizedRunNote(command.request.note ?? null);
     if (note !== null)
       this.db
-        .prepare('INSERT INTO run_notes(run_id,organization_id,workspace_id,version,note) VALUES(?,?,?,1,?)')
-        .run(run.id, scope.organizationId, scope.workspaceId, note);
+        .prepare(
+          'INSERT INTO run_notes(run_id,organization_id,workspace_id,version,note,updated_at) VALUES(?,?,?,1,?,?)',
+        )
+        .run(run.id, scope.organizationId, scope.workspaceId, note, command.requestedAt);
     // The persisted snapshot stays pure intent; the response carries the fresh read annotations.
-    return { ...run, note, noteVersion: note === null ? 0 : 1, startedAt: null, finishedAt: null, pinned: false };
+    return {
+      ...run,
+      note,
+      noteVersion: note === null ? 0 : 1,
+      noteUpdatedAt: note === null ? null : command.requestedAt,
+      startedAt: null,
+      finishedAt: null,
+      pinned: false,
+    };
   }
   private insert(run: Run, offer: string, profile: RunProfilePin): void {
     const parsedOffer = JSON.parse(offer) as Offer;

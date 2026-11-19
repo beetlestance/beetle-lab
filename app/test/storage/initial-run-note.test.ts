@@ -11,7 +11,7 @@ it('commits the initial note with the run and replays the original note after an
   const body={...runRequest(revision.id),note:' After connection-pool fix '};
   const command=runCommand(revision.id,70,body);
   const run=await metadata.runs.execute(command);
-  expect(run).toMatchObject({note:'After connection-pool fix',noteVersion:1,version:1});
+  expect(run).toMatchObject({note:'After connection-pool fix',noteVersion:1,version:1,noteUpdatedAt:command.requestedAt});
   expect(await metadata.runs.getRun({scope,id:run.id})).toEqual(run);
   for(let step=0;step<40;step++){
     try {
@@ -21,9 +21,9 @@ it('commits the initial note with the run and replays the original note after an
       if(!(error instanceof Error)||!('code' in error)||error.code!=='search_indexing'||step===39)throw error;
     }
   }
-  const changed=await metadata.runs.setNote(prepareRunNoteCommand({kind:'setRunNote',id:run.id,
+  const changed=await metadata.runs.setNote(prepareRunNoteCommand({kind:'setRunNote',updatedAt:'2026-11-11T00:00:00.000Z',id:run.id,
     request:{scope,requestId:requestId(),expectedNoteVersion:1,note:'Updated annotation'}},digest));
-  expect(changed).toMatchObject({note:'Updated annotation',noteVersion:2});
+  expect(changed).toMatchObject({note:'Updated annotation',noteVersion:2,noteUpdatedAt:'2026-11-11T00:00:00.000Z'});
   expect(await metadata.runs.execute(runCommand(revision.id,71,body))).toEqual(run);
   await expect(metadata.runs.execute(runCommand(revision.id,72,{...body,note:'Different'}))).rejects.toMatchObject({code:'conflict'});
   await f.close(metadata);

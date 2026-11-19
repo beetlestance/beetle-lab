@@ -7,6 +7,7 @@ import { StorageError } from './protocol.js';
 export interface RunAnnotations {
   note: string | null;
   noteVersion: number;
+  noteUpdatedAt: string | null;
   startedAt: string | null;
   finishedAt: string | null;
 }
@@ -17,17 +18,24 @@ function unavailable(condition: boolean): asserts condition {
   if (!condition) throw new StorageError('unavailable');
 }
 /** Version 0 means no note was ever written; a cleared note keeps its version. */
-export function readRunNote(db: DatabaseSync, run: Owned): Pick<RunAnnotations, 'note' | 'noteVersion'> {
+export function readRunNote(
+  db: DatabaseSync,
+  run: Owned,
+): Pick<RunAnnotations, 'note' | 'noteVersion' | 'noteUpdatedAt'> {
   const row = db
     .prepare(
-      `SELECT ${sqlTextColumn('note', 4000, true)},${sqlIntegerColumn('version')} FROM run_notes
+      `SELECT ${sqlTextColumn('note', 4000, true)},${sqlIntegerColumn('version')},${sqlTextColumn('updated_at', 64, true)} FROM run_notes
       WHERE run_id=? AND organization_id=? AND workspace_id=?`,
     )
     .get(run.id, run.scope.organizationId, run.scope.workspaceId);
-  if (row === undefined) return { note: null, noteVersion: 0 };
+  if (row === undefined) return { note: null, noteVersion: 0, noteUpdatedAt: null };
   unavailable(typeof row.version === 'number' && row.version >= 1);
   unavailable(row.note === null || validateApi('RunNote', row.note).ok);
-  return { note: row.note as string | null, noteVersion: row.version };
+  return {
+    note: row.note as string | null,
+    noteVersion: row.version,
+    noteUpdatedAt: row.updated_at === null ? null : observed(row.updated_at),
+  };
 }
 function observed(input: unknown): string {
   const parsed = validateApi('RunTimestamp', input);
