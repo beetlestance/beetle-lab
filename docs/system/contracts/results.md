@@ -102,9 +102,9 @@ SHA and count. No pair is `unavailable/not_recorded`; an unknown private version
 `unavailable/unsupported_format`; a broken pair is a storage failure. Sample pages
 walk backwards from the newest window, points within a page ascend, and a null
 cursor means the requested range is exhausted, not that capture was complete.
-Missing samples are absent points or null ratios, never zero. One native original;
-one read can wait behind history with its original deadline and cancellation. Other
-overlaps are busy; abort retains original settlement. Missing byte/hash capability fails 503.
+Missing samples are absent points or null ratios, never zero. One operation runs at
+a time per service (`busy` otherwise); abort returns early but the native original
+stays owned until settlement. Without byte or hash capability, ready reads fail 503.
 Owner: `app/src/application/run-metrics`; [result overview](result-presentation.md) adds one compact read.
 
 The browser chart holds ≤ 1000 points and ≤ 1 MiB, issues ≤ 10 sequential page
@@ -214,7 +214,7 @@ a failed revocation keeps ownership and rejects close.
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/attempt/archive/` | `93c22f858025` |
-| `app/src/application/run-metrics/` | `e7751478d487` |
+| `app/src/application/run-metrics/` | `b11366f52408` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
 | `contracts/src/k6-live/` | `324516855159` |
 | `agent/src/live-metrics/` | `feac352cffc7` |

@@ -1,4 +1,3 @@
-import { HistoryReadWaiter } from './history-waiter.js';
 import { chartHistory } from './chart-history.js';
 import { metricOverview } from './overview.js';
 import type { RunKey } from '../../ports/runs.js';
@@ -75,8 +74,7 @@ function series(q: RunMetricSeriesQuery, p: Publication): RunMetricSeriesPage {
         : null,
   };
 }
-type ReadMode = 'public' | 'original' | 'history';
-/** One physical reader; a single successor may wait for background history. */
+/** One operation, no queue. Cancellation fences reads without releasing original ownership. */
 export function createRunMetricsService(options: RunMetricServiceOptions): RunMetricsService {
   const lane = new MetricReadLane(options);
   return Object.freeze({
@@ -87,7 +85,7 @@ export function createRunMetricsService(options: RunMetricServiceOptions): RunMe
       } catch (error) {
         return Promise.reject(error);
       }
-      return lane.run({ ...captured, limit: 1 }, context, async (_captured, p) => historyProjection(p), 'history');
+      return lane.run({ ...captured, limit: 1 }, context, async (_captured, p) => historyProjection(p), true);
     },
     lookupRunMetricSeries(q: RunMetricLookupQuery, c: MetricReadContext) {
       let input;
@@ -100,7 +98,7 @@ export function createRunMetricsService(options: RunMetricServiceOptions): RunMe
         { id: input.id, scope: input.scope, attemptId: input.attemptId, limit: 1 },
         c,
         async (captured, p) => lookup(captured, p, input.metric),
-        'original',
+        true,
       );
     },
     reader: createReader(lane),
@@ -205,8 +203,7 @@ function captureQuery(input: unknown): RunMetricSeriesQuery {
 }
 
 class MetricReadLane {
-  private active: { owner: Operation; original: Promise<unknown>; mode: ReadMode } | undefined;
-  private readonly waiting = new HistoryReadWaiter();
+  private active: { owner: Operation; original: Promise<unknown> } | undefined;
   private closed = false;
   private closing: Promise<void> | undefined;
   private readonly artifacts: RunMetricServiceOptions['artifacts'];
@@ -224,19 +221,17 @@ class MetricReadLane {
     q: RunMetricSeriesQuery,
     context: MetricReadContext,
     work: (q: RunMetricSeriesQuery, p: Publication, io?: ArchiveIO) => Promise<T>,
-    mode: ReadMode = 'public',
+    actualOriginal = false,
   ): Promise<T> {
-    if (this.closed) return Promise.reject(new MetricReadError('closed'));
-    if (this.active && (this.active.mode !== 'history' || mode === 'history' || this.waiting.busy))
-      return Promise.reject(new MetricReadError('busy'));
+    if (this.closed || this.active) return Promise.reject(new MetricReadError(this.closed ? 'closed' : 'busy'));
     let captured: RunMetricSeriesQuery;
     let owner: Operation;
     try {
-      ({ query: captured, owner } = captureRead(q, context));
+      captured = captureQuery(q);
+      owner = new Operation(context);
     } catch (e) {
       return Promise.reject(e);
     }
-    if (this.active) return this.waiting.wait(owner, (next) => this.run(captured, next, work, mode));
     const original = Promise.resolve()
       .then(async () => {
         owner.check();
@@ -250,28 +245,14 @@ class MetricReadLane {
       .finally(() => {
         owner.dispose();
         this.active = undefined;
-        this.waiting.start();
       });
-    this.active = { owner, original, mode };
-    return mode === 'public' ? owner.race(original) : original;
+    this.active = { owner, original };
+    return actualOriginal ? original : owner.race(original);
   }
   close() {
     this.closed = true;
-    this.waiting.close();
     this.active?.owner.controller.abort();
     this.closing ??= Promise.allSettled([this.active?.original]).then(() => undefined);
     return this.closing;
-  }
-}
-
-function captureRead(input: unknown, context: MetricReadContext) {
-  const query = captureQuery(input);
-  const owner = new Operation(context);
-  try {
-    owner.check();
-    return { query, owner };
-  } catch (error) {
-    owner.dispose();
-    throw error;
   }
 }
