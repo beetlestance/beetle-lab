@@ -14,3 +14,4 @@ never in it; same owner/group/mode, bound to anchor identity and retirement (dec
 Caps: root 8 KiB, intent 12 KiB, anchor 16 KiB, singleton 32 KiB, marker 1 KiB, task 8 KiB
 including512logical row allowance. Native inode/device values remain decimal strings.
 Owner docs/system/contracts/outputs-collection.md; native owner staging; SQL owner journal.
+Reconciliation may equal anchor facts (A→B→A); candidate pages are keys only, 32 per page.

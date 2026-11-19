@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { encodeJson } from '@beetle/contracts';
+import { encodeJson, validatePrimitive } from '@beetle/contracts';
 import {
   captureInstalledRoot,
   captureNamespaceIntent,
@@ -21,7 +21,7 @@ import type {
 } from '../../staging-namespace/index.js';
 import { readInstalledNamespace, beginInstalledNamespace, commitInstalledNamespace } from './installed.js';
 import { readTaskNamespace, beginTaskNamespace, commitTaskNamespace } from './tasks.js';
-import { readTaskReconciliation, reconcileTaskNamespace } from './reconciliation.js';
+import { readTaskReconciliation, reconcileTaskNamespace, reconciliationCandidates } from './reconciliation.js';
 type Checked =
   | { kind: 'namespaceRead' }
   | { kind: 'namespaceBegin'; root: InstalledRootFacts }
@@ -30,7 +30,12 @@ type Checked =
   | { kind: 'taskNamespaceBegin'; intent: TaskNamespaceIntent }
   | { kind: 'taskNamespaceCommit'; request: { intent: TaskNamespaceIntent; directories: TaskDirectoryFacts } }
   | { kind: 'taskReconciliationRead'; key: TaskNamespaceKey }
-  | { kind: 'taskReconciliationCommit'; key: TaskNamespaceKey; reconciliation: unknown };
+  | { kind: 'taskReconciliationCommit'; key: TaskNamespaceKey; reconciliation: unknown }
+  | { kind: 'taskReconciliationCandidates'; after: string | null };
+function captureUuid(value: unknown): string {
+  if (!validatePrimitive('uuid', value).ok) throw new Error('Invalid candidate cursor');
+  return value as string;
+}
 function parse(json: string): Record<string, unknown> {
   if (typeof json !== 'string' || json.length > namespaceCaps.state || Buffer.byteLength(json) > namespaceCaps.state)
     throw new Error('Invalid namespace JSON');
@@ -52,7 +57,9 @@ function capture(operation: NamespaceOperation & { id: number }): Checked {
         ? ['key']
         : copy.kind === 'taskReconciliationCommit'
           ? ['key', 'json']
-          : ['json'];
+          : copy.kind === 'taskReconciliationCandidates'
+            ? ['after']
+            : ['json'];
   const fields = Object.keys(copy);
   if (
     fields.length !== payload.length + 2 ||
@@ -64,6 +71,8 @@ function capture(operation: NamespaceOperation & { id: number }): Checked {
 }
 function capturePayload(operation: NamespaceOperation): Checked {
   if (operation.kind === 'namespaceRead') return { kind: operation.kind };
+  if (operation.kind === 'taskReconciliationCandidates')
+    return { kind: operation.kind, after: operation.after === null ? null : captureUuid(operation.after) };
   if (!('json' in operation)) return { kind: operation.kind, key: captureTaskNamespaceKey(operation.key) };
   if (operation.kind === 'taskReconciliationCommit')
     // The reconciliation is captured against the stored anchor inside the transaction.
@@ -119,6 +128,8 @@ export class NamespaceStore {
         return commitTaskNamespace(this.db, operation.request);
       case 'taskReconciliationRead':
         return readTaskReconciliation(this.db, operation.key);
+      case 'taskReconciliationCandidates':
+        return reconciliationCandidates(this.db, operation.after);
       case 'taskReconciliationCommit':
         return reconcileTaskNamespace(
           this.db,

@@ -1,7 +1,17 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { encodeCanonicalJson } from '@beetle/contracts';
-import { captureTaskReconciliation, namespaceCaps } from '../../staging-namespace/index.js';
-import type { TaskNamespaceAnchor, TaskNamespaceKey, TaskReconciliation } from '../../staging-namespace/index.js';
+import {
+  captureTaskNamespaceIntent,
+  captureTaskReconciliation,
+  candidatePageSize,
+  namespaceCaps,
+} from '../../staging-namespace/index.js';
+import type {
+  ReconciliationCandidatePage,
+  TaskNamespaceAnchor,
+  TaskNamespaceKey,
+  TaskReconciliation,
+} from '../../staging-namespace/index.js';
 import { Failure, owner } from '../sql.js';
 import { readInstalledNamespace } from './installed.js';
 import { readTaskNamespace } from './tasks.js';
@@ -60,4 +70,33 @@ function reconcilableAnchor(db: DatabaseSync, key: TaskNamespaceKey): TaskNamesp
   for (const field of ['organizationId', 'workspaceId', 'attemptId', 'generation'] as const)
     if (task.intent.original[field] !== key[field]) throw new Failure('conflict');
   return task.anchor;
+}
+
+/**
+ * Read-only listing for the operator command: prepared tasks in the bound namespace whose stored
+ * retirement intent names the same task identity, with no cleanup plan, progress, receipt or
+ * settled replay. One bounded page per call, ordered by attempt ID.
+ */
+export function reconciliationCandidates(db: DatabaseSync, after: string | null): ReconciliationCandidatePage {
+  const rows = db
+    .prepare(
+      `SELECT t.intent_json,t.reconciliation_json IS NOT NULL AS reconciled FROM task_staging_namespaces t
+       JOIN output_retirement_intents r ON r.attempt_id=t.attempt_id
+       JOIN installed_staging_namespace n ON n.namespace_identity=t.namespace_identity
+       WHERE n.state='bound' AND t.state='prepared' AND r.namespace_identity=t.namespace_identity
+       AND r.task_namespace_identity=t.task_namespace_identity AND t.attempt_id>?
+       AND NOT EXISTS(SELECT 1 FROM output_cleanup_plans WHERE attempt_id=t.attempt_id)
+       AND NOT EXISTS(SELECT 1 FROM output_cleanup_progress WHERE attempt_id=t.attempt_id)
+       AND NOT EXISTS(SELECT 1 FROM output_cleanup_receipts WHERE attempt_id=t.attempt_id)
+       AND NOT EXISTS(SELECT 1 FROM retired_attempts WHERE attempt_id=t.attempt_id)
+       ORDER BY t.attempt_id LIMIT ?`,
+    )
+    .all(after ?? '', candidatePageSize + 1);
+  const candidates = rows.slice(0, candidatePageSize).map((row) => {
+    const original = captureTaskNamespaceIntent(JSON.parse(String(row.intent_json)) as unknown).original;
+    const { organizationId, workspaceId, attemptId, generation } = original;
+    return { key: { organizationId, workspaceId, attemptId, generation }, reconciled: row.reconciled === 1 };
+  });
+  const last = candidates.at(-1);
+  return { candidates, next: rows.length > candidatePageSize && last ? last.key.attemptId : null };
 }

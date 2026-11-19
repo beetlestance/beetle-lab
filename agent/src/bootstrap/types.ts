@@ -1,4 +1,6 @@
 import type { RetirementPipeline } from '../retirement-pipeline/index.js';
+import type { ReconcileOutcome } from '../task-inventory/index.js';
+import type { ReconciliationCandidatePage } from '../staging-namespace/index.js';
 import type { NativeReceipt } from '../native-receipt/index.js';
 import type { NativeRemoval } from '../native-removal/index.js';
 import type { TaskInventory } from '../task-inventory/index.js';
@@ -43,6 +45,20 @@ export interface AgentRuntime {
   };
   /** Failed cleanup retains journal/process ownership; never certifies remote dispatch quiescence. */
   close(): Promise<void>;
+}
+/** Offline operator handle (decision 030); the runtime it came from serves nothing. */
+export interface ReconcileRuntime {
+  /** Journal-only listing; observes and changes nothing. */
+  candidates(after: string | null): Promise<ReconciliationCandidatePage>;
+  /** Replays retirement for the stored request, proves runtime absence, then reconciles one task. */
+  reconcile(key: ReconcileKey, deadline: number): Promise<ReconcileOutcome>;
+  close(): Promise<void>;
+}
+export interface ReconcileKey {
+  readonly organizationId: string;
+  readonly workspaceId: string;
+  readonly attemptId: string;
+  readonly generation: 1;
 }
 export class AgentRuntimeError extends Error {
   constructor(

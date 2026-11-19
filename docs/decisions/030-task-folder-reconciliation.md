@@ -37,6 +37,10 @@ replace a recorded B with facts equal to the anchor's A; the anchor itself never
 changes. Inventory, removal and the plan trigger then compare role folders
 with the reconciled facts instead of the anchor's.
 
+Operators run it as the agent entrypoint subcommand `reconcile` (preview) or
+`reconcile --apply` in a one-off container while the serving agent is stopped;
+it takes the same exclusive process owner and starts no server or scheduler.
+
 ## Why
 
 After decision 029, an ordinary Docker Desktop restart no longer blocks the

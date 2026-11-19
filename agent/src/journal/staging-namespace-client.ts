@@ -12,6 +12,7 @@ import {
   captureTaskNamespaceKey,
   captureTaskDirectories,
   captureTaskReconciliation,
+  captureCandidatePage,
   namespaceCaps,
 } from '../staging-namespace/index.js';
 import type {
@@ -144,7 +145,7 @@ function taskClient(options: ClientOptions): Pick<StagingNamespaceJournal, 'begi
 /** Replies are checked against the stored anchor, read in the same queue before and after the write. */
 function reconciliationClient(
   options: ClientOptions,
-): Pick<StagingNamespaceJournal, 'reconcileTask' | 'readTaskReconciliation'> {
+): Pick<StagingNamespaceJournal, 'reconcileTask' | 'readTaskReconciliation' | 'reconciliationCandidates'> {
   const read = (key: TaskNamespaceKey) => taskClient(options).readTask(key);
   return {
     async reconcileTask(input, reconciliation) {
@@ -160,6 +161,13 @@ function reconciliationClient(
           if (!same(result, expected, namespaceCaps.task)) throw new Error('Task reconciliation reply mismatch');
           return result;
         },
+      );
+    },
+    reconciliationCandidates(after) {
+      return checked(
+        options,
+        options.send(() => ({ kind: 'taskReconciliationCandidates', after })),
+        (value) => captureCandidatePage(value, after),
       );
     },
     async readTaskReconciliation(input) {

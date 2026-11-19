@@ -56,6 +56,8 @@ it('reconciles a renumbered task folder after proving the runtime absent, then c
   try {
     await expect(settle(s.pipeline.tickWithPorts(s.request, operation(), s.ports))).rejects.toMatchObject({ reason: 'unavailable' });
     expect(await e.owner.cleanupPlans.read(e.key)).toBeNull();
+    // The operator listing names this attempt (keys only) and never changes it.
+    expect(await e.owner.stagingNamespace.reconciliationCandidates(null)).toEqual({ candidates: [{ key: tk(e), reconciled: false }], next: null });
     const live = await observed(e.task);
     const outcome = await settle(s.pipeline.reconcileWithPorts(s.request, operation(), s.ports));
     expect(outcome).toMatchObject({ state: 'reconciled', reconciliation: { directories: live, taskNamespaceIdentity: recordedTask.anchor.taskNamespaceIdentity } });
@@ -64,7 +66,10 @@ it('reconciles a renumbered task folder after proving the runtime absent, then c
     expect(await e.owner.stagingNamespace.readTask(tk(e))).toEqual(recordedTask);
     expect(await settle(s.pipeline.reconcileWithPorts(s.request, operation(), s.ports))).toEqual({ state: 'current' });
     expect(s.effects).toEqual([]);
+    expect(await e.owner.stagingNamespace.reconciliationCandidates(null)).toEqual({ candidates: [{ key: tk(e), reconciled: true }], next: null });
+    expect(await e.owner.stagingNamespace.reconciliationCandidates(e.key.attemptId)).toEqual({ candidates: [], next: null });
     expect(await settle(s.pipeline.tickWithPorts(s.request, operation(), s.ports))).toMatchObject({ state: 'cleaned' });
+    expect(await e.owner.stagingNamespace.reconciliationCandidates(null)).toEqual({ candidates: [], next: null });
     const plan = await e.owner.cleanupPlans.read(e.key);
     expect(plan?.plan.entries.find((entry) => entry.path === 'output')?.native).toEqual(live.output);
     await expect(lstat(e.task)).rejects.toMatchObject({ code: 'ENOENT' });

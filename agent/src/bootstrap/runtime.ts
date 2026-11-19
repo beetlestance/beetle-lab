@@ -1,14 +1,10 @@
 import { drain, type Close } from './runtime-close.js';
 import { captureRuntimeOptions } from './runtime-options.js';
-import { NoTaskReceipt } from '../no-task-receipt/index.js';
-import { StorageSettlement } from '../storage-settlement/index.js';
-import { RetirementPipeline } from '../retirement-pipeline/index.js';
+import { RetirementServices } from './retirement-services.js';
 import type { RetirementRequest } from '@beetle/contracts/output-retirement';
-import { NativeReceipt } from '../native-receipt/index.js';
-import { NativeRemoval } from '../native-removal/index.js';
-import { type TaskPlanObservation, TaskInventory } from '../task-inventory/index.js';
-import { type RuntimeAbsent, RuntimeRetirement } from '../runtime-retirement/index.js';
-import { type ProducerBarrier, ProducerRetirement } from '../producer-retirement/index.js';
+import type { TaskPlanObservation } from '../task-inventory/index.js';
+import type { RuntimeAbsent } from '../runtime-retirement/index.js';
+import type { ProducerBarrier } from '../producer-retirement/index.js';
 import { type Operation, DockerBackend } from '../backends/docker/index.js';
 import { ProducerGate } from '../producer-gate/index.js';
 import { installedLiveMetricApproval } from './live-metrics.js';
@@ -44,20 +40,15 @@ import type { FastifyInstance } from 'fastify';
 import { CapabilityView } from './capabilities.js';
 import { installationStatePath } from './authority-state.js';
 import { verifyInstalledImages } from './installed-images.js';
-import { AgentRuntimeError, type AgentRuntime, type AgentRuntimeOptions } from './types.js';
+import { AgentRuntimeError, type AgentRuntime, type AgentRuntimeOptions, type ReconcileRuntime } from './types.js';
+import { reconcileHandle } from './reconcile-handle.js';
+type Mode = 'serve' | 'reconcile';
 
 let owner: RuntimeOwner | undefined;
 /** One retained owner covers initialization, service originals and failed cleanup. */
 class RuntimeOwner {
   private gate: ProducerGate | undefined;
-  private retirement: ProducerRetirement | undefined;
-  private retiredRuntime: RuntimeRetirement | undefined;
-  private taskInventory: TaskInventory | undefined;
-  private nativeRemoval: NativeRemoval | undefined;
-  private nativeReceipt: NativeReceipt | undefined;
-  private noTaskReceipt: NoTaskReceipt | undefined;
-  private cleanup: RetirementPipeline | undefined;
-  private settlement?: StorageSettlement;
+  private services?: RetirementServices;
   private authorityState?: ServingState;
   private authorityCleanupUnknown = false;
   private journal?: Journal;
@@ -73,7 +64,7 @@ class RuntimeOwner {
   private readonly stagers = new Map<object, Stager>();
   private closed = false;
   private closing?: Promise<void>;
-  async open(input: AgentRuntimeOptions): Promise<AgentRuntime> {
+  async open(input: AgentRuntimeOptions, mode: Mode): Promise<void> {
     const options = captureRuntimeOptions(input);
     this.check(options);
     const authorityState = this.openAuthority(installationStatePath(options.journal.path));
@@ -114,43 +105,48 @@ class RuntimeOwner {
         65_536,
       ),
     ) as PoolConfiguration;
+    // Offline reconciliation never changes pool policy and starts no guard, publisher or scheduler.
+    if (mode === 'reconcile') return this.compose(options, configuration, verified.value, authority, mode);
     await this.journal.admission({ kind: 'configure', configuration });
     this.check(options);
-    this.compose(options, configuration, verified.value, authority);
+    this.compose(options, configuration, verified.value, authority, mode);
     this.check(options);
     this.output!.start();
     this.timeout!.start();
     this.publisher!.start();
     this.scheduler!.start();
-    return this.handle();
   }
-  private handle(): AgentRuntime {
+  reconcileHandle(): ReconcileRuntime {
+    return reconcileHandle(this.journal!, this.services!.cleanup, () => this.close());
+  }
+  handle(): AgentRuntime {
+    const services = this.services!;
     const server = this.server!;
     const initial = this.publisher!.initial;
     const retirement = Object.freeze({
-      retire: (input: unknown) => this.retirement!.retire(input),
-      status: () => this.retirement!.status(),
+      retire: (input: unknown) => services.retirement.retire(input),
+      status: () => services.retirement.status(),
     });
     const retiredRuntime = Object.freeze({
-      retire: (producer: ProducerBarrier, operation: Operation) => this.retiredRuntime!.retire(producer, operation),
-      status: () => this.retiredRuntime!.status(),
+      retire: (producer: ProducerBarrier, operation: Operation) => services.retiredRuntime.retire(producer, operation),
+      status: () => services.retiredRuntime.status(),
     });
     const cleanup = Object.freeze({
-      tick: (request: RetirementRequest, operation: Operation) => this.cleanup!.tick(request, operation),
-      status: () => this.cleanup!.status(),
+      tick: (request: RetirementRequest, operation: Operation) => services.cleanup.tick(request, operation),
+      status: () => services.cleanup.status(),
     });
     const nativeReceipt = Object.freeze({
-      finalize: (token: RuntimeAbsent, operation: Operation) => this.nativeReceipt!.finalize(token, operation),
-      status: () => this.nativeReceipt!.status(),
+      finalize: (token: RuntimeAbsent, operation: Operation) => services.nativeReceipt.finalize(token, operation),
+      status: () => services.nativeReceipt.status(),
     });
     const nativeRemoval = Object.freeze({
-      step: (token: RuntimeAbsent, operation: Operation) => this.nativeRemoval!.step(token, operation),
-      status: () => this.nativeRemoval!.status(),
+      step: (token: RuntimeAbsent, operation: Operation) => services.nativeRemoval.step(token, operation),
+      status: () => services.nativeRemoval.status(),
     });
     const taskInventory = Object.freeze({
-      persist: (token: TaskPlanObservation, operation: Operation) => this.taskInventory!.persist(token, operation),
-      prepare: (token: RuntimeAbsent, operation: Operation) => this.taskInventory!.prepare(token, operation),
-      status: () => this.taskInventory!.status(),
+      persist: (token: TaskPlanObservation, operation: Operation) => services.taskInventory.persist(token, operation),
+      prepare: (token: RuntimeAbsent, operation: Operation) => services.taskInventory.prepare(token, operation),
+      status: () => services.taskInventory.status(),
     });
     return Object.freeze({
       server,
@@ -184,6 +180,7 @@ class RuntimeOwner {
     configuration: PoolConfiguration,
     root: VerifiedRoot,
     journalAuthority: string,
+    mode: Mode,
   ): void {
     const journal = this.journal!;
     const gate = (this.gate = new ProducerGate({
@@ -220,7 +217,15 @@ class RuntimeOwner {
         return stager;
       },
     });
-    this.composeRetirement(options, root);
+    this.services = new RetirementServices({
+      journal,
+      gate,
+      root,
+      catalog: options.catalog,
+      transport,
+      installation: this.installation,
+    });
+    if (mode === 'reconcile') return;
     this.observer = createResourceObserver({ root, transport: options.transport, configuration });
     const view = new CapabilityView({
       configuration,
@@ -235,13 +240,23 @@ class RuntimeOwner {
       timeout: this.timeout,
     });
     this.scheduler = createScheduler({ journal, installation: this.installation });
+    this.createServer(options, journalAuthority, supervisor, gate, view);
+  }
+  private createServer(
+    options: AgentRuntimeOptions,
+    journalAuthority: string,
+    supervisor: Supervisor,
+    gate: ProducerGate,
+    view: CapabilityView,
+  ): void {
+    const journal = this.journal!;
     this.server = createAgentServer({
-      settlement: this.settlement!,
-      cleanup: this.cleanup!,
+      settlement: this.services!.settlement,
+      cleanup: this.services!.cleanup,
       credential: options.credential,
       journalAuthority,
       journal,
-      installation: this.installation,
+      installation: this.installation!,
       health: () =>
         journal.storageStatus() === 'unavailable' ? 'unavailable' : this.closed ? 'closing' : journal.storageStatus(),
       liveHistory: (key, operation) => supervisor.readLiveHistory(key, operation),
@@ -272,38 +287,6 @@ class RuntimeOwner {
         }),
       );
   }
-  private composeRetirement(options: AgentRuntimeOptions, root: VerifiedRoot): void {
-    const journal = this.journal!;
-    const gate = this.gate!;
-    const transport = options.transport;
-    this.retirement = new ProducerRetirement({
-      journal: journal.retirements,
-      funding: journal.retirements,
-      gate,
-      installation: this.installation!,
-    });
-    this.retiredRuntime = new RuntimeRetirement({
-      journal,
-      root,
-      catalog: options.catalog,
-      transport,
-      backend: () => new DockerBackend(transport),
-    });
-    this.taskInventory = new TaskInventory({ journal, root });
-    this.nativeRemoval = new NativeRemoval({ journal, root });
-    this.nativeReceipt = new NativeReceipt({ journal, root, removal: this.nativeRemoval });
-    this.noTaskReceipt = new NoTaskReceipt({ journal, root, transport });
-    this.cleanup = new RetirementPipeline({
-      journal,
-      producer: this.retirement,
-      runtime: this.retiredRuntime,
-      inventory: this.taskInventory,
-      removal: this.nativeRemoval,
-      receipt: this.nativeReceipt,
-      noTask: this.noTaskReceipt,
-    });
-    this.settlement = new StorageSettlement({ journal });
-  }
   private status() {
     return {
       ready: !this.closed && this.publisher?.status().ready === true,
@@ -315,8 +298,7 @@ class RuntimeOwner {
   close(): Promise<void> {
     if (this.closing) return this.closing;
     this.closed = true;
-    this.settlement?.stop();
-    this.noTaskReceipt?.stop();
+    this.services?.stop();
     let resolve!: () => void;
     let reject!: (error: unknown) => void;
     this.closing = new Promise<void>((yes, no) => {
@@ -338,20 +320,7 @@ class RuntimeOwner {
     return first;
   }
   private async closeRetirement(): Promise<void> {
-    let closed = true;
-    for (const service of [
-      this.settlement,
-      this.cleanup,
-      this.noTaskReceipt,
-      this.nativeReceipt,
-      this.nativeRemoval,
-      this.taskInventory,
-      this.retiredRuntime,
-      this.retirement,
-      this.gate,
-    ]) {
-      if (service) closed = (await drain([() => service.close()])) && closed;
-    }
+    const closed = this.services ? await this.services.close() : await drain([() => this.gate!.close()]);
     if (!closed) throw new AgentRuntimeError('cleanup');
   }
   private monitoringCloses(): Close[] {
@@ -379,17 +348,28 @@ class RuntimeOwner {
     if (owner === this) owner = undefined;
   }
 }
-/** Executable owns transport construction and listening; all execution components are bound here. */
-export async function openAgentRuntime(options: AgentRuntimeOptions): Promise<AgentRuntime> {
+async function openOwner(options: AgentRuntimeOptions, mode: Mode): Promise<RuntimeOwner> {
   if (owner) throw new AgentRuntimeError('busy');
   const current = new RuntimeOwner();
   owner = current;
   try {
-    return await current.open(options);
+    await current.open(options, mode);
+    return current;
   } catch (error) {
     await current.close();
     throw new AgentRuntimeError(error instanceof NamespaceBindingError ? 'recovery_required' : 'startup', {
       cause: error,
     });
   }
+}
+/** Executable owns transport construction and listening; all execution components are bound here. */
+export async function openAgentRuntime(options: AgentRuntimeOptions): Promise<AgentRuntime> {
+  return (await openOwner(options, 'serve')).handle();
+}
+/**
+ * Offline reconciliation (decision 030): the same process owner, installation, journal and namespace
+ * checks as serving, then only the retirement chain. No server, scheduler, publisher or guard runs.
+ */
+export async function openReconcileRuntime(options: AgentRuntimeOptions): Promise<ReconcileRuntime> {
+  return (await openOwner(options, 'reconcile')).reconcileHandle();
 }

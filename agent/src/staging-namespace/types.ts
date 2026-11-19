@@ -80,6 +80,17 @@ export interface StagingNamespaceJournal {
   /** Records reconciled facts; the Journal refuses once any cleanup plan exists for the attempt. */
   reconcileTask(key: TaskNamespaceKey, reconciliation: TaskReconciliation): Promise<TaskReconciliation>;
   readTaskReconciliation(key: TaskNamespaceKey): Promise<TaskReconciliation | null>;
+  /** Read-only page of prepared tasks with a retirement intent and no cleanup plan, progress or receipt. */
+  reconciliationCandidates(after: string | null): Promise<ReconciliationCandidatePage>;
+}
+export interface ReconciliationCandidate {
+  readonly key: TaskNamespaceKey;
+  readonly reconciled: boolean;
+}
+export interface ReconciliationCandidatePage {
+  readonly candidates: readonly ReconciliationCandidate[];
+  /** Attempt ID to continue after, or null when this is the last page. */
+  readonly next: string | null;
 }
 /** Frozen protocol1 sizes; do not revise applied-schema limits in place. */
 export const namespaceCaps = Object.freeze({

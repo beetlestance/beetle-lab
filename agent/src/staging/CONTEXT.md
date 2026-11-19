@@ -35,3 +35,4 @@ Scope check: NODE_OPTIONS=--max-old-space-size=1024 node node_modules/vitest/vit
 run agent/test/staging --maxWorkers=2. Synthetic inspection/providers, actual temp FS
 and compiled SQLite Journal only. Docker/Linux/Desktop visibility and enforcement
 qualification, installer provisioning and integrated launch remain outstanding.
+Agent identity: inspected Cmd must equal the running args; only none or `reconcile [--apply]`.

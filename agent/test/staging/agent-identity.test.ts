@@ -2,7 +2,7 @@ import {expect,it,vi} from 'vitest';
 import {verifyAgentIdentity} from '../../src/staging/agent-identity.js';
 const installation={installationId:'synthetic',stagingRoot:'/synthetic',expectedDaemonId:'synthetic',agentContainer:'synthetic',agentImageId:'synthetic',user:'1000:1000',agentIdentity:'socket-group-drop-v1' as const};
 function inspection(){return {Config:{User:'0:0',Entrypoint:['node','/beetle/agent/container.js'],Cmd:null},HostConfig:{Init:false,Privileged:false,PidMode:'',CapDrop:['ALL'],CapAdd:['CAP_SETGID','CAP_SETUID'],SecurityOpt:['no-new-privileges:true']}};}
-const identity={pid:1,uid:1000,gid:1000,euid:1000,egid:1000,status:'CapEff:\t000000\nCapPrm:\t000000\nCapAmb:\t000000\n'};
+const identity={pid:1,uid:1000,gid:1000,euid:1000,egid:1000,status:'CapEff:\t000000\nCapPrm:\t000000\nCapAmb:\t000000\n',args:[] as readonly string[]};
 it('requires the explicit package recipe and actual permanently dropped PID1 identity',()=>{
  expect(()=>verifyAgentIdentity(inspection(),installation,()=>identity)).not.toThrow();
  const read=vi.fn(()=>identity);expect(()=>verifyAgentIdentity({Config:{User:'1000:1000'}},{...installation,agentIdentity:undefined} as never,read)).not.toThrow();expect(read).not.toHaveBeenCalled();
@@ -15,4 +15,10 @@ it.each([
 ])('refuses a changed container identity recipe %j',change=>{expect(()=>verifyAgentIdentity({...inspection(),...change},installation,()=>identity)).toThrow();});
 it.each([{pid:2},{uid:0},{euid:0},{gid:0},{egid:0},{status:'CapEff:\t000001\nCapPrm:\t000000\nCapAmb:\t000000\n'},{status:'CapEff:\t000000\nCapPrm:\t000001\nCapAmb:\t000000\n'},{status:'CapEff:\t000000\nCapPrm:\t000000\nCapAmb:\t000001\n'}])('refuses an undropped or supervised process %j',change=>{
  expect(()=>verifyAgentIdentity(inspection(),installation,()=>({...identity,...change}))).toThrow();
+});
+it('accepts only the reconcile command whose inspected command equals the running arguments',()=>{
+ for(const args of [['reconcile'],['reconcile','--apply']])expect(()=>verifyAgentIdentity({...inspection(),Config:{...inspection().Config,Cmd:args}},installation,()=>({...identity,args}))).not.toThrow();
+ expect(()=>verifyAgentIdentity({...inspection(),Config:{...inspection().Config,Cmd:[]}},installation,()=>identity)).not.toThrow();
+ for(const[cmd,args]of [[null,['reconcile']],[['reconcile'],[]],[['reconcile'],['reconcile','--apply']],[['--apply','reconcile'],['--apply','reconcile']],[['reconcile','--apply','x'],['reconcile','--apply','x']],[['serve'],['serve']]])
+  expect(()=>verifyAgentIdentity({...inspection(),Config:{...inspection().Config,Cmd:cmd}},installation,()=>({...identity,args:args as string[]}))).toThrow();
 });

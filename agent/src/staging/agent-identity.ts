@@ -8,6 +8,17 @@ interface RuntimeIdentity {
   euid: number;
   egid: number;
   status: string;
+  /** Arguments after the entry script; the inspected container command must match them exactly. */
+  args: readonly string[];
+}
+/** Serving (no command) or the offline reconcile command (decision 030); nothing else. */
+const commands: readonly (readonly string[])[] = [[], ['reconcile'], ['reconcile', '--apply']];
+function ordered(actual: unknown, expected: readonly string[]): boolean {
+  return (
+    Array.isArray(actual) &&
+    actual.length === expected.length &&
+    expected.every((value, index) => actual[index] === value)
+  );
 }
 function safe(value: unknown): asserts value {
   if (!value) throw new StagingError('installation');
@@ -34,6 +45,7 @@ function runtimeIdentity(): RuntimeIdentity {
       euid: process.geteuid!(),
       egid: process.getegid!(),
       status: bytes.subarray(0, length).toString('utf8'),
+      args: process.argv.slice(2),
     };
   } finally {
     closeSync(fd);
@@ -51,10 +63,11 @@ export function verifyAgentIdentity(
     return;
   }
   safe(configuration.agentIdentity === 'socket-group-drop-v1' && configuration.user === '1000:1000');
-  bootstrapRecipe(raw, config);
-  droppedProcess(runtime());
+  const actual = runtime();
+  bootstrapRecipe(raw, config, actual.args);
+  droppedProcess(actual);
 }
-function bootstrapRecipe(raw: Record<string, unknown>, config: Record<string, unknown>): void {
+function bootstrapRecipe(raw: Record<string, unknown>, config: Record<string, unknown>, args: readonly string[]): void {
   safe(
     config.User === '0:0' &&
       Array.isArray(config.Entrypoint) &&
@@ -62,7 +75,8 @@ function bootstrapRecipe(raw: Record<string, unknown>, config: Record<string, un
       config.Entrypoint[0] === 'node' &&
       config.Entrypoint[1] === '/beetle/agent/container.js',
   );
-  safe(config.Cmd === null || exact(config.Cmd, []));
+  safe(commands.some((command) => ordered(command, args)));
+  safe(args.length === 0 ? config.Cmd === null || ordered(config.Cmd, []) : ordered(config.Cmd, args));
   bootstrapPrivileges(record(raw.HostConfig));
 }
 function bootstrapPrivileges(host: Record<string, unknown>): void {
