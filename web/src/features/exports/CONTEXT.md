@@ -25,7 +25,9 @@ Checks: web/src/features/exports/*.test.tsx.
 - `useRevisionExport.ts` reads the exact scoped latest revision export, follows
   newly created jobs, stops polling on errors, and builds the
   create request in `prepare.ts` from workspace run defaults, the first allowed
-  installed profile and the default options.
+  installed profile and a script time limit from the captured workspace run timeout.
+  Ready shows the persisted limit; Prepare again creates a new job, preserving old files.
+  Limits over 48 hours are refused rather than clamped; unknown replays keep their intent.
 - `script-bytes.ts` captures published size/hash/path; inline scriptText stays at 1 MiB,
   downloads at 64 MiB. One original, no queue; 30 s abort retains cleanup/hash work.
 - VerifiedDownload saves original checked bytes with one global URL; retirement

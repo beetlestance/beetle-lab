@@ -1,8 +1,9 @@
+import { validateApi } from '@beetle/contracts/api';
 import type { CreateExportRequest, ExportJob, SuiteRevision, WorkspaceSettings } from '@beetle/contracts/api';
 import { captureRequest, initialValues } from '../execution-request/index.js';
 
 /** Options the export form uses by default; the result budget must cover them plus 72 KiB. */
-export const defaultExportOptions = { maximumBuildBytes: 1048576, scriptTimeoutMs: 180000 } as const;
+export const defaultExportOptions = { maximumBuildBytes: 1048576 } as const;
 const resultOverhead = 73728;
 
 /** Secret names a revision references. Revisions with secrets are never exported. */
@@ -32,9 +33,17 @@ export function exportRequest(
   const base = captureRequest({ revision, settings, values: { ...values, profile }, requestId });
   if (base.budget.outputBytes < defaultExportOptions.maximumBuildBytes + resultOverhead)
     throw new Error(
-      'The workspace output budget is too small for a 1 MiB script. Raise it in workspace settings, or use the export form under the revision.',
+      'The workspace output budget is too small for a 1 MiB script. Raise it in workspace settings before preparing this script.',
     );
-  return { ...base, options: { ...defaultExportOptions } };
+  const options = validateApi('StandaloneExportOptions', {
+    ...defaultExportOptions,
+    scriptTimeoutMs: base.budget.timeoutMs,
+  });
+  if (!options.ok)
+    throw new Error(
+      'The workspace run timeout exceeds the supported script limit. Choose a timeout of at most 48 hours in workspace settings.',
+    );
+  return { ...base, options: options.value };
 }
 
 export const exportTerminalStates: readonly ExportJob['state'][] = ['ready', 'failed', 'cancelled'];
@@ -78,4 +87,12 @@ export function elapsedText(since: string, now: number): string {
   if (!Number.isFinite(start)) return '';
   const seconds = Math.max(0, Math.round((now - start) / 1000));
   return seconds < 120 ? `${seconds} s` : `${Math.round(seconds / 60)} min`;
+}
+
+/** Exact declared milliseconds, rendered without rounding a small limit to zero. */
+export function scriptLimitText(milliseconds: number): string {
+  if (!Number.isSafeInteger(milliseconds) || milliseconds < 1) return 'Not recorded';
+  if (milliseconds % 60000 === 0) return `${milliseconds / 60000} min`;
+  if (milliseconds % 1000 === 0) return `${milliseconds / 1000} s`;
+  return `${milliseconds.toLocaleString('en-US')} ms`;
 }

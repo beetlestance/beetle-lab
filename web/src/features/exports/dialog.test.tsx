@@ -79,7 +79,7 @@ it('prepares a script with the default options and then shows its progress', asy
   expect(posts[0]!.path).toContain(`/revisions/${rev.id}/exports`);
   expect(posts[0]!.body).toMatchObject({
     revisionId: rev.id,
-    options: { maximumBuildBytes: 1048576, scriptTimeoutMs: 180000 },
+    options: { maximumBuildBytes: 1048576, scriptTimeoutMs: 100 },
   });
 });
 
