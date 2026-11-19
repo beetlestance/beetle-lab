@@ -17,6 +17,7 @@ function artifactFormat(kind: string) {
     case 'k6-diagnostics':
     case 'k6-warnings':
     case 'numeric-final':
+    case 'native-summary':
       return { contentType: 'application/json; charset=utf-8', extension: 'json' };
     default:
       return { contentType: 'application/octet-stream', extension: 'bin' };

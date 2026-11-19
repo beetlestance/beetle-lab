@@ -49,11 +49,11 @@ and no speculative unlink runs. Only the atomic published manifest authorises re
 
 Unoccupied intervals are never written as zero observations. Readiness-scoped values
 never enter history. Every frame, header and footer byte is charged before its write;
-an excess is `output_limit`, never silently truncated history. Footer room is reserved
-before new records. A partial archive never gets a sealed descriptor or
+an excess is `output_limit`. With reserved footer space, a partial archive never gets a descriptor or
 `windowsRetained: true`. If only its digest differs
 after successful custody checks and close, a verified native summary can still
-publish with a partial `artifact_incomplete` result. Archive bytes remain charged. Custody and cleanup failures remain fatal.
+publish with a partial `artifact_incomplete` result. Its compact native figures
+bind the summary digest. Archive bytes stay charged and custody failures stay fatal.
 
 Its internal `completedPrefix()` retains the last complete data/index pair's IDs,
 extents, hashes, scope, count and end time, without extra IO or sync. It is withdrawn

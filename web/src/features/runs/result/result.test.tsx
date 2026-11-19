@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import nativeTemplate from '../../../../../contracts/fixtures/valid/passed-result.json' with { type: 'json' };
 import chartData from '../../../../../contracts/fixtures/api/valid/run-chart-history.json' with { type: 'json' };
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -298,14 +299,28 @@ it('retries failed result details explicitly without refreshing the run or losin
 it('replaces missing incomplete-archive sections with one explanation while retaining diagnostics', async () => {
   const current = finished({ state: 'errored', outcome: 'inconclusive', reason: 'artifact_incomplete' });
   const f = fixture(current, (request) => {
-    const ownership = { id: current.id, scope: current.scope, attemptId: current.activeAttemptId, source: null };
-    if (request.path.endsWith('/metrics/chart-history'))
-      return json({ ...ownership, windows: 0, sampled: false, points: [], observedPeakRequestsPerSecond: null,
-        knownRequestWindows: 0, meanVus: null, knownVusWindows: 0, reason: 'not_recorded' });
-    if (request.path.endsWith('/metrics/overview'))
-      return json({ ...ownership, availability: 'not_recorded', testDurationMs: null, requestCount: null,
-        requestsPerSecond: null, failure: null, latency: null, checks: null, droppedIterations: null,
-        endpoints: [], omittedEndpoints: 0 });
+    if (request.path.endsWith('/result')) {
+      const summarySha256 = 'a'.repeat(64);
+      return json({ ...resultSnapshot(current), result: {
+        ...nativeTemplate,
+        organizationId: current.scope.organizationId,
+        workspaceId: current.scope.workspaceId,
+        attemptId: current.activeAttemptId,
+        outcome: 'inconclusive',
+        completeness: 'partial',
+        execution: { ...nativeTemplate.execution, status: 'error', reason: 'artifact_incomplete' },
+        artifacts: [{
+          artifactId: ids.request, kind: 'native-summary', relativePath: 'beetle-evidence.json', bytes: 1024,
+          sha256: summarySha256, sealedAt: nativeTemplate.seal.sealedAt,
+        }],
+        nativeOverview: {
+          summarySha256, durationMs: 600000, requests: 712200, failureRatio: 0.0006, checkPassRatio: 0.9992,
+          droppedIterations: 0, p50Ms: 48, p95Ms: 197, p99Ms: 322,
+        },
+      } });
+    }
+    if (request.path.endsWith('/metrics/overview') || request.path.endsWith('/metrics/chart-history'))
+      return json(apiError('storage_unavailable'), 503);
     return undefined;
   });
   mount(f.client, path);
@@ -315,4 +330,10 @@ it('replaces missing incomplete-archive sections with one explanation while reta
   expect(nav.queryByRole('link', { name: 'Endpoints' })).not.toBeInTheDocument();
   expect(screen.queryByRole('region', { name: 'The whole run' })).not.toBeInTheDocument();
   expect(screen.getByRole('tab', { name: 'Diagnostics' })).toBeVisible();
+  const tiles = await screen.findByLabelText('Verified k6 summary');
+  expect(tiles).toHaveTextContent('1,187');
+  expect(tiles).toHaveTextContent('197 ms');
+  expect(tiles).toHaveTextContent('99.92%');
+  expect(tiles).not.toHaveTextContent('histogram');
+  expect(screen.getAllByText('Not judged').length).toBeGreaterThan(0);
 });

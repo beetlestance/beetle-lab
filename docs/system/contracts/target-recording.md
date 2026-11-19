@@ -95,7 +95,7 @@ The numeric archive keeps its existing format. No execution outcome changes.
 
 | Code | Reviewed |
 | --- | --- |
-| `engines/k6/wrapper/attempt/attempt.ts` | `fdb066c454b0` |
+| `engines/k6/wrapper/attempt/attempt.ts` | `46a26c661552` |
 | `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/target-sampling/` | `6afe70750068` |

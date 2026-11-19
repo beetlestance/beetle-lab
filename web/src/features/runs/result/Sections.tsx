@@ -97,7 +97,12 @@ export function Thresholds({
       ) : (
         <ul className="result-native-thresholds" aria-label="Thresholds">
           {result.thresholds.map((threshold, index) => (
-            <ThresholdReading key={`${threshold.id}/${index}`} threshold={threshold} rules={rules} />
+            <ThresholdReading
+              key={`${threshold.id}/${index}`}
+              threshold={threshold}
+              rules={rules}
+              unjudged={variant === 'incomplete'}
+            />
           ))}
         </ul>
       )}

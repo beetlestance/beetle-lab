@@ -34,9 +34,17 @@ function fill(threshold: Threshold, rule: PlanRule | undefined): number | null {
   return Math.min(1, reading.value / rule.value) * 100;
 }
 /** Native verdict is authoritative; the meter never reevaluates it or uses a histogram estimate. */
-export function ThresholdReading({ threshold, rules }: { threshold: Threshold; rules: readonly PlanRule[] }) {
+export function ThresholdReading({
+  threshold,
+  rules,
+  unjudged = false,
+}: {
+  threshold: Threshold;
+  rules: readonly PlanRule[];
+  unjudged?: boolean;
+}) {
   const rule = threshold.purpose === 'slo' ? rules.find((item) => item.id === threshold.id) : undefined;
-  const state = status(threshold);
+  const state = unjudged ? { tone: 'neutral' as const, label: 'Not judged' } : status(threshold);
   const width = fill(threshold, rule);
   return (
     <li className={`result-card result-threshold-card${state.tone === 'fail' ? ' is-failed' : ''}`}>
@@ -51,9 +59,11 @@ export function ThresholdReading({ threshold, rules }: { threshold: Threshold; r
         </span>
       )}
       <span className="sr-only">
-        {threshold.purpose === 'discovery'
-          ? 'Discovery trigger; native comparison is inverted.'
-          : 'Native engine verdict.'}
+        {unjudged
+          ? 'Native reading; the run outcome is inconclusive.'
+          : threshold.purpose === 'discovery'
+            ? 'Discovery trigger; native comparison is inverted.'
+            : 'Native engine verdict.'}
       </span>
     </li>
   );

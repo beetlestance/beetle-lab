@@ -52,6 +52,7 @@ function map(input: K6ResultInput): K6ResultMapping {
     execution: state,
     outcome: outcome({ execution: state, assertions, thresholds, health, complete }),
     artifacts: input.artifacts,
+    ...(input.nativeOverview ? { nativeOverview: input.nativeOverview } : {}),
     ...(thresholds.expectedAbort
       ? { mode: 'discovery', expectedAbort: thresholds.expectedAbort }
       : { mode: 'ordinary' }),

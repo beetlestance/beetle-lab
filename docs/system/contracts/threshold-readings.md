@@ -40,12 +40,12 @@ The result reading remains a native statistic; the UI never computes its verdict
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/runner/v1/result-evidence.schema.json` | `dacc0045db72` |
+| `contracts/runner/v1/result-evidence.schema.json` | `379ecd645141` |
 | `contracts/runner/v1/engine-result.schema.json` | `e377fc467e47` |
-| `engines/k6/wrapper/result/` | `97fe9b2a9759` |
+| `engines/k6/wrapper/result/` | `bc94b5adb495` |
 | `web/src/features/runs/run-revision.ts` | `d57756f98b8a` |
-| `web/src/features/runs/result/ThresholdReading.tsx` | `08971f65c4f9` |
-| `web/src/features/runs/result/threshold-sentence.ts` | `18d0102d94e8` |
+| `web/src/features/runs/result/ThresholdReading.tsx` | `f244269e4ac1` |
+| `web/src/features/runs/result/threshold-sentence.ts` | `a5ccdb7f0a16` |
 | `contracts/src/k6-metrics/index.ts` | `ae909fa57f1f` |
 | `engines/k6/runtime/native.ts` | `f2277e65a4b4` |
 | `engines/k6/runtime/native-api.d.ts` | `1d0f5d2b55d1` |

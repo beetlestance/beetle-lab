@@ -2,7 +2,7 @@ import { open, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { verifyEngineResultSeal } from '@beetle/contracts';
+import { sealEngineResult, verifyEngineResultSeal } from '@beetle/contracts';
 import type { ControlEvent } from '@beetle/contracts';
 import { MetricFiles } from '../../wrapper/attempt/archive/files.js';
 import { replayControl } from '../../wrapper/control/index.js';
@@ -147,6 +147,19 @@ it('keeps sealed native evidence and withholds a same-length damaged archive', a
     const numeric = JSON.parse(await readFile(join(f.outputRoot, 'numeric-final.json'), 'utf8'));
     const report = result.artifacts.find(({ kind }) => kind === 'performance-report')!;
     const reportText = await readFile(join(f.outputRoot, report.relativePath), 'utf8');
+    const summary = result.artifacts.find(({ kind }) => kind === 'native-summary')!;
+    expect(result.nativeOverview).toMatchObject({ summarySha256: summary.sha256, durationMs: 1000, p95Ms: 1 });
+    const { seal, ...body } = result;
+    const unbound = { ...body, nativeOverview: { ...body.nativeOverview!, summarySha256: 'f'.repeat(64) } };
+    expect(sealEngineResult(unbound, seal.sealedAt, text => createHash('sha256').update(text).digest('hex')))
+      .toEqual({ ok: false, code: 'invalid_result' });
+    for (const change of [{ bytes: 0 }, { relativePath: 'synthetic.json' }]) {
+      const artifacts = body.artifacts.map(artifact => artifact === summary ? { ...artifact, ...change } : artifact);
+      expect(sealEngineResult({ ...body, artifacts }, seal.sealedAt, text => createHash('sha256').update(text).digest('hex')))
+        .toEqual({ ok: false, code: 'invalid_result' });
+    }
+    expect(reportText).toContain('Verified native k6 summary.');
+    expect(reportText).toContain('p95 latency (ms): 1');
     expect(reportText).toContain('metric window coverage: missing');
     expect(reportText).toContain('Observed metric series: 0.');
     expect(events.find(({ kind }) => kind === 'engine.result')?.payload).toEqual(result);

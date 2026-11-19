@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { sealEngineResult } from '@beetle/contracts';
+import { nativeOverview } from './native-overview.js';
 import { ArchiveDigestMismatch } from './archive/index.js';
 import type { MetricArchive, ArchiveEvidence } from './archive/index.js';
 import { renderPerformanceReports, ReportError } from '../../report/index.js';
@@ -27,8 +28,10 @@ export async function finishMetricEvidence(
     return { history: await archive!.finish(), evidence: state, mapped };
   } catch (error) {
     if (!(error instanceof ArchiveDigestMismatch) || !canRetainNativeSummary(receipt, mapped)) throw error;
+    const summary = receipt.summary;
+    if (!summary?.ok) throw new AttemptError('artifact');
     const evidence: State = { ...state, execution: { ...receipt, ok: false, code: 'metrics', metrics: null } };
-    const partial = mapK6Result(resultEvidence(evidence, compiled, []));
+    const partial = mapK6Result(resultEvidence(evidence, compiled, [], nativeOverview(summary.evidence)));
     if (!partial.ok) throw new AttemptError('mapping');
     return { history: null, evidence, mapped: partial };
   }
@@ -48,6 +51,7 @@ export function resultEvidence(
   state: State,
   compiled: CompiledInput,
   artifacts: EngineResult['artifacts'],
+  native?: EngineResult['nativeOverview'],
 ): K6ResultInput {
   const receipt = state.execution!;
   if (!receipt.process || !receipt.terminalObservedAt) throw new AttemptError('execution');
@@ -63,6 +67,7 @@ export function resultEvidence(
     summary: receipt.summary?.ok ? receipt.summary.evidence : null,
     metrics: receipt.metrics,
     artifacts,
+    ...(native ? { nativeOverview: native } : {}),
   };
 }
 export function targetReportWithSpan(

@@ -212,7 +212,7 @@ Container removal requires a stopped, sealed and application-acknowledged attemp
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/runner/v1/` | `5c71acd8a91f` |
+| `contracts/runner/v1/` | `483deb2235be` |
 | `agent/src/transport/` | `ef7b3981fc9b` |
 | `agent/src/journal/projection.ts` | `7c77ac77f06a` |
 | `agent/src/controller/` | `230594aa2b66` |
