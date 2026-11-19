@@ -304,9 +304,6 @@
   .live-split {
     grid-template-columns: minmax(0, 1fr);
   }
-  .live-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 760px) {
   .live-ticks > .live-tick-detail {
@@ -314,9 +311,6 @@
   }
   .live-charts {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .live-kpi dd {
-    font-size: var(--fs-3xl);
   }
   .live-stage-label > span:not(.number) {
     display: none;
