@@ -27,7 +27,7 @@ function viewer(reads: ArtifactReader<string>, onClose = vi.fn()) {
   return onClose;
 }
 
-it('offers Verify and open only for small text kinds; every row keeps Download', async () => {
+it('offers Verify and open only for bounded native text kinds; every row keeps Download', async () => {
   const value = page();
   value.items = [summary, { ...artifact(1), kind: 'raw' }];
   mountArtifacts(testClient(() => json(value)).client);
@@ -38,7 +38,7 @@ it('offers Verify and open only for small text kinds; every row keeps Download',
 });
 
 it('shows indented JSON only after the verified read, with Close and Download', async () => {
-  const reads = { read: vi.fn(async () => text) };
+  const reads = { read: vi.fn(async () => JSON.stringify(JSON.parse(text), null, 2)) };
   const onClose = viewer(reads);
   const dialog = await screen.findByRole('dialog', { name: 'summary.json' });
   expect(await within(dialog).findByText(/Size and SHA-256 match the sealed manifest/)).toBeVisible();
@@ -61,4 +61,21 @@ it('shows no content when verification fails and retries only on request', async
   fireEvent.click(within(dialog).getByRole('button', { name: 'Verify again' }));
   await within(dialog).findByRole('alert');
   expect(reads.read).toHaveBeenCalledTimes(2);
+});
+
+it('opens a native metrics file over 1 MiB and makes the bounded excerpt explicit', async () => {
+  const value = page();
+  value.items = [{ ...summary, kind: 'metric-windows', relativePath: 'metric-windows.ndjson', bytes: 6800000 }];
+  mountArtifacts(testClient(() => json(value)).client);
+  expect(await screen.findByRole('button', { name: 'Verify and open metric-windows.ndjson' })).toBeVisible();
+  expect(screen.getByText(/checks files up to 32 MiB/)).toBeVisible();
+});
+
+it('labels an excerpt after full verification rather than claiming the displayed text is the entire file', async () => {
+  const api = testClient(() => json({})).client;
+  render(<ApiContext.Provider value={api}>
+    <ArtifactViewer params={params} artifact={{ ...summary, bytes: 6800000 }} reads={{ read: async () => 'verified excerpt' }} onClose={() => undefined} />
+  </ApiContext.Provider>);
+  expect(await screen.findByText(/Showing the first 64 KiB/)).toBeVisible();
+  expect(screen.getByLabelText('Contents of summary.json')).toHaveTextContent('verified excerpt');
 });

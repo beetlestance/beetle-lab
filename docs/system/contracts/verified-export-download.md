@@ -55,7 +55,7 @@ These proofs do not qualify a newly built frontend image or a native publication
 | `web/src/features/exports/script-bytes.ts` | `b5f1a8ab6f19` |
 | `web/src/features/exports/scriptText.ts` | `d5e7ac244ac6` |
 | `web/src/features/exports/VerifiedDownload.tsx` | `7e5d1fdbf5d3` |
-| `web/src/lib/response-body.ts` | `67ff70cba3db` |
+| `web/src/lib/response-body.ts` | `253992da68f6` |
 | `web/src/features/exports/ExportDialog.tsx` | `83fa0323e3e3` |
 | `web/src/features/exports/ExportsTable.tsx` | `0d1892c56502` |
 | `web/src/features/exports/Job.tsx` | `97a3808af9c3` |

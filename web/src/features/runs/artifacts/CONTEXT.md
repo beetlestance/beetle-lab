@@ -15,7 +15,8 @@ txt/CSV/JSON extensions for known kinds, bin otherwise; no engine filenames.
 Browser owns bytes, save/progress/cancel; links create no completion state or byte
 client/cache. Already-issued native transfers remain browser/server owned.
 Table: File / What it holds (static map by kind) / Size / Verify and open.
-ArtifactViewer (Overlay / Artifact viewer) opens text kinds up to 1 MiB through
-the shared VerifiedArtifactReads; content shows only after size and SHA-256 match.
+ArtifactViewer opens declared native text kinds through the explicit 32 MiB preview profile.
+Full size/SHA-256 verification precedes a <=64 KiB UTF-8 excerpt. Other readers keep their caps.
+Formatting only applies to tiny depth/node-bounded JSON; retained DOM text stays bounded.
 Checks: node ../../../node_modules/vitest/vitest.mjs run
 web/src/features/runs/artifacts --maxWorkers=1 (from assigned worktree root).

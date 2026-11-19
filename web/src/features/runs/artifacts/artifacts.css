@@ -55,5 +55,5 @@
 }
 .artifact-viewer-error p {
   margin: 0 0 var(--s-8);
-  color: var(--error);
+  color: var(--red);
 }

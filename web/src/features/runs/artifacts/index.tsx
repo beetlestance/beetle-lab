@@ -52,7 +52,8 @@ function Inventory({ run, terminal, heading: title = 'Published artifacts' }: Pr
       )}
       <p className="artifacts-foot">
         Artifacts stay until the run is removed. Pin the run to keep it out of retention. Download progress and
-        cancellation are handled by your browser.
+        cancellation are handled by your browser. Verify and open checks files up to 32 MiB and displays at most 64 KiB
+        of text; larger or binary files are download-only.
       </p>
     </section>
   );
@@ -67,8 +68,10 @@ const holds: Record<string, string> = {
   'k6-diagnostics': 'Sanitized k6 diagnostics',
   'k6-warnings': 'k6 warnings, if any',
   'target-runtime': 'Target runtime samples',
+  'metric-windows': 'Recorded metric windows, one JSON object per line',
+  'metric-index': 'Metric window lookup index',
 };
-/** Kinds the shared download policy serves as text; only these can be opened here. */
+/** Native UTF-8 kinds; attachment media types stay governed by the shared download policy. */
 const textKinds = new Set([
   'standalone-k6-script',
   'performance-report',
@@ -76,6 +79,9 @@ const textKinds = new Set([
   'numeric-final',
   'k6-diagnostics',
   'k6-warnings',
+  'target-runtime',
+  'metric-windows',
+  'metric-index',
 ]);
 
 function ArtifactList({ page }: { page: RunArtifactPage }) {
@@ -124,7 +130,7 @@ function ArtifactList({ page }: { page: RunArtifactPage }) {
                       aria-label={`Verify and open ${item.relativePath}`}
                       onClick={() => setOpen(item.artifactId)}
                     >
-                      Open
+                      Verify and open
                     </Button>
                   )}
                   <a

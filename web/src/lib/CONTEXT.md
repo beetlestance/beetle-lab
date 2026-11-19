@@ -1,5 +1,6 @@
 # Bounded browser primitives
-responseBody owns a finite decoded response stream (<=1 MiB, <=4096 fragments),
+responseBody owns a finite response stream (default <=1 MiB, <=4096 fragments),
+with explicit history/API, 64 MiB export and 32 MiB artifact-preview profiles.
 optional exact length, and actual cancellation/closed/lock cleanup before return.
 Live metrics cap 64 KiB; target artifacts retain their exact descriptor length.
 series-buffer owns the separate bounded rendering buffer for historical samples.

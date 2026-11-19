@@ -9,10 +9,11 @@ import { Dialog } from '../../../components/Dialog.js';
 import { useArtifactReport } from '../../../lib/use-artifact-report.js';
 import type { ArtifactReader } from '../../../lib/use-artifact-report.js';
 import { VerifiedArtifactReads } from '../../../lib/verified-artifact.js';
+import { artifactPreview, previewLimit } from './preview.js';
 import { formatBytes } from '../../run-results/format.js';
 
-/** Largest artifact the viewer verifies in the browser (the shared reader's own cap). */
-export const viewerLimit = 1048576;
+/** Explicit preview profile; other verified readers retain their 1 MiB cap. */
+export const viewerLimit = 32 * 1048576;
 const readers = new Map<string, VerifiedArtifactReads<string>>();
 function readerFor(kind: string) {
   let reader = readers.get(kind);
@@ -20,24 +21,17 @@ function readerFor(kind: string) {
     reader = new VerifiedArtifactReads<string>({
       kind,
       maximumBytes: viewerLimit,
-      decode: (bytes) => new TextDecoder('utf-8', { fatal: true }).decode(bytes),
+      profile: 'artifact-preview',
+      decode: artifactPreview,
     });
     readers.set(kind, reader);
   }
   return reader;
 }
-function pretty(text: string): string {
-  try {
-    return JSON.stringify(JSON.parse(text), null, 2);
-  } catch {
-    return text;
-  }
-}
-
 /**
  * Overlay / Artifact viewer: reads the published bytes, checks size and SHA-256
  * against the sealed descriptor, then shows UTF-8 text (JSON indented). Nothing is
- * shown before verification; non-text or oversized artifacts offer Download only.
+ * shown before full verification; only a bounded text excerpt is displayed.
  */
 export function ArtifactViewer({
   params,
@@ -96,7 +90,7 @@ function VerifiedText({
   if (state.status !== 'ready')
     return (
       <div role="alert" className="artifact-viewer-error">
-        <p>The bytes could not be read or did not match the sealed manifest, or the file is not UTF-8 text.</p>
+        <p>The bytes could not be read or did not match the sealed manifest, or its preview is not UTF-8 text.</p>
         <Button size="sm" onClick={retry}>
           Verify again
         </Button>
@@ -107,8 +101,14 @@ function VerifiedText({
       <p className="artifact-verified" role="status">
         ✓ Size and SHA-256 match the sealed manifest: <span className="number">{artifact.sha256.slice(0, 16)}…</span>
       </p>
+      {artifact.bytes > previewLimit && (
+        <p className="result-muted">
+          Showing the first 64 KiB of text; size and SHA-256 were checked against the entire file. Download to inspect
+          the remaining bytes.
+        </p>
+      )}
       <pre className="artifact-viewer-text" tabIndex={0} aria-label={`Contents of ${artifact.relativePath}`}>
-        {pretty(state.value)}
+        {state.value}
       </pre>
     </>
   );
