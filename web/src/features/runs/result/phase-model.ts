@@ -2,6 +2,7 @@ import {
   observationSummary,
   observedMetricDecrease,
   targetReading,
+  targetGcPauseMaximum,
   targetUnitProjection,
   projectTargetReading,
 } from '@beetle/contracts/target-runtime';
@@ -126,7 +127,7 @@ function gcRows(
   ordered: boolean,
 ): PhaseRow[] {
   const metrics = samples.map((group) => {
-    if (!ordered) return [null, null, null] as const;
+    if (!ordered) return [null, null, null, null] as const;
     const count = counterDelta(report, group, 'gc.count');
     const time = counterDelta(report, group, 'gc.totalMs');
     const span = elapsed(group);
@@ -134,6 +135,7 @@ function gcRows(
       divide(count === null ? null : count * 60000, span),
       divide(time === null ? null : time * 100, span),
       divide(time, count),
+      targetGcPauseMaximum(group),
     ] as const;
   });
   const note =
@@ -143,10 +145,10 @@ function gcRows(
     row('Time spent in GC', column(metrics, 1), '%', ordered, note),
     row(
       'Longest GC pause',
-      [null, null, null],
+      column(metrics, 3),
       'ms',
       ordered,
-      'Phase-local maximum was not recorded. A lifetime maximum cannot identify a phase maximum.',
+      'Longest pause between the recorded phase endpoints. Requires complete pause records in one collector generation.',
     ),
     row('Average GC pause', column(metrics, 2), 'ms', ordered, note),
   ];
@@ -161,6 +163,6 @@ export function phaseNumber(value: number | null, unit: string, signed = false):
   const sign = signed && value > 0 ? '+' : '';
   return `${sign}${text}${unit === '%' ? '%' : unit === 'count' ? '' : ` ${unit}`}`;
 }
-function column(values: readonly Values[], index: number): Values {
+function column(values: readonly (readonly (number | null)[])[], index: number): Values {
   return [values[0]![index] ?? null, values[1]![index] ?? null, values[2]![index] ?? null];
 }

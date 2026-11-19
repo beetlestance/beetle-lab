@@ -1,7 +1,8 @@
 import { encodeCanonicalJson } from '../json.js';
 import { validate } from '../validate.js';
+import { captureTargetGcWindow } from './gc-window.js';
 import { schema } from '../generated/target-runtime-report.js';
-import type { TargetMetricName, TargetRuntimeReport } from './types.js';
+import type { TargetMetricName, TargetRuntimeReport, TargetRuntimeSample } from './types.js';
 export type {
   TargetMetricName,
   TargetRuntimePhase,
@@ -30,10 +31,7 @@ export function captureTargetRuntimeReport(input: unknown): TargetRuntimeReport 
     const unavailable = report.samples.filter((sample) => sample.status === 'unavailable').length;
     if (report.missed < unavailable || report.missed > unavailable + Number(report.limited))
       throw new TargetRuntimeError('invalid_report');
-    for (const sample of report.samples) {
-      Object.freeze(sample.values);
-      Object.freeze(sample);
-    }
+    report.samples.forEach(freezeSample);
     Object.freeze(report.samples);
     if (report.units) Object.freeze(report.units);
     if (report.requestSpan) {
@@ -45,6 +43,16 @@ export function captureTargetRuntimeReport(input: unknown): TargetRuntimeReport 
   } catch {
     throw new TargetRuntimeError('invalid_report');
   }
+}
+function freezeSample(sample: TargetRuntimeSample): void {
+  if (sample.gcWindow) {
+    const gcWindow = captureTargetGcWindow(sample.gcWindow);
+    if (!gcWindow) throw new TargetRuntimeError('invalid_report');
+    Object.freeze(sample.gcWindow.recentMs);
+    Object.freeze(sample.gcWindow);
+  }
+  Object.freeze(sample.values);
+  Object.freeze(sample);
 }
 export function decodeTargetRuntimeReport(bytes: Uint8Array): TargetRuntimeReport {
   if (!(bytes instanceof Uint8Array) || bytes.length > TARGET_RUNTIME_REPORT_BYTES)
@@ -64,3 +72,5 @@ export function encodeTargetRuntimeReport(input: unknown): Uint8Array {
 export { observationSummary, targetResetObserved, targetReading, observedMetricDecrease } from './summary.js';
 export { captureTargetRuntimeUnits, targetUnitProjection, projectTargetReading } from './units.js';
 export type { TargetUnit, TargetUnitProjection } from './units.js';
+
+export { captureTargetGcWindow, targetGcPauseMaximum } from './gc-window.js';

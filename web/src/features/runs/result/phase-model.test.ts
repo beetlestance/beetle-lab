@@ -59,3 +59,28 @@ it('never turns a positive gauge mean that underflows into an observed zero', ()
   expect(rows.find(row => row.name === 'CPU (process)')!.values[1]).toBeNull();
   expect(rows.find(row => row.name === 'RSS')!.values[1]).toBe(0);
 });
+
+it('uses only verified pauses between phase observations, including zero-length pauses', () => {
+  const withPauses = (time: number, phase: TargetRuntimePhase, generation: number, through: number, recentMs: number[]) =>
+    ({ ...sample(time, phase, { 'gc.maxMs': 500 }), gcWindow: { generation, through, recentMs } });
+  const phases = [
+    withPauses(0, 'before', 10, 1, [500]),
+    withPauses(1000, 'before', 10, 2, [500, 5]),
+    withPauses(2000, 'during', 10, 3, [500, 5, 89]),
+    withPauses(3000, 'during', 10, 5, [5, 89, 8, 9]),
+    withPauses(4000, 'after', 10, 6, [8, 9, 10]),
+    withPauses(5000, 'after', 10, 7, [9, 10, 0]),
+  ];
+  const longest = (input: typeof phases) => targetPhaseSummary(report(input)).rows.find(row => row.name === 'Longest GC pause');
+  expect(longest(phases)).toMatchObject({ values: [5, 9, 0], delta: 4 });
+  const bridged = report([...phases.slice(0, 3), sample(2400, 'during'), ...phases.slice(3)]);
+  expect(targetPhaseSummary(bridged).rows.find(row => row.name === 'Longest GC pause')?.values[1]).toBe(9);
+  for (const conflict of [
+    withPauses(3000, 'during', 11, 5, [5, 89, 8, 9]),
+    withPauses(3000, 'during', 10, 8, [89, 8, 9]),
+    withPauses(3000, 'during', 10, 5, [10, 89, 8, 9]),
+    withPauses(3000, 'during', 10, 3, [500, 5, 89]),
+  ]) {
+    expect(longest([...phases.slice(0, 3), conflict, ...phases.slice(4)])?.values[1]).toBeNull();
+  }
+});

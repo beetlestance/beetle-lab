@@ -73,8 +73,8 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
       </p>
       <p className="result-muted">
         GC rates and averages use cumulative counter differences within each recorded phase, not lifetime averages.
-        Missing counters, unit declarations, phase endpoints or observed resets leave a dash. A phase-local longest GC
-        pause is not recorded by this report format.
+        Missing counters, units, phase endpoints or observed resets leave a dash. The longest pause requires a complete
+        sequence of pause records within the phase.
       </p>
     </div>
   );

@@ -16,6 +16,7 @@ it('returns complete verified target samples with phases, original units and unk
   expect(reply.value.targetSamples?.map(sample => sample.phase)).toEqual(['before', 'during', 'after']);
   expect(reply.value.targetSamples?.[1]).toMatchObject({ status: 'unavailable', reason: 'http', values: { rss: null, 'gc.totalMs': null } });
   expect(reply.value.targetSamples?.[2]?.values['gc.totalMs']).toBe(3);
+  expect(reply.value.targetSamples?.[2]?.gcWindow).toEqual({ generation: 1, through: 3, recentMs: [3, 3, 3] });
   expect(() => encodeLiveMetricHistory(reply.value, sha)).not.toThrow();
 });
 it('reads only the completed target extent while later partial samples are being appended', async () => {

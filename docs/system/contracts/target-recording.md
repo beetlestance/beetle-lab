@@ -66,6 +66,19 @@ Returned frame mutation cannot change this baseline. Metadata hints grant no
 sealed-result authority. Target-file reads additionally require the existing
 approved actor, native custody and [active-history verification](active-history.md).
 
+## GC pause evidence
+
+A sampler response may declare `gc.pauseWindow` with a positive integer
+`generation`, a nonnegative collection sequence `through`, and up to 16
+completed pause durations in `recentMs`, oldest first, ending at `through`.
+The reporter changes generation when its collection sequence resets. Values
+are explicitly milliseconds. Optional malformed evidence is omitted during
+sampling. Sealed reports and recorded history retain valid samples under the
+existing reservation. The phase maximum uses only intervals between observed
+endpoints in one generation. A later window can bridge a missing observation
+if it still covers every pause. Incomplete events, contradictory overlap or
+a reset leave the value unknown. A lifetime maximum is never substituted.
+
 ## Managed request landmarks
 
 A complete native k6 execution can seal optional request landmarks in the
@@ -85,10 +98,10 @@ The numeric archive keeps its existing format. No execution outcome changes.
 | `engines/k6/wrapper/attempt/attempt.ts` | `73fc69e3dd70` |
 | `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/target-sampling/` | `c601c5e4dfb5` |
+| `engines/k6/wrapper/target-sampling/` | `6afe70750068` |
 | `engines/k6/wrapper/target-archive/` | `7bc3a5dba7c2` |
 | `contracts/runner/v1/target-runtime-units.schema.json` | `05a6a5565ff1` |
-| `contracts/src/target-runtime/` | `67aa82aa131b` |
+| `contracts/src/target-runtime/` | `cc1c391100f1` |
 | `engines/k6/wrapper/artifact-custody/append-files.ts` | `0a83d0325b03` |
 | `contracts/api/v2/live-history-prefix.schema.json` | `995b549a49d8` |
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |
