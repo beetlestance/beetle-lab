@@ -154,3 +154,16 @@ it('marks missing source windows rather than connecting coalesced or paused inte
   }
   expect(history.points.map((point) => point.gapBefore)).toEqual([false, false, true]);
 });
+
+it('uses the approved pooled checks ratio even when an endpoint is outside the display subset', () => {
+  const plan = readPlan({ ...config, requests: [...config.requests, { ...config.requests[0], name: 'Third', path: '/third' }] });
+  const { frame } = liveFrame(liveRun());
+  const rule = plan.rules[2]!;
+  const descriptor = { ordinal: frame.subset.selected.length, metric: 'beetle_checks_passing',
+    kind: 'rate' as const, scope: 'execute' as const, tags: { phase: 'execute' as const } };
+  frame.subset.selected.push(descriptor);
+  frame.series.push({ ...descriptor, unit: 'ratio', total: { kind: 'rate', numerator: 9996, sampleCount: 10000, ratio: .9996 } });
+  const figures = liveFigures(frame, plan);
+  expect(figures.complete).toBe(false);
+  expect(readRule(rule, figures)).toMatchObject({ state: 'holding', value: .9996, bound: 'exact', unit: 'ratio' });
+});

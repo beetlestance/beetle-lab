@@ -1,3 +1,4 @@
+import { K6_LIVE_CHECKS } from '@beetle/contracts/k6-live';
 import { ruleUnit } from './rule-units.js';
 import type { RuleUnit } from './rule-units.js';
 import type { LiveMetricSnapshot } from '@beetle/contracts/api';
@@ -43,6 +44,7 @@ export interface LiveFigures {
   readonly p99: Percentile | null;
   readonly failedRatio: number | null;
   readonly failedPerSecond: number | null;
+  readonly checksRatio: number | null;
   readonly vus: number | null;
   readonly vusMax: number | null;
   readonly endpoints: readonly EndpointRow[];
@@ -60,6 +62,11 @@ const executeRequest = (series: Series, metric: string, label: string) =>
 function gauge(frame: MetricWindowView, metric: string): number | null {
   const row = frame.series.find((s) => s.metric === metric && s.total.kind === 'gauge');
   return row?.total.kind === 'gauge' ? row.total.latest : null;
+}
+
+function checksRatio(frame: MetricWindowView): number | null {
+  const row = frame.series.find((value) => value.metric === K6_LIVE_CHECKS);
+  return row?.total.kind === 'rate' ? row.total.ratio : null;
 }
 
 function percentile(values: readonly (number | null)[]): Percentile | null {
@@ -171,6 +178,7 @@ export function liveFigures(frame: MetricWindowView, plan: RunPlan): LiveFigures
     p99: percentile(endpoints.map((row) => row.p99)),
     failedRatio: pooled && pooled.samples > 0 ? pooled.numerator / pooled.samples : null,
     failedPerSecond: pooled ? pooled.numerator / seconds : null,
+    checksRatio: checksRatio(frame),
     vus: gauge(frame, 'vus'),
     vusMax: gauge(frame, 'vus_max'),
     endpoints,
@@ -220,8 +228,7 @@ function readPercentileRule(rule: PlanRule, figures: LiveFigures): RuleReading {
   return { rule, state, value: p.value, bound: p.slowest ? 'at-most' : 'exact', unit: 'ms' };
 }
 
-function readFailedRule(rule: PlanRule, figures: LiveFigures): RuleReading {
-  const value = figures.failedRatio;
+function readRatioRule(rule: PlanRule, value: number | null): RuleReading {
   if (value === null) return unknown(rule, 'ratio');
   return { rule, state: passes(value, rule) ? 'holding' : 'over', value, bound: 'exact', unit: 'ratio' };
 }
@@ -230,7 +237,8 @@ function readFailedRule(rule: PlanRule, figures: LiveFigures): RuleReading {
 export function readRule(rule: PlanRule, figures: LiveFigures): RuleReading {
   if (rule.metric === 'http_req_duration' && ['p50', 'p95', 'p99'].includes(rule.stat))
     return readPercentileRule(rule, figures);
-  if (rule.metric === 'http_req_failed' && rule.stat === 'rate') return readFailedRule(rule, figures);
+  if (rule.stat === 'rate' && rule.metric === 'http_req_failed') return readRatioRule(rule, figures.failedRatio);
+  if (rule.stat === 'rate' && rule.metric === 'checks') return readRatioRule(rule, figures.checksRatio);
   return unknown(rule, ruleUnit(rule));
 }
 

@@ -3,18 +3,24 @@ import { createHash } from 'node:crypto';
 import { afterEach, expect, it, vi } from 'vitest';
 import { captureMailboxImage, MAILBOX_BYTES } from '@beetle/contracts/live-mailbox';
 import { decodeLiveMetricSnapshot } from '@beetle/contracts/api';
+import { K6_LIVE_CHECKS } from '@beetle/contracts/k6-live';
 import { createK6MetricProfile } from '../../aggregation/index.js';
 import { AttemptLive, attemptLiveSubset } from '../../wrapper/attempt/live.js';
 import { NativeMailboxError } from '../../wrapper/live-mailbox/index.js';
 import { liveInput, MemoryMailbox, deferred } from './live-fixtures.js';
 const hash = (value: Uint8Array | string) => createHash('sha256').update(value).digest('hex');
 afterEach(() => {vi.useRealTimers();});
-it('derives a bounded immutable subset only from the approved parser catalogue', () => {
+it('derives a bounded immutable subset from the parser catalogue and the approved check projection', () => {
   const input = liveInput(); const subset = attemptLiveSubset(input.suite); const profile = createK6MetricProfile(input.suite);
   expect(subset.selected).toHaveLength(Math.min(20, profile.allowedSeries.length));
-  expect(subset.excludedSeries).toBe(profile.allowedSeries.length - subset.selected.length);
+  const selected = subset.selected.filter(row => row.metric !== K6_LIVE_CHECKS);
+  expect(subset.excludedSeries).toBe(profile.allowedSeries.length - selected.length);
+  expect(subset.selected.filter(row => row.metric === K6_LIVE_CHECKS)).toEqual([
+    {ordinal: expect.any(Number), metric: K6_LIVE_CHECKS, tags: {phase: 'execute'}, scope: 'execute', kind: 'rate'},
+  ]);
   subset.selected.forEach(({ordinal, ...row}, index) => {
-    expect(ordinal).toBe(index); expect(profile.allowedSeries).toContainEqual(row);
+    expect(ordinal).toBe(index);
+    if (row.metric !== K6_LIVE_CHECKS) expect(profile.allowedSeries).toContainEqual(row);
   });
   expect(subset.selected.map(row => row.metric)).toEqual(expect.arrayContaining(['http_req_duration', 'http_req_failed', 'vus', 'dropped_iterations']));
   expect(Object.isFrozen(subset.selected)).toBe(true);
@@ -22,10 +28,15 @@ it('derives a bounded immutable subset only from the approved parser catalogue',
 it('publishes an actual mailbox frame and charges extent plus every physical write', async () => {
   vi.useFakeTimers(); const input = liveInput(); const file = new MemoryMailbox(); const live = new AttemptLive();
   await live.start(input, async () => file);
-  live.accept({startTimeMs: 0, endTimeMs: 1000, series: []}); await vi.advanceTimersByTimeAsync(0);
+  live.accept({startTimeMs: 0, endTimeMs: 1000, series: [
+    {metric: 'checks', scope: 'execute', kind: 'rate', tags: {phase: 'execute', assertion: 'a0'},
+      total: {kind: 'rate', numerator: 17, sampleCount: 18}},
+  ]}); await vi.advanceTimersByTimeAsync(0);
   const image = captureMailboxImage(file.bytes, hash); const frame = decodeLiveMetricSnapshot(gunzipSync(image.frame, {maxOutputLength: 65536}), hash);
   expect(frame.scope).toEqual(input.scope); expect(frame.subset).toEqual(attemptLiveSubset(input.suite));
-  expect(frame.publishedSequence).toBe(image.revision); expect(frame.series).toEqual([]);
+  expect(frame.publishedSequence).toBe(image.revision); expect(frame.series).toEqual([
+    expect.objectContaining({metric: K6_LIVE_CHECKS, total: {kind: 'rate', numerator: 17, sampleCount: 18, ratio: 17 / 18}}),
+  ]);
   const state = await live.close(); expect(state.quiescence).toBe('confirmed'); expect(file.closes).toBe(1);
   expect(state.producedBytes).toBe(MAILBOX_BYTES + file.produced); expect(state.producedBytes).toBeLessThanOrEqual(input.maximumBytes);
 });

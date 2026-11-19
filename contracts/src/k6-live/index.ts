@@ -5,6 +5,9 @@ import { k6MetricCatalogue, k6MetricLayout } from '../k6-metrics/index.js';
 import type { K6MetricShape } from '../k6-metrics/index.js';
 /** Trusted image metadata only; never a suite/Offer option. */
 export const K6_LIVE_METRIC_IMAGE_ENV = 'BEETLE_K6_LIVE_METRICS_V2';
+/** Virtual output-only series. No native sample uses this name. */
+export const K6_LIVE_CHECKS = 'beetle_checks_passing';
+const checksRow = { metric: K6_LIVE_CHECKS, kind: 'rate', scope: 'execute', tags: { phase: 'execute' } } as const;
 export interface K6LiveAssignment {
   readonly specDigest: string;
   readonly intentDigest: string;
@@ -56,6 +59,7 @@ export function k6LiveSubset(source: K6MetricShape): LiveMetricSubset {
   );
   const preferred = [
     ...rows,
+    ...(eligible.some((item) => item.metric === 'checks') ? [checksRow] : []),
     ...priorities.flatMap((metric) => {
       const row = rows.some((item) => item.metric === metric)
         ? undefined
@@ -66,7 +70,8 @@ export function k6LiveSubset(source: K6MetricShape): LiveMetricSubset {
   const selected = [...preferred, ...eligible.filter((item) => !preferred.includes(item))]
     .slice(0, 20)
     .map((item, ordinal) => ({ ...item, ordinal }));
-  const subset = captureLiveMetricSubset({ selected, excludedSeries: approved.length - selected.length });
+  const nativeSelected = selected.filter((item) => item.metric !== K6_LIVE_CHECKS).length;
+  const subset = captureLiveMetricSubset({ selected, excludedSeries: approved.length - nativeSelected });
   for (const item of subset.selected) {
     Object.freeze(item.tags);
     Object.freeze(item);

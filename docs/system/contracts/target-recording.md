@@ -94,6 +94,6 @@ The numeric archive keeps its existing format. No execution outcome changes.
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |
 | `contracts/src/api/live-metrics.ts` | `49964b8426b1` |
 | `agent/src/live-metrics/` | `feac352cffc7` |
-| `engines/k6/wrapper/live/` | `9ab8c75609b9` |
+| `engines/k6/wrapper/live/` | `9a7462c484ce` |
 | `web/src/features/runs/live/target-charts.ts` | `788710258b75` |
 | `web/src/features/runs/live/Charts.tsx` | `37c406ecb622` |
