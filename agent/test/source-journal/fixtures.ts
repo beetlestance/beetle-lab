@@ -28,7 +28,7 @@ export function inspect(path: string) {
 export function sourceFixture() {
   const f = admissionFixture(); const databases = new Set<DatabaseSync>();
   afterEach(() => { for (const db of databases) db.close(); databases.clear(); });
-  async function seed(path = f.path(), beforeClaim?: (input: { journal: Journal; offer: Offer; specDigest: string }) => Promise<void>) {
+  async function seed(path = f.path(), beforeClaim?: (input: { journal: Journal; offer: Offer; specDigest: string }) => Promise<void>, interrupted = false) {
     const journal = await f.configured(path); const offer = f.job(); offer.budget.outputBytes = 100_000;
     const config = configuration(); config.pool.outputBytes = 200_000; config.perRun.outputBytes = 200_000;
     const observed = observation(); observed.capacity.outputBytes = 200_000;
@@ -40,13 +40,20 @@ export function sourceFixture() {
     if (!('token' in claim)) throw new Error('Missing actual claim');
     const binding = { key, createToken: claim.token, specDigest: draft.binding.specDigest, runtimeId: 'synthetic-source-runtime' };
     await journal.admission({ kind: 'bindRuntime', ...binding });
-    const launch = { authority: 'supervisor' as const, ...binding, epoch: 0 as const, startToken: null,
-      disposition: 'retired' as const, settledAt: now + 2, evidenceId: 'synthetic-source-settlement' };
+    const started = interrupted ? await journal.admission({ kind: 'claimStart', ...binding, now: now + 1 }) : null;
+    if (started && !('token' in started)) throw Error('Missing synthetic start');
+    const launch = { authority: 'supervisor' as const, ...binding, epoch: interrupted ? 1 as const : 0 as const,
+      startToken: started?.token ?? null, disposition: 'retired' as const,
+      settledAt: now + 2, evidenceId: 'synthetic-source-settlement' };
     await journal.admission({ kind: 'settleLaunch', settlement: launch });
     draft.binding = { ...draft.binding, ...key, generation: 1, journalAuthority: await journal.journalAuthority(),
       intentDigest: offer.intentDigest, engine: offer.engine, installedIdentity: offer.installedIdentity };
     const { seal, ...body } = { ...draft.collection.value, ...key };
-    const sealed = sealEngineResult(body, seal.sealedAt, hash); if (!sealed.ok) throw new Error('Synthetic result invalid');
+    const sealed = sealEngineResult(interrupted ? {
+      ...body, completeness: 'missing', outcome: 'inconclusive', thresholds: [],
+      requiredAssertions: { required: 2, passed: 0, failed: 0, unknown: 2 },
+      execution: { status: 'error', reason: 'artifact_incomplete', exitCode: null, stoppedAt: seal.sealedAt },
+    } : body, seal.sealedAt, hash); if (!sealed.ok) throw new Error('Synthetic result invalid');
     draft.collection.value = structuredClone(sealed.value) as Mutable<EngineResult>;
     const event = { ...key, version: '1.0', seq: 1, phase: 'seal', kind: 'engine.result',
       observedAt: '2026-01-01T00:00:00Z', payload: sealed.value } as ControlEvent;
@@ -54,11 +61,15 @@ export function sourceFixture() {
     const checkpoint = await journal.commitWrapperBatch({ key, expected: null, events: [event], next: {
       version: 1, dev: draft.collection.custody.root.device, ino: draft.checkpoint.ino,
       offset: Buffer.byteLength(raw), wrapperSeq: 1, prefixSha256: hash(raw) } });
+    if (interrupted) await journal.appendSupervisor({ sourceOrdinal: 2, event: {
+      version: '1.0', ...key, source: 'agent', phase: 'execute', kind: 'runtime.exited', observedAt: seal.sealedAt,
+      payload: { exitCode: 1, oomKilled: true, observedAt: seal.sealedAt, reason: 'memory_limit' },
+    } });
     draft.checkpoint = checkpoint; draft.collection.custody.controlBytes = checkpoint.offset;
     draft.collection.verifiedBytes = draft.collection.custody.resultFileBytes + checkpoint.offset
       + draft.collection.value.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0);
     draft.release = { ...draft.release, ...binding, runtime: { ...draft.release.runtime, observedAt: now + 3 },
-      collection: { ...draft.release.collection, observedAt: now + 5 }, launch: { epoch: 0, startToken: null, settlementId: launch.evidenceId } };
+      collection: { ...draft.release.collection, observedAt: now + 5 }, launch: { epoch: launch.epoch, startToken: launch.startToken, settlementId: launch.evidenceId } };
     const intent: CollectionIntent = captureCollectionIntent({ version: 1, collectionId: draft.collectionId, binding: draft.binding,
       root: draft.collection.custody.root, checkpoint, launch, runtime: draft.release.runtime, begunAt: now + 4 });
     const failed: FailedOutputCollection = { collectionId: draft.collectionId,

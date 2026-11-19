@@ -1,7 +1,6 @@
-import { LIVE_HISTORY_BYTES } from '@beetle/contracts/api';
 import { captureOutputAbsence } from '@beetle/contracts/output-source';
 import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
-import { captureStoppedObservation } from './stopped-history-value.js';
+import { boundedStoppedInput, stoppedObservationReply } from './stopped-history-value.js';
 import type { StoppedObservation } from './stopped-history-value.js';
 import type { Scope } from '../admission/index.js';
 
@@ -28,12 +27,7 @@ export function absenceCommand(
   stoppedHistory: unknown,
 ): OutputAbsenceOperation {
   if (stoppedHistory === undefined) return { kind, key };
-  if (
-    kind !== 'outputAbsenceClose' ||
-    typeof stoppedHistory !== 'string' ||
-    stoppedHistory.length > LIVE_HISTORY_BYTES ||
-    Buffer.byteLength(stoppedHistory) > LIVE_HISTORY_BYTES
-  )
+  if (kind !== 'outputAbsenceClose' || !boundedStoppedInput(stoppedHistory))
     throw new Error('Invalid stopped history submission');
   return { kind, key, stoppedHistory };
 }
@@ -45,14 +39,6 @@ export function absenceReply(key: Scope, input: unknown): Owned<OutputAbsence> |
     if (proof[field] !== key[field]) throw new Error('Unexpected absence scope');
   }
   return proof;
-}
-
-function stoppedObservationReply(key: Scope, input: unknown): StoppedObservation {
-  const reply = input as Partial<StoppedObservation>;
-  const result = captureStoppedObservation(key, reply.json);
-  if (result.digest !== reply.digest || result.bytes !== reply.bytes)
-    throw new Error('Unexpected stopped history reply');
-  return result;
 }
 
 export function stoppedHistoryReply(key: Scope, input: unknown): StoppedHistoryClosure {

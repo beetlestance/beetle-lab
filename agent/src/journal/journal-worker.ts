@@ -31,6 +31,7 @@ function largeOperation(operation: Operation): boolean {
       'outputCollectionFailed',
       'outputDeliveryClose',
       'outputDeliveryRead',
+      'outputDeliveryHistoryRead',
       'outputAbsenceClose',
       'outputAbsenceRead',
       'outputStoppedHistoryRead',
@@ -96,6 +97,17 @@ export abstract class JournalWorker {
     if (this.closing) return 'closed';
     if (this.failed) return 'unavailable';
     return this.pending.size >= this.limit ? 'queue_full' : null;
+  }
+
+  protected output<T>(prepare: () => Operation, validate: (value: Value) => T): Promise<T> {
+    return this.prepare(prepare, true).then((value) => {
+      try {
+        return validate(value);
+      } catch {
+        this.fail('unavailable');
+        throw new JournalError('unavailable');
+      }
+    });
   }
 
   protected prepare(operation: () => Operation, large: boolean | (() => boolean) = false): Promise<Value> {

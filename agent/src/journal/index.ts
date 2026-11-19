@@ -36,17 +36,12 @@ import { attemptKey, offerInput, pageInput, runnableInput } from './input.js';
 import type { RunnablePage, RunnableRequest } from './protocol.js';
 import type { AdmissionCommand, AdmissionValue, Reservation, Scope } from '../admission/index.js';
 import type { CollectionIntent, CollectedSource, PrivateSource, SourceReceipt } from '../output-source/index.js';
-import type { JournalOutputSources, OutputSourceOperation, FailedOutputCollection } from './output-source-protocol.js';
-import type {
-  JournalOutputDelivery,
-  OutputDeliveryClosure,
-  OutputDeliveryOperation,
-} from './output-delivery-protocol.js';
-import { OUTPUT_DELIVERY_BYTES } from './output-delivery-protocol.js';
-import { deliveryReply } from './delivery-input.js';
+import type { JournalOutputSources, FailedOutputCollection } from './output-source-protocol.js';
+import type { JournalOutputDelivery, OutputDeliveryClosure } from './output-delivery-protocol.js';
+import { deliveryCloseInput, deliveryReply, deliveryHistoryReply } from './delivery-input.js';
 import { absenceCommand, absenceReply, stoppedHistoryReply } from './output-absence-protocol.js';
 import type { OutputAbsence, Owned } from '@beetle/contracts/output-source';
-import type { JournalOutputAbsence, OutputAbsenceOperation } from './output-absence-protocol.js';
+import type { JournalOutputAbsence } from './output-absence-protocol.js';
 import {
   captureCollectionIntent,
   prepareOutputSource,
@@ -74,7 +69,6 @@ import type {
   SnapshotPage,
   SourceCursors,
   SupervisorInput,
-  Value,
 } from './protocol.js';
 import { JournalError, validateOptions, type JournalOptions } from './options.js';
 import { JournalWorker } from './journal-worker.js';
@@ -156,20 +150,6 @@ export class Journal
       () => ({ kind: 'admission', request: admissionInput(input) }),
       () => isOfferCommand(input),
     ) as Promise<AdmissionValue>;
-  }
-
-  private output<T>(
-    prepare: () => OutputSourceOperation | OutputDeliveryOperation | OutputAbsenceOperation,
-    validate: (value: Value) => T,
-  ): Promise<T> {
-    return this.prepare(prepare, true).then((value) => {
-      try {
-        return validate(value);
-      } catch {
-        this.fail('unavailable');
-        throw new JournalError('unavailable');
-      }
-    });
   }
 
   beginOutputCollection(input: CollectionIntent): Promise<CollectionIntent> {
@@ -338,13 +318,10 @@ export class Journal
   }
 
   /** Call only after the owning producer barrier; worker captures the durable stream end. */
-  closeOutputDelivery(receipt: SourceReceipt): Promise<OutputDeliveryClosure> {
+  closeOutputDelivery(receipt: SourceReceipt, stoppedHistory?: string): Promise<OutputDeliveryClosure> {
     let expected: SourceReceipt;
     return this.output(
-      () => ({
-        kind: 'outputDeliveryClose',
-        json: sourceJson((expected = copyReceipt(receipt)), OUTPUT_DELIVERY_BYTES),
-      }),
+      () => deliveryCloseInput((expected = copyReceipt(receipt)), stoppedHistory),
       (value) => deliveryReply(value, expected),
     );
   }
@@ -354,6 +331,14 @@ export class Journal
     return this.output(
       () => ({ kind: 'outputDeliveryRead', key: (expected = sourceScope(key)) }),
       (value) => (value === null ? null : deliveryReply(value, expected)),
+    );
+  }
+
+  readStoppedDeliveryClosure(key: Scope) {
+    let expected: Scope;
+    return this.output(
+      () => ({ kind: 'outputDeliveryHistoryRead', key: (expected = sourceScope(key)) }),
+      (value) => (value === null ? null : deliveryHistoryReply(expected, value)),
     );
   }
 

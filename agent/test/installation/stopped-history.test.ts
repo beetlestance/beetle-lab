@@ -1,10 +1,7 @@
 import { createHash } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
-import { encodeK6HistoryCheckpoint, K6_HISTORY_CHECKPOINT_NAMES } from '@beetle/contracts/k6-live';
+import { writeCheckpoint } from './stopped-history-fixture.js';
 import type { K6LiveApproval } from '@beetle/contracts/k6-live';
-import type { LiveMetricArchivePrefix } from '@beetle/contracts/api';
 import { configuration, observation } from '../admission/fixtures.js';
 import { frame } from '../live-metrics/fixtures.js';
 import { fixture, operation, scope } from './fixtures.js';
@@ -73,48 +70,6 @@ function output(plan: ReturnType<typeof recover>): string {
   return plan.spec.HostConfig.Mounts.find((mount) => mount.Target === '/beetle/output')!.Source;
 }
 
-async function writeCheckpoint(path: string, approval: K6LiveApproval): Promise<void> {
-  const scope = approval.scope;
-  const dataId = uid(12);
-  const header = (format: string) => JSON.stringify({ format, version: 1, scope, dataArtifactId: dataId }) + '\n';
-  const dataHeader = header('beetle-k6-metric-windows');
-  const window = { startTimeMs: 0, endTimeMs: 1000, series: [] };
-  const row = JSON.stringify({ kind: 'window', sequence: 1, window }) + '\n';
-  const data = dataHeader + row;
-  const index =
-    header('beetle-k6-metric-index') +
-    JSON.stringify({
-      sequence: 1,
-      startTimeMs: 0,
-      endTimeMs: 1000,
-      offset: Buffer.byteLength(dataHeader),
-      length: Buffer.byteLength(row),
-    }) +
-    '\n';
-  const prefix: LiveMetricArchivePrefix = {
-    scope,
-    windows: 1,
-    endTimeMs: 1000,
-    data: {
-      artifactId: dataId,
-      relativePath: 'metric-windows.ndjson',
-      bytes: Buffer.byteLength(data),
-      sha256: hash(data),
-    },
-    index: {
-      artifactId: uid(13),
-      relativePath: 'metric-index.ndjson',
-      bytes: Buffer.byteLength(index),
-      sha256: hash(index),
-    },
-  };
-  await writeFile(join(path, prefix.data.relativePath), data, { mode: 0o600 });
-  await writeFile(join(path, prefix.index.relativePath), index, { mode: 0o600 });
-  await writeFile(join(path, K6_HISTORY_CHECKPOINT_NAMES[0]), encodeK6HistoryCheckpoint(prefix, approval, hash), {
-    mode: 0o600,
-  });
-}
-
 it('binds recoverable observations to the exited launch and prepared output directory', async () => {
   const f = await exited();
   expect(f.options.snapshot.state).toBe('exited');
@@ -131,7 +86,8 @@ it('binds recoverable observations to the exited launch and prepared output dire
 
 it('reads no task when physical exit or settled start authority is absent', async () => {
   const f = await exited();
-  const { exitEvidence: _, ...snapshot } = f.options.snapshot;
+  const { exitEvidence, ...snapshot } = f.options.snapshot;
+  void exitEvidence;
   const readTask = vi.fn(f.options.tasks.readTask);
   expect(await recoverStoppedObservation({ ...f.options, snapshot, tasks: { readTask } })).toBeUndefined();
   expect(readTask).not.toHaveBeenCalled();

@@ -51,8 +51,8 @@ Source commit and physical release do not close the event stream. `closeOutputDe
 `{version: 1, receipt, finalAgentSeq}`; the worker alone captures `finalAgentSeq` from `last_seq`.
 
 - One transaction verifies the source, intent, released reservation with the source's finished
-  evidence and disk hold, then inserts the closure and charges canonical bytes + 256
-  (`delivery_bytes`, never refunded). Equal replay returns the stored closure without a second charge.
+  evidence and disk hold, then charges canonical closure bytes + 256. Journal 029 can
+  preserve an approved checkpoint for an exited k6 source without a metric archive, within its remaining output and journal quota. Replay preserves the first closure and observation exactly.
 - A closure fences unseen event inserts and changes to sequence, high-waters, result and checkpoint.
   Exact duplicate replay, ACK, pruning and non-event cancellation metadata stay available.
 - Indexed `delivery_pending` is set with the source, cleared only by closure. The scheduler's delivery
@@ -213,7 +213,7 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 | Code | Reviewed |
 | --- | --- |
 | `contracts/src/output-source/` | `c32141e86911` |
-| `agent/src/journal/output-delivery-protocol.ts` | `23234170ace9` |
+| `agent/src/journal/output-delivery-protocol.ts` | `9c029c3752ab` |
 | `app/src/adapters/outbound/sqlite/output-finalization/` | `fa47885187b8` |
 | `app/src/adapters/outbound/sqlite/output-absence/` | `07399ae8a09f` |
 | `app/src/adapters/outbound/sqlite/output-deletion/` | `081c1165b71f` |

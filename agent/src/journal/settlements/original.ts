@@ -2,6 +2,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { RUNNER_MAXIMUM_OFFER_BYTES } from '@beetle/contracts';
 import type { Scope } from '../../admission/index.js';
 import { retirementDigest } from '../../retirement-values/index.js';
+import { readOutputDeliveryHistoryAtomic } from '../output-delivery.js';
 import { readStoppedObservation } from '../stopped-history-store.js';
 import { owner, quotaUsed, Failure } from '../sql.js';
 /** Bounded original hash and exact persisted charge components; no refund authority. */
@@ -13,7 +14,9 @@ export function settlementOriginal(db: DatabaseSync, key: Scope) {
     db.prepare('SELECT 1 FROM export_assignments WHERE attempt_id=?').get(key.attemptId)
   )
     throw new Failure('conflict');
-  readStoppedObservation(db, key); // Validate the optional charged row before the exact-count purge.
+  readStoppedObservation(db, key); // Validate optional charged evidence before the exact-count purge.
+  if (db.prepare('SELECT 1 FROM stopped_delivery_observations WHERE attempt_id=?').get(key.attemptId))
+    if (!readOutputDeliveryHistoryAtomic(db, key)?.observation) throw new Failure('conflict');
   const text = db
     .prepare(
       `SELECT CASE WHEN length(CAST(canonical_json AS BLOB))<=? THEN canonical_json END json

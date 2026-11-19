@@ -2,6 +2,9 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { Scope } from '../admission/index.js';
 import { receiptForOutputSource } from '../output-source/index.js';
 import type { SourceReceipt } from '../output-source/index.js';
+import { eligibleStoppedSource, STOPPED_HISTORY_ROW_ALLOWANCE } from './stopped-history-value.js';
+import { readStoppedDelivery, storeStoppedDelivery } from './stopped-history-store.js';
+import type { SourceState } from './output-source-context.js';
 import { readSourceState } from './output-source-context.js';
 import {
   copyReceipt,
@@ -14,11 +17,19 @@ import {
 } from './output-source-input.js';
 import { copyDelivery } from './delivery-input.js';
 import { OUTPUT_DELIVERY_BYTES, OUTPUT_DELIVERY_ROW_ALLOWANCE } from './output-delivery-protocol.js';
-import type { OutputDeliveryClosure, OutputDeliveryOperation } from './output-delivery-protocol.js';
+import type {
+  DeliveryHistoryClosure,
+  OutputDeliveryClosure,
+  OutputDeliveryOperation,
+} from './output-delivery-protocol.js';
 import { Failure, quotaUsed, transaction } from './sql.js';
 
 export function outputDeliveryOperation(input: { kind: string }): input is OutputDeliveryOperation {
-  return input.kind === 'outputDeliveryClose' || input.kind === 'outputDeliveryRead';
+  return (
+    input.kind === 'outputDeliveryClose' ||
+    input.kind === 'outputDeliveryRead' ||
+    input.kind === 'outputDeliveryHistoryRead'
+  );
 }
 function storedDelivery(db: DatabaseSync, state: ReturnType<typeof readSourceState>): OutputDeliveryClosure | null {
   const record = db
@@ -51,7 +62,7 @@ function storedDelivery(db: DatabaseSync, state: ReturnType<typeof readSourceSta
     throw new Failure('unavailable');
   }
 }
-function closeDelivery(db: DatabaseSync, receipt: SourceReceipt): OutputDeliveryClosure {
+function closeDelivery(db: DatabaseSync, receipt: SourceReceipt, stoppedHistory?: string): OutputDeliveryClosure {
   const state = readSourceState(db, receipt.key);
   const prior = storedDelivery(db, state);
   requireSource(state.source && sameSource(receiptForOutputSource(state.source, sourceHash), receipt), 'conflict');
@@ -66,14 +77,48 @@ function closeDelivery(db: DatabaseSync, receipt: SourceReceipt): OutputDelivery
     json,
     charge,
   );
+  if (stoppedHistory !== undefined && permitsStoppedDelivery(state)) {
+    const availableOutput = state.reservation!.budget.outputBytes - state.source.manifest.verifiedBytes;
+    storeStoppedDelivery(db, receipt.key, { row: state.row, availableOutput, deliveryCharge: charge }, stoppedHistory);
+  }
   return closure;
+}
+function permitsStoppedDelivery(state: SourceState): boolean {
+  const release = state.reservation?.releaseEvidence;
+  return Boolean(
+    state.source &&
+    state.row.state === 'exited' &&
+    state.row.exit_facts_json !== null &&
+    release?.launch.epoch === 1 &&
+    release.runtime.state === 'stopped' &&
+    eligibleStoppedSource(state.source.manifest.result),
+  );
+}
+
+export function readOutputDeliveryHistoryAtomic(db: DatabaseSync, key: Scope): DeliveryHistoryClosure | null {
+  const state = readSourceState(db, key);
+  const delivery = storedDelivery(db, state);
+  if (!delivery) return null;
+  const observation = readStoppedDelivery(db, key);
+  if (observation) {
+    requireSource(permitsStoppedDelivery(state), 'unavailable');
+    requireSource(
+      observation.bytes + STOPPED_HISTORY_ROW_ALLOWANCE <=
+        state.reservation!.budget.outputBytes - state.source!.manifest.verifiedBytes,
+      'unavailable',
+    );
+  }
+  return { delivery, observation };
 }
 /** Caller owns the transaction; preserves the existing source/closure validation. */
 export function readOutputDeliveryAtomic(db: DatabaseSync, key: Scope): OutputDeliveryClosure | null {
   return storedDelivery(db, readSourceState(db, key));
 }
 /** Trusted storage boundary only; a producer owner must establish quiescence separately. */
-export function executeOutputDelivery(db: DatabaseSync, input: OutputDeliveryOperation): OutputDeliveryClosure | null {
+export function executeOutputDelivery(
+  db: DatabaseSync,
+  input: OutputDeliveryOperation,
+): OutputDeliveryClosure | DeliveryHistoryClosure | null {
   let value: SourceReceipt | Readonly<Scope>;
   try {
     value =
@@ -83,9 +128,9 @@ export function executeOutputDelivery(db: DatabaseSync, input: OutputDeliveryOpe
   } catch {
     throw new Failure('invalid_input');
   }
-  return transaction(db, () =>
-    input.kind === 'outputDeliveryClose'
-      ? closeDelivery(db, value as SourceReceipt)
-      : readOutputDeliveryAtomic(db, value as Scope),
-  );
+  return transaction(db, () => {
+    if (input.kind === 'outputDeliveryClose') return closeDelivery(db, value as SourceReceipt, input.stoppedHistory);
+    if (input.kind === 'outputDeliveryHistoryRead') return readOutputDeliveryHistoryAtomic(db, value as Scope);
+    return readOutputDeliveryAtomic(db, value as Scope);
+  });
 }

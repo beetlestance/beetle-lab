@@ -1,7 +1,7 @@
 import { LIVE_HISTORY_BYTES } from '@beetle/contracts/api';
 import { STOPPED_HISTORY_ROW_ALLOWANCE } from './stopped-history-value.js';
 
-const used = (prefix: string) =>
+export const stoppedHistoryQuotaUsed = (prefix: string) =>
   [
     'spool_bytes',
     'snapshot_bytes',
@@ -42,11 +42,11 @@ CREATE TRIGGER stopped_history_insert BEFORE INSERT ON stopped_history_observati
        AND lower(json_extract(NEW.history_json,'$.scope.workspaceId')) IS lower(a.workspace_id)
        AND json_extract(NEW.history_json,'$.scope.generation') IS a.generation
        AND NEW.charged_bytes<=json_extract(r.reservation_json,'$.budget.outputBytes')
-       AND ${used('a')}+NEW.charged_bytes<=a.quota_bytes)
+       AND ${stoppedHistoryQuotaUsed('a')}+NEW.charged_bytes<=a.quota_bytes)
   THEN RAISE(ABORT,'stopped history requires settled absence and available custody') END;
 END;
 CREATE TRIGGER stopped_history_quota BEFORE UPDATE ON accepted_attempts
-WHEN ${used('NEW')}+COALESCE((SELECT charged_bytes FROM stopped_history_observations WHERE attempt_id=OLD.attempt_id),0)
+WHEN ${stoppedHistoryQuotaUsed('NEW')}+COALESCE((SELECT charged_bytes FROM stopped_history_observations WHERE attempt_id=OLD.attempt_id),0)
      >NEW.quota_bytes
 BEGIN SELECT RAISE(ABORT,'stopped history quota'); END;
 CREATE TRIGGER stopped_history_update BEFORE UPDATE ON stopped_history_observations

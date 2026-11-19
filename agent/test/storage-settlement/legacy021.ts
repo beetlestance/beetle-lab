@@ -16,8 +16,9 @@ function triggers(db:DatabaseSync){
 /** Synthetic empty-prefix projection only. Never discard settled replay identity/debt. */
 export function asSchema21(db:DatabaseSync):void{
  const version=db.prepare('PRAGMA user_version').get()?.user_version;if(version===21)return;
- if(![22,23,24,25,26,27,28].includes(Number(version))||db.prepare('SELECT 1 FROM retired_attempts LIMIT 1').get())throw Error('Cannot project settled replay identity');
+ if(![22,23,24,25,26,27,28,29].includes(Number(version))||db.prepare('SELECT 1 FROM retired_attempts LIMIT 1').get())throw Error('Cannot project settled replay identity');
  if(Number(version)>=28&&db.prepare('SELECT 1 FROM stopped_history_observations LIMIT 1').get())throw Error('Cannot discard stopped history');
+ if(Number(version)>=29&&db.prepare('SELECT 1 FROM stopped_delivery_observations LIMIT 1').get())throw Error('Cannot discard stopped delivery history');
  requireUnfundedPrefix(db,version);
  const prior=initializePrior021(':memory:');const current=initialize(':memory:');
  try{
@@ -28,6 +29,7 @@ export function asSchema21(db:DatabaseSync):void{
     if(!oldNames.has(row.name))db.exec(`DROP TRIGGER "${name}"`);
     else if(before?.sql!==row.sql){db.exec(`DROP TRIGGER "${name}"`);db.exec(String(before?.sql));}
    }
+   if(Number(version)>=29)db.exec('DROP TABLE stopped_delivery_observations');
    if(Number(version)>=28)db.exec('DROP TABLE stopped_history_observations');
    if(Number(version)>=27)db.exec('ALTER TABLE task_staging_namespaces DROP COLUMN reconciliation_json');
    if(Number(version)>=24)db.exec(`DROP TABLE ${Number(version)>=26?'output_no_task_cleanup_receipts':'rejected_cleanup_receipts'}`);

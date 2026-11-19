@@ -2,6 +2,7 @@ import { purgeOrder022 } from './purge-order-022.js';
 /** New funded no-task rows precede every original; historical022 SQL stays frozen. */
 export const purgeOrder = [
   'stopped_history_observations',
+  'stopped_delivery_observations',
   'output_no_task_cleanup_receipts',
   'rejected_cleanup_controls',
   ...purgeOrder022,

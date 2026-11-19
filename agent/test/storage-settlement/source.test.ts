@@ -6,6 +6,8 @@ import type { EngineResult } from '@beetle/contracts';
 import { captureOutputRetirementRequest } from '@beetle/contracts/output-retirement';
 import { cleanedReplyDigest } from '@beetle/contracts/output-settlement';
 import { configuration as poolConfiguration,observation as runtimeObservation } from '../admission/fixtures.js';
+import { writeCheckpoint } from '../installation/stopped-history-fixture.js';
+import { frame } from '../live-metrics/fixtures.js';
 import { fixture as installationFixture,scope } from '../installation/fixtures.js';
 import { seal } from '../output-collection/fixture.js';
 import { recoverRuntimePlan } from '../../src/installation/index.js';
@@ -27,21 +29,31 @@ import { payload } from '../backends/docker/fixtures.js';
 const f=installationFixture();const owners:{close():Promise<void>}[]=[];
 afterEach(async()=>{for(const owner of owners.splice(0))await owner.close();});
 const operation=()=>({deadline:performance.now()+10000});
-it('settles an actual staged source closure after checked collection and native cleanup',async()=>{
+it.each([false,true])('settles a checked staged source with stopped history %s and replays the removal receipt',async(history)=>{
+
  const e=await f.setup(200000);const config=poolConfiguration();
  config.pool.outputBytes=400000;config.perRun.outputBytes=400000;config.maxTimeoutMs=e.offer.budget.timeoutMs;
  const observed=runtimeObservation(e.time.wall());observed.capacity.outputBytes=400000;
  await e.owner.admission({kind:'configure',configuration:config});await e.owner.admission({kind:'observe',observation:observed});
- const manager=e.create();await e.accepted(manager);const key=scope(e.offer);
+ const key=scope(e.offer);
+ const approval={scope:key,producerEpoch:'00000000-0000-4000-8000-000000000010',subset:frame().subset,targetIntervalMs:null};
+ const manager=e.create(history?{stoppedHistoryApproval:()=>approval}:{});await e.accepted(manager);
  e.time.advance(1);await manager.drive(key,operation());
  const reservation=await e.owner.admission({kind:'reservation',key});if(!('status'in reservation))throw Error('Missing reservation');
  const plan=recoverRuntimePlan(e.catalog,e.offer,reservation);const output=join(retirementRoot(e.staging.root).directory,plan.name,'output');
- const result=seal({...structuredClone(template),...key,artifacts:[]} as EngineResult);
+ const body={...structuredClone(template),...key,artifacts:[]};
+ const result=seal((history?{...body,completeness:'missing',outcome:'inconclusive',thresholds:[],
+     requiredAssertions:{required:2,passed:0,failed:0,unknown:2},
+     execution:{status:'error',reason:'artifact_incomplete',exitCode:null,stoppedAt:'2026-01-01T00:00:00Z'}}:body) as EngineResult);
  const event={version:'1.0',...key,seq:1,phase:'seal',kind:'engine.result',observedAt:'2026-01-01T00:00:00Z',payload:result};
  await writeFile(join(output,OUTPUT_RESULT_FILE),JSON.stringify(result),{mode:0o600});
  await writeFile(join(output,CONTROL_FILE),JSON.stringify(event)+'\n',{mode:0o600});
+ if(history)await writeCheckpoint(output,approval);
  expect(await e.finish(manager)).toEqual({kind:'released',collection:'finished'});
  const delivery=await e.owner.readOutputDelivery(key);if(!delivery)throw Error('Missing actual source delivery');
+ const paired=await e.owner.readStoppedDeliveryClosure(key);
+ expect(paired?.delivery).toEqual(delivery);
+ expect(paired?.observation!==null).toBe(history);
  await e.owner.acknowledge({protocolVersion:'1.0',...key,throughSeq:delivery.finalAgentSeq});
  const request=captureOutputRetirementRequest({version:1,purpose:'performance',...key,intentDigest:e.offer.intentDigest,
   journalAuthority:await e.owner.journalAuthority(),runId:'00000000-0000-4000-8000-000000000201',deletionId:'00000000-0000-4000-8000-000000000202',deletionVersion:1,
@@ -59,5 +71,6 @@ it('settles an actual staged source closure after checked collection and native 
   const observation=await fence.drain();const release={version:1,retirement:request,cleanupReplyDigest:cleanedReplyDigest(cleaned,request,retirementDigest)};
   expect(await e.owner.settlements.settle(observation,release)).toMatchObject({state:'settled',chargedBytes:4096});
   expect(await e.owner.settlements.retiredReply(request)).toEqual(cleaned);
+  await expect(e.owner.readStoppedDeliveryClosure(key)).rejects.toMatchObject({code:'conflict'});
  }finally{fence.release();}
 });

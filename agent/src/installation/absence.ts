@@ -1,5 +1,4 @@
 import type { AttemptSnapshot } from '@beetle/contracts';
-import { JournalError } from '../journal/index.js';
 import type { Journal } from '../journal/index.js';
 import type { Operation } from '../backends/docker/index.js';
 import type { CollectionIntent } from '../output-source/index.js';
@@ -7,7 +6,7 @@ import type { Entry } from './entry.js';
 import type { DriveProgress } from './types.js';
 import { InstallationError } from './types.js';
 import type { InstallationOptions } from './types.js';
-import { prepareStoppedObservation } from './stopped-history.js';
+import { prepareStoppedObservation, withStoppedHistoryOwner } from './stopped-history.js';
 
 /** Only validated durable admission facts select this retirement path. */
 export function absenceProgress(snapshot: AttemptSnapshot | null): DriveProgress | null {
@@ -64,7 +63,6 @@ export async function reconcileAbsence(
   return true;
 }
 
-const historyOwners = new WeakMap<Journal, Promise<void>>();
 async function closeWithHistory(
   options: InstallationOptions,
   entry: Entry,
@@ -73,30 +71,15 @@ async function closeWithHistory(
 ): ReturnType<Journal['closeOutputAbsence']> {
   const { journal } = options;
   if (!options.stoppedHistoryApproval || !snapshot.exitEvidence) return journal.closeOutputAbsence(entry.key);
-  const active = historyOwners.get(journal);
-  if (active) {
-    if (operation) throw new JournalError('queue_full');
-    // Shutdown waits for the original owner before trying the remaining drained entry.
-    await active;
-    return closeWithHistory(options, entry, snapshot);
-  }
-  let release!: () => void;
-  historyOwners.set(
-    journal,
-    new Promise<void>((resolve) => {
-      release = resolve;
-    }),
-  );
-  try {
-    const history = await prepareStoppedObservation(options, entry, snapshot, operation);
-    return await (history
-      ? journal.closeOutputAbsence(entry.key, history.json)
-      : journal.closeOutputAbsence(entry.key));
-  } catch (error) {
-    if (error instanceof InstallationError && error.reason === 'cleanup') entry.cleanupFailed = true;
-    throw error;
-  } finally {
-    historyOwners.delete(journal);
-    release();
-  }
+  return withStoppedHistoryOwner(journal, operation, async () => {
+    try {
+      const history = await prepareStoppedObservation(options, entry, snapshot, operation);
+      return await (history
+        ? journal.closeOutputAbsence(entry.key, history.json)
+        : journal.closeOutputAbsence(entry.key));
+    } catch (error) {
+      if (error instanceof InstallationError && error.reason === 'cleanup') entry.cleanupFailed = true;
+      throw error;
+    }
+  });
 }

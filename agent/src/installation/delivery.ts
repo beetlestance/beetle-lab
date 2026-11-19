@@ -5,6 +5,10 @@ import { receiptForOutputSource } from '../output-source/index.js';
 import type { PrivateSource } from '../output-source/index.js';
 import type { Journal, OutputDeliveryClosure } from '../journal/index.js';
 import type { Entry } from './entry.js';
+import type { Operation } from '../backends/docker/index.js';
+import { eligibleStoppedSource } from '../journal/stopped-history-value.js';
+import { prepareStoppedObservation, withStoppedHistoryOwner } from './stopped-history.js';
+import type { InstallationOptions } from './types.js';
 import { InstallationError } from './types.js';
 
 const digest = (text: string): string => createHash('sha256').update(text).digest('hex');
@@ -43,16 +47,43 @@ export async function releaseStoredSource(journal: Journal, entry: Entry): Promi
   return true;
 }
 /** Earlier close originals settle before a read can prove absence and authorize replay. */
-export async function reconcileDelivery(journal: Journal, entry: Entry): Promise<void> {
+export async function reconcileDelivery(
+  options: InstallationOptions,
+  entry: Entry,
+  operation?: Operation,
+): Promise<void> {
+  const { journal } = options;
   await entry.deliveryAttempt?.catch(() => undefined);
+  if (entry.cleanupFailed) throw new InstallationError('cleanup');
   const stored = await journal.readOutputDelivery(entry.key);
   if (stored !== null) {
     closure(stored, entry);
     return;
   }
-  entry.deliveryAttempt = journal.closeOutputDelivery(entry.sourceReceipt!);
+  entry.deliveryAttempt = closeWithHistory(options, entry, operation);
   void entry.deliveryAttempt.catch(() => undefined);
   closure(await entry.deliveryAttempt, entry);
+}
+
+async function closeWithHistory(options: InstallationOptions, entry: Entry, operation?: Operation) {
+  const { journal } = options;
+  const receipt = entry.sourceReceipt!;
+  if (!options.stoppedHistoryApproval) return journal.closeOutputDelivery(receipt);
+  const source = await journal.readOutputSource(entry.key);
+  if (!source || !same(receipt, receiptForOutputSource(source, digest))) throw new InstallationError('journal');
+  if (!eligibleStoppedSource(source.manifest.result)) return journal.closeOutputDelivery(receipt);
+  return withStoppedHistoryOwner(journal, operation, async () => {
+    const snapshot = await journal.get(entry.key);
+    try {
+      const observation = await prepareStoppedObservation(options, entry, snapshot, operation, source);
+      return await (observation
+        ? journal.closeOutputDelivery(receipt, observation.json)
+        : journal.closeOutputDelivery(receipt));
+    } catch (error) {
+      if (error instanceof InstallationError && error.reason === 'cleanup') entry.cleanupFailed = true;
+      throw error;
+    }
+  });
 }
 
 /** Absence never authorizes a late metadata caller to create a closure. */
