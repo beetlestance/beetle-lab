@@ -32,9 +32,11 @@ export {
 } from './wire-limits.js';
 export type { SourceChunkRequest, SourceChunk } from '../generated/types.js';
 export {
+  captureStoppedDeliveryHistory,
   captureStoppedHistoryClosure,
   captureStoredStoppedObservation,
+  encodeStoppedDeliveryHistory,
   encodeStoppedHistoryClosure,
   STOPPED_HISTORY_ENVELOPE_BYTES,
 } from './stopped-history.js';
-export type { StoppedObservation, StoppedHistoryClosure } from './stopped-history.js';
+export type { StoppedObservation, StoppedHistoryClosure, StoppedDeliveryHistory } from './stopped-history.js';

@@ -103,6 +103,15 @@ backend gateway verify scope, journal authority, digest and wire bounds. The
 payload budget is 2 MiB, plus the bounded proof and envelope. The route performs
 no native archive read.
 
+For an incomplete verified source without either metric archive, the agent can
+also commit an observation alongside the delivery closure. The runner route
+`GET …/source/history` shares the same credits and size bounds. It returns the
+immutable source and manifest digests, final event sequence and matching intent
+digest, with the observation or `null`. Before delivery it returns
+`source_pending`, or `source_absent` when an absence receipt has been committed.
+The backend runner client validates this response. Source-backed finalisation
+does not yet adopt it.
+
 The backend waits for the exact released snapshot and full event acknowledgement
 before fetching a stopped observation. It compares the companion proof to the
 retained proof and commits available history in the same transaction as finalisation.

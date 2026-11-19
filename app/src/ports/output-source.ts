@@ -1,9 +1,16 @@
 import type { ClientResult } from '@beetle/contracts';
 import type { RunnerAttemptIdentity, RunnerGateway } from './runner.js';
-import type { Owned, SourceEnvelope, SourceChunkRequest, SourceChunk } from '@beetle/contracts/output-source';
+import type {
+  Owned,
+  SourceEnvelope,
+  SourceChunkRequest,
+  SourceChunk,
+  StoppedDeliveryHistory,
+} from '@beetle/contracts/output-source';
 
 /** Extension of the installation-owned runner connection, never a second pool. */
 export interface RunnerOutputClient {
+  stoppedDeliveryHistory?(signal?: AbortSignal): Promise<ClientResult<StoppedDeliveryHistory>>;
   source(signal?: AbortSignal): Promise<ClientResult<Owned<SourceEnvelope>>>;
   /** Caller supplies the byte length from exactly one declared artifact in its
    * verified, matched envelope. This expectation is private, not a wire field.

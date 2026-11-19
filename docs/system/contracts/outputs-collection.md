@@ -214,7 +214,7 @@ numbers are per-start checks only ([decision 029](../../decisions/029-durable-st
 | --- | --- |
 | `agent/src/collection/` | `20a932208af4` |
 | `agent/src/journal/output-source-protocol.ts` | `3633d477b92c` |
-| `agent/src/transport/sources.ts` | `daae3e5bcdfa` |
+| `agent/src/transport/sources.ts` | `0ca4d454eaf0` |
 | `app/src/ports/output-bytes.ts` | `10c5f59ca356` |
 | `app/src/adapters/outbound/sqlite/output-artifacts/` | `b0175dc3d649` |
 | `agent/src/guard/` | `4b7dff6c413a` |

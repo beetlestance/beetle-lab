@@ -4,7 +4,9 @@ import { encodeCanonicalJson } from '../json.js';
 import type { OutputAbsence } from '../generated/types.js';
 import { captureOutputAbsence, OUTPUT_ABSENCE_BYTES } from './absence.js';
 import type { AbsenceIdentity } from './absence.js';
-import type { Owned } from './types.js';
+import type { OutputDeliveryClosure, Owned } from './types.js';
+import { capture, fields as exactFields, requireInput } from './capture.js';
+import { integer, sameScope, scope, sha } from './shape.js';
 
 export const STOPPED_HISTORY_ENVELOPE_BYTES = LIVE_HISTORY_BYTES + OUTPUT_ABSENCE_BYTES + 512;
 
@@ -15,6 +17,10 @@ export interface StoppedObservation {
 }
 export interface StoppedHistoryClosure {
   readonly absence: Owned<OutputAbsence>;
+  readonly observation: StoppedObservation | null;
+}
+export interface StoppedDeliveryHistory {
+  readonly delivery: OutputDeliveryClosure;
   readonly observation: StoppedObservation | null;
 }
 const rejected = () => new Error('Stopped history reply rejected');
@@ -28,9 +34,7 @@ function fields(object: unknown, keys: readonly string[]): void {
   if (!object || typeof object !== 'object' || Reflect.ownKeys(object).length !== keys.length) throw rejected();
   for (const key of keys) field(object, key);
 }
-function observed(proof: OutputAbsence, text: string, metadata: unknown, hash: LiveMetricHash): StoppedObservation {
-  if (proof.admission.state !== 'released' || proof.admission.disposition !== 'settled' || proof.finalAgentSeq < 1)
-    throw rejected();
+function observed(text: string, metadata: unknown, hash: LiveMetricHash): StoppedObservation {
   const digest = hash(text);
   const bytes = new TextEncoder().encode(text).length;
   if (!/^[a-f0-9]{64}$/.test(digest) || digest !== field(metadata, 'digest') || bytes !== field(metadata, 'bytes'))
@@ -48,9 +52,25 @@ export function captureStoppedHistoryClosure(
   const absence = captureOutputAbsence(field(input, 'absence'), expected);
   const observation = field(input, 'observation');
   if (observation === null) return { absence, observation: null };
-  fields(observation, ['history', 'digest', 'bytes']);
-  const bytes = encodeLiveMetricHistory(field(observation, 'history'), hash, expected);
-  return { absence, observation: observed(absence, new TextDecoder().decode(bytes), observation, hash) };
+  if (
+    absence.admission.state !== 'released' ||
+    absence.admission.disposition !== 'settled' ||
+    absence.finalAgentSeq < 1
+  )
+    throw rejected();
+  return { absence, observation: captureWireObservation(observation, expected, hash) };
+}
+
+function captureWireObservation(input: unknown, expected: AbsenceIdentity, hash: LiveMetricHash): StoppedObservation {
+  fields(input, ['history', 'digest', 'bytes']);
+  const bytes = encodeLiveMetricHistory(field(input, 'history'), hash, expected);
+  return observed(new TextDecoder().decode(bytes), input, hash);
+}
+
+function encodeObservation(input: StoppedObservation | null, expected: AbsenceIdentity, hash: LiveMetricHash): string {
+  if (input === null) return 'null';
+  const { json, digest, bytes } = captureStoredStoppedObservation(input, expected, hash);
+  return `{"bytes":${bytes},"digest":"${digest}","history":${json}}`;
 }
 
 /** Insert the verified canonical JSON as a value so transport does not double-escape the payload. */
@@ -61,14 +81,60 @@ export function encodeStoppedHistoryClosure(
 ): string {
   const absence = captureOutputAbsence(input.absence, expected);
   const proof = encodeCanonicalJson(absence, OUTPUT_ABSENCE_BYTES);
-  if (input.observation === null) return `{"absence":${proof},"observation":null}`;
-  const { json } = input.observation;
-  if (typeof json !== 'string' || json.length > LIVE_HISTORY_BYTES) throw rejected();
-  const bytes = new TextEncoder().encode(json);
-  const parsed = decodeLiveMetricHistory(bytes, hash);
-  if (new TextDecoder().decode(encodeLiveMetricHistory(parsed, hash, expected)) !== json) throw rejected();
-  const observation = observed(absence, json, input.observation, hash);
-  return `{"absence":${proof},"observation":{"bytes":${observation.bytes},"digest":"${observation.digest}","history":${json}}}`;
+  if (
+    input.observation !== null &&
+    (absence.admission.state !== 'released' || absence.admission.disposition !== 'settled' || absence.finalAgentSeq < 1)
+  )
+    throw rejected();
+  return `{"absence":${proof},"observation":${encodeObservation(input.observation, expected, hash)}}`;
+}
+
+function captureDelivery(input: unknown, expected: AbsenceIdentity): OutputDeliveryClosure {
+  const value = exactFields(capture(input, OUTPUT_ABSENCE_BYTES), 'version,receipt,finalAgentSeq');
+  const receipt = exactFields(value.receipt, 'version,key,journalAuthority,sourceDigest,manifestDigest');
+  requireInput(value.version === 1 && receipt.version === 1 && receipt.journalAuthority === expected.journalAuthority);
+  const key = scope(receipt.key);
+  sameScope(key, expected);
+  integer(value.finalAgentSeq);
+  sha(receipt.sourceDigest);
+  sha(receipt.manifestDigest);
+  return {
+    version: 1,
+    finalAgentSeq: value.finalAgentSeq,
+    receipt: {
+      version: 1,
+      key,
+      journalAuthority: expected.journalAuthority,
+      sourceDigest: receipt.sourceDigest,
+      manifestDigest: receipt.manifestDigest,
+    },
+  };
+}
+
+export function captureStoppedDeliveryHistory(
+  input: unknown,
+  expected: AbsenceIdentity,
+  hash: LiveMetricHash,
+): StoppedDeliveryHistory {
+  fields(input, ['delivery', 'intentDigest', 'observation']);
+  if (field(input, 'intentDigest') !== expected.intentDigest) throw rejected();
+  const delivery = captureDelivery(field(input, 'delivery'), expected);
+  const observation = field(input, 'observation');
+  if (observation === null) return { delivery, observation: null };
+  if (delivery.finalAgentSeq < 1) throw rejected();
+  return { delivery, observation: captureWireObservation(observation, expected, hash) };
+}
+
+export function encodeStoppedDeliveryHistory(
+  input: StoppedDeliveryHistory,
+  expected: AbsenceIdentity,
+  hash: LiveMetricHash,
+): string {
+  const delivery = captureDelivery(input.delivery, expected);
+  if (delivery.finalAgentSeq < 1 && input.observation !== null) throw rejected();
+  sha(expected.intentDigest);
+  const proof = encodeCanonicalJson(delivery, OUTPUT_ABSENCE_BYTES);
+  return `{"delivery":${proof},"intentDigest":"${expected.intentDigest}","observation":${encodeObservation(input.observation, expected, hash)}}`;
 }
 
 export function captureStoredStoppedObservation(

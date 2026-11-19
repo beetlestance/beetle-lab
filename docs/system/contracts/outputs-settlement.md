@@ -212,7 +212,7 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/src/output-source/` | `c32141e86911` |
+| `contracts/src/output-source/` | `3c46ca08d6f0` |
 | `agent/src/journal/output-delivery-protocol.ts` | `9c029c3752ab` |
 | `app/src/adapters/outbound/sqlite/output-finalization/` | `fa47885187b8` |
 | `app/src/adapters/outbound/sqlite/output-absence/` | `07399ae8a09f` |
