@@ -15,6 +15,7 @@ EditorProvider retains one draft across navigation and snapshots mutation intent
 Unknown results allow identical replay; editing begins a new request ID.
 Workspaces opens the organization chooser or the current organization's workspace list.
 The header switcher reads up to 20 organizations on demand and links to the full list.
+Direct Compare resolves one scoped organization label independently of its comparison reads.
 Settings routes lazy-load one feature and always expose all three levels. The shell
 remembers the current organization and workspace for Settings within the session.
 Settings query keys include full scope. Page and tab entry honor reduced motion.

@@ -1,11 +1,11 @@
-import { lazy, Suspense, useState } from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Route, Routes, useParams, useLocation } from 'react-router-dom';
 import type { ApiClient, InputTransferClient } from '@beetle/contracts/api';
-import { ApiContext, InputTransferContext } from './api.js';
+import { ApiContext, InputTransferContext, readResult, useApi } from './api.js';
 import { SessionContext, writableSession } from './session.js';
 import type { SessionAccess } from './session.js';
-import { createQueryClient } from './queries.js';
+import { createQueryClient, queryKeys } from './queries.js';
 import { routes, validId } from './routes.js';
 import { EditorProvider } from '../components/Editor.js';
 import { LoadingState } from '../components/States.js';
@@ -180,5 +180,24 @@ function SuiteScriptRoute() {
 function ComparisonRoute() {
   const { organizationId, workspaceId } = useParams();
   if (!validId(organizationId) || !validId(workspaceId)) return <InvalidRoute />;
+  return <ScopedComparison organizationId={organizationId} workspaceId={workspaceId} />;
+}
+
+/** Resolve the shell label on direct entry without gating comparison reads. */
+function ScopedComparison({ organizationId, workspaceId }: { organizationId: string; workspaceId: string }) {
+  const api = useApi();
+  const client = useQueryClient();
+  useQuery({
+    queryKey: queryKeys.organization(organizationId),
+    queryFn: ({ signal }) => readResult(api.getOrganization({ params: { organizationId }, signal })),
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
+  useEffect(
+    () => () => {
+      client.removeQueries({ queryKey: queryKeys.organization(organizationId), exact: true, type: 'inactive' });
+    },
+    [client, organizationId],
+  );
   return <RunComparison organizationId={organizationId} workspaceId={workspaceId} />;
 }
