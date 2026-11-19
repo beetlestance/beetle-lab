@@ -12,6 +12,7 @@ import { author, revision } from './authoring.mjs';
 import { execute, results } from './results.mjs';
 import { inputs, settings, emptyFolder, directoryImport } from './inputs-settings.mjs';
 import { offlineExport } from './exports.mjs';
+import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
 import { cleanupBrowserInstallation } from './cleanup.mjs';
 import { keyboard, themesAndViewports } from './interactions.mjs';
@@ -29,6 +30,7 @@ if (
     'functional',
     'run-results',
     'live-reconnect',
+    'early-cancel',
     'run-deletion',
     'interaction',
     'reference',
@@ -85,6 +87,11 @@ try {
   const entry = override.services['synthetic-target'].entrypoint;
   if (!entry[2].includes('if(++counts[key]>4)')) throw Error('Unexpected target fixture');
   entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
+  if (profile === 'early-cancel') {
+    const status = "r.writeHead(key==='unexpected'?404:200)";
+    assert(entry[2].includes(status));
+    entry[2] = entry[2].replace(status, "r.writeHead(key==='ready'?503:key==='unexpected'?404:200)");
+  }
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime') await configureTarget(f, true);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
@@ -152,6 +159,9 @@ try {
     await phase('no-performance-work', async () => {
       assert.deepEqual(counts(f), { ready: 0, work: 0, unexpected: 0 });
     });
+  } else if (profile === 'early-cancel') {
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    await phase('cancel-during-readiness', () => earlyCancel(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'live-reconnect') {
     await appPage.setViewportSize({ width: 1440, height: 900 });
     await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored, evidence ?? f.root));
