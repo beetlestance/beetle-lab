@@ -338,7 +338,7 @@ export class Manager implements InstallationController {
     if (progress) entry.retirementProgress ??= progress;
     await retireNative(entry, caller);
     if (await releaseStoredSource(this.options.journal, entry)) {
-      await reconcileDelivery(this.options.journal, entry);
+      await reconcileDelivery(this.options, entry, operation);
       this.entries.delete(identity(entry.key));
     } else {
       const retire = () => this.retireReleased(entry, operation);

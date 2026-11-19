@@ -47,13 +47,9 @@ A successful result requires browser closure plus verified installation cleanup.
 Screenshots and private transcripts are not required for a pass. Reload buttons
 are tested explicitly where available; no mutation is retried automatically.
 
-The sequence covers automatic access, authoring, run/result/report/warning reads,
-metrics, content hashes, history comparison, input roundtrip and directory import,
-settings, offline export, live reconnect/cancellation and explicit run/folder deletion.
-Each small run requests 8 MiB output; the one-VU live case is capped at 45 seconds.
-The synthetic target permits at most 128 requests per path. This does not qualify
-maximum load or resource enforcement. A full passing outcome is required; separate
-feature probes do not establish that this entire sequence passed.
+The functional sequence covers authoring, result and warning reads, content hashes,
+comparison, inputs, settings, export, live reconnect, cancellation and deletion.
+Runs request 8 MiB output, with a 45 s live case and 128 target requests per path.
 
 The UI-adapted `run-results` profile passed all seven phases locally on ARM64
 with six matching `322d2851` images and harness `dde0dee7` in 88.36 seconds.
@@ -86,11 +82,9 @@ This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile
 continues to require the original twelve functional phases.
 
-The `memory-pressure` profile starts with a small workload, then serves at most
-32 retained responses of 32 MiB within the synthetic target network. It
-requires Docker's OOM exit evidence at the engine's 512 MiB limit, the public
-memory-limit result and the observed checkpoint or verified partial report.
-The outcome records whether chart windows were available.
+The `memory-pressure` profile serves up to 32 synthetic 32 MiB responses after
+a small workload. It verifies Docker OOM at the 512 MiB engine limit, the
+public result, and which report or chart evidence remained available.
 
 The `output-pressure` profile exercises a bounded workload capped at 4,000
 synthetic requests and 4 MiB of output. It binds the observed wrapper failure

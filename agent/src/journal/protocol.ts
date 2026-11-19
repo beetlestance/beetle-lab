@@ -20,7 +20,11 @@ import type { WrapperBatch, WrapperCheckpoint } from '../control-protocol/index.
 import type { AdmissionCommand, AdmissionValue } from '../admission/index.js';
 import type { CollectionIntent, PrivateSource, SourceReceipt } from '../output-source/index.js';
 import type { OutputSourceOperation } from './output-source-protocol.js';
-import type { OutputDeliveryOperation, OutputDeliveryClosure } from './output-delivery-protocol.js';
+import type {
+  OutputDeliveryOperation,
+  OutputDeliveryClosure,
+  DeliveryHistoryClosure,
+} from './output-delivery-protocol.js';
 import type { OutputAbsence } from '@beetle/contracts/output-source';
 import type { OutputAbsenceOperation, StoppedHistoryClosure } from './output-absence-protocol.js';
 
@@ -155,6 +159,7 @@ export type Value =
   | PrivateSource
   | SourceReceipt
   | OutputDeliveryClosure
+  | DeliveryHistoryClosure
   | OutputAbsence
   | StoppedHistoryClosure
   | string

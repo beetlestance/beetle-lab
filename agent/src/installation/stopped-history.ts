@@ -3,6 +3,10 @@ import { performance } from 'node:perf_hooks';
 import { basename, dirname } from 'node:path';
 import type { BigIntStats } from 'node:fs';
 import { encodeLiveMetricHistory } from '@beetle/contracts/api';
+import { encodeCanonicalJson } from '@beetle/contracts';
+import type { PrivateSource } from '../output-source/index.js';
+import { eligibleStoppedSource } from '../journal/stopped-history-value.js';
+import type { Journal } from '../journal/index.js';
 import type { AttemptSnapshot, Offer } from '@beetle/contracts';
 import { readStoppedHistory } from '../collection/live-history/index.js';
 import { nodePorts } from '../collection/output/index.js';
@@ -31,34 +35,45 @@ interface Request {
   readonly approval: StoppedHistoryApproval;
   readonly tasks: Pick<StagingNamespaceJournal, 'readTask'>;
   readonly operation: Operation;
+  readonly source?: PrivateSource;
 }
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 
-function failedExit(snapshot: AttemptSnapshot, reservation: Reservation): boolean {
-  const { releaseEvidence: release, launchSettlement: settled } = reservation;
+function stoppedSnapshot(snapshot: AttemptSnapshot): boolean {
   return (
     snapshot.admission?.state === 'released' &&
     snapshot.admission.disposition === 'settled' &&
     snapshot.state === 'exited' &&
-    snapshot.exitEvidence !== undefined &&
-    failedRelease(reservation, release) &&
-    settled !== null &&
+    snapshot.exitEvidence !== undefined
+  );
+}
+
+function stoppedExit(snapshot: AttemptSnapshot, reservation: Reservation, source?: PrivateSource): boolean {
+  if (!stoppedSnapshot(snapshot)) return false;
+  const { releaseEvidence: release, launchSettlement: settled } = reservation;
+  return Boolean(
+    release &&
+    settled &&
     settled.disposition !== 'unknown' &&
-    release!.launch.settlementId === settled.evidenceId &&
-    release!.runtime.observedAt > settled.settledAt
+    stoppedRelease(reservation, release, source) &&
+    release.launch.settlementId === settled.evidenceId &&
+    release.runtime.observedAt > settled.settledAt,
   );
 }
 
-function failedRelease(reservation: Reservation, release: Reservation['releaseEvidence']): boolean {
-  if (reservation.status !== 'released' || reservation.aborted || !reservation.launchClosed || !release) return false;
-  return (
-    release.authority === 'supervisor' &&
-    release.collection.state === 'failed' &&
-    release.runtime.state === 'stopped' &&
-    matchesLaunch(reservation, release)
-  );
+function stoppedRelease(
+  reservation: Reservation,
+  release: NonNullable<Reservation['releaseEvidence']>,
+  source: PrivateSource | undefined,
+): boolean {
+  if (reservation.status !== 'released' || reservation.aborted || !reservation.launchClosed) return false;
+  if (release.authority !== 'supervisor' || release.runtime.state !== 'stopped' || !matchesLaunch(reservation, release))
+    return false;
+  if (!source) return release.collection.state === 'failed';
+  return eligibleStoppedSource(source.manifest.result) && sameEvidence(source.release, release);
 }
 
+const sameEvidence = (a: unknown, b: unknown) => encodeCanonicalJson(a, 4096) === encodeCanonicalJson(b, 4096);
 function matchesLaunch(reservation: Reservation, release: NonNullable<Reservation['releaseEvidence']>): boolean {
   return (
     release.runtimeId === reservation.runtimeId &&
@@ -111,7 +126,8 @@ async function captureRoot(input: Request, ports: OutputPorts) {
   if (!sameDirectory(anchor.directories.task, taskStat) || !sameDirectory(anchor.directories.output, stat))
     return undefined;
   const uid = Number(plan.spec.User.split(':')[0]);
-  return snapshotRootIdentity(path, uid, stat);
+  const root = snapshotRootIdentity(path, uid, stat);
+  return !input.source || sameEvidence(root, input.source.root) ? root : undefined;
 }
 function preparedOutputPath({ key, plan }: LaunchInput): string | undefined {
   const mount = plan.spec.HostConfig.Mounts.find((value) => value.Target === '/beetle/output');
@@ -140,7 +156,7 @@ export async function recoverStoppedObservation(
   input: Request,
   ports: OutputPorts = nodePorts,
 ): Promise<StoppedObservation | undefined> {
-  if (!failedExit(input.snapshot, input.reservation) || !stoppedScopeMatches(input)) return undefined;
+  if (!stoppedExit(input.snapshot, input.reservation, input.source) || !stoppedScopeMatches(input)) return undefined;
   const read = await openRecovery(input, ports);
   if (!read) return undefined;
   const result = await read.result;
@@ -181,7 +197,7 @@ async function openRecovery(input: Request, ports: OutputPorts) {
     );
   } catch (error) {
     if (error instanceof JournalError && error.code === 'queue_full') throw error;
-    // Checkpoint evidence is optional. The original absence path remains available.
+    // Checkpoint evidence is optional. Closure can still preserve the existing result.
     return undefined;
   }
 }
@@ -191,6 +207,7 @@ export async function prepareStoppedObservation(
   entry: Entry,
   snapshot: AttemptSnapshot,
   budget?: Operation,
+  source?: PrivateSource,
 ): Promise<StoppedObservation | undefined> {
   const approval = options.stoppedHistoryApproval;
   if (!approval || snapshot.state !== 'exited') return undefined;
@@ -198,11 +215,12 @@ export async function prepareStoppedObservation(
   let request: Request;
   try {
     const reservation = await allocation(options.journal, entry.key);
-    if (!reservation || !failedExit(snapshot, reservation)) return undefined;
+    if (!reservation) return undefined;
     const offer = await options.journal.readOffer(entry.key);
     const plan = entry.plan ?? recover(options.catalog, offer, reservation);
     request = {
       snapshot,
+      ...(source ? { source } : {}),
       reservation,
       offer,
       approval,
@@ -216,4 +234,32 @@ export async function prepareStoppedObservation(
     return undefined;
   }
   return recoverStoppedObservation(request);
+}
+
+const historyOwners = new WeakMap<Journal, Promise<void>>();
+
+export async function withStoppedHistoryOwner<T>(
+  journal: Journal,
+  operation: Operation | undefined,
+  work: () => Promise<T>,
+): Promise<T> {
+  const active = historyOwners.get(journal);
+  if (active) {
+    if (operation) throw new JournalError('queue_full');
+    await active;
+    return withStoppedHistoryOwner(journal, operation, work);
+  }
+  let release!: () => void;
+  historyOwners.set(
+    journal,
+    new Promise<void>((resolve) => {
+      release = resolve;
+    }),
+  );
+  try {
+    return await work();
+  } finally {
+    historyOwners.delete(journal);
+    release();
+  }
 }
