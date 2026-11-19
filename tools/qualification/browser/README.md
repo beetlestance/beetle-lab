@@ -110,6 +110,10 @@ npm run check:a11y -- site                         # docs site, both skins, each
 npm run check:a11y -- app http://127.0.0.1:4567    # a running installation, same-origin pages
 ```
 
+Axe reads only the current computed style, so app mode also hovers up to 24 visible
+controls in `main` per page and checks their contrast. CI runs only the site scan; the
+app scan needs a running installation and is run by hand.
+
 Set `BEETLE_BROWSER_CHANNEL=chrome` to use an installed Chrome when Playwright's bundled
 Chromium is not installed. Any violation exits 1.
 

@@ -4,7 +4,8 @@
 //   node tools/qualification/browser/a11y.mjs app <origin>    # a running installation, e.g. http://127.0.0.1:4567
 //
 // Every page is scanned as loaded and again after each button in the docs diagrams is
-// pressed, so selected and pressed states are covered. BEETLE_BROWSER_CHANNEL=chrome uses an
+// pressed, so selected and pressed states are covered. In app mode each visible control in
+// main is also hovered and checked for colour contrast. BEETLE_BROWSER_CHANNEL=chrome uses an
 // installed Chrome instead of Playwright's bundled Chromium. Exits 1 on any violation.
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
@@ -15,6 +16,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const SKINS = ['darkroom', 'scarab'];
 const MAX_APP_PAGES = 40;
+const MAX_HOVERS = 24;
 /** @type {Record<string, string>} */
 const TYPES = {
   '.html': 'text/html',
@@ -81,6 +83,35 @@ async function scan(page, label, findings) {
 }
 
 /**
+ * Hovers each visible control and checks its contrast in that state; axe reads only
+ * the current computed style, so a scan as loaded never sees a hover colour.
+ * @param {Page} page
+ * @param {string} label
+ * @param {Finding[]} findings
+ */
+async function scanHover(page, label, findings) {
+  const controls = await page.locator('main :is(a, button):visible').all();
+  for (const [index, control] of controls.slice(0, MAX_HOVERS).entries()) {
+    const hovered = await control.hover({ timeout: 1000 }).then(
+      () => true,
+      () => false,
+    );
+    if (!hovered) continue;
+    const result = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+    for (const violation of result.violations)
+      for (const node of violation.nodes)
+        findings.push({
+          label: `${label} hover ${index + 1}`,
+          rule: violation.id,
+          impact: violation.impact,
+          target: node.target.join(' '),
+          summary: node.failureSummary?.split('\n')[1]?.trim() ?? violation.help,
+        });
+  }
+  await page.mouse.move(0, 0);
+}
+
+/**
  * Scans the page as loaded, then after pressing each diagram button.
  * @param {Page} page
  * @param {string} label
@@ -129,7 +160,8 @@ async function siteScan(browser, findings) {
  * @param {Finding[]} findings
  */
 async function appScan(browser, origin, findings) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  // Reduced motion zeroes the colour transitions, so a hover is measured settled.
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   const queue = [new URL('/', origin).href];
   const seen = new Set(queue);
@@ -139,6 +171,7 @@ async function appScan(browser, origin, findings) {
     await page.goto(url);
     await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
     await scan(page, new URL(url).pathname, findings);
+    await scanHover(page, new URL(url).pathname, findings);
     scanned += 1;
     for (const href of await page
       .locator('a[href]')
@@ -169,7 +202,7 @@ try {
     target === 'site' ? await siteScan(browser, findings) : await appScan(browser, String(origin), findings);
   const unique = new Map();
   for (const finding of findings) {
-    const key = `${finding.rule} ${finding.target} ${finding.label.replace(/ after button \d+$/, '')}`;
+    const key = `${finding.rule} ${finding.target} ${finding.label.replace(/ (after button|hover) \d+$/, '')}`;
     if (!unique.has(key)) unique.set(key, finding);
   }
   for (const f of unique.values()) console.log(`${f.impact ?? 'n/a'} ${f.rule} [${f.label}] ${f.target}: ${f.summary}`);
