@@ -106,7 +106,7 @@
   width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 640px) minmax(0, 560px);
-  gap: var(--s-80);
+  gap: var(--s-40);
   align-items: center;
 }
 .history-empty-text {
