@@ -32,6 +32,9 @@ docker run --rm --network "$CONTROL_NETWORK" \
 - `--endpoint` can name the private backend on the installation's control network.
 - `--origin` must be the installation's configured external origin and port; the
   client sends the same Origin, Host and CSRF exchange as a browser.
+- The client accepts only a loopback origin (`localhost`, `[::1]` or `127.x.x.x`),
+  so it cannot yet connect to an installation
+  [opened over a private network](/guides/private-network/) at an `https://` address.
 - The command prints only `{"connected":true}`.
 
 The session file is bound to that endpoint and origin. It keeps the server

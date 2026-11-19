@@ -8,8 +8,8 @@ sidebar:
 The automation client ships in the backend image as
 `/beetle/backend/automation.js`. Run it with `docker run --entrypoint node`, as
 shown in [Automate from CI](/guides/automation/), which covers the tasks step by
-step. This page lists everything the client accepts. The host commands for
-upgrading an installation are under [Upgrade commands](#upgrade-commands).
+step. This page lists everything the client accepts; the host commands are under
+[Upgrade and address commands](#upgrade-and-address-commands).
 
 ```sh
 node /beetle/backend/automation.js COMMAND --endpoint URL --origin URL \
@@ -39,7 +39,7 @@ done in the UI or the HTTP API.
 | Flag | Value |
 | --- | --- |
 | `--endpoint` | Origin of the API to call, such as `http://backend:4311`: scheme, host and optional port, with no path or trailing `/` |
-| `--origin` | The installation's external origin, such as `http://127.0.0.1:8080`; must be `localhost`, `[::1]` or a `127.x.x.x` address |
+| `--origin` | The installation's external origin, such as `http://127.0.0.1:8080`; must be `localhost`, `[::1]` or a `127.x.x.x` address, so private-network installations are not supported yet |
 | `--session-file` | Absolute path of the session file |
 | `--token-file` | Absolute path of a file holding the one-time startup token |
 | `--request-file` | Absolute path of a JSON request file |
@@ -164,7 +164,7 @@ script is checked against the published size (at most 64 MiB) and SHA-256 as it
 is written; on any failure the client removes the partial file it created and exits
 3, so a file left at `--out` always matches.
 
-## Upgrade commands
+## Upgrade and address commands
 
 Run on the host, from the checkout, with the services stopped; see [Upgrade an installation](/guides/upgrade/).
 
@@ -174,6 +174,7 @@ Run on the host, from the checkout, with the services stopped; see [Upgrade an i
 | `docker compose run --rm setup upgrade status` | Prints the open upgrade's phase and steps; changes nothing |
 | `docker compose run --rm setup upgrade activate` | Lifts the fence after you checked the new version |
 | `docker compose run --rm setup upgrade rollback` | Before activation only, restores the sealed backup |
+| `docker compose run --rm setup origin --from URL --operation-id UUID` | Changes the address to `BEETLE_ORIGIN`; see [Open it over a private network](/guides/private-network/#change-the-address-of-an-existing-installation) |
 
 Each prints one JSON line with `status` and exits 0, or prints a code such as `upgrade_blocked runs`
 on standard error and exits 1; see [Troubleshooting](/reference/troubleshooting/#setup-stops-with-a-code).

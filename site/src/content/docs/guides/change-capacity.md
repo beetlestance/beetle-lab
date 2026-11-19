@@ -30,7 +30,9 @@ docker compose up -d --no-build backend agent
 Use the same Compose environment, home directory and images as the original
 setup. If the operation is interrupted, repeat the identical command with the
 same ID. Until it completes, the installation stays fenced rather than half
-changed.
+changed. An [address change](/guides/private-network/#change-the-address-of-an-existing-installation)
+is refused meanwhile with `origin_blocked capacity_change`; a capacity change keeps
+an address changed earlier.
 
 ## Grow the output pool
 

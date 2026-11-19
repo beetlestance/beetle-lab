@@ -21,8 +21,10 @@ measurements live in [evidence](../evidence/README.md).
   run pinning protects up to 256 runs per workspace.
 - Read-only installation status (agent reachability, measured host facts, verified image/engine-version
   metadata, pool usage) and run queue position/individual-capacity wait reasons; CPU use and available memory are not measured.
-- Cold backup and fresh read-only historical restoration. General in-place upgrade,
-  downgrade and mutable restore are not claimed.
+- Cold backup and fresh read-only historical restoration. Offline forward upgrade with
+  a sealed backup and rollback until activation; downgrade and mutable restore are not claimed.
+- Opt-in HTTPS access for one administrator over a private network (decision 032) and an
+  offline `setup origin` address change (decision 033); the automation client stays loopback-only.
 
 The legacy executable source and automatic publishing path are removed in the rewrite.
 No replacement default image was promoted. Use source Compose; the old single-image

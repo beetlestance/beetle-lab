@@ -94,8 +94,9 @@ differs from `BEETLE_ORIGIN`, often by the port, or the proxy rewrote `Host`.
 | `BEETLE_BIND` | `127.0.0.1` | Server IPv4 address the UI port is published on |
 
 Setup refuses an address or bind on another host without `BEETLE_ACCESS=network`
-(`network_access_required`). The local launcher and the
-[history viewer](/guides/backup-and-restore/) stay on loopback.
+(`network_access_required`). The local launcher, the
+[history viewer](/guides/backup-and-restore/) and the
+[automation client](/guides/automation/) work only with a loopback address.
 
 ## Change the address of an existing installation
 
