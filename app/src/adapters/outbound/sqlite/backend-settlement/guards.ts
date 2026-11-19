@@ -1,4 +1,4 @@
-import { purgeOrder } from './purge-order.js';
+import { purgeOrder024 } from './purge-order.js';
 const retained: Readonly<Record<string, string>> = {
   backend_output_cleanup_acks: 'cleanup_ack_retained',
   output_deletion_files: 'output_deletion_file_retained',
@@ -39,7 +39,7 @@ const unchanged = [
 ];
 /** Existing conditional active/delivery guards remain intact. No old migration literals change. */
 export const settlementGuards =
-  purgeOrder
+  purgeOrder024
     .map(([table, column]) => {
       const trigger = retained[table];
       const exception = `backend_settlement_delete('${table}',OLD.${column}) IS NOT 1`;

@@ -8,6 +8,7 @@ import type { OutputAbsence } from '@beetle/contracts';
 import { openOutputRuntime } from '../../src/bootstrap/output-runtime/index.js';
 import { createRunnerGateway } from '../../src/adapters/outbound/runner/index.js';
 import { prepareCancelRunCommand } from '../../src/application/runs/index.js';
+import { observed } from '../output-absence/stopped-history-fixture.js';
 import { absenceFixture } from '../output-absence/fixture.js';
 import { storageFixture, digest, requestId } from '../storage/fixture.js';
 import { snapshotFor } from '../storage/execution-foundation-fixtures.js';
@@ -31,7 +32,9 @@ it.each(cases)('compiled Metadata and authenticated TCP proof peer close $mode w
   if (mode === 'cancelled') await metadata.runs.cancel(prepareCancelRunCommand({kind: 'cancelRun', id: f.key.runId,
     request: {scope: runKey.scope, requestId: requestId()}}, digest));
   const snapshot = snapshotFor(f.key, {state: 'exited', lastSeq: 3, admission,
-    ...(mode === 'provisional' ? {result: f.value} : {})});
+    ...(mode === 'provisional' ? {result: f.value,
+      exitEvidence: {exitCode:137,oomKilled:false,reason:'artifact_incomplete',observedAt:'2026-01-01T00:01:00Z'}} : {})});
+  const recovered = mode === 'provisional' ? observed(f) : null;
   const requests: string[] = []; const unexpected: string[] = [];
   const prefix = `/runner/v1/attempts/${a.attemptId}`;
   const remote = await loopback((request, response) => {
@@ -43,6 +46,9 @@ it.each(cases)('compiled Metadata and authenticated TCP proof peer close $mode w
     if (request.url === `${prefix}/source`) send(response, {protocolVersion: '1.0', organizationId: a.organizationId,
       workspaceId: a.workspaceId, attemptId: a.attemptId, reason: 'source_absent', retry: 'never', issues: []}, 409);
     else if (request.url === `${prefix}/source/absence`) send(response, f.proof);
+    else if (request.url === `${prefix}/source/absence/history`) send(response, {
+      absence: f.proof, observation: recovered ? {bytes:recovered.bytes,digest:recovered.digest,history:JSON.parse(recovered.json)} : null,
+    });
     else if (request.url === prefix) send(response, snapshot);
     else {unexpected.push(request.url ?? ''); send(response, {}, 500);}
   });
@@ -59,6 +65,7 @@ it.each(cases)('compiled Metadata and authenticated TCP proof peer close $mode w
       expect(await metadata.absences.read(f.binding)).toMatchObject({closure: f.proof});
       const original = await metadata.events.load(f.binding); expect(original).toMatchObject({durableThrough: 3});
       const current = await metadata.runs.getRun(runKey); expect(current.state).toBe('finalizing');
+      expect(requests.filter(url => url.endsWith('/source/absence/history'))).toHaveLength(0);
       expect(requests.filter(url => url === prefix)).toHaveLength(1);
     }, {timeout: 5000, interval: 25});
     // Full confirmed ACK remains real Metadata authority; no receipt or credit before it.
@@ -83,6 +90,9 @@ it.each(cases)('compiled Metadata and authenticated TCP proof peer close $mode w
       const carrier = db.prepare('SELECT kind,canonical_json FROM execution_output_payloads').get();
       if (mode === 'provisional') expect(carrier).toEqual({kind: 'result', canonical_json: encodeCanonicalJson(f.value, 65536)});
       else expect(carrier).toBeUndefined();
+      expect(db.prepare('SELECT canonical_json,digest,bytes FROM execution_stopped_history').get())
+        .toEqual(recovered ? {canonical_json:recovered.json,digest:recovered.digest,bytes:recovered.bytes} : undefined);
+      expect(requests.filter(url => url.endsWith('/source/absence/history'))).toHaveLength(recovered ? 1 : 0);
       expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
     } finally {db.close();}
     expect(failures).toEqual([]); expect(unexpected).toEqual([]);

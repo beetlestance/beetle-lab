@@ -52,12 +52,14 @@ async function finalize(
   request: OutputAbsenceFinalizeRequest,
   state: OutputAbsenceState,
   run: Run,
-): Promise<'execution' | 'done'> {
+): Promise<'execution' | 'history' | 'done'> {
   let reply;
   try {
     reply = await options.absences.finalize(request);
   } catch (error) {
-    if (error instanceof Error && Object.getOwnPropertyDescriptor(error, 'code')?.value === 'conflict') return 'done';
+    const code = error instanceof Error ? Object.getOwnPropertyDescriptor(error, 'code')?.value : undefined;
+    if (code === 'conflict') return 'done';
+    if (code === 'queue_full') throw new OutputTransferError('busy');
     throw error;
   }
   return absenceFinalization(reply, request, state, run);
@@ -78,14 +80,65 @@ export async function handoffAbsence(
   let run = await getRun(runKey, options.runs);
   requireValue(run.activeAttemptId === identity.attemptId);
   if (signal.aborted) return;
-  let request = { binding, proofDigest: state.proofDigest, expectedRunVersion: run.version };
-  const result = await finalize(options, request, state, run);
+  const request = finalizationRequest(options, state, run.version);
+  const result = await finalizeWithHistory(options, request, state, run, signal);
   if (signal.aborted || result !== 'execution') return;
   await refreshOutputSnapshot(options, binding, signal);
   if (signal.aborted) return;
   run = await getRun(runKey, options.runs);
   requireValue(run.activeAttemptId === identity.attemptId);
   if (signal.aborted) return;
-  request = { ...request, expectedRunVersion: run.version };
-  await finalize(options, request, state, run);
+  await finalizeWithHistory(options, { ...request, expectedRunVersion: run.version }, state, run, signal);
+}
+
+function finalizationRequest(
+  options: OutputRuntimeOptions,
+  state: OutputAbsenceState,
+  expectedRunVersion: number,
+): OutputAbsenceFinalizeRequest {
+  const { binding, proofDigest, closure } = state;
+  const request = { binding, proofDigest, expectedRunVersion };
+  if (
+    closure.admission.state !== 'released' ||
+    closure.admission.disposition !== 'settled' ||
+    closure.finalAgentSeq <= 0
+  )
+    return request;
+  const client = options.gateway.output({ ...binding.key.attempt, journalAuthority: binding.journalAuthority });
+  return client.stoppedHistory ? { ...request, stoppedHistory: 'fetch' } : request;
+}
+
+async function finalizeWithHistory(
+  options: OutputRuntimeOptions,
+  request: OutputAbsenceFinalizeRequest,
+  state: OutputAbsenceState,
+  run: Run,
+  signal: AbortSignal,
+): Promise<'execution' | 'done'> {
+  const result = await finalize(options, request, state, run);
+  if (result !== 'history') return result;
+  if (signal.aborted) return 'done';
+  const client = options.gateway.output({
+    ...request.binding.key.attempt,
+    journalAuthority: request.binding.journalAuthority,
+  });
+  const read = client.stoppedHistory;
+  requireValue(typeof read === 'function' && request.stoppedHistory === 'fetch');
+  const response = await read.call(client, signal);
+  if (signal.aborted) return 'done';
+  const { absence, observation } = remoteValue(response);
+  requireValue(encodeCanonicalJson(state.closure, 2048) === encodeCanonicalJson(absence, 2048));
+  const retried = await finalize(
+    options,
+    {
+      binding: request.binding,
+      proofDigest: request.proofDigest,
+      expectedRunVersion: request.expectedRunVersion,
+      ...(observation === null ? {} : { stoppedHistory: observation }),
+    },
+    state,
+    run,
+  );
+  requireValue(retried !== 'history');
+  return retried;
 }

@@ -24,9 +24,18 @@ it('upgrades populated schema 38 with only the output evidence DDL changes and n
     old.prepare('VACUUM INTO ?').run(path);
     const next = initialize(path);
     try {
-      expect(next.prepare('PRAGMA user_version').get()?.user_version).toBe(40);
-      expect(rows(next)).toEqual(before);
-      const changed = new Set(['output_finalization_evidence', 'output_header_update', 'output_absence_evidence']);
+      expect(next.prepare('PRAGMA user_version').get()?.user_version).toBe(41);
+      expect(rows(next).filter((entry) => entry.name !== 'execution_stopped_history')).toEqual(before);
+      const changed = new Set([
+        'output_finalization_evidence',
+        'output_header_update',
+        'output_absence_evidence',
+        'execution_stopped_history',
+        'stopped_history_insert',
+        'stopped_history_update',
+        'stopped_history_delete',
+        'sqlite_autoindex_execution_stopped_history_1',
+      ]);
       expect(schema(next).filter((row) => !changed.has(String(row.name)))).toEqual(
         prior.filter((row) => !changed.has(String(row.name))),
       );

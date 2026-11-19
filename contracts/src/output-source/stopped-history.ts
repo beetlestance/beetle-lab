@@ -70,3 +70,20 @@ export function encodeStoppedHistoryClosure(
   const observation = observed(absence, json, input.observation, hash);
   return `{"absence":${proof},"observation":{"bytes":${observation.bytes},"digest":"${observation.digest}","history":${json}}}`;
 }
+
+export function captureStoredStoppedObservation(
+  input: unknown,
+  expected: AbsenceIdentity,
+  hash: LiveMetricHash,
+): StoppedObservation {
+  fields(input, ['json', 'digest', 'bytes']);
+  const text = field(input, 'json');
+  if (typeof text !== 'string' || text.length > LIVE_HISTORY_BYTES) throw rejected();
+  const bytes = new TextEncoder().encode(text);
+  const value = decodeLiveMetricHistory(bytes, hash);
+  if (new TextDecoder().decode(encodeLiveMetricHistory(value, hash, expected)) !== text) throw rejected();
+  const digest = hash(text);
+  if (!/^[a-f0-9]{64}$/.test(digest) || digest !== field(input, 'digest') || bytes.length !== field(input, 'bytes'))
+    throw rejected();
+  return { json: text, digest, bytes: bytes.length };
+}

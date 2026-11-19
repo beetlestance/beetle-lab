@@ -1,5 +1,6 @@
+import { LIVE_HISTORY_BYTES } from '@beetle/contracts/api';
 import { encodeCanonicalJson, runnerSchemas } from '@beetle/contracts';
-import { captureOutputAbsence } from '@beetle/contracts/output-source';
+import { captureOutputAbsence, captureStoredStoppedObservation } from '@beetle/contracts/output-source';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import type { EventBinding } from '../../../../ports/events.js';
@@ -31,8 +32,19 @@ export function absenceOperation(input: unknown): input is AbsenceOperation {
     ['absenceRead', 'absenceAdopt', 'absenceFinalize'].includes(descriptor.value as string)
   );
 }
+export const STOPPED_HISTORY_RPC_BYTES = 2 * LIVE_HISTORY_BYTES + 4096;
+export function hasStoppedHistoryPayload(input: unknown): boolean {
+  if (!absenceOperation(input) || input.kind !== 'absenceFinalize') return false;
+  const request = Object.getOwnPropertyDescriptor(input, 'request');
+  if (!request || !('value' in request) || !request.value || typeof request.value !== 'object') return false;
+  const field = Object.getOwnPropertyDescriptor(request.value, 'stoppedHistory');
+  return !!field && 'value' in field && typeof field.value === 'object' && field.value !== null;
+}
 export function captureAbsenceOperation(input: unknown): AbsenceOperation {
-  const copy = boundedCopy(input, 4096) as AbsenceOperation & { messageId?: number };
+  const copy = boundedCopy(
+    input,
+    hasStoppedHistoryPayload(input) ? STOPPED_HISTORY_RPC_BYTES : 4096,
+  ) as AbsenceOperation & { messageId?: number };
   requireRule(absenceOperation(copy));
   const fields = ['kind', copy.kind === 'absenceRead' ? 'binding' : 'request'];
   if (Object.hasOwn(copy, 'messageId')) {
@@ -57,11 +69,30 @@ export function captureAbsenceOperation(input: unknown): AbsenceOperation {
       },
     };
   }
-  closed(request, ['binding', 'proofDigest', 'expectedRunVersion']);
+  const names = ['binding', 'proofDigest', 'expectedRunVersion'];
+  const history = copy.request.stoppedHistory;
+  if (Object.hasOwn(request, 'stoppedHistory')) names.push('stoppedHistory');
+  closed(request, names);
   hex(copy.request.proofDigest);
   natural(copy.request.expectedRunVersion);
   requireRule(copy.request.expectedRunVersion > 0);
-  return { kind: copy.kind, request: { ...copy.request, binding } };
+  const captured =
+    history === undefined || history === 'fetch'
+      ? history
+      : captureStoredStoppedObservation(
+          history,
+          { ...binding.key.attempt, journalAuthority: binding.journalAuthority },
+          sha256,
+        );
+  return {
+    kind: copy.kind,
+    request: {
+      binding,
+      proofDigest: copy.request.proofDigest,
+      expectedRunVersion: copy.request.expectedRunVersion,
+      ...(captured === undefined ? {} : { stoppedHistory: captured }),
+    },
+  };
 }
 function sameBinding(actual: EventBinding, expected: EventBinding): void {
   requireRule(encodeCanonicalJson(captureEventBinding(actual), 2048) === encodeCanonicalJson(expected, 2048));
@@ -100,7 +131,7 @@ function finalizationReply(
   const copy = boundedCopy(input, 4096) as OutputAbsenceFinalizationReply;
   if (copy.kind === 'pending') {
     closed(copy, ['kind', 'reason']);
-    requireRule(['proof', 'execution', 'events'].includes(copy.reason));
+    requireRule(['proof', 'execution', 'events', 'history'].includes(copy.reason));
     return copy;
   }
   closed(copy, ['kind', 'receipt']);

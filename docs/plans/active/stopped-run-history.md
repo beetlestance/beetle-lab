@@ -3,7 +3,8 @@
 Status: Implementation in progress. The Result views can display accepted
 partial evidence. After native retirement, the agent commits verified samples
 with the absence receipt. The authenticated runner can return the paired
-carrier. Backend adoption, storage and presentation remain open.
+carrier. Backend finalisation retains it within the remaining output budget.
+Terminal reads and Results presentation remain open.
 
 ## Current behaviour
 

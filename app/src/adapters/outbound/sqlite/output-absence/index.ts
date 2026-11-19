@@ -11,6 +11,7 @@ import { requireRetainedOriginal } from '../output-custody/index.js';
 import { requireCurrentRun, checkFinalHeader, seedZeroCursor, requireRetention } from '../output-finalization/index.js';
 import { transaction } from '../transaction.js';
 import { sha256 } from '../input-values.js';
+import { eligibleStoppedHistory, retainStoppedHistory } from './stopped-history.js';
 import { StorageError } from '../protocol.js';
 import { captureAbsenceOperation, captureAbsenceReply, captureAbsenceState } from './wire.js';
 import type { AbsenceOperation, AbsenceValue } from './wire.js';
@@ -106,7 +107,19 @@ export class OutputAbsences {
     if (!row) throw new StorageError('unavailable');
     const pending = this.pending(row);
     if (pending) return pending;
+    return this.commitFinalization(request, proof, row);
+  }
+  private commitFinalization(
+    request: OutputAbsenceFinalizeRequest,
+    proof: OutputAbsenceState,
+    row: Row,
+  ): OutputAbsenceFinalizationReply {
+    const attempt = request.binding.key.attempt.attemptId;
     requireRetention(row.retained_payload_bytes, row.maximum_payload_bytes);
+    if (request.stoppedHistory === 'fetch' && eligibleStoppedHistory(proof, row))
+      return { kind: 'pending', reason: 'history' };
+    if (request.stoppedHistory && request.stoppedHistory !== 'fetch')
+      retainStoppedHistory(this.db, proof, row, request.stoppedHistory);
     this.db
       .prepare(
         `INSERT INTO execution_output_absence_finalizations SELECT attempt_id,run_id,organization_id,workspace_id,

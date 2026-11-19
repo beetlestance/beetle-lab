@@ -30,12 +30,12 @@ export function absenceFinalization(
   request: OutputAbsenceFinalizeRequest,
   state: OutputAbsenceState,
   run: Run,
-): 'execution' | 'done' {
+): 'execution' | 'history' | 'done' {
   encodeJson(input, 4096);
   const value = fields(input, discriminator(input) === 'pending' ? ['kind', 'reason'] : ['kind', 'receipt']);
   if (value.kind === 'pending') {
-    requireValue(['proof', 'execution', 'events'].includes(value.reason as string));
-    return value.reason === 'execution' ? 'execution' : 'done';
+    requireValue(['proof', 'execution', 'events', 'history'].includes(value.reason as string));
+    return value.reason === 'execution' || value.reason === 'history' ? value.reason : 'done';
   }
   requireValue(value.kind === 'finalized');
   const receipt = fields(value.receipt, [

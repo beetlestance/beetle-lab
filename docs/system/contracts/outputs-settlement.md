@@ -133,7 +133,7 @@ impossible request → `budget_unavailable`. A never-started original reports it
 settled admission and a positive final sequence gives verified OOM priority over the proof's cause and
 user cancellation. Without OOM, a system cause wins, and a `cancelled` proof requires persisted intent.
 The backend (`app/src/ports/output-absence.ts`, ≤ 4096 bytes) adopts one canonical proof only without
-source, manifest or slot. Finalisation requires header `lastSeq` = `finalAgentSeq` and full ACK. It credits P − (C + R) once.
+source, manifest or slot. Finalisation requires header `lastSeq` = `finalAgentSeq` and full ACK. The refund is P − (C + R + H), with H the verified stopped-history bytes that fit.
 
 ## Deletion
 
@@ -212,9 +212,9 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/src/output-source/` | `45965cc35bcb` |
+| `contracts/src/output-source/` | `c32141e86911` |
 | `agent/src/journal/output-delivery-protocol.ts` | `23234170ace9` |
 | `app/src/adapters/outbound/sqlite/output-finalization/` | `fa47885187b8` |
-| `app/src/adapters/outbound/sqlite/output-absence/` | `0f2d925087dc` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `9c4e8dc70ef4` |
-| `app/src/adapters/outbound/sqlite/backend-settlement/` | `7f81a1b56b08` |
+| `app/src/adapters/outbound/sqlite/output-absence/` | `07399ae8a09f` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `081c1165b71f` |
+| `app/src/adapters/outbound/sqlite/backend-settlement/` | `a99634b02749` |

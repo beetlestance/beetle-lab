@@ -25,7 +25,7 @@ const outcome = replace(
   `CASE WHEN ${physicalOom} THEN 'memory_limit'
   WHEN ${systemCause} THEN ${reason}`,
 );
-const ready = replace(
+export const absenceOomProjection = replace(
   outcome,
   `AND (r.cancellation_requested=1 OR ${reason}!='cancelled') execution_ready`,
   `AND (r.cancellation_requested=1 OR ${reason}!='cancelled' OR (${physicalOom})) execution_ready`,
@@ -33,6 +33,6 @@ const ready = replace(
 
 export const migration040 = `
 DROP VIEW output_absence_evidence;
-${ready}
+${absenceOomProjection}
 PRAGMA user_version=40;
 `;

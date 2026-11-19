@@ -1,4 +1,4 @@
-import type { Owned, OutputAbsence, StoppedHistoryClosure } from '@beetle/contracts/output-source';
+import type { Owned, OutputAbsence, StoppedHistoryClosure, StoppedObservation } from '@beetle/contracts/output-source';
 import type { ClientResult } from '@beetle/contracts';
 import type { EventBinding } from './events.js';
 import type { OutputFinalizationReceipt } from './output-finalization.js';
@@ -27,6 +27,7 @@ export interface OutputAbsenceFinalizeRequest {
   readonly binding: EventBinding;
   readonly proofDigest: string;
   readonly expectedRunVersion: number;
+  readonly stoppedHistory?: 'fetch' | StoppedObservation;
 }
 export type OutputAbsenceFinalizationReceipt = Omit<
   OutputFinalizationReceipt,
@@ -40,7 +41,7 @@ export type OutputAbsenceFinalizationReceipt = Omit<
 };
 export type OutputAbsenceFinalizationReply =
   | { readonly kind: 'finalized'; readonly receipt: OutputAbsenceFinalizationReceipt }
-  | { readonly kind: 'pending'; readonly reason: 'proof' | 'execution' | 'events' };
+  | { readonly kind: 'pending'; readonly reason: 'proof' | 'execution' | 'events' | 'history' };
 /** Sibling custody/settlement, never a fabricated source or source receipt.
  * All operations use the existing ordinary worker lane and4096-byte bounds.
  */

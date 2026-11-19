@@ -48,10 +48,10 @@ it('upgrades populated shipped schema 37 with no row, receipt or accounting drif
     prior.close();
     const upgraded = initialize(path);
     try {
-      expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(40);
-      expect(rows(upgraded)).toEqual(before);
+      expect(upgraded.prepare('PRAGMA user_version').get()?.user_version).toBe(41);
+      expect(rows(upgraded).filter((entry) => entry.name !== 'execution_stopped_history')).toEqual(before);
       const beforeByName = new Map(schema.map((row) => [row.name, row.sql]));
-      const current = graph(upgraded);
+      const current = graph(upgraded).filter((row) => !String(row.name).includes('stopped_history'));
       expect(current.map((row) => row.name)).toEqual(schema.map((row) => row.name));
       expect(current.filter((row) => beforeByName.get(row.name) !== row.sql).map((row) => row.name)).toEqual([
         'output_header_update',
