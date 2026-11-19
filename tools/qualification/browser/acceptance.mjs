@@ -12,6 +12,7 @@ import { author, revision } from './authoring.mjs';
 import { execute, results } from './results.mjs';
 import { inputs, settings, emptyFolder, directoryImport } from './inputs-settings.mjs';
 import { offlineExport } from './exports.mjs';
+import { memoryPressure, memoryTarget } from './memory-pressure.mjs';
 import { outputPressure } from './output-pressure.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
@@ -33,6 +34,7 @@ if (
     'live-reconnect',
     'early-cancel',
     'output-pressure',
+    'memory-pressure',
     'run-deletion',
     'interaction',
     'reference',
@@ -97,6 +99,7 @@ try {
     assert(entry[2].includes(status));
     entry[2] = entry[2].replace(status, "r.writeHead(key==='ready'?503:key==='unexpected'?404:200)");
   }
+  if (profile === 'memory-pressure') entry[2] = memoryTarget(entry[2]);
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime') await configureTarget(f, true);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
@@ -164,6 +167,13 @@ try {
     await phase('no-performance-work', async () => {
       assert.deepEqual(counts(f), { ready: 0, work: 0, unexpected: 0 });
     });
+  } else if (profile === 'memory-pressure') {
+    assert(installation);
+    await appPage.setViewportSize({ width: 1440, height: 900 });
+    const ownedInstallation = installation;
+    await phase('memory-stop-and-result', () =>
+      memoryPressure(appPage, authored, f, ownedInstallation, evidence ?? f.root),
+    );
   } else if (profile === 'output-pressure') {
     assert(installation);
     await appPage.setViewportSize({ width: 1440, height: 900 });

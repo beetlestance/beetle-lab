@@ -86,6 +86,12 @@ This is a finite functional matrix, not a complete accessibility certification.
 Keep it outside any exclusive resource measurement window. The default profile
 continues to require the original twelve functional phases.
 
+The `memory-pressure` profile starts with a small workload, then serves at most
+32 retained responses of 32 MiB within the synthetic target network. It
+requires Docker's OOM exit evidence at the engine's 512 MiB limit, the public
+memory-limit result and the observed checkpoint or verified partial report.
+The outcome records whether chart windows were available.
+
 The `output-pressure` profile exercises a bounded workload capped at 4,000
 synthetic requests and 4 MiB of output. It binds the observed wrapper failure
 to the submitted attempt and checks the terminal result and any retained history.

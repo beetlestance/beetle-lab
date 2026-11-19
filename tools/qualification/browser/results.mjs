@@ -7,13 +7,15 @@ import { assertRunState, submittedRun, suiteRoute } from './run-state.mjs';
 /**
  * @param {import('@playwright/test').Page} page
  * @param {number} outputBytes
+ * @param {number} [memoryBytes]
  */
-export async function start(page, outputBytes = 8388608) {
+export async function start(page, outputBytes = 8388608, memoryBytes) {
   const suite = suiteRoute(page.url());
   await page.getByRole('button', { name: 'Start run', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: /^Start / });
   await dialog.getByRole('button', { name: 'Change for this run', exact: true }).click();
   await dialog.getByLabel(/^Output, up to /).fill(String(outputBytes / 1073741824));
+  if (memoryBytes !== undefined) await dialog.getByLabel(/^Memory, up to /).fill(String(memoryBytes / 1073741824));
   const revisionId = await dialog.getByLabel('Revision', { exact: true }).inputValue();
   const [reply] = await Promise.all([
     page.waitForResponse((reply) => {
