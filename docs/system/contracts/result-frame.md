@@ -1,6 +1,7 @@
 # Result frame and traffic headline
 
-The result title/status still use authoritative Run state. Traffic wording uses
+Status and severity titles use authoritative Run state. Passed phone titles lead
+with the recorded average when rate and duration are known. Traffic wording uses
 one ready metric overview when available, including null values; it never fills
 missing overview fields with values from the history index. Without a ready
 overview the existing indexed summary remains the fallback. Native SLO verdicts
@@ -35,15 +36,19 @@ Phone summary leads with average rate, p95 estimate, failure ratio and total
 requests from one accepted source. Other measurements stay in expandable details;
 partial-coverage warnings remain visible. Legacy/pending history keeps four explicit
 unknown figures, never invented zeros. Desktop summary stays unchanged.
-Header and chart phone board matching remains open.
+Phone titles use 34 px tokens and compare/download precede Run again in action
+order. A compact whole-run chart names its selected metric, retains exact points,
+gaps, bounds and accessible labels, and shows its reading on hover. Sampling and
+coverage details remain expandable, with partial-source coverage in the summary.
+Whole-family board acceptance and matching packaged execution remain unproven.
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `ef62bb206bed` |
+| `web/src/features/runs/result/headline.ts` | `6c8e558e75b9` |
 | `web/src/features/runs/result/SectionNav.tsx` | `2781bcc519ff` |
-| `web/src/features/runs/result/ResultHeader.tsx` | `23f6b9adf58a` |
+| `web/src/features/runs/result/ResultHeader.tsx` | `eae4c3909114` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `587774070696` |
 | `web/src/features/runs/result/phone.css` | `ba4a5771ad8d` |
@@ -51,4 +56,6 @@ Header and chart phone board matching remains open.
 | `web/src/features/runs/result/EndpointTable.tsx` | `f7bd8fa29dec` |
 | `web/src/features/runs/result/overview.css` | `af298878404b` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `d33fc6761fea` |
-| `web/src/features/runs/result/index.tsx` | `6e87c877da8d` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
+| `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
+| `web/src/features/runs/result/index.tsx` | `71b19479dde2` |

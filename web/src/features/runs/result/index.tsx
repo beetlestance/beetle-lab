@@ -72,7 +72,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const charts = useRecordedCharts(reads.chartHistory);
   const plan = readPlan(reads.revision?.config);
   const engine = view.status === 'ready' ? view.result : null;
-  const context = { readOnly, rules: plan.rules, measurements: ready };
+  const context = { readOnly, rules: plan.rules, measurements: ready, phone };
   const { title, sentence } = headline(run, reads.suite?.name, reads.summary, engine, context);
   return (
     <div className={className}>
@@ -102,7 +102,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
       </PhoneDisclosure>
       {!phone && <ResultSectionNav onSelect={selectSection} />}
       <ResultSummary reads={reads} charts={charts} ready={ready} phone={phone} />
-      <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} />
+      <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />
       <ResultThresholds reads={reads} engine={engine} run={run} phone={phone} />
       <ResultEndpoints overview={ready} requests={plan.requests} phone={phone} />
       <SupplementaryResult
