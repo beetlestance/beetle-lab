@@ -98,7 +98,7 @@
   gap: var(--s-8);
   color: var(--mute);
   overflow-wrap: anywhere;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
 }
 .compare-breadcrumb a {
   color: inherit;
@@ -120,6 +120,7 @@
 .compare-empty-text h1 {
   font-size: var(--fs-4xl);
   letter-spacing: var(--tracking-display);
+  line-height: var(--lh-heading);
 }
 .compare-empty-text p {
   margin: 0;
