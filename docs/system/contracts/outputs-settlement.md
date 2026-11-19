@@ -172,7 +172,7 @@ unknown or cleaning work is excluded (pinned Runs still count toward completed a
 - Apply refuses missing, consumed or expired pages. An expired unapplied preview may be swept, refunding
   only its charge. An applied page stays charged until all members settle permanently, then expires 15 min
   after that is first observed or on acknowledgement; a Run vanishing unsettled is an error.
-- A workspace epoch advances on selection-relevant change, including pin and unpin; continuation and
+- A workspace epoch advances on selection-relevant change, including pin and unpin; derived history-cache writes leave it unchanged. Continuation and
   Apply reject epoch or settings-version drift. Apply begins all ≤ 100 captured candidates or none via
   receipt-first Begin, rechecking pins in its admission transaction regardless of the epoch ([pins, parent previews, `driverState`](storage.md#retention-and-space)).
 

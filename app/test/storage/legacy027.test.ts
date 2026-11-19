@@ -1,3 +1,5 @@
+import {migration037} from '../../src/adapters/outbound/sqlite/migration037.js';
+import {migration038} from '../../src/adapters/outbound/sqlite/migration038.js';
 import {migration035} from '../../src/adapters/outbound/sqlite/migration035.js';
 import {migration036} from '../../src/adapters/outbound/sqlite/migration036.js';
 import {asSchema25} from './legacy025.js';
@@ -26,6 +28,7 @@ it('round-trips an exact synthetic predecessor without changing original rows, r
   transaction(f.db,()=>f.db.exec(migration028));transaction(f.db,()=>f.db.exec(migration029));transaction(f.db,()=>f.db.exec(migration030));transaction(f.db,()=>f.db.exec(migration031));
   transaction(f.db,()=>f.db.exec(migration032));transaction(f.db,()=>f.db.exec(migration033));transaction(f.db,()=>f.db.exec(migration034));
   transaction(f.db,()=>f.db.exec(migration035));transaction(f.db,()=>f.db.exec(migration036));
+  transaction(f.db,()=>f.db.exec(migration037));transaction(f.db,()=>f.db.exec(migration038));
   expect(rows(f.db)).toEqual(before);expect(f.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
  }finally{f.db.close();}
 });

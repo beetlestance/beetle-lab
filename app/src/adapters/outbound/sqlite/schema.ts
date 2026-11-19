@@ -1,6 +1,7 @@
 import { checkHistoricalNative } from './historical-native.js';
 import { markHistorical } from './historical.js';
 import { migration032 } from './migration032.js';
+import { migration038 } from './migration038.js';
 import { migration037 } from './migration037.js';
 import { migration036 } from './migration036.js';
 import { migration035 } from './migration035.js';
@@ -46,7 +47,7 @@ import { migration002 } from './migration002.js';
 import { DatabaseSync } from 'node:sqlite';
 import { StorageError } from './protocol.js';
 
-export const METADATA_SCHEMA_VERSION = 37;
+export const METADATA_SCHEMA_VERSION = 38;
 
 // Application migration 001; independent of the agent journal schema.
 export const migration001 = `
@@ -157,6 +158,7 @@ function applyMigrations(db: DatabaseSync, version: number): void {
     () => db.exec(migration035),
     () => db.exec(migration036),
     () => db.exec(migration037),
+    () => db.exec(migration038),
   ];
   steps.forEach((step, index) => {
     if (version <= index) transaction(db, step);
