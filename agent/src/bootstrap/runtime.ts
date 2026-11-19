@@ -265,6 +265,7 @@ class RuntimeOwner {
       liveMetrics: (key, operation) => supervisor.readLiveMetrics(key, operation),
       outputs: createOutputSourceReader({ journal, gate, readRange: readOutputRange }),
       absences: journal,
+      deliveries: journal,
       capabilities: () => view.capabilities(),
     });
     this.server.addHook('onRequest', async (request) => {

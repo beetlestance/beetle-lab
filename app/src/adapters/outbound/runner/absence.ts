@@ -2,10 +2,17 @@ import { createHash } from 'node:crypto';
 import {
   captureOutputAbsence,
   captureStoppedHistoryClosure,
+  captureStoppedDeliveryHistory,
   OUTPUT_ABSENCE_BYTES,
   STOPPED_HISTORY_ENVELOPE_BYTES,
 } from '@beetle/contracts/output-source';
-import type { AbsenceIdentity, Owned, OutputAbsence, StoppedHistoryClosure } from '@beetle/contracts/output-source';
+import type {
+  AbsenceIdentity,
+  Owned,
+  OutputAbsence,
+  StoppedDeliveryHistory,
+  StoppedHistoryClosure,
+} from '@beetle/contracts/output-source';
 import type { ClientResult } from '@beetle/contracts';
 import type { RunnerAttemptIdentity } from '../../../ports/runner.js';
 import { scopeHeaders } from './identity.js';
@@ -19,8 +26,8 @@ export function absence(
   identity: RunnerAttemptIdentity,
   signal?: AbortSignal,
 ): Promise<ClientResult<Owned<OutputAbsence>>> {
-  return readAbsence(connection, identity, signal, {
-    suffix: '',
+  return readClosure(connection, identity, signal, {
+    suffix: '/absence',
     bytes: OUTPUT_ABSENCE_BYTES,
     capture: captureOutputAbsence,
   });
@@ -31,19 +38,36 @@ export function stoppedHistory(
   identity: RunnerAttemptIdentity,
   signal?: AbortSignal,
 ): Promise<ClientResult<StoppedHistoryClosure>> {
-  return readAbsence(connection, identity, signal, {
-    suffix: '/history',
+  return readClosure(connection, identity, signal, {
+    suffix: '/absence/history',
     bytes: STOPPED_HISTORY_ENVELOPE_BYTES,
     capture: (value, expected) =>
       captureStoppedHistoryClosure(value, expected, (text) => createHash('sha256').update(text).digest('hex')),
   });
 }
 
-function readAbsence<T>(
+export function stoppedDeliveryHistory(
+  connection: Connection,
+  identity: RunnerAttemptIdentity,
+  signal?: AbortSignal,
+): Promise<ClientResult<StoppedDeliveryHistory>> {
+  return readClosure(connection, identity, signal, {
+    suffix: '/history',
+    bytes: STOPPED_HISTORY_ENVELOPE_BYTES,
+    capture: (value, expected) =>
+      captureStoppedDeliveryHistory(value, expected, (text) => createHash('sha256').update(text).digest('hex')),
+  });
+}
+
+function readClosure<T>(
   connection: Connection,
   identity: RunnerAttemptIdentity,
   signal: AbortSignal | undefined,
-  request: { suffix: '' | '/history'; bytes: number; capture: (value: unknown, expected: AbsenceIdentity) => T },
+  request: {
+    suffix: '/absence' | '/absence/history' | '/history';
+    bytes: number;
+    capture: (value: unknown, expected: AbsenceIdentity) => T;
+  },
 ): Promise<ClientResult<T>> {
   return connection.credits.run<T>('source', signal, async (original) => {
     if (identity.generation !== 1) return { ok: false, error: { kind: 'request' } };
@@ -51,7 +75,7 @@ function readAbsence<T>(
       {
         origin: connection.origin,
         method: 'GET',
-        path: `/runner/v1/attempts/${encodeURIComponent(identity.attemptId)}/source/absence${request.suffix}`,
+        path: `/runner/v1/attempts/${encodeURIComponent(identity.attemptId)}/source${request.suffix}`,
         headers: { authorization: `Bearer ${connection.token}`, ...scopeHeaders(identity) },
         body: undefined,
         signal: original.signal,

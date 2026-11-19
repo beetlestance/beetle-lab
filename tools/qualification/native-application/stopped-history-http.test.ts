@@ -5,9 +5,10 @@ import { createK6LiveApproval } from '@beetle/contracts/k6-live';
 import {
   captureOutputAbsence,
   encodeStoppedHistoryClosure,
+  encodeStoppedDeliveryHistory,
   STOPPED_HISTORY_ENVELOPE_BYTES,
 } from '@beetle/contracts/output-source';
-import type { StoppedHistoryClosure } from '@beetle/contracts/output-source';
+import type { StoppedDeliveryHistory, StoppedHistoryClosure } from '@beetle/contracts/output-source';
 import { createRunnerGateway } from '../../../app/src/adapters/outbound/runner/index.js';
 import { createAgentServer } from '../../../agent/src/transport/index.js';
 import { identity, loaded, loopback } from '../../../app/test/runner/fixtures.js';
@@ -15,7 +16,7 @@ import { identity, loaded, loopback } from '../../../app/test/runner/fixtures.js
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const { organizationId, workspaceId, attemptId } = identity;
 const key = { organizationId, workspaceId, attemptId, generation: 1 };
-const route = `/runner/v1/attempts/${attemptId}/source/absence/history`;
+const sourceRoute = `/runner/v1/attempts/${attemptId}/source`;
 const unused = async (): Promise<never> => {
   throw new Error('Unexpected service call');
 };
@@ -65,8 +66,26 @@ function closed(): StoppedHistoryClosure {
   };
 }
 
-function serving(record: StoppedHistoryClosure | null) {
+function delivered(): StoppedDeliveryHistory {
+  return {
+    delivery: {
+      version: 1,
+      finalAgentSeq: 4,
+      receipt: {
+        version: 1,
+        key: { ...key, generation: 1 },
+        journalAuthority: identity.journalAuthority,
+        manifestDigest: hash('manifest'),
+        sourceDigest: hash('source'),
+      },
+    },
+    observation: closed().observation,
+  };
+}
+
+function serving(record: StoppedHistoryClosure | null, delivered: StoppedDeliveryHistory | null = null) {
   const read = vi.fn(async () => record);
+  const readDelivery = vi.fn(async () => delivered);
   const app = createAgentServer({
     journalAuthority: identity.journalAuthority,
     installation: {
@@ -79,6 +98,7 @@ function serving(record: StoppedHistoryClosure | null) {
     capabilities: unused,
     credential: loaded().token,
     absences: { readOutputAbsence: async () => record?.absence ?? null, readStoppedHistoryClosure: read },
+    deliveries: { readStoppedDeliveryClosure: readDelivery },
     journal: {
       get: async () => ({
         ...key,
@@ -95,7 +115,7 @@ function serving(record: StoppedHistoryClosure | null) {
       acknowledge: unused,
     },
   });
-  return { read, app };
+  return { read, readDelivery, app };
 }
 
 it('round trips one exact closure and its canonical observation over native agent HTTP', async () => {
@@ -130,26 +150,30 @@ it('distinguishes pending closure from committed absence without observations', 
   }
 });
 
-it('rejects untrusted authority before invoking the durable history owner', async () => {
-  const { app, read } = serving(closed());
-  try {
-    const origin = await app.listen({ host: '127.0.0.1', port: 0 });
-    const response = await fetch(new URL(route, origin), {
-      headers: {
-        authorization: `Bearer ${loaded().token}`,
-        'x-beetle-organization-id': organizationId,
-        'x-beetle-workspace-id': workspaceId,
-        'x-beetle-generation': '1',
-        'x-beetle-journal-authority': attemptId,
-      },
-    });
-    await response.arrayBuffer();
-    expect(response.status).toBe(409);
-    expect(read).not.toHaveBeenCalled();
-  } finally {
-    await app.close();
-  }
-});
+it.each(['/absence/history', '/history'])(
+  'rejects untrusted authority for %s before journal access',
+  async (suffix) => {
+    const { app, read, readDelivery } = serving(closed(), delivered());
+    try {
+      const origin = await app.listen({ host: '127.0.0.1', port: 0 });
+      const response = await fetch(new URL(sourceRoute + suffix, origin), {
+        headers: {
+          authorization: `Bearer ${loaded().token}`,
+          'x-beetle-organization-id': organizationId,
+          'x-beetle-workspace-id': workspaceId,
+          'x-beetle-generation': '1',
+          'x-beetle-journal-authority': attemptId,
+        },
+      });
+      await response.arrayBuffer();
+      expect(response.status).toBe(409);
+      expect(read).not.toHaveBeenCalled();
+      expect(readDelivery).not.toHaveBeenCalled();
+    } finally {
+      await app.close();
+    }
+  },
+);
 
 it.each(['digest', 'sequence', 'oversize'])('rejects a corrupt %s response', async (issue) => {
   const record = closed();
@@ -175,3 +199,67 @@ it.each(['digest', 'sequence', 'oversize'])('rejects a corrupt %s response', asy
     await runner.close();
   }
 });
+
+it.each(['observed', 'no observations', 'pending', 'absent', 'stale sequence'] as const)(
+  'distinguishes %s for source companion history',
+  async (state) => {
+    const value = delivered();
+    const record =
+      state === 'no observations'
+        ? { ...value, observation: null }
+        : state === 'stale sequence'
+          ? { ...value, delivery: { ...value.delivery, finalAgentSeq: 3 } }
+          : state === 'observed'
+            ? value
+            : null;
+    const { app, readDelivery } = serving(state === 'absent' ? closed() : null, record);
+    const gateway = createRunnerGateway(loaded(await app.listen({ host: '127.0.0.1', port: 0 })));
+    try {
+      const reply = await gateway.output(identity).stoppedDeliveryHistory!();
+      if (state === 'observed' || state === 'no observations') expect(reply).toEqual({ ok: true, value: record });
+      else
+        expect(reply).toMatchObject({
+          ok: false,
+          error: {
+            kind: 'protocol',
+            protocol: {
+              reason:
+                state === 'pending' ? 'source_pending' : state === 'absent' ? 'source_absent' : 'invalid_protocol',
+            },
+          },
+        });
+      expect(readDelivery).toHaveBeenCalledExactlyOnceWith(key);
+    } finally {
+      await gateway.close();
+      await app.close();
+    }
+  },
+);
+
+it.each(['intent', 'source digest', 'observation digest'])(
+  'rejects a source companion with a corrupt %s',
+  async (issue) => {
+    const record = delivered();
+    const valid = encodeStoppedDeliveryHistory(record, { ...identity, generation: 1 }, hash);
+    const body =
+      issue === 'intent'
+        ? valid.replace(identity.intentDigest, 'f'.repeat(64))
+        : issue === 'source digest'
+          ? valid.replace(record.delivery.receipt.sourceDigest, 'invalid')
+          : valid.replace(record.observation!.digest, 'f'.repeat(64));
+    const runner = await loopback((_, response) => {
+      response.writeHead(200, { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) });
+      response.end(body);
+    });
+    const gateway = createRunnerGateway(runner.loaded);
+    try {
+      expect(await gateway.output(identity).stoppedDeliveryHistory!()).toMatchObject({
+        ok: false,
+        error: { kind: 'response' },
+      });
+    } finally {
+      await gateway.close();
+      await runner.close();
+    }
+  },
+);

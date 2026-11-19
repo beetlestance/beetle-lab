@@ -31,6 +31,8 @@ export interface AgentHttpOptions {
   /** Read-only durable closure capability; transport cannot create absence authority. */
   readonly absences?: Pick<JournalOutputAbsence, 'readOutputAbsence'> &
     Partial<Pick<Journal, 'readStoppedHistoryClosure'>>;
+  /** Read-only access to the immutable delivery and checkpoint transaction. */
+  readonly deliveries?: Pick<Journal, 'readStoppedDeliveryClosure'>;
   capabilities(): Promise<Capabilities>;
 }
 export interface HttpScope {

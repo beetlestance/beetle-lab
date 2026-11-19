@@ -175,6 +175,7 @@ export function createAgentServer(options: AgentHttpOptions): FastifyInstance {
   registerSources(server, {
     outputs: options.outputs,
     absences: options.absences,
+    deliveries: options.deliveries,
     journal: options.journal,
     identity,
     operations,

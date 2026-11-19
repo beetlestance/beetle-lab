@@ -4,6 +4,7 @@ import { encodeJson } from '@beetle/contracts';
 import {
   captureOutputAbsence,
   encodeStoppedHistoryClosure,
+  encodeStoppedDeliveryHistory,
   OUTPUT_ABSENCE_BYTES,
 } from '@beetle/contracts/output-source';
 import type { AbsenceIdentity } from '@beetle/contracts/output-source';
@@ -16,6 +17,7 @@ import { snapshotBody } from './json.js';
 
 type Services = Pick<AgentHttpOptions, 'journal' | 'journalAuthority'> & {
   readonly absences: AgentHttpOptions['absences'];
+  readonly deliveries: AgentHttpOptions['deliveries'];
 };
 function check(budget: Operation): void {
   if (budget.signal?.aborted || performance.now() >= budget.deadline)
@@ -56,10 +58,10 @@ export function sendAbsence(reply: FastifyReply, value: NonNullable<Awaited<Retu
 
 function requireStoppedObservation(
   snapshot: ReturnType<typeof snapshotBody>,
-  proof: NonNullable<Awaited<ReturnType<typeof readAbsence>>>,
+  finalAgentSeq: number,
   available: boolean,
 ): void {
-  if (proof.finalAgentSeq !== snapshot.lastSeq) throw new AgentHttpError(500, 'invalid_protocol');
+  if (finalAgentSeq !== snapshot.lastSeq) throw new AgentHttpError(500, 'invalid_protocol');
   if (!available) return;
   if (
     snapshot.state !== 'exited' ||
@@ -70,27 +72,44 @@ function requireStoppedObservation(
     throw new AgentHttpError(500, 'invalid_protocol');
 }
 
-export async function readStoppedHistory(services: Services, scope: GenerationKey, budget: Operation): Promise<string> {
-  const reader = services.absences;
-  if (!reader?.readStoppedHistoryClosure) throw new AgentHttpError(503, 'execution_lost', 'transport');
+const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+
+async function readClosure(services: Services, scope: GenerationKey, kind: 'absence' | 'delivery') {
+  if (kind === 'absence' && services.absences?.readStoppedHistoryClosure)
+    return services.absences.readStoppedHistoryClosure(scope);
+  if (kind === 'delivery' && services.deliveries) return services.deliveries.readStoppedDeliveryClosure(scope);
+  throw new AgentHttpError(503, 'execution_lost', 'transport');
+}
+
+export async function readStoppedClosure(
+  services: Services,
+  scope: GenerationKey,
+  budget: Operation,
+  kind: 'absence' | 'delivery',
+): Promise<string> {
   check(budget);
-  const record = await reader.readStoppedHistoryClosure(scope);
+  const record = await readClosure(services, scope, kind);
   check(budget);
   const snapshot = snapshotBody(await services.journal.get(scope), scope);
   check(budget);
-  if (record === null) throw new AgentHttpError(409, 'source_pending', 'transport');
+  if (record === null) {
+    if (kind === 'delivery' && services.absences && (await readAbsence(services, scope, budget)) !== null)
+      throw new AgentHttpError(409, 'source_absent');
+    throw new AgentHttpError(409, 'source_pending', 'transport');
+  }
   const expected = {
     ...scope,
     generation: 1 as const,
     intentDigest: snapshot.intentDigest,
     journalAuthority: services.journalAuthority,
   };
-  const proof = captureProof(record.absence, expected);
-  requireStoppedObservation(snapshot, proof, record.observation !== null);
+  const sequence = 'delivery' in record ? record.delivery.finalAgentSeq : record.absence.finalAgentSeq;
+  requireStoppedObservation(snapshot, sequence, record.observation !== null);
   try {
-    const json = encodeStoppedHistoryClosure({ absence: proof, observation: record.observation }, expected, (text) =>
-      createHash('sha256').update(text).digest('hex'),
-    );
+    const json =
+      'delivery' in record
+        ? encodeStoppedDeliveryHistory(record, expected, hash)
+        : encodeStoppedHistoryClosure(record, expected, hash);
     check(budget);
     return json;
   } catch (error) {
