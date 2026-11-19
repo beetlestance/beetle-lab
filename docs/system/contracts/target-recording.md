@@ -95,14 +95,14 @@ The numeric archive keeps its existing format. No execution outcome changes.
 
 | Code | Reviewed |
 | --- | --- |
-| `engines/k6/wrapper/attempt/attempt.ts` | `73fc69e3dd70` |
+| `engines/k6/wrapper/attempt/attempt.ts` | `fdb066c454b0` |
 | `engines/k6/wrapper/attempt/target.ts` | `36dc1ecb06b8` |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
 | `engines/k6/wrapper/target-sampling/` | `6afe70750068` |
 | `engines/k6/wrapper/target-archive/` | `7bc3a5dba7c2` |
 | `contracts/runner/v1/target-runtime-units.schema.json` | `05a6a5565ff1` |
 | `contracts/src/target-runtime/` | `cc1c391100f1` |
-| `engines/k6/wrapper/artifact-custody/append-files.ts` | `0a83d0325b03` |
+| `engines/k6/wrapper/artifact-custody/append-files.ts` | `8a8fa01783bd` |
 | `contracts/api/v2/live-history-prefix.schema.json` | `995b549a49d8` |
 | `contracts/api/v2/live-metrics.schema.json` | `7595a5a70b98` |
 | `contracts/src/api/live-metrics.ts` | `49964b8426b1` |

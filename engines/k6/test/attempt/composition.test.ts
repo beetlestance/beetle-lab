@@ -1,9 +1,10 @@
-import { readFile, stat } from 'node:fs/promises';
+import { open, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { verifyEngineResultSeal } from '@beetle/contracts';
 import type { ControlEvent } from '@beetle/contracts';
+import { MetricFiles } from '../../wrapper/attempt/archive/files.js';
 import { replayControl } from '../../wrapper/control/index.js';
 import { fixture, native, resetNative } from './fixtures.js';
 import { discoveryConfig } from '../result/fixtures.js';
@@ -111,4 +112,53 @@ it('preserves discovery native99 witness semantics through the real mapper', asy
   expect(receipt.ok, JSON.stringify(receipt)).toBe(true);
   expect(receipt.result).toMatchObject({ mode: 'discovery', outcome: 'passed', execution: { exitCode: 99 },
     expectedAbort: { ruleId: 'stop', reached: true } });
+});
+
+it('keeps sealed native evidence and withholds a same-length damaged archive', async () => {
+  const f = await setup();
+  const original = MetricFiles.prototype.verify;
+  const verify = vi.spyOn(MetricFiles.prototype, 'verify').mockImplementationOnce(async function (this: MetricFiles, lane, expected) {
+    const file = await open(join(f.outputRoot, 'metric-windows.ndjson'), 'r+');
+    try {
+      await file.write(Buffer.from('X'), 0, 1, 0);
+    } finally {
+      await file.close();
+    }
+    return original.call(this, lane, expected);
+  });
+  try {
+    const events: ControlEvent[] = [];
+    const receipt = await f.run({ onEvent: async (event) => { events.push(event); } });
+    expect(receipt.ok, JSON.stringify(receipt)).toBe(true);
+    const result = receipt.result!;
+    expect(result).toMatchObject({
+      outcome: 'inconclusive',
+      completeness: 'partial',
+      execution: { status: 'error', reason: 'artifact_incomplete' },
+    });
+    expect(verifyEngineResultSeal(result, text => createHash('sha256').update(text).digest('hex')).ok).toBe(true);
+    expect(result.artifacts.map(({ kind }) => kind)).toEqual(expect.arrayContaining(['native-summary', 'numeric-final', 'performance-report', 'metrics-csv']));
+    expect(result.artifacts.some(({ kind }) => kind === 'metric-windows' || kind === 'metric-index')).toBe(false);
+    for (const artifact of result.artifacts) {
+      const bytes = await readFile(join(f.outputRoot, artifact.relativePath));
+      expect(bytes.byteLength).toBe(artifact.bytes);
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(artifact.sha256);
+    }
+    const numeric = JSON.parse(await readFile(join(f.outputRoot, 'numeric-final.json'), 'utf8'));
+    const report = result.artifacts.find(({ kind }) => kind === 'performance-report')!;
+    const reportText = await readFile(join(f.outputRoot, report.relativePath), 'utf8');
+    expect(reportText).toContain('metric window coverage: missing');
+    expect(reportText).toContain('Observed metric series: 0.');
+    expect(events.find(({ kind }) => kind === 'engine.result')?.payload).toEqual(result);
+    expect(events.at(-1)).toMatchObject({ kind: 'phase.finished', phase: 'seal' });
+    expect(numeric).toMatchObject({ timing: { testRunDurationMs: 1000 }, metrics: null, windowsRetained: false, history: null });
+    const size = async (name: string) => (await stat(join(f.outputRoot, name))).size;
+    const archiveBytes = await size('metric-windows.ndjson') + await size('metric-index.ndjson');
+    const produced = events.filter((event) => event.kind === 'phase.finished' && ['execute', 'collect'].includes(event.phase))
+      .reduce((bytes, event) => bytes + (event.kind === 'phase.finished' ? event.payload.outputBytes : 0), 0);
+    expect(produced).toBe(archiveBytes + result.artifacts.reduce((bytes, artifact) => bytes + artifact.bytes, 0));
+    expect((await readFile(join(f.outputRoot, 'metric-windows.ndjson'), 'utf8')).startsWith('X')).toBe(true);
+  } finally {
+    verify.mockRestore();
+  }
 });
