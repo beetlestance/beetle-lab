@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
-import { cleanup, screen, within } from '@testing-library/react';
+import { cleanup, screen, within, fireEvent } from '@testing-library/react';
 import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import type { Run, RunHistorySummary } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
@@ -10,22 +10,51 @@ import { catalogue, json, mountComparison, runIds, scope, snapshot, testClient }
 
 afterEach(cleanup);
 function measured(run: Run, rps: number, p95: number, ratio: number): RunHistorySummary {
-  return { ...pendingRunHistorySummary(run), availability: 'ready', source: { generation: 1,
-    manifestDigest: 'a'.repeat(64), numericArtifactId: '44444444-4444-4444-8444-444444444444', numericSha256: 'b'.repeat(64),
-    numericVersion: 4, measurementSourceTimeMs: 1000, coverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 } },
-    testDurationMs: 2000, requestCount: rps * 2, requestsPerSecond: rps, httpFailures: Math.round(rps * 2 * ratio),
-    httpSamples: rps * 2, httpFailureRatio: ratio,
+  return {
+    ...pendingRunHistorySummary(run),
+    availability: 'ready',
+    source: {
+      generation: 1,
+      manifestDigest: 'a'.repeat(64),
+      numericArtifactId: '44444444-4444-4444-8444-444444444444',
+      numericSha256: 'b'.repeat(64),
+      numericVersion: 4,
+      measurementSourceTimeMs: 1000,
+      coverage: { complete: true, latePoints: 0, markerDelayDroppedBuckets: 0 },
+    },
+    testDurationMs: 2000,
+    requestCount: rps * 2,
+    requestsPerSecond: rps,
+    httpFailures: Math.round(rps * 2 * ratio),
+    httpSamples: rps * 2,
+    httpFailureRatio: ratio,
     httpP95: { source: 'histogram-estimate', scale: 4, estimate: p95, lower: p95 - 1, upper: p95 + 1 },
-    publishedArtifactBytes: 1536, retainedLogicalBytes: 67584, metadataAllowanceBytes: 65536 };
+    publishedArtifactBytes: 1536,
+    retainedLogicalBytes: 67584,
+    metadataAllowanceBytes: 65536,
+  };
 }
 
 it('shows Compare / Empty with one workspace-context read and no comparison or metric reads', async () => {
-  const f = testClient(() => json({scope:{kind:'workspace',...scope},workspaceName:'checkout-workspace',items:[],summaries:[],contexts:[],nextCursor:null}));
+  const f = testClient(() =>
+    json({
+      scope: { kind: 'workspace', ...scope },
+      workspaceName: 'checkout-workspace',
+      items: [],
+      summaries: [],
+      contexts: [],
+      nextCursor: null,
+    }),
+  );
   mountComparison(f.client, false, '/');
   expect(await screen.findByRole('heading', { name: 'Pick runs to compare' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Go to runs' })).toHaveAttribute('href', routes.runs(scope.organizationId, scope.workspaceId));
-  await screen.findByRole('link',{name:'checkout-workspace'});
-  expect(f.records).toHaveLength(1);expect(f.records[0]!.path).toContain('/runs?limit=1');
+  expect(screen.getByRole('link', { name: 'Go to runs' })).toHaveAttribute(
+    'href',
+    routes.runs(scope.organizationId, scope.workspaceId),
+  );
+  await screen.findByRole('link', { name: 'checkout-workspace' });
+  expect(f.records).toHaveLength(1);
+  expect(f.records[0]!.path).toContain('/runs?limit=1');
 });
 
 it('labels client deltas from the baseline, offers Make baseline and lists what was different', async () => {
@@ -45,9 +74,11 @@ it('labels client deltas from the baseline, offers Make baseline and lists what 
   });
   mountComparison(f.client);
   const table = await screen.findByRole('table', { name: /difference from the baseline/ });
-  expect(screen.getByRole('region', {name: 'Whole-run figures'})).toHaveAttribute('tabindex', '0');
-  expect(screen.getByRole('region', {name: 'Run settings differences'})).toHaveAttribute('tabindex', '0');
-  const rate = within(table).getByRole('rowheader', { name: 'Requests a second' }).closest('tr')!;
+  expect(screen.getByRole('region', { name: 'Whole-run figures' })).toHaveAttribute('tabindex', '0');
+  expect(screen.getByRole('region', { name: 'Run settings differences' })).toHaveAttribute('tabindex', '0');
+  fireEvent.click(screen.getByText('Additional whole-run figures', { selector: 'summary' }));
+  const extra = screen.getByRole('table', { name: 'Additional whole-run figures' });
+  const rate = within(extra).getByRole('rowheader', { name: 'Requests a second' }).closest('tr')!;
   expect(rate).toHaveTextContent('100');
   expect(rate).toHaveTextContent('110+10%');
   const p95 = within(table).getByRole('rowheader', { name: 'p95, histogram estimate' }).closest('tr')!;
@@ -56,9 +87,14 @@ it('labels client deltas from the baseline, offers Make baseline and lists what 
   expect(failed).toHaveTextContent('+4 pp');
   expect(screen.getByText('Baseline', { selector: '.badge' })).toBeVisible();
   const make = screen.getByRole('link', { name: /Make .* the baseline/ });
-  expect(make).toHaveAttribute('href', routes.comparison(scope.organizationId, scope.workspaceId, [runIds[1]!, runIds[0]!]));
+  expect(make).toHaveAttribute(
+    'href',
+    routes.comparison(scope.organizationId, scope.workspaceId, [runIds[1]!, runIds[0]!]),
+  );
   expect(screen.getByRole('table', { name: 'What was different between the runs' })).toBeVisible();
-  expect(f.records.filter((record) => record.method !== 'GET' && !record.path.endsWith('/comparisons'))).toHaveLength(0);
+  expect(f.records.filter((record) => record.method !== 'GET' && !record.path.endsWith('/comparisons'))).toHaveLength(
+    0,
+  );
 });
 
 it('never invents a delta when either side is unknown', () => {

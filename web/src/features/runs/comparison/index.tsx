@@ -4,7 +4,8 @@ import { Badge, Status } from '../../../components/Badge.js';
 import { Button, buttonClass } from '../../../components/Button.js';
 import { runStatus } from '../../run-results/format.js';
 import type { RunScope } from '../types.js';
-import { ComparisonDeltas, WhatWasDifferent } from './Deltas.js';
+import { ComparisonDeltas } from './Deltas.js';
+import { WhatWasDifferent } from './SettingsTable.js';
 import { ComparisonFacts } from './Facts.js';
 import { ComparedMetric, MetricSelection } from './Metric.js';
 import { comparisonRunIds } from './selection.js';
@@ -12,7 +13,6 @@ import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
 import { RecordedComparisonCharts } from './RecordedCharts.js';
 import { ComparisonTargetRuntime } from './TargetRuntime.js';
-import { ComparisonSlos } from './Slos.js';
 import { ComparisonFailedSlos } from './FailedSlos.js';
 import { ComparisonHeadline } from './Headline.js';
 import compareArt from '../../../assets/illustrations/compare.svg';
@@ -84,22 +84,31 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
       {snapshot && (
         <>
           <ComparisonFailedSlos items={snapshot.items} />
-          <RunStrip scope={scope} ids={ids} snapshot={snapshot} contexts={state.contexts} />
           <ComparisonDeltas
+            key={'summary:' + ids.join(',')}
+            headers={snapshot.items.map((item, index) => (
+              <RunColumn
+                key={item.run.id}
+                scope={scope}
+                ids={ids}
+                item={item}
+                index={index}
+                contexts={state.contexts}
+              />
+            ))}
             items={snapshot.items}
             summaries={state.summaries}
             overviews={state.overviews}
             histories={state.histories}
           />
-          <ComparisonSlos key={ids.join(',')} items={snapshot.items} />
           <RecordedComparisonCharts
-            key={ids.join(',')}
+            key={'workload:' + ids.join(',')}
             items={snapshot.items}
             histories={state.histories}
             overviews={state.overviews}
           />
           <ComparisonTargetRuntime
-            key={ids.join(',')}
+            key={'target:' + ids.join(',')}
             items={snapshot.items}
             targets={state.targets}
             histories={state.histories}
@@ -169,52 +178,51 @@ function ComparisonHeader({ scope, ids, state }: { scope: RunScope; ids: string[
   );
 }
 
-function RunStrip({
+function RunColumn({
   scope,
   ids,
-  snapshot,
+  item,
+  index,
   contexts,
 }: {
   scope: RunScope;
   ids: string[];
-  snapshot: Snapshot;
+  item: Snapshot['items'][number];
+  index: number;
   contexts: ComparisonState['contexts'];
 }) {
   const { organizationId, workspaceId } = scope;
   const labels = comparisonRunLabels(ids);
+  const status = runStatus(item.run);
+  const context = contexts?.get(item.run.id.toLowerCase());
+  const label = labels.get(item.run.id.toLowerCase())!;
+  const others = ids.filter((id) => id !== item.run.id.toLowerCase());
   return (
-    <ul className="compare-runs" aria-label="Compared runs">
-      {snapshot.items.map((item, index) => {
-        const status = runStatus(item.run);
-        const context = contexts?.get(item.run.id.toLowerCase());
-        const label = labels.get(item.run.id.toLowerCase())!;
-        const others = ids.filter((id) => id !== item.run.id.toLowerCase());
-        return (
-          <li key={item.run.id} className="compare-run">
-            <Status tone={status.tone}>{status.label}</Status>
-            <Link to={routes.run(organizationId, workspaceId, item.run.id)}>
-              {context?.suiteName && <span>{context.suiteName} </span>}
-              <span className="number">{label}</span>
-              <span className="sr-only">, run {item.run.id}</span>
-            </Link>
-            <span className="compare-muted">
-              {context ? `revision ${context.revisionOrdinal}` : 'Revision unknown'}
-            </span>
-            {index === 0 ? (
-              <Badge tone="amber">Baseline</Badge>
-            ) : (
-              <Link
-                className={buttonClass('text', 'sm')}
-                to={routes.comparison(organizationId, workspaceId, [item.run.id.toLowerCase(), ...others])}
-                aria-label={`Make ${label} the baseline`}
-              >
-                Make baseline
-              </Link>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <div className="compare-run-column">
+      <span className="compare-column-summary" data-run-index={index}>
+        <Link
+          to={routes.run(organizationId, workspaceId, item.run.id)}
+          title={context ? `${context.suiteName}, revision ${context.revisionOrdinal}` : 'Revision unknown'}
+        >
+          {context?.suiteName && <span className="sr-only">{context.suiteName} </span>}
+          <span className="number">{label}</span>
+          <span className="sr-only">, run {item.run.id}</span>
+        </Link>
+        <Status tone={status.tone}>{status.label}</Status>
+      </span>
+      <span className="sr-only">{context ? `revision ${context.revisionOrdinal}` : 'Revision unknown'}</span>
+      {index === 0 ? (
+        <Badge tone="amber">Baseline</Badge>
+      ) : (
+        <Link
+          className={buttonClass('text', 'sm')}
+          to={routes.comparison(organizationId, workspaceId, [item.run.id.toLowerCase(), ...others])}
+          aria-label={`Make ${label} the baseline`}
+        >
+          Make baseline
+        </Link>
+      )}
+    </div>
   );
 }
 
