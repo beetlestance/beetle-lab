@@ -101,7 +101,7 @@ it('retires mutable names after a failed comparison refresh and keeps board sect
   expect(
     screen
       .getByRole('region', { name: 'Native SLO comparisons' })
-      .compareDocumentPosition(screen.getByRole('heading', { name: 'Recorded runs over time' })) &
+      .compareDocumentPosition(screen.getByRole('heading', { name: 'Requests and virtual users' })) &
       Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
   expect(headings.indexOf('Target runtime')).toBeLessThan(headings.indexOf('What was different'));

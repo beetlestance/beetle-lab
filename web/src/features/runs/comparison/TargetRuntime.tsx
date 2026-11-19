@@ -22,12 +22,14 @@ export function ComparisonTargetRuntime({
   const [hoverT, onHover] = useState<number | null>(null);
   const labels = comparisonRunLabels(items.map((i) => i.run.id));
   return (
-    <section className="compare-section" aria-label="Target runtime comparison">
-      <h2>Target runtime</h2>
-      <p className="compare-muted">
-        Target-reported observations, relative to each run’s native marker. Only matching metrics with declared
-        compatible units share a scale. No phase alignment or gap filling.
-      </p>
+    <section className="compare-section compare-chart-section" aria-label="Target runtime comparison">
+      <header className="compare-chart-heading">
+        <h2>Target runtime</h2>
+        <p className="compare-muted">
+          Target-reported observations, relative to each run’s native marker. Only matching metrics with declared
+          compatible units share a scale. No phase alignment or gap filling.
+        </p>
+      </header>
       {items.map((item) => {
         const id = item.run.id.toLowerCase(),
           read = targets?.get(id),
