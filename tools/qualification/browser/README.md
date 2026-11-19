@@ -151,3 +151,13 @@ The same assertions run after explicit Refresh comparison. Target counts must
 stay at two readiness requests, 80 work requests and 12–64 sampler observations,
 with no unexpected requests. This is six-phase functional coverage, not full
 visual acceptance, variable-value/hover proof or target failure qualification.
+
+Local ARM64 target evidence at six matching `322d2851` images:
+
+| Profile | Harness | Completed | Duration | Cleanup |
+| --- | --- | --- | --- | --- |
+| `target-runtime` | `91c7f853` | 4 phases | 44.47 s | Installation and browser verified |
+| `target-comparison` | `f94e79ae` | 6 phases | 67.51 s | Installation and browser verified |
+
+These are private synthetic-fixture observations, not hosted evidence. They do
+not qualify visual matching, target-failure comparison or another architecture.
