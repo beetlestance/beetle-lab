@@ -22,7 +22,7 @@ once; cleanup retires/aborts tokens and cancels queued waits. API originals keep
 admission until they settle. Errors stop automatic reads; retries are manual. Catalogue failure preserves the
 accepted comparison and shows a scoped alert with explicit retry.
 Recorded p95/requests/failures/active-VU overlays retain each run's <=900 actual source positions and
-native-marker-relative time on one scale. Gaps, nulls and zero remain exact; no
+native-marker-relative time. Resting legends use bound run aggregates; hover uses source points. Gaps/nulls/zero remain exact; no
 phase warping, union-grid fill or extrapolation. Peak requires the same numeric
 source as overview (generation/version/hash/manifest/marker), never configured load.
 The optional legacy selector still keeps <=1,000 points/1 MiB per run with its own
@@ -35,6 +35,6 @@ shows failure/reading with a matched saved limit;
 legacy missing details stay explicit. No regrading, new reads or polling.
 Named table scroll regions wrap on phones. Failed refresh retires mutable names.
 Configured target reads bind sole sealed descriptors and numeric ID/hash timing.
-Shared verified byte admission, same metric/declared units; no raw-unit overlay.
+Shared byte admission and declared same-metric units; resting target means require complete known during readings. No raw overlay.
 120px plots retain source timing/gaps; healthy provenance uses details, uncertainty stays visible. Full family acceptance
 remains open. Checks: comparison, target-runtime, history and lifecycle tests.

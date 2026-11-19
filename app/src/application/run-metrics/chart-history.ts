@@ -1,7 +1,7 @@
 import { DistributionError } from '@beetle/contracts/metrics';
 import type { MetricWindow } from '@beetle/contracts/metrics';
 import { isK6ExecuteRequest, K6HttpSummaryError } from '@beetle/contracts/k6-history';
-import { chartSampleOrdinals } from '@beetle/contracts/api';
+import { chartSampleOrdinals, recordedValueMean } from '@beetle/contracts/api';
 import type { RunChartHistory, RunChartPoint } from '@beetle/contracts/api';
 import type { RunMetricSeriesQuery } from '../../ports/run-metrics.js';
 import type { Publication, ReadyArchive } from './archive.js';
@@ -42,15 +42,26 @@ async function readPoints(io: ArchiveIO, archive: ReadyArchive) {
   const points: RunChartPoint[] = [];
   let peak: number | null = null;
   let knownRequestWindows = 0;
+  const vus: number[] = [];
+  let firstStart: number | undefined;
+  let lastEnd = 0;
   await scanArchiveWindows(io, archive, (window, sequence) => {
     const current = point(window, sequence, points.at(-1));
+    firstStart ??= current.startTimeMs;
+    lastEnd = current.endTimeMs;
+    if (current.vus !== null) vus.push(current.vus);
     if (current.requestCount !== null) {
       peak = Math.max(peak ?? 0, current.requestCount);
       knownRequestWindows++;
     }
     if (selected.has(sequence)) points.push(current);
   });
-  return { points, observedPeakRequestsPerSecond: peak, knownRequestWindows };
+  const contiguous = firstStart !== undefined && lastEnd - firstStart === archive.numeric.windows * 1000;
+  const meanVus =
+    archive.numeric.coverage.complete && contiguous && vus.length === archive.numeric.windows
+      ? recordedValueMean(vus)
+      : null;
+  return { points, observedPeakRequestsPerSecond: peak, knownRequestWindows, meanVus, knownVusWindows: vus.length };
 }
 export async function chartHistory(
   q: RunMetricSeriesQuery,
@@ -68,6 +79,8 @@ export async function chartHistory(
     points: [],
     observedPeakRequestsPerSecond: null,
     knownRequestWindows: 0,
+    meanVus: null,
+    knownVusWindows: 0,
     reason: null,
   };
   if (!archive) {
@@ -77,7 +90,8 @@ export async function chartHistory(
   if (tooLarge(archive)) return { ...base, reason: 'too_large' };
   if (!io) return fail();
   try {
-    return { ...base, ...(await readPoints(io, archive)), sampled: archive.numeric.windows > 900 };
+    const read = await readPoints(io, archive);
+    return { ...base, ...read, sampled: archive.numeric.windows > 900 };
   } catch (error) {
     if (error instanceof DistributionError || error instanceof K6HttpSummaryError) return fail();
     throw error;

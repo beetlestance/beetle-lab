@@ -9,7 +9,7 @@ function reader(f:Awaited<ReturnType<typeof chartFixture>>){const service=f.serv
 it('returns real source windows, pooled percentiles and actual zero gauges',async()=>{
  const f=await chartFixture();const {read,key}=reader(f);const value=await read();
  expect(validateApi('RunChartHistory',value).ok).toBe(true);expect(runChartHistoryMatches(value,key)).toBe(true);
- expect(value).toMatchObject({reason:null,windows:3,sampled:false,observedPeakRequestsPerSecond:9,knownRequestWindows:3});
+ expect(value).toMatchObject({reason:null,windows:3,sampled:false,observedPeakRequestsPerSecond:9,knownRequestWindows:3,meanVus:1,knownVusWindows:3});
  expect(value.points.map(p=>p.sequence)).toEqual([1,2,3]);expect(value.points[0]).toMatchObject({requestCount:9,httpFailures:1,httpSamples:9,vus:0,vusMax:null,gapBefore:false});
  expect(value.points[0]?.httpP95?.source).toBe('histogram-estimate');
  const data=f.descriptors.find(a=>a.kind==='metric-windows')!;
@@ -42,4 +42,19 @@ it('refuses oversized histories before a full data scan and keeps unavailable hi
  expect(large.reads.some(r=>r.id===data.artifactId&&r.start===0&&r.end===data.bytes)).toBe(false);
  const absent=await chartFixture();absent.descriptors.splice(0,absent.descriptors.length,...absent.descriptors.filter(a=>a.kind==='numeric-final'));
  expect(await reader(absent).read()).toMatchObject({reason:'not_recorded',source:null,windows:0,points:[]});
+});
+
+it('computes the VU mean before 900-point selection in the same bounded archive scan',async()=>{
+ const skipped=Array.from({length:901},(_,i)=>i+1).find(i=>!new Set(chartSampleOrdinals(901)).has(i))!;
+ const f=await chartFixture(901,()=>0,-1,i=>i+1===skipped?1000:0);const {read,key}=reader(f);const result=await read();
+ expect(result.points.every(point=>point.vus===0)).toBe(true);expect(result.meanVus).toBeCloseTo(1000/901,12);expect(result.knownVusWindows).toBe(901);
+ expect(runChartHistoryMatches(result,key)).toBe(true);
+ const artifact=f.descriptors.find(a=>a.kind==='metric-windows')!;expect(f.reads.filter(r=>r.id===artifact.artifactId&&r.start===0&&r.end===artifact.bytes)).toHaveLength(1);
+});
+for(const scenario of ['zero','missing','gap','partial'] as const)it(`preserves ${scenario} VU aggregate evidence without inventing a reading`,async()=>{
+ const f=await chartFixture(3,()=>0,scenario==='gap'?0:-1,i=>scenario==='missing'&&i===1?null:0);
+ if(scenario==='partial'){rewrite(f,'numeric-final',text=>{const value=JSON.parse(text);value.metrics.windowCoverage={complete:false,latePoints:1,markerDelayDroppedBuckets:0};return JSON.stringify(value);});rebindPair(f);}
+ const {read,key}=reader(f);const result=await read();
+ expect(result.knownVusWindows).toBe(scenario==='missing'?2:3);expect(result.meanVus).toBe(scenario==='zero'?0:null);
+ expect(runChartHistoryMatches(result,key)).toBe(true);
 });

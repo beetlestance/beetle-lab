@@ -121,5 +121,7 @@
   ],
   "observedPeakRequestsPerSecond": 9,
   "knownRequestWindows": 3,
-  "reason": null
+  "reason": null,
+  "knownVusWindows": 3,
+  "meanVus": 1.0
 }

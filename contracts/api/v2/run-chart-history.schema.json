@@ -194,6 +194,23 @@
             "unavailable",
             "too_large"
           ]
+        },
+        "meanVus": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1.7976931348623157e+308
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "knownVusWindows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3600
         }
       },
       "required": [
@@ -206,7 +223,9 @@
         "points",
         "observedPeakRequestsPerSecond",
         "knownRequestWindows",
-        "reason"
+        "reason",
+        "meanVus",
+        "knownVusWindows"
       ],
       "additionalProperties": false
     }

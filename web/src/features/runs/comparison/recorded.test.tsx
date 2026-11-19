@@ -4,7 +4,7 @@ import chartData from '../../../../../contracts/fixtures/api/valid/run-chart-his
 import overviewData from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with {type:'json'};
 import { afterEach, expect, it } from 'vitest';
 import { act, cleanup, screen, waitFor, render, fireEvent } from '@testing-library/react';
-import { validateApi } from '@beetle/contracts/api';
+import { validateApi, chartSampleOrdinals, runChartHistoryMatches } from '@beetle/contracts/api';
 import type { ApiClient, Run } from '@beetle/contracts/api';
 import { historyPage } from '../test-fixtures.js';
 import { catalogue, deferred, json, mountComparison, snapshot, testClient } from './fixtures.js';
@@ -92,4 +92,25 @@ for(const condition of ['partial','downsampled','peak','error'] as const)it(`kee
  const text=condition==='partial'?/Window coverage is partial/:condition==='peak'?/Observed peak is unavailable/
   :condition==='error'?/recorded charts could not be loaded/:/3 plotted of 4 verified/;
  expect(screen.getByText(text)).toBeVisible();
+});
+
+it('shows whole-source HTTP legends when all HTTP observations fall outside selected plot windows',()=>{
+ const items=snapshot().items;const histories=new Map(items.map(item=>{
+  const value=history(item.run);const start=value.points[0]!.startTimeMs;const template=value.points[0]!;
+  value.windows=901;value.sampled=true;value.knownRequestWindows=1;value.observedPeakRequestsPerSecond=1;value.meanVus=1;value.knownVusWindows=901;
+  value.points=chartSampleOrdinals(901).map(sequence=>({...template,sequence,startTimeMs:start+(sequence-1)*1000,endTimeMs:start+sequence*1000,
+   gapBefore:false,requestCount:null,httpFailures:null,httpSamples:null,httpP50:null,httpP95:null,httpP99:null,vus:0}));
+  expect(runChartHistoryMatches(value,{id:item.run.id,scope:item.run.scope,attemptId:item.run.activeAttemptId})).toBe(true);
+  return [item.run.id,{status:'loaded' as const,value}] as const;
+ }));
+ const overviews=new Map(items.map(item=>{const value=overview(item.run);const q=history(item.run).points[0]!.httpP95!;
+  value.testDurationMs=901000;value.requestCount=1;value.requestsPerSecond=1/901;value.failure={kind:'rate',numerator:0,sampleCount:1,ratio:0};
+  value.latency={kind:'trend',count:1,sum:1,min:1,max:1,mean:1,percentiles:{p50:q,p90:q,p95:q,p99:q}};
+  return [item.run.id,{status:'loaded' as const,value}] as const;
+ }));
+ render(<RecordedComparisonCharts items={items} histories={histories} overviews={overviews}/>);
+ expect(screen.getAllByText('No sampled window readings. The legend uses verified whole-run figures.')).toHaveLength(3);
+ expect(screen.getAllByRole('img')).toHaveLength(1);
+ expect(screen.getByText('Requests a second').closest('figure')).toHaveTextContent('1.11e-3');
+ expect(screen.getByText('Latency (p95)').closest('figure')).toHaveTextContent('1 ms');
 });

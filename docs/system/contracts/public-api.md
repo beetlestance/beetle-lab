@@ -14,8 +14,7 @@ automation client and agents following the embedded reference.
 - Registration (`api-route.ts`) throws for any descriptor whose `implementation` is not
   `implemented`; `app/test/bootstrap/route-catalogue.test.ts` checks every descriptor
   against the composed routes. All current descriptors are implemented.
-- Byte routes (input chunks and content, artifact and export content) sit outside the JSON
-  catalogue and are described by `apiBinaryOperations`.
+- Byte routes for input chunks and input/artifact/export content use `apiBinaryOperations` outside the JSON catalogue.
 - `/healthz` is private. No SSE endpoint exists; clients poll event and live-metric reads.
 
 ## Conventions
@@ -55,8 +54,7 @@ later HTTP 422. Missing live capacity waits in the queue. An initial note commit
 
 ## Authentication and authority
 
-One installation has one administrator; there are no accounts, roles,
-invitations or SSO, and organisation views are not access control.
+One administrator per installation; no accounts, roles, invitations or SSO. Organisation views are not access control.
 
 - Sessions: `POST /auth/local` (automatic mode) or `POST /auth/pair` (paired
   mode, single-use 15 min startup token) issue an HttpOnly, SameSite Strict
@@ -158,7 +156,9 @@ Codecs: `contracts/src/api/run-list.ts`, `run-search.ts`, `run-history-summary.t
 - `pinned=true` reads at most 257 pinned rows of the workspace, then applies the other
   filters; its cursor is a distinct tuple version, so it never continues an unfiltered list.
 History pages may include the current workspace name. Optional `includeCounts=true`
-adds exact snapshot counts/ranges ([contract](history-counts.md)); it never changes cursor membership.## Run event reads
+adds exact snapshot counts/ranges ([contract](history-counts.md)); it never changes cursor membership.
+
+## Run event reads
 
 `listRunEvents` reads durable events of the run's active attempt.
 
@@ -212,7 +212,7 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `7cf0f2c30f70` |
+| `contracts/api/v2/` | `52efe0d82132` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
