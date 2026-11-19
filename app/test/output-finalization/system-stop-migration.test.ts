@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { initialize, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
+import { initialize, METADATA_SCHEMA_VERSION, transaction } from '../../src/adapters/outbound/sqlite/schema.js';
 import { migration039 } from '../../src/adapters/outbound/sqlite/migration039.js';
 import { enqueue, seedFoundation } from '../storage/execution-foundation-fixtures.js';
 import { shipped } from '../storage/legacy027.js';
@@ -24,8 +24,12 @@ it('upgrades populated schema 38 with only the output evidence DDL changes and n
     old.prepare('VACUUM INTO ?').run(path);
     const next = initialize(path);
     try {
-      expect(next.prepare('PRAGMA user_version').get()?.user_version).toBe(41);
-      expect(rows(next).filter((entry) => entry.name !== 'execution_stopped_history')).toEqual(before);
+      expect(next.prepare('PRAGMA user_version').get()?.user_version).toBe(METADATA_SCHEMA_VERSION);
+      expect(
+        rows(next).filter(
+          (entry) => !['execution_stopped_history', 'execution_source_stopped_history'].includes(entry.name),
+        ),
+      ).toEqual(before);
       const changed = new Set([
         'output_finalization_evidence',
         'output_header_update',
@@ -35,6 +39,11 @@ it('upgrades populated schema 38 with only the output evidence DDL changes and n
         'stopped_history_update',
         'stopped_history_delete',
         'sqlite_autoindex_execution_stopped_history_1',
+        'execution_source_stopped_history',
+        'source_stopped_history_insert',
+        'source_stopped_history_update',
+        'source_stopped_history_delete',
+        'sqlite_autoindex_execution_source_stopped_history_1',
       ]);
       expect(schema(next).filter((row) => !changed.has(String(row.name)))).toEqual(
         prior.filter((row) => !changed.has(String(row.name))),

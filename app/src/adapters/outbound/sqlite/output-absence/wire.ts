@@ -1,10 +1,10 @@
-import { LIVE_HISTORY_BYTES } from '@beetle/contracts/api';
 import { encodeCanonicalJson, runnerSchemas } from '@beetle/contracts';
 import { captureOutputAbsence, captureStoredStoppedObservation } from '@beetle/contracts/output-source';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 import type { EventBinding } from '../../../../ports/events.js';
 import type { OutputAbsenceState, OutputAbsenceFinalizationReply } from '../../../../ports/output-absence.js';
+import { hasStoppedHistoryPayload, STOPPED_HISTORY_RPC_BYTES } from '../stopped-history-rpc.js';
 import { boundedCopy, sha256 } from '../input-values.js';
 import type { AbsenceOperation } from './operations.js';
 export type { AbsenceOperation } from './operations.js';
@@ -31,14 +31,6 @@ export function absenceOperation(input: unknown): input is AbsenceOperation {
     'value' in descriptor &&
     ['absenceRead', 'absenceAdopt', 'absenceFinalize'].includes(descriptor.value as string)
   );
-}
-export const STOPPED_HISTORY_RPC_BYTES = 2 * LIVE_HISTORY_BYTES + 4096;
-export function hasStoppedHistoryPayload(input: unknown): boolean {
-  if (!absenceOperation(input) || input.kind !== 'absenceFinalize') return false;
-  const request = Object.getOwnPropertyDescriptor(input, 'request');
-  if (!request || !('value' in request) || !request.value || typeof request.value !== 'object') return false;
-  const field = Object.getOwnPropertyDescriptor(request.value, 'stoppedHistory');
-  return !!field && 'value' in field && typeof field.value === 'object' && field.value !== null;
 }
 export function captureAbsenceOperation(input: unknown): AbsenceOperation {
   const copy = boundedCopy(

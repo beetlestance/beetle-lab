@@ -4,6 +4,7 @@ import type { DatabaseSync, SQLOutputValue } from 'node:sqlite';
 import type { OutputFinalizationReply, OutputFinalizationRequest } from '../../../../ports/output-finalization.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';
 import { transaction } from '../transaction.js';
+import { retainSourceStoppedHistory } from './stopped-history.js';
 import { StorageError } from '../protocol.js';
 import { captureFinalizationOperation, captureFinalizationReply } from './wire.js';
 import type { FinalizationOperation } from './wire.js';
@@ -81,6 +82,11 @@ export class OutputFinalizations {
     const pending = this.pending(request, row);
     if (pending) return pending;
     requireRetention(row.retained_payload_bytes, row.maximum_payload_bytes);
+    if (retainSourceStoppedHistory(this.db, request, row) === 'fetch') return { kind: 'pending', reason: 'history' };
+    return this.commit(request);
+  }
+  private commit(request: OutputFinalizationRequest): OutputFinalizationReply {
+    const { attemptId } = request.binding.key.attempt;
     this.db
       .prepare(
         `INSERT INTO execution_output_finalizations SELECT attempt_id,run_id,organization_id,workspace_id,
@@ -88,10 +94,8 @@ export class OutputFinalizations {
       maximum_payload_bytes-retained_payload_bytes,run_version,state,outcome,validation_status,reason
       FROM output_finalization_evidence WHERE attempt_id=?`,
       )
-      .run(a.attemptId);
-    const committed = this.db
-      .prepare('SELECT * FROM execution_output_finalizations WHERE attempt_id=?')
-      .get(a.attemptId);
+      .run(attemptId);
+    const committed = this.db.prepare('SELECT * FROM execution_output_finalizations WHERE attempt_id=?').get(attemptId);
     if (!committed) throw new StorageError('unavailable');
     return receipt(request, committed);
   }

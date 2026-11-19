@@ -7,6 +7,7 @@ import type { RunKey } from '../../../../ports/runs.js';
 import type { PublishedArtifactRead } from '../../../../ports/run-artifacts.js';
 import type { EventBinding } from '../../../../ports/events.js';
 import { captureEventBinding } from '../../../../domain/events/index.js';
+import { readSourceStoppedHistory } from '../output-finalization/stopped-history.js';
 import { readRetainedStoppedHistory } from '../output-absence/stopped-history.js';
 import { readEnvelope, loadOutput } from '../output-custody/index.js';
 import { OutputAbsences } from '../output-absence/index.js';
@@ -95,18 +96,40 @@ export class RunArtifacts {
     if (run.activeAttemptId !== key.attemptId || !['cancelled', 'errored'].includes(run.state))
       throw new StorageError('not_found');
     const binding = this.binding(run, key.attemptId);
-    const receipt = this.db
+    if (!binding) throw new StorageError('not_found');
+    const sourceReceipt = this.db
+      .prepare('SELECT * FROM execution_output_finalizations WHERE attempt_id=?')
+      .get(key.attemptId);
+    const absenceReceipt = this.db
       .prepare('SELECT * FROM execution_output_absence_finalizations WHERE attempt_id=?')
       .get(key.attemptId);
-    if (!binding || !receipt) throw new StorageError('not_found');
+    requireEvidence(!(sourceReceipt && absenceReceipt));
+    const observation = sourceReceipt
+      ? this.sourceStoppedHistory(binding, sourceReceipt)
+      : absenceReceipt
+        ? this.absenceStoppedHistory(binding, absenceReceipt)
+        : null;
+    if (!observation) throw new StorageError('not_found');
+    return JSON.parse(observation.json) as unknown;
+  }
+  private sourceStoppedHistory(binding: EventBinding, receipt: Row) {
+    matches(receipt, binding);
+    const source = readEnvelope(this.db, binding);
+    requireEvidence(
+      source &&
+        source.sourceDigest === receipt.source_digest &&
+        source.manifest.manifestDigest === receipt.manifest_digest &&
+        source.closure.finalAgentSeq === receipt.final_agent_seq,
+    );
+    return readSourceStoppedHistory(this.db, binding, source.sourceDigest);
+  }
+  private absenceStoppedHistory(binding: EventBinding, receipt: Row) {
     matches(receipt, binding);
     const proof = new OutputAbsences(this.db).read(binding);
     requireEvidence(
       proof && proof.proofDigest === receipt.proof_digest && proof.closure.finalAgentSeq === receipt.final_agent_seq,
     );
-    const observation = readRetainedStoppedHistory(this.db, proof);
-    if (!observation) throw new StorageError('not_found');
-    return JSON.parse(observation.json) as unknown;
+    return readRetainedStoppedHistory(this.db, proof);
   }
   private requireAvailable(key: RunKey): void {
     if (

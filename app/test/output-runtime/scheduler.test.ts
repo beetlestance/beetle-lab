@@ -48,7 +48,7 @@ it('advances unbound diagnostics without inventing a binding or issuing a transf
   await tick(25); expect(f.scans).toEqual([undefined, '1']); expect(f.scheduler.state().status).toBe('running');
   await f.scheduler.close(); f.dispose();
 });
-it('does not read or finalize before transfer settlement and retries pending and version conflict on later finite passes', async () => {
+it.each(['conflict', 'queue_full'])('defers finalization until transfer settlement and retries %s', async (code) => {
   const f = fixture(); const original = held();
   f.transfers.transfer.mockImplementationOnce(() => ({result: original.result.promise, settled: original.settled.promise}))
     .mockImplementation(binding => ({result: Promise.resolve(published(binding)), settled: Promise.resolve()}));
@@ -58,7 +58,7 @@ it('does not read or finalize before transfer settlement and retries pending and
     expect(f.getRun).not.toHaveBeenCalled(); expect(f.scheduler.state().active).toBe(1);
     original.settled.resolve(); await tick(); expect(f.finalize).toHaveBeenCalledTimes(1);
     expect(f.finalize.mock.calls[0]![0]).toMatchObject({expectedRunVersion: 1, binding: f.bindings[0]});
-    f.finalize.mockRejectedValueOnce(Object.assign(new Error('Synthetic version race'), {code: 'conflict'}));
+    f.finalize.mockRejectedValueOnce(Object.assign(new Error('Synthetic deferred finalization'), {code}));
     await tick(100); expect(f.finalize.mock.calls.length).toBeGreaterThanOrEqual(3);
     expect(f.scheduler.state().status).toBe('running'); expect(f.options.onFailure).not.toHaveBeenCalled();
   } finally {await f.scheduler.close(); f.dispose();}

@@ -1,3 +1,4 @@
+import { captureStoredStoppedObservation } from '@beetle/contracts/output-source';
 import { encodeCanonicalJson, runnerSchemas } from '@beetle/contracts';
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
@@ -9,8 +10,10 @@ import type {
   OutputFinalizationRequest,
   OutputFinalizationReply,
   OutputFinalizationReceipt,
+  SourceFinalizationHistory,
 } from '../../../../ports/output-finalization.js';
-import { boundedCopy } from '../input-values.js';
+import { hasStoppedHistoryPayload, STOPPED_HISTORY_RPC_BYTES } from '../stopped-history-rpc.js';
+import { boundedCopy, sha256 } from '../input-values.js';
 export interface FinalizationOperation {
   kind: 'outputFinalize';
   request: OutputFinalizationRequest;
@@ -35,20 +38,48 @@ export function finalizationOperation(input: unknown): input is FinalizationOper
   return !!descriptor && 'value' in descriptor && descriptor.value === 'outputFinalize';
 }
 export function captureFinalizationOperation(input: unknown): FinalizationOperation {
-  const copy = boundedCopy(input, OUTPUT_FINALIZATION_REQUEST_BYTES) as FinalizationOperation & { messageId?: number };
+  const maximum = hasStoppedHistoryPayload(input) ? STOPPED_HISTORY_RPC_BYTES : OUTPUT_FINALIZATION_REQUEST_BYTES;
+  const copy = boundedCopy(input, maximum) as FinalizationOperation & { messageId?: number };
   requireRule(finalizationOperation(copy));
   closed(copy, Object.hasOwn(copy, 'messageId') ? ['kind', 'request', 'messageId'] : ['kind', 'request']);
   if (Object.hasOwn(copy, 'messageId')) {
     natural(copy.messageId);
     requireRule(copy.messageId > 0);
   }
-  closed(copy.request, ['binding', 'sourceDigest', 'manifestDigest', 'expectedRunVersion']);
   const request = copy.request;
+  const fields = ['binding', 'sourceDigest', 'manifestDigest', 'expectedRunVersion'];
+  if (Object.hasOwn(request, 'stoppedHistory')) fields.push('stoppedHistory');
+  closed(request, fields);
   hex(request.sourceDigest);
   hex(request.manifestDigest);
   natural(request.expectedRunVersion);
   requireRule(request.expectedRunVersion > 0);
-  return { kind: 'outputFinalize', request: { ...request, binding: captureEventBinding(request.binding) } };
+  const binding = captureEventBinding(request.binding);
+  const history = captureHistory(request.stoppedHistory, binding);
+  return {
+    kind: 'outputFinalize',
+    request: { ...request, binding, ...(history === undefined ? {} : { stoppedHistory: history }) },
+  };
+}
+function captureHistory(
+  value: OutputFinalizationRequest['stoppedHistory'],
+  binding: OutputFinalizationRequest['binding'],
+): 'fetch' | SourceFinalizationHistory | undefined {
+  if (value === undefined || value === 'fetch') return value;
+  closed(value, ['finalAgentSeq', 'observation']);
+  natural(value.finalAgentSeq);
+  requireRule(value.finalAgentSeq > 0);
+  return {
+    finalAgentSeq: value.finalAgentSeq,
+    observation:
+      value.observation === null
+        ? null
+        : captureStoredStoppedObservation(
+            value.observation,
+            { ...binding.key.attempt, journalAuthority: binding.journalAuthority },
+            sha256,
+          ),
+  };
 }
 function projection(value: OutputFinalizationReceipt): void {
   requireRule(['finished', 'cancelled', 'errored'].includes(value.state));
@@ -65,7 +96,9 @@ export function captureFinalizationReply(operation: FinalizationOperation, input
   const copy = boundedCopy(input, OUTPUT_FINALIZATION_REPLY_BYTES) as OutputFinalizationReply;
   if (copy.kind === 'pending') {
     closed(copy, ['kind', 'reason']);
-    requireRule(['source', 'execution', 'events', 'artifacts', 'stop_evidence', 'exit_evidence'].includes(copy.reason));
+    requireRule(
+      ['source', 'execution', 'events', 'artifacts', 'stop_evidence', 'exit_evidence', 'history'].includes(copy.reason),
+    );
     return copy;
   }
   closed(copy, ['kind', 'receipt']);

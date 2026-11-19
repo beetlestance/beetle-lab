@@ -57,19 +57,17 @@ function assertNoInputMetadata(db: DatabaseSync): void {
   );
   assert(!db.prepare('SELECT 1 FROM input_shapes LIMIT 1').get(), 'Cannot project fixture with input shapes');
 }
-/** Test-only projection of synthetic schema34-41 fixtures to schema33; refuse recorded newer facts. */
+/** Test-only projection of synthetic schema34–42 fixtures to schema33; refuse recorded newer facts. */
 export function asSchema33(db: DatabaseSync): void {
   const initial = version(db);
-  assert([34, 35, 36, 37, 38, 39, 40, 41].includes(initial), 'Cannot project fixture to schema33');
+  assert([34, 35, 36, 37, 38, 39, 40, 41, 42].includes(initial), 'Cannot project fixture to schema33');
   if (initial >= 39) assertNoSystemStop(db);
   if (initial >= 36) assert(!db.prepare('SELECT 1 FROM export_jobs WHERE last_agent_report_at IS NOT NULL LIMIT 1').get(),
     'Cannot project recorded agent report time');
   if (initial >= 37) assert(!db.prepare('SELECT 1 FROM run_notes WHERE updated_at IS NOT NULL LIMIT 1').get(),
     'Cannot project recorded note edit time');
   transaction(db, () => {
-    if (initial >= 41) dropStoppedHistory(db);
-    if (initial >= 40) db.exec(`DROP VIEW output_absence_evidence;${absentProjection}`);
-    if (initial >= 39) restoreOutputFinalization(db);
+    dropOutputHistory(db, initial);
     if (initial >= 38) restoreRetentionTrigger(db);
     if (initial >= 37) db.exec('ALTER TABLE run_notes DROP COLUMN updated_at');
     if (initial >= 36) db.exec('ALTER TABLE export_jobs DROP COLUMN last_agent_report_at');
@@ -80,7 +78,7 @@ export function asSchema33(db: DatabaseSync): void {
   });
 }
 /**
- * Test-only projection of a synthetic schema31-41 fixture to schema30, peeling 036 (only without report times), 035, 034, 033, 032
+ * Test-only projection of a synthetic schema31–42 fixture to schema30, peeling 036 (only without report times), 035, 034, 033, 032
  * then 031. Derived 034 listing state is dropped; run pins, authored
  * notes, descriptions, messages and input facts can never be rewound; server-stamped
  * savedAt/savedBy did not exist before 031, so they are dropped with their columns.
@@ -89,7 +87,7 @@ export function asSchema33(db: DatabaseSync): void {
 export function asSchema30(db: DatabaseSync): void {
   const initial = version(db);
   if (initial === 30) return;
-  assert([31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41].includes(initial), 'Cannot project fixture to schema30');
+  assert([31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42].includes(initial), 'Cannot project fixture to schema30');
   if (initial >= 33) assert(!db.prepare('SELECT 1 FROM run_pins LIMIT 1').get(), 'Cannot project fixture with run pins');
   assert(!db.prepare('SELECT 1 FROM run_notes LIMIT 1').get(), 'Cannot project fixture with run notes');
   assert(!db.prepare('SELECT 1 FROM suites WHERE description IS NOT NULL LIMIT 1').get(), 'Cannot project descriptions');
@@ -98,9 +96,7 @@ export function asSchema30(db: DatabaseSync): void {
   if (initial >= 39) assertNoSystemStop(db);
   if (initial >= 36) assert(!db.prepare('SELECT 1 FROM export_jobs WHERE last_agent_report_at IS NOT NULL LIMIT 1').get(), 'Cannot project recorded agent report time');
   transaction(db, () => {
-    if (initial >= 41) dropStoppedHistory(db);
-    if (initial >= 40) db.exec(`DROP VIEW output_absence_evidence;${absentProjection}`);
-    if (initial >= 39) restoreOutputFinalization(db);
+    dropOutputHistory(db, initial);
     if (initial >= 38) restoreRetentionTrigger(db);
     if (initial >= 36) db.exec('ALTER TABLE export_jobs DROP COLUMN last_agent_report_at');
     if (initial >= 35) db.exec('DROP INDEX exports_revision_latest');
@@ -172,4 +168,18 @@ function restoreOutputFinalization(db: DatabaseSync): void {
 function dropStoppedHistory(db: DatabaseSync): void {
   assert(!db.prepare('SELECT 1 FROM execution_stopped_history LIMIT 1').get(), 'Cannot discard stopped history');
   db.exec('DROP TABLE execution_stopped_history');
+}
+
+/** The caller restores the older source evidence view in the same transaction. */
+function dropSourceStoppedHistory(db: DatabaseSync): void {
+  assert(!db.prepare('SELECT 1 FROM execution_source_stopped_history LIMIT 1').get(),
+    'Cannot project fixture with source stopped history');
+  db.exec('DROP TABLE execution_source_stopped_history');
+}
+
+function dropOutputHistory(db: DatabaseSync, initial: number): void {
+    if (initial >= 42) dropSourceStoppedHistory(db);
+    if (initial >= 41) dropStoppedHistory(db);
+    if (initial >= 40) db.exec(`DROP VIEW output_absence_evidence;${absentProjection}`);
+    if (initial >= 39) restoreOutputFinalization(db);
 }

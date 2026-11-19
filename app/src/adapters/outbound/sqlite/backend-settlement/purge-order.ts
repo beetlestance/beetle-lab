@@ -21,7 +21,11 @@ export const purgeOrder024 = [
   ['execution_intents', 'attempt_id', 'attempt', 1],
   ['runs', 'id', 'run', 1],
 ] as const;
-export const purgeOrder = [['execution_stopped_history', 'attempt_id', 'attempt', 1], ...purgeOrder024] as const;
+export const purgeOrder = [
+  ['execution_source_stopped_history', 'attempt_id', 'attempt', 1],
+  ['execution_stopped_history', 'attempt_id', 'attempt', 1],
+  ...purgeOrder024,
+] as const;
 export type PurgeTable = (typeof purgeOrder)[number][0];
 export interface OriginalIds {
   readonly deletion: string;
