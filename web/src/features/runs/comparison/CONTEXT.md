@@ -5,11 +5,11 @@ baseline. Same-page history contexts supply suite/revision labels only when
 run/suite/revision bind to the captured run; no extra metadata requests. Colliding
 four-character IDs expand to source prefix+suffix or the full UUID.
 Empty selection reads one history page for its workspace name; invalid runs rejects.
-Layout: run strip (status, short ID, Baseline badge or Make baseline, which only
-reorders the URL), whole-run figures with labelled client deltas from the
-baseline (Deltas.tsx: relative %, percentage points, duration; "same" when equal,
-nothing when either side is unknown), What was different (revision, profile,
-configured load/budgets/policy/note), paged native SLOs and recorded evidence.
+Layout: one table owns run headers, eight primary figures and paged native SLOs.
+Baseline controls only reorder the URL; client deltas preserve unknowns and zeros.
+Additional averages/counts/check facts remain in a disclosure. SettingsTable owns
+What was different (revision, profile, configured load/budgets/policy/note).
+Compact native rows share equal limits in their label; unequal limits stay per cell.
 Generated compareRuns owns request/response semantics. Whole-run summaries come
 from one exact-ID listRuns row per run (limit 1), read inside the comparison
 admission after the catalogue on first catalogue loads only; each run then gets

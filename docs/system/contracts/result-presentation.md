@@ -83,28 +83,29 @@ Ready overviews supply their own complete figure set: p50/p95/p99 estimates,
 request/failure/check values and dropped iterations. Missing fields remain unknown;
 no history field fills a ready overview's null. Without a ready overview, existing
 accepted history scalars can remain, with a per-run error/availability note.
-Existing exact-ID history responses also supply bound suite/revision metadata.
-The settings comparison uses the same suite name and saved revision ordinal;
+Existing exact-ID history responses supply bound suite/revision metadata; settings uses the same suite name
+and saved revision ordinal;
 equal display labels never imply equal revision identities. Full digests stay in
 recorded fingerprints. Only the captured run/suite/revision match grants labels; missing
 or mismatched records remain unknown. All metadata shares the same scoped owner.
-Selected IDs with colliding four-character prefixes expand to prefix plus suffix,
-then the complete source UUID if needed; labels never invent a run ordinal.
+Colliding four-character IDs expand to prefix plus suffix, then the full UUID; labels never invent ordinals.
 Phone comparison tables keep readable row/column widths inside named keyboard-
-focusable scroll regions, while run cards wrap their controls.
+focusable scroll regions; header controls remain bound to their run.
 Rates are whole-run averages, not configured peaks. Deltas describe observations, not statistical confidence.
+
+One table combines run headers, eight measurements and native thresholds; header controls only reorder the URL.
+Additional whole-run figures retains averages/totals/check counts. Equal native limits share a row label;
+otherwise each cell displays its own limit.
 
 ## Native SLO comparison
 
-Optional SLO rows (at most 256 per run) and first failure detail reuse captured
-sealed results and the pinned,
-validated revision. It includes its native reading and a uniquely matched saved
+Optional SLO rows (at most 256 per run) and first failure detail reuse captured sealed results
+and the pinned, validated revision. It includes its native reading and a uniquely matched saved
 limit, never the full config or secret values. Missing readings and mismatched
 metric/statistic limits remain explicit. Discovery triggers are not SLO failures.
 The client rejects detail with zero failed count or contradictory reading/limit
 identity. Full rows also bind unique IDs, failed count and any first-failure detail.
-Display never reevaluates the native verdict. The unchanged 256 KiB reply cap may
-omit both optional projections together; no additional reads or polling are added.
+Display never reevaluates native verdicts. The 256 KiB reply cap may omit both optional projections together; no additional reads or polling are added.
 The UI bounds the union to 1,024 IDs and renders 32 rows per local page. Each cell
 keeps its own recorded verdict/metric/value/limit; unavailable legacy evidence and
 a rule absent from a recorded set differ. Equal display labels grant no verdict.
@@ -114,12 +115,9 @@ a rule absent from a recorded set differ. Equal display labels grant no verdict.
 One existing chart-history read per selected run shares comparison admission and
 retirement. Each reply remains bounded to 900 actual points / 1 MiB; the backend
 retains its 3,600-window / 32 MiB archive ceiling. No metric-per-endpoint fanout.
-P95, requests, failures and measured active-VU curves keep independent native-
-marker-relative coordinates on a
-common scale; they never fill a union grid, stretch phases or align wall clocks.
-The shared renderer accepts optional per-series source coordinates and gap flags.
-Its default shared-timeline behavior stays unchanged; CSS height affects only presentation. Recorded legends use each
-series' own nearest source position, hide values outside coverage/across gaps,
+P95, requests, failures and measured active-VU curves keep independent native-marker-relative
+coordinates on a common scale; they never fill a union grid, stretch phases or align wall clocks.
+The renderer accepts optional per-series coordinates/gap flags; its default shared timeline stays unchanged; CSS height affects only presentation. Recorded legends use each series' own nearest source position, hide values outside coverage/across gaps,
 and retain known zero. An overlay cursor denotes requested time, not a new sample.
 Observed peaks require matching overview numeric generation, version, manifest,
 artifact/hash and native marker. Missing/error/incompatible sources leave unknowns.
@@ -197,7 +195,9 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `8668f89aa562` |
+| `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
+| `web/src/features/runs/comparison/comparison.css` | `pending` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `fe6f0666d203` |
 | `web/src/features/runs/comparison/overlay-model.ts` | `ca773531ae9e` |
@@ -212,9 +212,9 @@ history can read it without starting work. No mutation or current-work polling.
 | `web/src/features/runs/comparison/target-model.ts` | `fcd94018f94f` |
 | `web/src/features/runs/comparison/TargetRuntime.tsx` | `091438037277` |
 | `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
-| `web/src/features/runs/comparison/Slos.tsx` | `b4f57fb7171b` |
+| `web/src/features/runs/comparison/Slos.tsx` | `e66be0ef3b34` |
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
-| `web/src/features/runs/comparison/index.tsx` | `55f5fe76fb86` |
+| `web/src/features/runs/comparison/index.tsx` | `c0a836ea2467` |

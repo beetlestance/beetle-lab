@@ -1,11 +1,12 @@
+import type { ReactNode } from 'react';
+import { ComparisonSlos } from './Slos.js';
 import type { RunComparisonItem } from '@beetle/contracts/api';
 import { Table, Td, Th } from '../../../components/Table.js';
-import { formatBytes, formatDuration, formatNumber, formatPercent } from '../../run-results/format.js';
+import { formatDuration, formatNumber, formatPercent } from '../../run-results/format.js';
 import { comparisonRunLabels } from './run-labels.js';
-import { scenarioFact } from './scenario-intent.js';
 import { comparisonFigures } from './figures.js';
 import type { ComparisonFigures } from './figures.js';
-import type { Summaries, Overviews, ComparisonHistories, ComparisonContexts } from './useComparison.js';
+import type { Summaries, Overviews, ComparisonHistories } from './useComparison.js';
 
 type Row = {
   label: string;
@@ -86,14 +87,31 @@ const deltaOf: Record<Row['delta'], (base: number, value: number) => string | nu
   },
 };
 
+/** Direction colouring describes the change only; native verdicts remain independent. */
+function deltaClass(label: string, base: number | null, value: number | null): string {
+  if (base === null || value === null || base === value) return 'compare-delta';
+  const higher = ['Observed peak requests a second', 'Checks passed'].includes(label);
+  const lower = [
+    'p50, histogram estimate',
+    'p95, histogram estimate',
+    'p99, histogram estimate',
+    'Failed requests',
+    'Dropped iterations',
+  ].includes(label);
+  if (!higher && !lower) return 'compare-delta';
+  return `compare-delta ${(higher ? value < base : value > base) ? 'compare-change-worse' : 'compare-change-better'}`;
+}
+
 /** Whole-run figures per run with differences from the first (baseline) run. */
 export function ComparisonDeltas({
   items,
   summaries,
   overviews,
   histories,
+  headers,
 }: {
   items: readonly RunComparisonItem[];
+  headers: readonly ReactNode[];
   summaries: Summaries | undefined;
   overviews: Overviews | undefined;
   histories: ComparisonHistories | undefined;
@@ -109,56 +127,84 @@ export function ComparisonDeltas({
   return (
     <>
       <ComparisonReadNotes items={items} overviews={overviews} />
-      {values.every((value) => value === null) ? (
+      {values.every((value) => value === null) && (
         <p className="compare-muted">Whole-run figures are unavailable for these runs.</p>
-      ) : (
-        <FiguresTable items={items} values={values} />
       )}
+      <ComparisonSlos items={items}>
+        {(sloRows) => <FiguresTable items={items} values={values} headers={headers} slos={sloRows} />}
+      </ComparisonSlos>
+      <details className="compare-additional">
+        <summary>Additional whole-run figures</summary>
+        <FiguresTable items={items} values={values} additional />
+      </details>
     </>
   );
 }
 function FiguresTable({
   items,
   values,
+  headers,
+  slos,
+  additional = false,
 }: {
   items: readonly RunComparisonItem[];
   values: readonly (ComparisonFigures | null)[];
+  headers?: readonly ReactNode[];
+  slos?: ReactNode;
+  additional?: boolean;
 }) {
   const labels = comparisonRunLabels(items.map((item) => item.run.id));
   return (
     <Table
-      caption="Whole-run figures, with each run's difference from the baseline"
-      className="compare-deltas"
-      scrollLabel="Whole-run figures"
+      caption={
+        additional
+          ? 'Additional whole-run figures'
+          : "Whole-run figures and native thresholds, with each run's difference from the baseline"
+      }
+      className={additional ? 'compare-deltas compare-extra' : 'compare-deltas compare-summary'}
+      scrollLabel={additional ? 'Additional whole-run figures' : 'Whole-run figures'}
       columns={[
-        { key: 'metric', label: 'Measure' },
+        { key: 'metric', label: headers ? <span className="sr-only">Measure</span> : 'Measure' },
         ...items.map((item, index) => ({
           key: item.run.id,
-          label: `${labels.get(item.run.id.toLowerCase())}${index === 0 ? ' (baseline)' : ''}`,
+          label: headers?.[index] ?? `${labels.get(item.run.id.toLowerCase())}${index === 0 ? ' (baseline)' : ''}`,
           numeric: true,
         })),
       ]}
     >
-      {rows.map((row) => {
-        const base = values[0] ? row.value(values[0]) : null;
-        return (
-          <tr key={row.label}>
-            <Th scope="row">{row.label}</Th>
-            {items.map((item, index) => {
-              const summary = values[index];
-              const value = summary ? row.value(summary) : null;
-              const text = value === null ? null : row.show(value);
-              const change = index === 0 ? null : delta(row.delta, base, value);
-              return (
-                <Td key={item.run.id} numeric>
-                  {text ?? <span aria-label="Unknown">—</span>}
-                  {change && <span className="compare-delta">{change}</span>}
-                </Td>
-              );
-            })}
-          </tr>
-        );
-      })}
+      {rows
+        .filter((row) => additional === ['Requests a second', 'Requests'].includes(row.label))
+        .map((row) => {
+          const base = values[0] ? row.value(values[0]) : null;
+          return (
+            <tr key={row.label}>
+              <Th scope="row" aria-label={row.label}>
+                {row.label.replace(', histogram estimate', '').replace(/^Observed peak/, 'Peak')}
+              </Th>
+              {items.map((item, index) => {
+                const summary = values[index];
+                const value = summary ? row.value(summary) : null;
+                const text = value === null ? null : row.show(value);
+                const change = index === 0 ? null : delta(row.delta, base, value);
+                return (
+                  <Td key={item.run.id} numeric>
+                    {text ?? <span aria-label="Unknown">—</span>}
+                    {change && <span className={deltaClass(row.label, base, value)}>{change}</span>}
+                  </Td>
+                );
+              })}
+            </tr>
+          );
+        })}
+      {slos}
+      {additional && <AdditionalFactRows items={items} />}
+    </Table>
+  );
+}
+
+function AdditionalFactRows({ items }: { items: readonly RunComparisonItem[] }) {
+  return (
+    <>
       <tr>
         <Th scope="row">Required checks passed</Th>
         {items.map((item) => (
@@ -177,7 +223,7 @@ function FiguresTable({
           </Td>
         ))}
       </tr>
-    </Table>
+    </>
   );
 }
 
@@ -191,7 +237,10 @@ function ComparisonReadNotes({
   const labels = comparisonRunLabels(items.map((item) => item.run.id));
   return (
     <div className="compare-muted">
-      <p>Request rates are whole-run averages; latency values are histogram estimates.</p>
+      <p>
+        Peak rate comes from recorded windows; additional rates are whole-run averages. Latencies are histogram
+        estimates.
+      </p>
       {items.map((item) => {
         const read = overviews?.get(item.run.id.toLowerCase());
         if (!read) return null;
@@ -214,65 +263,5 @@ function ComparisonReadNotes({
         ) : null;
       })}
     </div>
-  );
-}
-
-/** "What was different": recorded run settings side by side; equal values say same. */
-export function WhatWasDifferent({
-  items,
-  contexts,
-}: {
-  items: readonly RunComparisonItem[];
-  contexts: ComparisonContexts | undefined;
-}) {
-  const labels = comparisonRunLabels(items.map((item) => item.run.id));
-  const facts: readonly [string, (item: RunComparisonItem) => string][] = [
-    [
-      'Revision',
-      (item) => {
-        const context = contexts?.get(item.run.id.toLowerCase());
-        return context ? `${context.suiteName} rev ${context.revisionOrdinal}` : 'Revision unknown';
-      },
-    ],
-    ['Configured executor', (item) => scenarioFact(item, 'executor')],
-    ['Configured arrivals', (item) => scenarioFact(item, 'arrival')],
-    ['Configured VUs', (item) => scenarioFact(item, 'vus')],
-    ['Engine profile', (item) => `${item.run.engine.id} / ${item.run.engine.profileId}`],
-    ['Memory limit', (item) => formatBytes(item.run.budget.memoryBytes) ?? '—'],
-    ['Time limit', (item) => formatDuration(item.run.budget.timeoutMs) ?? '—'],
-    ['Execution policy', (item) => item.run.executionPolicy.mode],
-    ['Note', (item) => item.run.note ?? 'None'],
-  ];
-  return (
-    <Table
-      caption="What was different between the runs"
-      className="compare-different"
-      scrollLabel="Run settings differences"
-      columns={[
-        { key: 'fact', label: 'Setting' },
-        ...items.map((item) => ({ key: item.run.id, label: labels.get(item.run.id.toLowerCase())! })),
-      ]}
-    >
-      {facts.map(([label, read]) => {
-        const base = read(items[0]!);
-        return (
-          <tr key={label}>
-            <Th scope="row">{label}</Th>
-            {items.map((item, index) => {
-              const value = read(item);
-              const same =
-                label === 'Revision'
-                  ? item.run.revisionId.toLowerCase() === items[0]!.run.revisionId.toLowerCase()
-                  : value === base;
-              return (
-                <Td key={item.run.id} muted={index > 0 && same && label !== 'Note'}>
-                  {value}
-                </Td>
-              );
-            })}
-          </tr>
-        );
-      })}
-    </Table>
   );
 }
