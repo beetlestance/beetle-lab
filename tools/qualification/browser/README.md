@@ -5,15 +5,26 @@ Use synthetic data only. Start from the repository root with Docker available.
 The fixture creates its own home, project, target and loopback port and verifies
 cleanup; it never selects the normal user's installation.
 
-Install the pinned browser tools and matching headless browser locally:
+Install the pinned driver tools; a container browser avoids a host browser install:
 
 ```sh
 npm ci --prefix tools/qualification/browser --ignore-scripts
 npm run check --prefix tools/qualification/browser
 npm run test:cleanup --prefix tools/qualification/browser
-PLAYWRIGHT_BROWSERS_PATH="$PWD/.agent-work/browser-binaries" \
-  node tools/qualification/browser/node_modules/playwright/cli.js install chromium --only-shell
 ```
+
+For a container browser, run a matching-version Playwright `launchServer` in a
+separate browser container, publishing its WebSocket port to loopback only. Set
+`BEETLE_BROWSER_WS_ENDPOINT=ws://127.0.0.1:PORT/OPAQUE_PATH` on the acceptance command.
+Client/server major and minor versions must match the pinned driver. The client
+exposes only the owned installation's loopback port to that browser; app Host,
+Origin and session rules remain unchanged. Fresh contexts and the normal cleanup
+still apply. Remote downloads use `saveAs`; uploads are transferred by Playwright.
+The caller owns and stops the separate browser container after acceptance. See
+[Playwright remote connections](https://playwright.dev/docs/api/class-browsertype#browser-type-connect).
+
+Without that variable, install the matching host browser with
+`PLAYWRIGHT_BROWSERS_PATH="$PWD/.agent-work/browser-binaries" node tools/qualification/browser/node_modules/playwright/cli.js install chromium --only-shell`.
 
 On Linux install the documented Playwright system dependencies separately; this
 script does not install global packages or change the host. Then supply the exact

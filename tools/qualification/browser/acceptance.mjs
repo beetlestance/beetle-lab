@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { counts } from '../resources/lifecycle/observations.ts';
 import { chromium } from '@playwright/test';
+import { openBrowser } from './browser.mjs';
 import { fixture } from '../native-application/compose/fixture.ts';
 import { cleanup } from '../native-application/compose/evidence.ts';
 import { automaticClient } from '../native-application/compose/public.ts';
@@ -75,7 +76,7 @@ try {
       JSON.stringify({ project: f.project, installationId: installation }),
       { flag: 'wx', mode: 0o600 },
     );
-  browser = await chromium.launch({ headless: true });
+  browser = await openBrowser(chromium, f.origin, process.env.BEETLE_BROWSER_WS_ENDPOINT);
   const context = await browser.newContext({ acceptDownloads: true });
   const appPage = await context.newPage();
   page = appPage;
