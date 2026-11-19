@@ -160,7 +160,7 @@ function ResultMeasurements({
   const recovered = recoveredHistoryState(reads);
   return (
     <>
-      {recovered && <RecoveredHistory query={recovered} plan={plan} />}
+      {recovered && <RecoveredHistory query={recovered} plan={plan} phone={phone} />}
       {!archiveMissing && !recovered && (
         <RecordedWhole view={charts} p95Limit={recordedLimit(plan)} plan={plan} phone={phone} />
       )}

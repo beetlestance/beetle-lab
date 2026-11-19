@@ -4,6 +4,7 @@ import { k6RequestsPerSecond } from '@beetle/contracts/k6-history';
 import type { useRecordedCharts } from './RecordedCharts.js';
 import type { ResultReads } from './useResultReads.js';
 import { MetricSummary, OverviewStatus } from './Overview.js';
+import { recoveredHistoryState } from './RecoveredHistory.js';
 import { SummaryTiles } from './Sections.js';
 import { formatNumber, formatPercent } from '../../run-results/format.js';
 
@@ -20,22 +21,42 @@ export function ResultSummary({
   phone: boolean;
   archiveMissing: boolean;
 }) {
-  const view = reads.result.view;
-  const native = archiveMissing && view.status === 'ready' ? view.result.nativeOverview : undefined;
   return (
     <section id="result-summary" className="result-section" aria-labelledby="result-summary-title">
       <h2 id="result-summary-title" className="sr-only">
         Summary
       </h2>
-      {!native && <OverviewStatus query={reads.overview} />}
-      {native && <NativeSummary evidence={native} />}
-      {!native &&
-        (ready ? (
-          <MetricSummary overview={ready} history={charts.data} phone={phone} />
-        ) : (
-          <SummaryTiles summary={reads.summary} status={reads.summaryStatus} phone={phone} />
-        ))}
+      <SummaryContent reads={reads} charts={charts} ready={ready} phone={phone} archiveMissing={archiveMissing} />
     </section>
+  );
+}
+
+function SummaryContent({ reads, charts, ready, phone, archiveMissing }: Parameters<typeof ResultSummary>[0]) {
+  const view = reads.result.view;
+  const native = archiveMissing && view.status === 'ready' ? view.result.nativeOverview : undefined;
+  if (native) return <NativeSummary evidence={native} />;
+  if (onlyRecoveredMeasurements(reads))
+    return <p className="result-muted">Only sampled charts were recovered. Whole-run figures are unavailable.</p>;
+  return (
+    <>
+      <OverviewStatus query={reads.overview} />
+      {ready ? (
+        <MetricSummary overview={ready} history={charts.data} phone={phone} />
+      ) : (
+        <SummaryTiles summary={reads.summary} status={reads.summaryStatus} phone={phone} />
+      )}
+    </>
+  );
+}
+
+function onlyRecoveredMeasurements(reads: ResultReads): boolean {
+  const history = recoveredHistoryState(reads);
+  return (
+    reads.overview.isSuccess &&
+    reads.overview.data.availability === 'not_recorded' &&
+    reads.summaryStatus === 'ready' &&
+    reads.summary?.availability === 'not_recorded' &&
+    Boolean(history?.isSuccess && history.data)
   );
 }
 
