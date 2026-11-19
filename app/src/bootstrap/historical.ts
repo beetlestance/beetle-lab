@@ -23,6 +23,7 @@ export interface HistoricalOptions {
 interface HistoricalApplication {
   readonly externalOrigin: string;
   readonly localAccess?: 'paired' | 'automatic';
+  readonly access?: 'local' | 'network';
   readonly historical?: HistoricalOptions;
   readonly metadata: { readonly readOnly?: true; readonly runtime: unknown };
   readonly agent?: unknown;
@@ -37,12 +38,17 @@ export function captureHistorical(options: HistoricalApplication): HistoricalOpt
   }
   if (options.metadata.readOnly !== true || options.metadata.runtime !== null || options.localAccess !== 'automatic')
     throw new TypeError('Invalid historical metadata');
+  loopbackOnly(options.access);
   if (options.agent !== undefined || options.inputsDirectory !== undefined || options.recoveryControl !== undefined)
     throw new TypeError('Historical execution unavailable');
   if (!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(history.historyId))
     throw new TypeError('Invalid historical identity');
   restoredBackup(history.backup);
   return history;
+}
+/** The history viewer stays loopback-only (decision 032). */
+function loopbackOnly(access: HistoricalApplication['access']): void {
+  if (access !== undefined && access !== 'local') throw new TypeError('Historical network access unavailable');
 }
 /** Canonical UTC millisecond form of the sealed header time; an unparsable time refuses composition. */
 export function restoredBackup(backup: HistoricalOptions['backup']): RestoredBackup {
@@ -87,6 +93,7 @@ export function applicationMode(options: HistoricalApplication) {
               restoredBackup: restoredBackup(history.backup),
             }
           : undefined,
+        history ? 'local' : options.access,
       ),
     inputs: (store: InputStore) => history?.openInputs(store),
     reads: (runtime: AgentRuntime | undefined) => (history ? { publishedBytes: history.bytes } : runtime),

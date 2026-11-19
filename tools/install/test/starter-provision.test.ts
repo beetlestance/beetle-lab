@@ -22,7 +22,7 @@ it('provisions the generated request through actual catalogue/schema, Journal an
     expect(engine.profile.maximumBudget).toEqual(request.installationValues.perRunCeilings);
     const backend = await loadBackendConfiguration({ BEETLE_CONFIG_FILE: result.paths.installation,
       BEETLE_AGENT_CONFIG_FILE: result.paths.backendAgent, BEETLE_DATA_DIR: result.paths.backendData,
-      BEETLE_EXTERNAL_ORIGIN: externalOrigin }, f.worker());
+      BEETLE_EXTERNAL_ORIGIN: externalOrigin, BEETLE_ACCESS: 'network' }, f.worker());
     expect(backend.application.agent?.connection?.configuration.profiles[0]?.installedIdentity).toEqual(engine.installedIdentity);
     const installed = JSON.parse(await readFile(result.paths.agent, 'utf8')) as { configuration: unknown };
     expect(installed.configuration).toEqual(request.agentPolicy);

@@ -27,7 +27,7 @@ async function setup() {
   const next = { ...receipt, generation: { ...intent, digest: generationDigest(intent, digest) } };
   const backend = () => loadBackendConfiguration({ BEETLE_CONFIG_FILE: installed.paths.installation,
     BEETLE_AGENT_CONFIG_FILE: installed.paths.backendAgent, BEETLE_DATA_DIR: installed.paths.backendData,
-    BEETLE_EXTERNAL_ORIGIN: e.request.externalOrigin }, f.worker());
+    BEETLE_EXTERNAL_ORIGIN: e.request.externalOrigin, BEETLE_ACCESS: 'network' }, f.worker());
   const agent = () => loadAgentConfiguration({ BEETLE_AGENT_CONFIG_FILE: installed.paths.agent }, f.worker());
   return { ...e, installed, statePath, next, backend, agent };
 }

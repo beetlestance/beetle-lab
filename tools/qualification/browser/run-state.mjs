@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { validateApi } from '@beetle/contracts/api';
+import { hostname } from './network.mjs';
 
 /** @typedef {{origin:string, path:string, organizationId:string, workspaceId:string, id:string}} ScopedRoute */
 /** @typedef {ScopedRoute & {suiteId:string, revisionId:string, outputBytes:number}} SubmittedRun */
@@ -7,7 +8,12 @@ import { validateApi } from '@beetle/contracts/api';
 function scopedRoute(input, resource) {
   const url = new URL(input);
   assert(['http:', 'https:'].includes(url.protocol));
-  assert(['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname), 'Qualification origin must be loopback');
+  // Loopback, or the network profile's HTTPS qualification hostname (decision 032).
+  const network = url.protocol === 'https:' && url.hostname === hostname;
+  assert(
+    network || ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname),
+    'Qualification origin must be loopback',
+  );
   assert.equal(url.username + url.password, '', 'Qualification URLs cannot carry credentials');
   const match = new RegExp(`^/organizations/([^/]+)/workspaces/([^/]+)/${resource}/([^/]+)$`).exec(url.pathname);
   assert(match && match.slice(1).every((id) => validateApi('Uuid', id).ok), 'Expected the scoped qualification route');

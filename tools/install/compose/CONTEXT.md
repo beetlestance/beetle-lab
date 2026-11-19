@@ -8,7 +8,8 @@ Arguments `upgrade [action]` run the explicit offline upgrade (../upgrade/) unde
 same home and gate; the home may then also hold `upgrade/`. Moved images print the command.
 An existing root's request keeps its baseline settings and policy before the gate
 opens (../src/installed-request.ts, decision 031); changed recorded bindings print
-`binding_changed` with fixed names and a fixed hint.
+`binding_changed` with fixed names and a fixed hint. options.ts admits a non-loopback
+origin/bind only with BEETLE_ACCESS=network and HTTPS (decision 032); a changed origin is `external_origin`.
 
 home.ts owns canonical private directories; gate.ts serializes only configuration
 preparation, never engine authority. Partial/conflicting state is preserved. No

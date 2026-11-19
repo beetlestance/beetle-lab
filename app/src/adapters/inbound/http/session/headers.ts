@@ -11,29 +11,47 @@ export interface ExternalOrigin {
 function loopback(hostname: string): boolean {
   return hostname === 'localhost' || hostname === '[::1]' || (isIP(hostname) === 4 && hostname.startsWith('127.'));
 }
-function rootOrigin(url: URL): boolean {
-  return (
-    loopback(url.hostname) &&
-    ['http:', 'https:'].includes(url.protocol) &&
-    !url.username &&
-    !url.password &&
-    url.pathname === '/' &&
-    !url.search &&
-    !url.hash
-  );
+function unspecified(hostname: string): boolean {
+  return hostname === '0.0.0.0' || hostname === '[::]' || hostname.endsWith('.');
+}
+function rootOrigin(url: URL, access: OriginAccess): boolean {
+  const reachable = loopback(url.hostname)
+    ? ['http:', 'https:'].includes(url.protocol)
+    : access === 'network' && url.protocol === 'https:' && !unspecified(url.hostname);
+  return reachable && !url.username && !url.password && url.pathname === '/' && !url.search && !url.hash;
 }
 
-/** Reject URL aliases as well as remote authorities; wire checks use exact strings. */
-export function externalOrigin(value: string): ExternalOrigin {
+/**
+ * Local access (the default) accepts loopback origins only. Network access (decision 032) also
+ * accepts one canonical HTTPS origin on another host: browsers expose Web Crypto only in a secure
+ * context, and an explicit opt-in keeps a mistyped origin from silently widening exposure.
+ */
+export type OriginAccess = 'local' | 'network';
+
+/** Reject URL aliases as well as unapproved authorities; wire checks use exact strings. */
+export function externalOrigin(value: string, access: OriginAccess = 'local'): ExternalOrigin {
   try {
     if (typeof value !== 'string' || value.length > 256) throw new Error();
     const url = new URL(value);
-    if (!rootOrigin(url) || (value !== url.origin && value !== `${url.origin}/`)) {
+    if (!rootOrigin(url, access) || (value !== url.origin && value !== `${url.origin}/`)) {
       throw new Error();
     }
     return Object.freeze({ origin: url.origin, authority: url.host, secure: url.protocol === 'https:' });
   } catch {
-    throw new TypeError('Canonical loopback external origin required');
+    throw new TypeError(
+      access === 'network'
+        ? 'Canonical loopback or HTTPS external origin required'
+        : 'Canonical loopback external origin required',
+    );
+  }
+}
+
+/** True when the origin is a loopback origin; network access is required otherwise. */
+export function loopbackOrigin(value: string): boolean {
+  try {
+    return loopback(new URL(value).hostname);
+  } catch {
+    return false;
   }
 }
 

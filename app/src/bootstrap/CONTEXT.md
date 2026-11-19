@@ -19,9 +19,9 @@ Startup failure retires authority and awaits cleanup; no successful partial hand
 second parser and closes only its scheduler. No generic service container is introduced.
 `configuration.ts` reads settings plus required BEETLE_AGENT_CONFIG_FILE and its private token;
 it requires a canonical owned mode 0700 data root and validated installed-profile pins.
-BEETLE_EXTERNAL_ORIGIN is required; normal listener defaults127.0.0.1:4311.
+BEETLE_EXTERNAL_ORIGIN required; non-loopback needs BEETLE_ACCESS=network+HTTPS (dec. 032).
 `main.ts` prints the one-time token only after binding, handles INT/TERM, and
-uses private umask. Explicit0.0.0.0 is for the private backend container network.
+uses private umask. Listener defaults 127.0.0.1:4311; explicit 0.0.0.0 is for the private backend network.
 `npm run build:api` bundles main/worker separately; start:api runs that output.
 `npm run smoke:api` needs an owned loopback port and tests the built entrypoint.
 Startup/shutdown diagnostics emit at most four allow-listed cause codes; no error

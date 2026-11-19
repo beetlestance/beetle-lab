@@ -117,3 +117,19 @@ run deletion. It reports its own profile and seven completed phases. It does not
 cover input/directory imports, folder deletion, settings or standalone exports;
 a pass is never a full functional-profile pass. The default twelve-phase profile
 continues to require those flows and preserves its own failures.
+
+`BEETLE_BROWSER_PROFILE=network` qualifies private-network access (decision 032).
+It requires an explicit evidence directory, `openssl` on the host, the local
+`mcr.microsoft.com/playwright:v1.65.1-noble` image and the pinned driver installed
+here; it ignores `BEETLE_BROWSER_WS_ENDPOINT`. The fixture sets `BEETLE_ACCESS=network`
+and `BEETLE_ORIGIN=https://beetle.test:PORT`, moves the frontend to another loopback
+port and adds two owned services: an nginx TLS proxy from the candidate frontend
+image, aliased `beetle.test` on the ingress network with a throwaway self-signed
+certificate, and a Playwright `run-server` on the same network. The browser uses
+that origin with certificate errors ignored, and the run checks that it is still a
+secure context with Web Crypto. Phases: authoring, secure context, a real run,
+report/metric verification with content-hashed downloads, an input upload roundtrip,
+active-metric (SSE) reconnect and cancellation, then raw requests through the proxy:
+the exact origin opens a session, while a wrong `Host`, a wrong `Origin`, a missing
+CSRF header and the loopback frontend port are each `403`. It does not cover a
+browser-trusted certificate, another host's network path or more than one user.

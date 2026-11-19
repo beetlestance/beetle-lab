@@ -132,3 +132,27 @@ it('rejects non-loopback, URL credentials/paths/query/fragment and noncanonical 
     expect(() => createLocalSession({ externalOrigin })).toThrow('Canonical loopback external origin required');
   }
 });
+
+it('admits a canonical HTTPS origin on another host only with network access, with Secure cookies', async () => {
+  for (const externalOrigin of ['https://beetle.test:8443', 'https://lab.example.internal', 'https://100.64.0.7:4567/']) {
+    expect(() => createLocalSession({ externalOrigin })).toThrow('Canonical loopback external origin required');
+    const { server, session } = fixture({ externalOrigin, access: 'network' }); servers.push(server);
+    const canonical = new URL(externalOrigin);
+    const response = await server.inject({ method: 'POST', url: `${authPath}pair`,
+      headers: { ...pairHeaders, host: canonical.host, origin: canonical.origin }, payload: { bootstrapToken: session.bootstrapToken } });
+    expect(response.statusCode).toBe(200);
+    expect(String(response.headers['set-cookie'])).toContain('; Secure');
+    const headers = { ...pairHeaders, host: '127.0.0.1:4567', origin: canonical.origin };
+    expect((await server.inject({ method: 'POST', url: `${authPath}pair`, headers, payload: { bootstrapToken: session.bootstrapToken } })).statusCode).toBe(403);
+  }
+  // Loopback origins are unchanged under network access.
+  expect(() => createLocalSession({ externalOrigin: origin, access: 'network' })).not.toThrow();
+});
+
+it('refuses plain HTTP, unspecified and noncanonical remote origins even with network access', () => {
+  for (const externalOrigin of ['http://beetle.test:8443', 'http://100.64.0.7:4567', 'https://0.0.0.0:4567', 'https://[::]:4567',
+    'https://beetle.test.:8443', 'https://BEETLE.test', 'https://beetle.test:443', 'https://user@beetle.test',
+    'https://beetle.test/path', 'ws://beetle.test']) {
+    expect(() => createLocalSession({ externalOrigin, access: 'network' })).toThrow('Canonical loopback or HTTPS external origin required');
+  }
+});

@@ -73,6 +73,10 @@ services:
       BEETLE_COMPOSE_AGENT_IMAGE: ${BEETLE_AGENT_IMAGE:-beetle-lab-agent:rewrite}
       BEETLE_COMPOSE_ENGINE_IMAGE: ${BEETLE_ENGINE_IMAGE:-beetle-lab-k6:rewrite}
       BEETLE_COMPOSE_EXPORT_IMAGE: ${BEETLE_EXPORT_IMAGE:-beetle-lab-k6-export:rewrite}
+      # Decision 032: network access is opt-in; setup refuses another host without it.
+      BEETLE_COMPOSE_ORIGIN: ${BEETLE_ORIGIN:-}
+      BEETLE_COMPOSE_BIND: ${BEETLE_BIND:-127.0.0.1}
+      BEETLE_COMPOSE_ACCESS: ${BEETLE_ACCESS:-local}
     volumes:
       - *socket
       - type: bind
@@ -139,7 +143,8 @@ services:
       BEETLE_AGENT_CONFIG_FILE: ${BEETLE_HOME:-${PWD}/.beetle}/data/config/backend-agent.json
       BEETLE_DATA_DIR: ${BEETLE_HOME:-${PWD}/.beetle}/data/backend
       BEETLE_LOCAL_ACCESS: automatic
-      BEETLE_EXTERNAL_ORIGIN: http://127.0.0.1:${BEETLE_PORT:-4567}
+      BEETLE_EXTERNAL_ORIGIN: ${BEETLE_ORIGIN:-http://127.0.0.1:${BEETLE_PORT:-4567}}
+      BEETLE_ACCESS: ${BEETLE_ACCESS:-local}
       BEETLE_LISTEN_HOST: 0.0.0.0
     volumes:
       - *config
@@ -157,7 +162,7 @@ services:
     pids_limit: 32
     restart: unless-stopped
     depends_on: {backend: {condition: service_healthy}}
-    ports: ["127.0.0.1:${BEETLE_PORT:-4567}:8080"]
+    ports: ["${BEETLE_BIND:-127.0.0.1}:${BEETLE_PORT:-4567}:8080"]
     networks: [ingress, control]
 
 networks:

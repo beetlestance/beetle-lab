@@ -62,9 +62,9 @@ invitations or SSO, and organisation views are not access control.
   mode, single-use 15 min startup token) issue an HttpOnly, SameSite Strict
   cookie with an 8 h absolute lifetime; `GET /auth/session`, `POST /auth/logout`.
   Exchanges are limited to 5 per minute. Logout revokes durably before replying.
-- Guard: exact canonical loopback `Host`/`Origin`, no forwarded trust or CORS,
-  CSRF on every mutation. A GET never grants access. Credentials never enter
-  URLs, `localStorage` or public metadata. Bootstrap supplies the guard to every
+- Guard: exact canonical `Host`/`Origin` (loopback, or one HTTPS origin with decision 032
+  network access), no forwarded trust or CORS, CSRF on every mutation. A GET never
+  grants access. Credentials never enter URLs, `localStorage` or public metadata. Bootstrap supplies the guard to every
   protected route; byte routes run it before reading a body.
 
 ## Hierarchy and scoping
@@ -216,5 +216,5 @@ characters and shows at most 80 matches.
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
-| `app/src/adapters/inbound/http/session/` | `328af44f81f3` |
+| `app/src/adapters/inbound/http/session/` | `902456a694b1` |
 | `app/src/client/cli/` | `c7eb756df145` |

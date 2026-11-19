@@ -7,7 +7,7 @@ import { openJournal } from '../../../agent/src/journal/index.js';
 import type { Journal } from '../../../agent/src/journal/index.js';
 import { openMetadata } from '../../../app/src/adapters/outbound/sqlite/index.js';
 import { METADATA_SCHEMA_VERSION } from '../../../app/src/adapters/outbound/sqlite/cold-inspection/index.js';
-import { loadBackendConfiguration } from '../../../app/src/bootstrap/configuration.js';
+import { loadBackendConfiguration, originAccessFor } from '../../../app/src/bootstrap/configuration.js';
 import { ProvisionError } from '../types.js';
 import { canonical, check, digest } from '../src/capture.js';
 import type { Captured } from '../src/capture.js';
@@ -98,6 +98,7 @@ export async function migrateMetadata(c: Captured, selector: Receipt): Promise<n
       BEETLE_AGENT_CONFIG_FILE: p.backendAgent,
       BEETLE_DATA_DIR: p.backendData,
       BEETLE_EXTERNAL_ORIGIN: c.request.externalOrigin,
+      BEETLE_ACCESS: originAccessFor(c.request.externalOrigin),
     },
     c.context.backendWorkerUrl,
     { baseline: true, receipt: selector },

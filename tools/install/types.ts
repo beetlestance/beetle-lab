@@ -57,6 +57,7 @@ export type ProvisionErrorCode =
   | 'upgrade_required'
   | 'upgrade_blocked'
   | 'binding_changed'
+  | 'network_access_required'
   | 'cancelled'
   | 'deadline'
   | 'io'

@@ -64,7 +64,7 @@ A number that was not collected is shown as unknown, never as zero.
 ## Trust and security
 
 Beetle Lab is built for **one trusted administrator** on a machine they control.
-Only the frontend publishes a port, on loopback, and engine containers run
+Only the frontend publishes a port, on loopback by default, and engine containers run
 hardened and without the Docker socket. The agent does hold the socket, so a
 compromised agent could control the host. Read
 [Trust and security](/concepts/security/) before you install it.

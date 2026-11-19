@@ -13,7 +13,7 @@ The identity checks below reduce privileges; they do not sandbox socket access.
 
 | Service | Network | Identity | Limits (CPU / memory / PIDs) | Mounts |
 | --- | --- | --- | --- | --- |
-| frontend | ingress + control; only `127.0.0.1:<port>` → 8080 published | UID/GID 101 | 0.1 / 64 MiB / 32 | none |
+| frontend | ingress + control; only `<bind>:<port>` → 8080 published (bind is loopback unless [decision 032](../../decisions/032-private-network-access.md) network access) | UID/GID 101 | 0.1 / 64 MiB / 32 | none |
 | backend | control (internal) | 1000:1000 | 1 / 256 MiB / 64 | config ro, backend data rw |
 | agent | control (internal) | starts root with only `SETUID`/`SETGID`, drops to 1000:1000 + socket group | 1 / 256 MiB / 64 | config ro, journal rw, staging rw, published inputs ro, socket |
 | setup | targets | starts root with `CHOWN`, `FOWNER`, `SETUID`, `SETGID` for empty-skeleton preparation, then drops | 1 / 256 MiB / 64 | home, socket |
@@ -66,13 +66,13 @@ installation ID, `created`/`unchanged` and paths; never a credential.
 - Replay of a `ready` root is `unchanged` only after receipt, configuration, authority and
   image pins match the same request (moved images: `upgrade_required`; [Upgrade](upgrade.md)). It never rotates
   tokens or rewrites settings and never inventories runtime data; a serving lease is `conflict`.
-- Existing Compose roots keep their baseline `installationValues` and `agentPolicy`
-  ([decision 031](../../decisions/031-installed-defaults.md)); changed recorded bindings refuse
-  with `binding_changed`, other differences (such as the engine template) stay `recovery_required`.
+- Existing Compose roots keep baseline `installationValues` and `agentPolicy` ([decision 031](../../decisions/031-installed-defaults.md));
+  changed recorded bindings, and a changed origin (`external_origin`, decision 032), refuse
+  with `binding_changed`; other differences (such as the engine template) stay `recovery_required`.
 - `inspectReadyConfiguration` checks receipt, configuration and pins without the Journal.
 - Failure codes: `invalid_input`, `inspection`, `unsafe_root`, `conflict`, `recovery_required`,
-  `upgrade_required`, `upgrade_blocked`, `binding_changed`, `cancelled`, `deadline`, `io`,
-  `cleanup`. CLI exit 2 for argument errors, else 1, with fixed text; partial roots are kept.
+  `upgrade_required`, `upgrade_blocked`, `binding_changed`, `network_access_required`,
+  `cancelled`, `deadline`, `io`, `cleanup`. CLI exit 2 for argument errors, else 1, with fixed text; partial roots are kept.
 - The installer may import only public entrypoints of agent bootstrap, installation-state,
   journal, catalog, admission, Docker backend and backend configuration; runtime services
   never import the installer (`npm run check:architecture`).
@@ -212,8 +212,8 @@ request alias never becomes an environment variable name or file path
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/src/` | `348e252fdbcb` |
-| `tools/install/compose/` | `25ccdb56fa44` |
+| `tools/install/src/` | `a2dd1180e617` |
+| `tools/install/compose/` | `b987567ea229` |
 | `tools/install/starter/policy.ts` | `c6d6ef3e6999` |
 | `agent/src/bootstrap/installed-config.ts` | `1975e2348c51` |
 | `agent/src/installation-state/` | `0beedc07f9a0` |

@@ -19,7 +19,7 @@ it.each([false, true])('binds the installed profile to the inspected image capab
     expect(engine.profile.liveMetricMailbox).toBe(enabled ? true : undefined);
     const backend = await loadBackendConfiguration({BEETLE_CONFIG_FILE: result.paths.installation,
       BEETLE_AGENT_CONFIG_FILE: result.paths.backendAgent, BEETLE_DATA_DIR: result.paths.backendData,
-      BEETLE_EXTERNAL_ORIGIN: e.request.externalOrigin}, f.worker());
+      BEETLE_EXTERNAL_ORIGIN: e.request.externalOrigin, BEETLE_ACCESS: 'network'}, f.worker());
     expect(backend.application.agent?.connection.configuration.profiles[0]?.installedIdentity).toEqual(engine.installedIdentity);
   } finally {await loaded.close();}
 });

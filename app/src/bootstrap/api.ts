@@ -13,7 +13,7 @@ import type { RunHistoryIndexerState } from '../ports/run-history.js';
 import { registerOverviewRoute } from '../adapters/inbound/http/overview/index.js';
 import { registerExportRoutes } from '../adapters/inbound/http/exports/index.js';
 import type { LocalSession } from '../adapters/inbound/http/session/index.js';
-import { captureLocalAccess } from './local-access.js';
+import { captureLocalAccess, captureOriginAccess } from './local-access.js';
 import { createRunComparisonService } from '../application/run-comparison/index.js';
 import { registerRunComparisonRoutes } from '../adapters/inbound/http/run-comparison/index.js';
 import { createRunLiveMetricsService } from '../application/run-live-metrics/index.js';
@@ -53,6 +53,8 @@ export interface ApplicationOptions {
   readonly historical?: HistoricalOptions;
   readonly recoveryControl?: { readonly path: string; readonly installationId: string };
   readonly localAccess?: 'paired' | 'automatic';
+  /** Decision 032: 'network' also admits one canonical HTTPS origin on another host. */
+  readonly access?: 'local' | 'network';
   readonly metadata: MetadataOptions;
   readonly agent?: AgentRuntimeOptions;
   /** Canonical installation-owned child of the private data directory. */
@@ -97,7 +99,7 @@ class ApplicationOwner {
     this.mode = applicationMode(options);
     const { externalOrigin, metadata: metadataOptions, inputsDirectory, agent: requestedAgent } = options;
     captureLocalAccess(options.localAccess);
-    captureLocalExternalOrigin(externalOrigin);
+    captureLocalExternalOrigin(externalOrigin, captureOriginAccess(options.access));
     this.inputsDirectory = inputsDirectory;
     this.agent =
       requestedAgent === undefined ? undefined : captureAgentRuntime(requestedAgent, metadataOptions, inputsDirectory);

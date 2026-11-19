@@ -23,3 +23,4 @@ executes one40-request owned test and checks actual zero/known/null comparisons,
 phase/reason rows, scope label, reload/reconnect and absence of thermal fields.
 It leaves functional/interaction/reference defaults unchanged and needs explicit
 private evidence output. Backend artifact/hash contract has separate native proof.
+`network.mjs`/`network-checks.mjs`: decision 032 TLS-proxy profile and its refusals.

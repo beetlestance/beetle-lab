@@ -2,6 +2,7 @@ import { selectInstalledConfiguration } from '@beetle/contracts/installation-gen
 import { captureInstallationReceipt, receiptDigest } from './installation-receipt.js';
 import { loadAgentConfiguration } from './agent-configuration.js';
 import { upgradeFenced } from './upgrade-fence.js';
+import { captureLocalExternalOrigin, loopbackOrigin } from '../adapters/inbound/http/session/index.js';
 import { constants } from 'node:fs';
 import { access, open, realpath, stat } from 'node:fs/promises';
 import type { FileHandle } from 'node:fs/promises';
@@ -21,6 +22,8 @@ export class BootstrapError extends Error {
 }
 export interface BackendEnvironment {
   readonly BEETLE_LOCAL_ACCESS?: string;
+  /** `local` (default) or `network` (decision 032). */
+  readonly BEETLE_ACCESS?: string;
   readonly BEETLE_CONFIG_FILE?: string;
   readonly BEETLE_INSTALLATION_RECEIPT_FILE?: string;
   readonly BEETLE_AGENT_CONFIG_FILE?: string;
@@ -105,6 +108,23 @@ export function listener(environment: BackendEnvironment): BackendConfiguration[
   if (port > 65535) throw new BootstrapError('listener');
   return Object.freeze({ host, port });
 }
+/** Decision 032: an origin on another host needs explicit network access and HTTPS. */
+export function originAccess(value: string | undefined, origin: string): 'local' | 'network' {
+  const mode = value ?? 'local';
+  if (mode !== 'local' && mode !== 'network') throw new BootstrapError('configuration');
+  try {
+    captureLocalExternalOrigin(origin, mode);
+  } catch (error) {
+    throw new BootstrapError('configuration', { cause: error });
+  }
+  return mode;
+}
+/** True for a loopback origin; any other origin needs network access. */
+export { loopbackOrigin };
+/** The access an installer-validated origin implies, for offline validation and migration. */
+export function originAccessFor(origin: string): 'local' | 'network' {
+  return loopbackOrigin(origin) ? 'local' : 'network';
+}
 async function agentConnection(path: string, installationId: string, receipt: unknown) {
   try {
     return await loadAgentConfiguration(path, installationId, receipt);
@@ -135,6 +155,7 @@ export async function loadBackendConfiguration(
   const root = absolute(environment.BEETLE_DATA_DIR);
   const externalOrigin = environment.BEETLE_EXTERNAL_ORIGIN;
   if (!externalOrigin || externalOrigin.length > 2048) throw new BootstrapError('configuration');
+  const originMode = originAccess(environment.BEETLE_ACCESS, externalOrigin);
   const receipt = offline?.baseline
     ? { value: offline.receipt, assertCurrent: async () => undefined }
     : await captureInstallationReceipt(config, environment.BEETLE_INSTALLATION_RECEIPT_FILE).catch((error) => {
@@ -149,6 +170,7 @@ export async function loadBackendConfiguration(
     application: {
       ...(fenced ? { upgradeFence: true as const } : {}),
       externalOrigin,
+      access: originMode,
       configurationCheck: receipt.assertCurrent,
       recoveryControl: { path: join(directory, 'recovery-control.sqlite'), installationId: record.id },
       localAccess: localAccess as 'paired' | 'automatic',

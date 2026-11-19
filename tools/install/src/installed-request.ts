@@ -5,7 +5,7 @@ import { captureInstalledConfiguration } from '../../../agent/src/bootstrap/inde
 import { captureInstallationRecord } from '../../../app/src/bootstrap/configuration.js';
 import { BindingChangedError, ProvisionError } from '../types.js';
 import type { ProvisionContext, ProvisionRequest } from '../types.js';
-import { capture, digest } from './capture.js';
+import { canonical, capture, digest } from './capture.js';
 import { paths } from './configuration.js';
 import { PrivateFiles } from './files.js';
 import { parse } from './receipt.js';
@@ -70,10 +70,13 @@ function changedBindings(request: ProvisionRequest, agent: unknown, backendAgent
  * changed starter default neither re-pins nor refuses it; the receipt's request digest still
  * proves everything else. Without a ready baseline the request is returned unchanged.
  * Recorded bindings that differ are refused by name (`binding_changed`), never re-pinned.
+ * `formerOrigin` is the origin the installation would have recorded before decision 032 (the
+ * loopback port); an installation set up with it refuses a changed origin as `external_origin`.
  */
 export async function installedRequest(
   request: ProvisionRequest,
   context: ProvisionContext,
+  formerOrigin?: string,
 ): Promise<ProvisionRequest> {
   // Upgrade actions carry a longer overall deadline; each configuration step gets at most 30 s.
   const step = { ...context, deadline: Math.min(context.deadline, performance.now() + 30_000) };
@@ -87,7 +90,7 @@ export async function installedRequest(
   }
   if (!baseline) return c.request;
   try {
-    return pinned(c.request, baseline, step);
+    return originChecked(pinned(c.request, baseline, step), baseline, step, formerOrigin);
   } catch (cause) {
     if (cause instanceof ProvisionError) throw cause;
     throw new ProvisionError('recovery_required', { cause });
@@ -103,4 +106,12 @@ function pinned(request: ProvisionRequest, baseline: Baseline, context: Provisio
   const installation = captureInstallationRecord(select('installation.json', baseline.installation));
   return capture({ ...request, installationValues: installation.values, agentPolicy: agent.configuration }, context)
     .request;
+}
+/** Decision 032: until an origin-change command exists, an installation keeps its origin. */
+function originChecked(request: ProvisionRequest, baseline: Baseline, context: ProvisionContext, former?: string) {
+  const recorded = baseline.receipt.requestDigest;
+  if (!former || former === request.externalOrigin || digest(canonical(request)) === recorded) return request;
+  const before = capture({ ...request, externalOrigin: former }, context).request;
+  if (digest(canonical(before)) === recorded) throw new BindingChangedError(['external_origin']);
+  return request;
 }

@@ -50,9 +50,12 @@ test('qualification URLs cannot escape loopback, carry credentials or select ano
     'http://user:password@localhost' + path,
     'http://localhost/organizations/x/workspaces/y/runs/z',
     'http://localhost' + path + '/result',
+    'http://beetle.test:5190' + path,
+    'https://other.beetle.test:5190' + path,
   ])
     assert.throws(() => runRoute(url));
   assert.equal(runRoute('http://localhost:5190' + path + '?target=phases').id, key.id);
+  assert.equal(runRoute('https://beetle.test:5190' + path).id, key.id);
 });
 
 test('a route and response agreeing with each other cannot substitute another requested run', () => {

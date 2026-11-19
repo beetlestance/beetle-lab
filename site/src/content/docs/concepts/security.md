@@ -20,25 +20,31 @@ A dedicated host or virtual machine is best.
 
 ## Network exposure
 
-- Only the frontend publishes a port, and only on loopback (`127.0.0.1`). It
-  forwards `/api/v2/` to the backend and nothing else.
+- Only the frontend publishes a port, on loopback (`127.0.0.1`) unless you turn on
+  network access. It forwards `/api/v2/` to the backend and nothing else.
 - The backend and the agent listen only on private container networks. They are
   never published.
 - Engine containers join a separate network for test targets, never the network
   the backend and agent use.
 
-To use Beetle Lab from another machine, forward the port over SSH. Do not publish
-it on a public or shared address.
+To use Beetle Lab from another machine, forward the port over SSH. If you are the
+only user and reach the server over a VPN or another private network, you can
+instead turn on network access and open it at an `https://` address through a
+reverse proxy ([how](/guides/private-network/)).
+Anyone who reaches that address is the administrator, so never publish it on a
+public or shared address.
 
 ## Browser session
 
-The browser signs in automatically through the loopback frontend; no token is
-printed or pasted.
+The browser signs in automatically through the frontend; no token is printed or
+pasted.
 
 - The session is an HttpOnly cookie, `SameSite=Strict`, with an 8 h absolute
   lifetime. Credentials never appear in URLs or browser storage.
-- Every request must carry the exact loopback `Host` and `Origin`. Cross-site
-  requests are refused and there is no CORS.
+- Every request must carry the installation's exact `Host` and `Origin`: a loopback
+  address, or the one `https://` address chosen with network access. Cross-site
+  requests are refused and there is no CORS. These checks stop other websites, not
+  other machines that can reach the port.
 - Every change also needs a CSRF header.
 - Sign-in attempts are limited to 5 per minute. Signing out revokes the session
   before it replies.

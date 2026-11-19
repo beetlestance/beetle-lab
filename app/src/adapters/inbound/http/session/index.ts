@@ -9,10 +9,13 @@ import { ApiFault } from '../api-errors.js';
 import { checkOrigin, externalOrigin, requestHeaders, sessionCookie, singleHeader } from './headers.js';
 import { equalSecret, SessionAuthority } from './state.js';
 import type { SessionClocks, Grant } from './state.js';
+import type { OriginAccess } from './headers.js';
 
 export type { SessionClocks } from './state.js';
 export interface LocalSessionOptions {
   readonly externalOrigin: string;
+  /** Network access (decision 032) also admits one canonical HTTPS origin on another host. */
+  readonly access?: OriginAccess;
   readonly readOnly?: true;
   readonly cookieName?: string;
   /** Sealed-manifest backup identity of a historical viewer; never the restore time. */
@@ -67,7 +70,7 @@ function checkExchange(
  * authorize explicitly to every protected route plugin before registering it.
  */
 export function createLocalSession(options: LocalSessionOptions): LocalSession {
-  const origin = externalOrigin(options.externalOrigin);
+  const origin = externalOrigin(options.externalOrigin, options.access);
   const name = cookieName(options);
   const view = (session: object) =>
     jsonObject({
@@ -143,7 +146,8 @@ export function createLocalSession(options: LocalSessionOptions): LocalSession {
   });
 }
 
-export { externalOrigin as captureLocalExternalOrigin } from './headers.js';
+export { externalOrigin as captureLocalExternalOrigin, loopbackOrigin } from './headers.js';
+export type { OriginAccess } from './headers.js';
 
 function localAccessError(error: unknown): unknown {
   return error instanceof ApiFault && error.code === 'unpaired' ? new ApiFault('storage_unavailable') : error;

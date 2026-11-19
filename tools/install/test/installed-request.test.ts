@@ -65,3 +65,15 @@ it('fails closed when a baseline configuration no longer matches its receipt dig
   expect(refusal).toBeInstanceOf(ProvisionError);
   expect(refusal).not.toBeInstanceOf(BindingChangedError);
 });
+
+it('refuses a changed origin by fixed name until an origin-change command exists (decision 032)', async () => {
+  const e = await f.setup();
+  await provisionFreshInstallation(e.request, e.context);
+  const moved = { ...e.request, externalOrigin: 'https://lab.example.internal' };
+  const refusal = await installedRequest(moved, e.context, e.request.externalOrigin).catch((error: unknown) => error);
+  expect(refusal).toBeInstanceOf(BindingChangedError);
+  expect((refusal as BindingChangedError).items).toEqual(['external_origin']);
+  // The unchanged origin, and installed defaults that differ, still pin as before.
+  const pinned = await installedRequest(changedDefaults(e.request), e.context, e.request.externalOrigin);
+  expect(digest(canonical(pinned))).toBe(await requestDigest(e.root));
+});

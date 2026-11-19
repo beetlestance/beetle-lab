@@ -18,10 +18,12 @@ import { keyboard, themesAndViewports } from './interactions.mjs';
 import { crossScope } from './scope.mjs';
 import { reference } from './reference.mjs';
 import { targetRuntime } from './target-runtime.mjs';
+import { prepareNetwork } from './network.mjs';
+import { connectBrowser, proxyTransport, refusals, secureContext } from './network-checks.mjs';
 import { configuration as targetConfiguration } from '../native-application/target-runtime/config.ts';
 import { target as configureTarget, targetCounts } from '../native-application/target-runtime/target.ts';
 const profile = process.env.BEETLE_BROWSER_PROFILE ?? 'functional';
-if (!['functional', 'run-results', 'interaction', 'reference', 'target-runtime'].includes(profile))
+if (!['functional', 'run-results', 'interaction', 'reference', 'target-runtime', 'network'].includes(profile))
   throw Error('Unsupported browser profile');
 const evidence = process.env.BEETLE_BROWSER_EVIDENCE;
 if (profile !== 'functional' && !evidence) throw Error('Selected profile requires an explicit evidence directory');
@@ -72,22 +74,27 @@ try {
   entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime') await configureTarget(f);
+  const network = profile === 'network' ? await prepareNetwork(f) : undefined;
+  const origin = network?.origin ?? f.origin;
   f.compose('up', '-d', '--no-build');
-  installation = (await automaticClient(f.origin)).installation.id;
+  installation = (await automaticClient(origin, network && proxyTransport(network.ca))).installation.id;
   if (evidence)
     await writeFile(
       join(evidence, 'installation-owner.json'),
       JSON.stringify({ project: f.project, installationId: installation }),
       { flag: 'wx', mode: 0o600 },
     );
-  browser = await openBrowser(chromium, f.origin, process.env.BEETLE_BROWSER_WS_ENDPOINT);
-  const context = await browser.newContext({ acceptDownloads: true });
+  browser = network
+    ? await connectBrowser(chromium, network.endpoint)
+    : await openBrowser(chromium, f.origin, process.env.BEETLE_BROWSER_WS_ENDPOINT);
+  // The network profile's certificate is self-signed for the qualification hostname only.
+  const context = await browser.newContext({ acceptDownloads: true, ignoreHTTPSErrors: Boolean(network) });
   const appPage = await context.newPage();
   page = appPage;
   appPage.on('response', (response) => {
     const url = new URL(response.url());
     if (
-      url.origin !== f.origin ||
+      url.origin !== origin ||
       !/^\/api\/v2\/organizations\/[^/]+\/workspaces\/[^/]+\/runs\/[^/]+\/result$/.test(url.pathname) ||
       resultEvidence.length >= 16
     )
@@ -116,21 +123,29 @@ try {
   if (profile === 'target-runtime')
     appPage.on('response', (response) => {
       const url = new URL(response.url());
-      if (url.origin !== f.origin || !url.pathname.startsWith('/api/v2/') || !url.pathname.endsWith('/content')) return;
+      if (url.origin !== origin || !url.pathname.startsWith('/api/v2/') || !url.pathname.endsWith('/content')) return;
       if (contentStatuses.length >= 64) {
         contentOverflow = true;
         return;
       }
       contentStatuses.push(response.status());
     });
-  const authored = await phase('automatic-access-and-authoring', () => author(appPage, f.origin));
+  const authored = await phase('automatic-access-and-authoring', () => author(appPage, origin));
   if (profile === 'interaction') {
-    await phase('keyboard-navigation', () => keyboard(appPage, f.origin));
+    await phase('keyboard-navigation', () => keyboard(appPage, origin));
     await phase('themes-viewports-reduced-motion', () => themesAndViewports(appPage, authored.workspace));
     await phase('cross-scope-cache-and-refusal', () => crossScope(appPage, authored));
     await phase('no-performance-work', async () => {
       assert.deepEqual(counts(f), { ready: 0, work: 0, unexpected: 0 });
     });
+  } else if (network) {
+    await phase('secure-context', () => secureContext(appPage));
+    const run = await phase('run-execution', () => execute(appPage));
+    await phase('report-metrics-and-download', () => results(appPage, f.root));
+    await phase('input-roundtrip', () => inputs(appPage, authored.workspace, f.root));
+    await phase('active-metrics-reconnect-cancellation', () => cancelReconnect(appPage, authored));
+    const statuses = await phase('host-origin-csrf-refusals', () => refusals(network));
+    await writeFile(join(f.root, 'network-refusals.json'), JSON.stringify({ run, statuses }), { mode: 0o600 });
   } else if (profile === 'reference') {
     const resources = await phase('reference-and-downloads', () => reference(appPage, f));
     if (evidence)
