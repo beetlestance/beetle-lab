@@ -34,7 +34,7 @@ it('session replacement hides evidence and holds the next API behind a retired c
   expect(screen.queryByText('Application state / outcome')).not.toBeInTheDocument();
   expect(signal!.aborted).toBe(true); await act(async () => {await Promise.resolve();}); expect(second.records).toHaveLength(0);
   await act(async () => held.resolve({ok: true, value: sampleReply(runIds[0]!, 2)}));
-  await screen.findByLabelText('Baseline metric'); expect(second.records).toHaveLength(6);
+  await screen.findByLabelText('Baseline metric'); expect(second.records).toHaveLength(8);
   expect(screen.queryByRole('img')).not.toBeInTheDocument(); expect(calls).toBe(1);
 });
 it('unmount aborts the held comparison without starting catalogue work after late success', async () => {
@@ -53,8 +53,8 @@ it('rejects a same-ordinal sample from a different logical series without drawin
   });
   mountComparison(fixture.client); await screen.findByLabelText('Baseline metric');
   fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
-  await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(4));
-  expect(screen.queryByRole('img')).not.toBeInTheDocument(); expect(fixture.records).toHaveLength(9);
+  await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(6));
+  expect(screen.queryByRole('img')).not.toBeInTheDocument(); expect(fixture.records).toHaveLength(11);
 });
 
 it('retains admission across unmount/remount until an ignored-abort API original settles', async () => {
@@ -65,5 +65,5 @@ it('retains admission across unmount/remount until an ignored-abort API original
   const second = testClient(request => json(request.path.endsWith('/comparisons') ? snapshot() : catalogue()));
   mountComparison(second.client); await act(async () => {await Promise.resolve();}); expect(second.records).toHaveLength(0);
   await act(async () => held.resolve({ok: true, value: snapshot()}));
-  await screen.findByLabelText('Baseline metric'); expect(second.records).toHaveLength(6);
+  await screen.findByLabelText('Baseline metric'); expect(second.records).toHaveLength(8);
 });

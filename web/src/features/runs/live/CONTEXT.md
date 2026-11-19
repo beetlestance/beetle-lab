@@ -24,8 +24,9 @@ Archive ordinals preserve duplicate UTC times, full values, phases/reasons/nulls
 live projections cannot overwrite recorded values. Detached target identity survives
 omitted hints and retires on owner changes. Only producer count 256 marks its
 limit; page-buffer capacity does not. Shared hover, source gaps and singleton
-points remain visible. Result target cards opt into strict hover coverage: no
-reading outside source coverage or across gaps. Unknown units stay as reported.
+points remain visible. Strict recorded hover hides readings beyond coverage/gaps.
+Optional per-series source coordinates retain independent observations; their
+cursor uses requested time, never a fabricated union-grid reading. Units stay raw.
 Bootstrap/coverage/lifetime rules: docs/system/contracts/active-history.md.
 
 Namespace queries have scoped retry. After verification, one workspace snapshot

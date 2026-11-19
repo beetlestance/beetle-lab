@@ -4,7 +4,7 @@ import { formatBytes, formatDuration, formatNumber, formatPercent } from '../../
 import { comparisonRunLabels } from './run-labels.js';
 import { comparisonFigures } from './figures.js';
 import type { ComparisonFigures } from './figures.js';
-import type { Summaries, Overviews } from './useComparison.js';
+import type { Summaries, Overviews, ComparisonHistories } from './useComparison.js';
 
 type Row = {
   label: string;
@@ -13,6 +13,12 @@ type Row = {
   delta: 'relative' | 'points' | 'duration' | 'absolute';
 };
 const rows: readonly Row[] = [
+  {
+    label: 'Observed peak requests a second',
+    value: (s) => s.peakRequestsPerSecond,
+    show: (v) => formatNumber(v, 'integer'),
+    delta: 'relative',
+  },
   {
     label: 'Requests a second',
     value: (s) => s.requestsPerSecond,
@@ -84,13 +90,19 @@ export function ComparisonDeltas({
   items,
   summaries,
   overviews,
+  histories,
 }: {
   items: readonly RunComparisonItem[];
   summaries: Summaries | undefined;
   overviews: Overviews | undefined;
+  histories: ComparisonHistories | undefined;
 }) {
   const values = items.map((item) =>
-    comparisonFigures(summaries?.get(item.run.id.toLowerCase()), overviews?.get(item.run.id.toLowerCase())),
+    comparisonFigures(
+      summaries?.get(item.run.id.toLowerCase()),
+      overviews?.get(item.run.id.toLowerCase()),
+      histories?.get(item.run.id.toLowerCase()),
+    ),
   );
   if (summaries === undefined) return <p role="status">Loading whole-run figures…</p>;
   return (

@@ -7,6 +7,9 @@ export interface ChartSeries {
   readonly label: string;
   readonly tone: SeriesTone;
   readonly values: readonly (number | null)[];
+  /** Optional independent recorded source coordinates; absent keeps the shared timeline. */
+  readonly xs?: readonly number[] | undefined;
+  readonly breaks?: readonly boolean[] | undefined;
   readonly area?: boolean | undefined;
   readonly dashed?: boolean | undefined;
 }
@@ -101,7 +104,7 @@ function Legend({ entries, format }: { entries: readonly LegendEntry[]; format: 
 
 function SeriesPaths({ props, scale }: { props: ChartProps; scale: Scale }) {
   return props.series.map((s) =>
-    linePath(props.xs, s.values, props.breaks, scale.x, scale.y).map((d, j) => (
+    linePath(s.xs ?? props.xs, s.values, s.breaks ?? props.breaks, scale.x, scale.y).map((d, j) => (
       <g key={`${s.key}-${j}`} className={`live-series tone-${s.tone}${s.dashed ? ' dashed' : ''}`}>
         {s.area && <path className="live-area" d={`${d.line} L${d.lastX},${scale.H} L${d.firstX},${scale.H} Z`} />}
         <path className="live-line" d={d.line} vectorEffect="non-scaling-stroke" />
@@ -167,16 +170,27 @@ function hoverHandlers(props: ChartProps) {
   };
 }
 
+function readingIndex(props: ChartProps, xs: readonly number[], breaks: readonly boolean[] | undefined): number {
+  if (props.hoverT == null) return xs.length - 1;
+  return props.strictHoverRange ? recordedHoverIndex(xs, breaks, props.hoverT) : nearestIndex(xs, props.hoverT);
+}
 function legendOf(props: ChartProps): { entries: LegendEntry[]; index: number } {
-  const { xs, hoverT } = props;
-  const index =
-    hoverT == null
-      ? xs.length - 1
-      : props.strictHoverRange
-        ? recordedHoverIndex(xs, props.breaks, hoverT)
-        : nearestIndex(xs, hoverT);
-  const entries = props.series.map((s) => ({ s, value: index >= 0 ? (s.values[index] ?? null) : null }));
+  const index = readingIndex(props, props.xs, props.breaks);
+  const entries = props.series.map((s) => {
+    const position =
+      s.xs === undefined && s.breaks === undefined
+        ? index
+        : readingIndex(props, s.xs ?? props.xs, s.breaks ?? props.breaks);
+    return { s, value: position >= 0 ? (s.values[position] ?? null) : null };
+  });
   return { entries, index };
+}
+function cursorAt(props: ChartProps, index: number, scale: Scale): number | null {
+  const time = props.hoverT;
+  if (time == null) return null;
+  if (props.series.some((series) => series.xs !== undefined))
+    return Number.isFinite(time) && time >= props.domain[0] && time <= props.domain[1] ? scale.x(time) : null;
+  return index >= 0 ? scale.x(props.xs[index]!) : null;
 }
 
 /**
@@ -185,12 +199,12 @@ function legendOf(props: ChartProps): { entries: LegendEntry[]; index: number } 
  * reading, or the reading at the pointed-at second when a chart is hovered.
  */
 export function LiveChart(props: ChartProps) {
-  const { xs, format } = props;
+  const { format } = props;
   const scale = scaleOf(props);
   const { entries, index } = legendOf(props);
   const label = entries.map(({ s, value }) => `${s.label} ${value === null ? 'no reading' : format(value)}`).join(', ');
   const title = typeof props.title === 'string' ? props.title : 'Chart';
-  const cursor = props.hoverT != null && index >= 0 ? scale.x(xs[index]!) : null;
+  const cursor = cursorAt(props, index, scale);
   return (
     <figure className={['live-chart', props.className].filter(Boolean).join(' ')}>
       <figcaption className="live-chart-head">

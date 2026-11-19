@@ -3,6 +3,7 @@ import type {
   RunComparisonSnapshot,
   RunHistorySummary,
   RunMetricOverview,
+  RunChartHistory,
   RunListContext,
   RunMetricKey,
   RunMetricSeriesPage,
@@ -23,9 +24,24 @@ interface View {
 }
 export type OverviewRead =
   { readonly status: 'error' } | { readonly status: 'loaded'; readonly value: RunMetricOverview };
+export type ChartRead = { readonly status: 'error' } | { readonly status: 'loaded'; readonly value: RunChartHistory };
+export type ComparisonHistories = ReadonlyMap<string, ChartRead>;
 export type Overviews = ReadonlyMap<string, OverviewRead>;
 export type ComparisonContexts = ReadonlyMap<string, RunListContext | null>;
 export type Summaries = ReadonlyMap<string, RunHistorySummary | null>;
+interface CapturedReads {
+  summaries: Summaries;
+  overviews: Overviews;
+  contexts: ComparisonContexts;
+  histories: ComparisonHistories;
+}
+interface SavedReads {
+  owner: object;
+  value: CapturedReads;
+}
+function ownedReads(saved: SavedReads | undefined, owner: object): CapturedReads | undefined {
+  return saved?.owner === owner ? saved.value : undefined;
+}
 // Physical admission outlives routes and sessions; it retains no result cache.
 const comparisonAdmission = new ReadAdmission();
 const initial: Command = { metric: null, catalogue: true };
@@ -73,6 +89,7 @@ async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapsh
   const read = new Map<string, RunHistorySummary | null>();
   const overviews = new Map<string, OverviewRead>();
   const contexts = new Map<string, RunListContext | null>();
+  const histories = new Map<string, ChartRead>();
   for (const item of snapshot.items) {
     if (!context.alive()) break;
     const record = await summaryOf(context, item.run);
@@ -80,8 +97,10 @@ async function readSummaries(context: ReadContext, snapshot: RunComparisonSnapsh
     contexts.set(item.run.id.toLowerCase(), record.context);
     if (!context.alive()) break;
     overviews.set(item.run.id.toLowerCase(), await overviewOf(context, item.run));
+    if (!context.alive()) break;
+    histories.set(item.run.id.toLowerCase(), await chartOf(context, item.run));
   }
-  return { summaries: read, overviews, contexts };
+  return { summaries: read, overviews, contexts, histories };
 }
 
 /** One run's stored history summary (one exact-ID row); a failure is only a gap. */
@@ -119,6 +138,18 @@ async function overviewOf({ api, params, signal }: ReadContext, run: ComparedRun
   }
 }
 
+/** The server verifies the whole archive and returns at most 900 actual source windows. */
+async function chartOf({ api, params, signal }: ReadContext, run: ComparedRun): Promise<ChartRead> {
+  try {
+    const value = await readResult(
+      api.getRunChartHistory({ params: { ...params, runId: run.id, attemptId: run.activeAttemptId }, signal }),
+    );
+    return { status: 'loaded', value };
+  } catch {
+    return { status: 'error' };
+  }
+}
+
 /** One admission survives render/session/selection replacement and ignored aborts. */
 export function useComparison(scope: RunScope, ids: readonly string[]) {
   const api = useApi();
@@ -130,11 +161,8 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   const [saved, setSaved] = useState<{ lease: typeof lease; view: View }>();
   const [busy, setBusy] = useState(admission.busy);
   const view = saved?.lease === lease ? saved.view : empty;
-  // Whole-run summaries are read with the first catalogue load and kept per selection.
-  const [summaries, setSummaries] = useState<{
-    owner: object;
-    value: { summaries: Summaries; overviews: Overviews; contexts: ComparisonContexts };
-  }>();
+  // Whole-run and recorded evidence share the first catalogue load and selection owner.
+  const [captured, setCaptured] = useState<SavedReads>();
   useEffect(() => admission.subscribe(() => setBusy(admission.busy)), [admission]);
   useEffect(() => {
     const controller = new AbortController();
@@ -148,7 +176,7 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
         const alive = () => current && owned.current;
         const result = await readComparison({ api, params, signal: owned.signal, alive }, ids, command);
         if (!result || !alive()) return;
-        if (result.read) setSummaries({ owner: lease.owner, value: result.read });
+        if (result.read) setCaptured({ owner: lease.owner, value: result.read });
         const { snapshot, page } = result;
         setSaved({ lease, view: { snapshot, ...(page ? { page } : {}), error: false, busy: false } });
       });
@@ -177,12 +205,13 @@ export function useComparison(scope: RunScope, ids: readonly string[]) {
   function retry() {
     setChoice({ owner, command: { ...command } });
   }
-  const recorded = summaries?.owner === owner ? summaries.value : undefined;
+  const recorded = ownedReads(captured, owner);
   return {
     view,
     summaries: recorded?.summaries,
     overviews: recorded?.overviews,
     contexts: recorded?.contexts,
+    histories: recorded?.histories,
     admission,
     busy: busy || view.busy,
     select,

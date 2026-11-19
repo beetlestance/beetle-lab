@@ -93,3 +93,16 @@ it.each([Number.MAX_VALUE, 1e308, Number.MIN_VALUE])(
     expect(ceiling).toBeGreaterThanOrEqual(value);
   },
 );
+
+it('preserves independent recorded source coordinates without union-grid fill or cross-series hover indices',()=>{
+ const props={title:'Independent recordings',xs:[1000,3000],domain:[0,5000] as const,strictHoverRange:true,format:String,
+  series:[{key:'a',label:'a',tone:'amber' as const,xs:[1000,3000],values:[0,30]},
+   {key:'b',label:'b',tone:'info' as const,xs:[2000,4000],breaks:[false,true],values:[20,40]}]};
+ const view=render(<LiveChart {...props} hoverT={1000}/>);
+ expect(view.getByRole('img')).toHaveAttribute('aria-label','Independent recordings: a 0, b no reading');
+ const paths=[...view.container.querySelectorAll('.live-line')].map(node=>node.getAttribute('d'));
+ expect(paths[0]).toMatch(/^M120,/);expect(paths[1]).toMatch(/^M240,/);expect(paths).toHaveLength(3);
+ view.rerender(<LiveChart {...props} hoverT={2500}/>);expect(view.getByRole('img')).toHaveAttribute('aria-label','Independent recordings: a 30, b no reading');
+ const cursor=view.container.querySelector('.live-cursor');expect(cursor).toHaveAttribute('x1','300');
+ view.rerender(<LiveChart {...props} hoverT={5000}/>);expect(view.getByRole('img')).toHaveAttribute('aria-label','Independent recordings: a no reading, b no reading');
+});

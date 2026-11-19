@@ -8,7 +8,7 @@ export interface RecordedPlot {
   readonly domain: readonly [number, number];
   readonly ticks: readonly ChartTick[];
 }
-const sourceClock = (time: number) => {
+export const sourceClock = (time: number) => {
   if (time !== 0 && Math.abs(time) < 1000)
     return `${(time / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} s`;
   return time < 0 ? `−${clock(-time)}` : clock(time);

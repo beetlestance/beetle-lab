@@ -10,6 +10,7 @@ import { ComparedMetric, MetricSelection } from './Metric.js';
 import { comparisonRunIds } from './selection.js';
 import { comparisonRunLabels } from './run-labels.js';
 import { useComparison } from './useComparison.js';
+import { RecordedComparisonCharts } from './RecordedCharts.js';
 import './comparison.css';
 
 export function RunComparison(scope: RunScope) {
@@ -61,11 +62,22 @@ function Comparison({ scope, ids }: { scope: RunScope; ids: string[] }) {
       {snapshot && (
         <>
           <RunStrip scope={scope} ids={ids} snapshot={snapshot} contexts={state.contexts} />
-          <ComparisonDeltas items={snapshot.items} summaries={state.summaries} overviews={state.overviews} />
+          <ComparisonDeltas
+            items={snapshot.items}
+            summaries={state.summaries}
+            overviews={state.overviews}
+            histories={state.histories}
+          />
           <section className="compare-section" aria-labelledby="compare-different">
             <h2 id="compare-different">What was different</h2>
             <WhatWasDifferent items={snapshot.items} />
           </section>
+          <RecordedComparisonCharts
+            key={ids.join(',')}
+            items={snapshot.items}
+            histories={state.histories}
+            overviews={state.overviews}
+          />
           <MetricSection state={state} snapshot={snapshot} />
           {snapshot.items.map((item, index) => (
             <article key={item.run.id} className="compare-section">

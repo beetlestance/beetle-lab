@@ -1,6 +1,8 @@
 import type { RunHistorySummary, RunMetricOverview } from '@beetle/contracts/api';
-import type { OverviewRead } from './useComparison.js';
+import { comparisonPeak } from './recorded-source.js';
+import type { OverviewRead, ChartRead } from './useComparison.js';
 export interface ComparisonFigures {
+  readonly peakRequestsPerSecond: number | null;
   readonly requestsPerSecond: number | null;
   readonly p50: number | null;
   readonly p95: number | null;
@@ -15,10 +17,13 @@ export interface ComparisonFigures {
 export function comparisonFigures(
   summary: RunHistorySummary | null | undefined,
   read: OverviewRead | undefined,
+  history?: ChartRead,
 ): ComparisonFigures | null {
-  if (read?.status === 'loaded' && read.value.availability === 'ready') return overviewFigures(read.value);
+  if (read?.status === 'loaded' && read.value.availability === 'ready')
+    return overviewFigures(read.value, comparisonPeak(read, history));
   if (summary?.availability !== 'ready') return null;
   return {
+    peakRequestsPerSecond: null,
     requestsPerSecond: summary.requestsPerSecond,
     p50: null,
     p95: summary.httpP95?.estimate ?? null,
@@ -31,8 +36,9 @@ export function comparisonFigures(
   };
 }
 
-function overviewFigures(value: RunMetricOverview): ComparisonFigures {
+function overviewFigures(value: RunMetricOverview, peak: number | null): ComparisonFigures {
   return {
+    peakRequestsPerSecond: peak,
     requestsPerSecond: value.requestsPerSecond,
     ...latencyFigures(value),
     failureRatio: value.failure?.ratio ?? null,

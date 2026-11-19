@@ -89,6 +89,21 @@ then the complete source UUID if needed; labels never invent a run ordinal.
 Rates stay labelled whole-run averages; no peak is invented from the configured
 load. Differences describe scalar observations, not statistical confidence.
 
+## Recorded comparison overlays
+
+One existing chart-history read per selected run shares comparison admission and
+retirement. Each reply remains bounded to 900 actual points / 1 MiB; the backend
+retains its 3,600-window / 32 MiB archive ceiling. No metric-per-endpoint fanout.
+P95 and request curves keep independent native-marker-relative coordinates on a
+common scale; they never fill a union grid, stretch phases or align wall clocks.
+The shared renderer accepts optional per-series source coordinates and gap flags.
+Its default shared-timeline behavior stays unchanged. Recorded legends use each
+series' own nearest source position, hide values outside coverage/across gaps,
+and retain known zero. An overlay cursor denotes requested time, not a new sample.
+Observed peaks require matching overview numeric generation, version, manifest,
+artifact/hash and native marker. Missing/error/incompatible sources leave unknowns.
+The chart notes preserve downsampling and partial-coverage context.
+
 ## Ownership
 
 The backend owns this projection. The browser consumes only the generated DTO; it must
@@ -110,14 +125,18 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/api/v2/run-chart-history.schema.json` | `a6611d151c82` |
 | `contracts/src/api/run-chart-history.ts` | `760adceea5f8` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `2e8b3ab203f4` |
-| `web/src/features/runs/result/chart-model.ts` | `52b2e65dd3d8` |
+| `web/src/features/runs/result/chart-model.ts` | `1887a2817681` |
 | `web/src/features/runs/charts/` | `7df1caa86595` |
 | `web/src/features/runs/result/TargetReport.tsx` | `750bc555e4bb` |
 | `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `3e23e074426e` |
-| `web/src/features/runs/comparison/useComparison.ts` | `a0b2da6c45bc` |
-| `web/src/features/runs/comparison/figures.ts` | `453533dcc6d5` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `55796747ac26` |
+| `web/src/features/runs/comparison/useComparison.ts` | `812decb44ba1` |
+| `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `76d6f109e5c2` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
+| `web/src/features/runs/comparison/RecordedCharts.tsx` | `ecfb3bf7212d` |
+| `web/src/features/runs/comparison/overlay-model.ts` | `b3a951dbbbb0` |
+| `web/src/features/runs/comparison/recorded-source.ts` | `0f579314884f` |
+| `web/src/features/runs/live/LiveChart.tsx` | `e6a093baddd7` |
