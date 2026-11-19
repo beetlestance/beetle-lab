@@ -103,7 +103,12 @@ export {
 } from './suite-list.js';
 export type { NormalizedSuiteListQuery, SuiteListPosition } from './suite-list.js';
 export { suiteListPageMatches, folderPageSummariesMatch } from './suite-list-page.js';
-export { pendingRunHistorySummary, pendingRunHistoryMetrics, runHistorySummaryMatches } from './run-history-summary.js';
+export {
+  pendingRunHistorySummary,
+  pendingRunHistoryMetrics,
+  runHistorySummaryMatches,
+  captureHttpP95Preview,
+} from './run-history-summary.js';
 export type { RunHistoryMetrics } from './run-history-summary.js';
 
 export { encodeRevisionListCursor, revisionListPosition, revisionListPageMatches } from './revision-list.js';

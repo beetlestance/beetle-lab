@@ -9,6 +9,7 @@ import type { TargetSamplingReport } from '../target-sampling/index.js';
 import type { OutputReservation } from './reservation.js';
 import { AttemptError } from './types.js';
 import type { State } from './state.js';
+import type { Artifacts } from '../artifact-custody/index.js';
 export function resultEvidence(
   state: State,
   compiled: CompiledInput,
@@ -74,13 +75,20 @@ function numericSnapshot(snapshot: NonNullable<State['execution']>['metrics']) {
   return { totals, totalsComplete, measurement, windowCoverage, quantiles };
 }
 
-export function numericEvidence(state: State, diagnostics: MappingDiagnostics, history: ArchiveEvidence | null) {
+export function writeNumericEvidence(
+  artifacts: Pick<Artifacts, 'numeric'>,
+  state: State,
+  diagnostics: MappingDiagnostics,
+  history: ArchiveEvidence | null,
+  allowance: number,
+) {
   const summary = state.execution!.summary;
   const timing =
     summary?.ok && summary.evidence.nativeCollection === 'complete'
       ? summary.evidence.timing
       : { testRunDurationMs: null };
-  return {
+  const preview = history?.httpP95Preview;
+  const base = {
     version: 4,
     timing,
     scope: state.scope,
@@ -98,6 +106,7 @@ export function numericEvidence(state: State, diagnostics: MappingDiagnostics, h
       : null,
     quantiles: state.execution!.metrics?.quantiles ?? 'unknown',
   };
+  return artifacts.numeric(base, allowance, preview ? { ...base, version: 5, httpP95Preview: preview } : undefined);
 }
 export function buildUsage(state: State): { bytes: number; peakBytes: number } | null {
   const build = state.execution?.build;

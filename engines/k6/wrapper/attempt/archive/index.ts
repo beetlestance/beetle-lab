@@ -10,6 +10,8 @@ import { AttemptError } from '../types.js';
 import { MetricFiles, names } from './files.js';
 import type { Lane } from './files.js';
 import type { ArchivePrefix } from './prefix.js';
+import { P95Preview } from './p95-preview.js';
+import type { RunHistorySummary } from '@beetle/contracts/api';
 export type { ArchivePrefix } from './prefix.js';
 
 const footerReserve = 1024;
@@ -23,6 +25,7 @@ export interface ArchiveOptions {
 export interface ArchiveEvidence {
   readonly artifacts: readonly EngineResult['artifacts'][number][];
   readonly windows: number;
+  readonly httpP95Preview?: RunHistorySummary['httpP95Preview'];
   readonly dataArtifactId: string;
   readonly indexArtifactId: string;
   readonly bytes: number;
@@ -49,6 +52,7 @@ export class MetricArchive {
   };
   private prefix: ArchivePrefix | undefined;
   private count = 0;
+  private readonly p95Preview = new P95Preview();
   private through = -1;
   private charged = 0;
   private ceiling: number;
@@ -202,6 +206,7 @@ export class MetricArchive {
       await this.write('index', index);
       this.count = sequence;
       this.through = end;
+      this.p95Preview.accept(window);
       const file = <L extends Lane>(lane: L) =>
         Object.freeze({
           artifactId: lane === 'data' ? this.dataId : this.indexId,
@@ -246,6 +251,7 @@ export class MetricArchive {
       this.check();
       this.sealed = Object.freeze({
         windows: this.count,
+        httpP95Preview: this.p95Preview.finish(),
         dataArtifactId: this.dataId,
         indexArtifactId: this.indexId,
         bytes: this.bytes,

@@ -82,3 +82,14 @@ it('captures report bytes before asynchronous custody and verifies the exact acc
   expect(artifact).toMatchObject({kind: 'performance-report', relativePath: 'performance-report.txt', bytes: expected.length});
   expect(await fs.readFile(join(f.directory, artifact.relativePath))).toEqual(expected);
 });
+
+it('omits an oversized advisory latency preview before writing the numeric artifact', async () => {
+  const f = await setup();
+  const baseline = { version: 4, quantiles: 'unknown' };
+  const allowance = Buffer.byteLength(encodeJson(baseline, 1024)) + 1;
+  const artifact = await f.artifacts.numeric(baseline, allowance, {
+    ...baseline, version: 5, httpP95Preview: [{ p95Ms: 10 }, { p95Ms: 20 }],
+  });
+  expect(artifact.bytes).toBe(allowance);
+  expect(JSON.parse(await fs.readFile(join(f.directory, 'numeric-final.json'), 'utf8'))).toEqual(baseline);
+});

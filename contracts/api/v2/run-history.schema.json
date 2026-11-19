@@ -23,7 +23,8 @@
         "numericVersion": {
           "enum": [
             3,
-            4
+            4,
+            5
           ]
         },
         "measurementSourceTimeMs": {
@@ -155,6 +156,22 @@
               "type": "null"
             }
           ]
+        },
+        "httpP95Preview": {
+          "description": "Sparse execute-phase one-second window p95 estimates; omitted when fewer than two samples are available.",
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "properties": {
+              "offsetSeconds": { "type": "integer", "minimum": 0, "maximum": 8640000000000 },
+              "p95Ms": { "type": "number", "minimum": 0, "maximum": 1.7976931348623157e+308 },
+              "gapBefore": { "type": "boolean" }
+            },
+            "required": ["offsetSeconds", "p95Ms", "gapBefore"],
+            "additionalProperties": false
+          }
         },
         "publishedArtifactBytes": {
           "anyOf": [

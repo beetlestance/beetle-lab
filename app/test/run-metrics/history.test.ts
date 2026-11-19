@@ -51,3 +51,21 @@ it('retains actual native settlement after caller abort and through service clos
     release(); await rejected; await closing;
   } finally { release(); }
 });
+
+it('projects only ordered sampled latency carried by the verified v5 artifact', async () => {
+  const f = await fixture();
+  const preview = [
+    { offsetSeconds: 0, p95Ms: 12, gapBefore: false },
+    { offsetSeconds: 4, p95Ms: 22, gapBefore: true },
+  ];
+  rewrite(f, 'numeric-final', text => JSON.stringify({
+    ...JSON.parse(text), version: 5, timing: { testRunDurationMs: 5000 }, httpP95Preview: preview,
+  }));
+  const service = f.service(); services.push(service);
+  const key = { id: f.query.id, scope: f.query.scope, attemptId: f.query.attemptId };
+  expect(await service.readRunHistorySummary(key, context())).toMatchObject({
+    availability: 'ready', source: { numericVersion: 5 }, httpP95Preview: preview,
+  });
+  rewrite(f, 'numeric-final', text => JSON.stringify({ ...JSON.parse(text), httpP95Preview: [...preview].reverse() }));
+  await expect(service.readRunHistorySummary(key, context())).rejects.toMatchObject({ code: 'unavailable' });
+});

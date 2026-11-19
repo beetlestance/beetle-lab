@@ -17,7 +17,7 @@ that milestones never occurred. At most 100 projected rows / 64 KiB remain cache
 
 The selected desktop activity panel (or opened phone disclosure) reads the existing
 terminal latency-attribution endpoint once; no polling or per-endpoint fanout.
-Its detected rise uses native source instants. Elapsed display requires a version-4
+Its detected rise uses native source instants. Elapsed display requires a version 4 or later
 measurement origin from the already-read metric overview, matching generation and
 manifest. Negative/unsafe differences, absent or legacy origins and mismatched
 sources show the reported source timestamp instead. Event clocks and native offsets
@@ -40,5 +40,5 @@ These source checks do not qualify a packaged native deployment.
 | `web/src/features/runs/timeline/index.tsx` | `23f6cfccb7f9` |
 | `web/src/features/runs/timeline/Milestones.tsx` | `ba2b2f78e6f1` |
 | `web/src/features/runs/live/Extras.tsx` | `ad293364de0f` |
-| `web/src/features/runs/live/rise-position.ts` | `b6096bcf9961` |
+| `web/src/features/runs/live/rise-position.ts` | `136a516589c3` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |

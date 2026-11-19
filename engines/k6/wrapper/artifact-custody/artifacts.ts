@@ -210,8 +210,8 @@ export class Artifacts {
       throw new AttemptError('artifact');
     return this.custody('beetle-evidence.json', evidence.rawBytes, evidence.sha256);
   }
-  async numeric(value: unknown, allowance = cap): Promise<Artifact> {
-    return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final');
+  async numeric(value: unknown, allowance = cap, withPreview?: unknown): Promise<Artifact> {
+    return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final', withPreview);
   }
   async warnings(value: unknown, allowance: number): Promise<Artifact> {
     return this.encoded(captureK6Warnings(value), allowance, 'k6-warnings.json', 'k6-warnings');
@@ -243,14 +243,30 @@ export class Artifacts {
       kind,
     );
   }
-  private async encoded(value: unknown, allowance: number, name: string, kind: string): Promise<Artifact> {
+  private async encoded(
+    value: unknown,
+    allowance: number,
+    name: string,
+    kind: string,
+    enriched?: unknown,
+  ): Promise<Artifact> {
     if (!Number.isSafeInteger(allowance) || allowance < 1 || allowance > cap) throw new AttemptError('output_limit');
     let bytes: Buffer;
     try {
-      bytes = Buffer.from(encodeJson(value, allowance - 1) + '\n');
+      const enrichedText = enriched === undefined ? undefined : optionalJson(enriched, allowance - 1);
+      bytes = Buffer.from((enrichedText ?? encodeJson(value, allowance - 1)) + '\n');
     } catch {
       throw new AttemptError('output_limit');
     }
     return this.custody(name, bytes.length, hash(bytes), bytes, kind);
+  }
+}
+
+/** Shed an advisory preview before opening the output if it cannot fit the reservation. */
+function optionalJson(value: unknown, allowance: number): string | undefined {
+  try {
+    return encodeJson(value, allowance);
+  } catch {
+    return undefined;
   }
 }
