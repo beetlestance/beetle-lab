@@ -65,6 +65,10 @@
   visibility: visible;
   opacity: 1;
 }
+.live-tip-anchor[data-dismissed='true'] .live-tip {
+  visibility: hidden;
+  opacity: 0;
+}
 .live-alert {
   display: flex;
   gap: var(--s-12);
@@ -130,6 +134,11 @@
   line-height: 16px;
 }
 @media (max-width: 760px) {
+  .live-tip {
+    left: 0;
+    right: auto;
+    max-width: calc(100vw - 32px);
+  }
   .live-title-row {
     align-items: start;
   }

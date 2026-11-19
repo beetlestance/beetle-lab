@@ -1,7 +1,7 @@
 import { RunRequester } from '../RunRequester.js';
 import { useWorkspaceSnapshot } from '../../../app/overview.js';
 import { useSessionAccess } from '../../../app/session.js';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Run } from '@beetle/contracts/api';
@@ -96,14 +96,19 @@ function ContextLine({
 
 function CompareButton() {
   const tip = useId();
+  const [dismissed, setDismissed] = useState(false);
   return (
-    <span className="live-tip-anchor">
+    <span className="live-tip-anchor" data-dismissed={dismissed}>
       <Button
         className="live-icon-action"
         aria-label="Compare"
-        title="Compare"
         aria-disabled="true"
         aria-describedby={tip}
+        onFocus={() => setDismissed(false)}
+        onMouseEnter={() => setDismissed(false)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setDismissed(true);
+        }}
         onClick={() => undefined}
       >
         <HeaderIcon kind="compare" />
