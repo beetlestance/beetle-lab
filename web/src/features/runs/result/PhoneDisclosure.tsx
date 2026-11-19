@@ -26,6 +26,7 @@ export function PhoneDisclosure({
   description,
   children,
   hashId,
+  hashAliases,
   expanded = false,
   className = '',
 }: {
@@ -34,23 +35,24 @@ export function PhoneDisclosure({
   description: string;
   children: ReactNode;
   hashId?: string;
+  hashAliases?: readonly string[];
   expanded?: boolean;
   className?: string;
 }) {
   const { hash } = useLocation();
-  const [open, setOpen] = useState(() => matchesHash(hash, id, hashId));
+  const [open, setOpen] = useState(() => matchesHash(hash, id, hashId, hashAliases));
   const [visited, setVisited] = useState(open || expanded);
   useEffect(() => {
     if (open || expanded) setVisited(true);
   }, [open, expanded]);
   useEffect(() => {
-    if (matchesHash(hash, id, hashId)) setOpen(true);
+    if (matchesHash(hash, id, hashId, hashAliases)) setOpen(true);
     const changed = () => {
-      if (matchesHash(window.location.hash, id, hashId)) setOpen(true);
+      if (matchesHash(window.location.hash, id, hashId, hashAliases)) setOpen(true);
     };
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
-  }, [hash, id, hashId]);
+  }, [hash, id, hashId, hashAliases]);
   return (
     <details
       id={id}
@@ -72,6 +74,8 @@ export function PhoneDisclosure({
   );
 }
 
-function matchesHash(hash: string, id: string, alias?: string): boolean {
-  return hash === `#${id}` || (alias !== undefined && hash === `#${alias}`);
+function matchesHash(hash: string, id: string, alias?: string, aliases?: readonly string[]): boolean {
+  return (
+    hash === `#${id}` || (alias !== undefined && hash === `#${alias}`) || aliases?.includes(hash.slice(1)) === true
+  );
 }

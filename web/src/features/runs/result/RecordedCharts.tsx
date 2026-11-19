@@ -91,8 +91,8 @@ function WholeChart({
       xs={plot.points.map((point) => point.t)}
       breaks={plot.points.map((point) => point.gapBefore)}
       domain={plot.domain}
-      ticks={plot.ticks}
-      bands={recordedBands(plan, plot.domain)}
+      ticks={phone ? plot.ticks.filter((_, index) => index % 2 === 0) : plot.ticks}
+      bands={phone ? undefined : recordedBands(plan, plot.domain)}
       series={[
         {
           key: selected,
@@ -104,6 +104,7 @@ function WholeChart({
       ]}
       format={p95 ? ms : whole}
       limit={p95 && p95Limit !== null ? { value: p95Limit, label: `Limit ${ms(p95Limit)}` } : undefined}
+      tightLimitScale={phone && p95}
     />
   );
 }

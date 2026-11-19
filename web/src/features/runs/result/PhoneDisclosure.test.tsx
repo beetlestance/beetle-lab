@@ -25,6 +25,16 @@ it('opens an initial inner-section hash and listens for native hash navigation',
   window.history.pushState(null,'','/#result-target');fireEvent(window,new Event('hashchange'));
   expect(await screen.findByText('Recorded target data')).toBeVisible();
 });
+it('opens a nested report link through its ancestor disclosure', () => {
+  render(
+    <MemoryRouter initialEntries={['/#result-report']}>
+      <PhoneDisclosure id="more" hashAliases={['result-report']} title="More run details" description="">
+        <PhoneDisclosure id="result-report" title="Report" description=""><p>Published report</p></PhoneDisclosure>
+      </PhoneDisclosure>
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('Published report')).toBeVisible();
+});
 it('retains form state through collapse and desktop/phone composition changes', async () => {
   const view = (expanded: boolean) => <MemoryRouter><PhoneDisclosure id="notes" title="Notes" description="One note"
     expanded={expanded}><input aria-label="Draft" defaultValue="Original" /></PhoneDisclosure></MemoryRouter>;

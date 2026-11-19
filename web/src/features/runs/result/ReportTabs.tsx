@@ -16,6 +16,7 @@ import { RunWarnings } from '../warnings/index.js';
 import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
 
 export type ReportTab = 'report' | 'activity' | 'artifacts' | 'diagnostics';
+const phoneDetailHashes = ['result-report', 'result-chart-details', 'result-charts', 'result-script'];
 function tabFromHash(hash: string): ReportTab | null {
   if (hash === '#result-artifacts') return 'artifacts';
   if (hash === '#result-diagnostics') return 'diagnostics';
@@ -134,10 +135,12 @@ export function ReportTabs({
         <PhoneDisclosure id="result-diagnostics" title="Diagnostics" description="Engine and agent details">
           {panels.diagnostics.body}
         </PhoneDisclosure>
-        <PhoneDisclosure id="result-report" title="Report" description="Published performance analysis">
-          {panels.report.body}
-        </PhoneDisclosure>
-        {phoneExtras}
+        <MoreRunDetails>
+          <PhoneDisclosure id="result-report" title="Report" description="Published performance analysis">
+            {panels.report.body}
+          </PhoneDisclosure>
+          {phoneExtras}
+        </MoreRunDetails>
       </div>
     );
   return (
@@ -159,5 +162,19 @@ export function ReportTabs({
         {panels[tab].body}
       </TabPanel>
     </section>
+  );
+}
+
+function MoreRunDetails({ children }: { children: ReactNode }) {
+  return (
+    <PhoneDisclosure
+      id="result-other-details"
+      className="result-phone-more"
+      hashAliases={phoneDetailHashes}
+      title="More run details"
+      description="Report and saved run information"
+    >
+      {children}
+    </PhoneDisclosure>
   );
 }
