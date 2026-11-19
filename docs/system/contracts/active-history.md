@@ -76,12 +76,19 @@ page-buffer capacity alone does not. Captions distinguish recorded and page-only
 observations. Request/target charts share hover without interpolated values.
 Undeclared target units stay as reported; unit-format acceptance remains separate.
 
+The live download menu creates a provisional TXT report and CSV locally from the
+same bounded browser projection, without another read. Both identify the run,
+attempt, producer epoch, metric subset and sampled coverage. The report describes
+the last retained window. CSV preserves actual window timestamps, source ordinals,
+gaps, missing values and zeroes. Final artifacts remain a separate sealed path.
+
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
 | `web/src/features/runs/live-history/` | `92d2e3aefd8a` |
-| `web/src/features/runs/live/backfill.ts` | `ff1ebd353e08` |
+| `web/src/features/runs/live/backfill.ts` | `359fdea05c65` |
+| `web/src/features/runs/live/provisional-download.ts` | `pending` |
 | `web/src/features/runs/live/history.ts` | `4662308fcf90` |
 | `app/src/application/live-attempt/` | `f142d17a3e6c` |
 | `app/src/application/run-live-history/` | `ddb71f298e44` |

@@ -61,7 +61,7 @@ export function mergeHistory(
     },
   };
 }
-export function recordedCount(history: LiveHistory): number {
+export function recordedCount(history: Pick<LiveHistory, 'coverage' | 'points'>): number {
   const limit = history.coverage?.windows ?? 0;
   return new Set(
     history.points

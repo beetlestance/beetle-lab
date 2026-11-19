@@ -13,6 +13,7 @@ import type { useCancellation } from '../useCancellation.js';
 import './header.css';
 import { HeaderIcon } from './HeaderIcon.js';
 import { LiveDownloads } from './Downloads.js';
+import type { ProvisionalSnapshot } from './provisional-download.js';
 import { useLiveNamespace } from './data.js';
 import { shortId, wallTime } from './format.js';
 
@@ -30,6 +31,7 @@ export interface HeaderProps {
   cancel: Cancellation | undefined;
   readOnly: boolean;
   early?: boolean | undefined;
+  snapshot: ProvisionalSnapshot | null;
   onScript: () => void;
 }
 
@@ -193,7 +195,7 @@ export function LiveHeader(props: HeaderProps) {
             </p>
             <div className="live-actions">
               <CompareButton />
-              <LiveDownloads ordinal={props.revisionOrdinal} onScript={props.onScript} />
+              <LiveDownloads ordinal={props.revisionOrdinal} snapshot={props.snapshot} onScript={props.onScript} />
               {stream && <Button onClick={stream.toggle}>{stream.paused ? 'Resume stream' : 'Pause stream'}</Button>}
               <LiveCancelButton run={props.run} cancel={props.cancel} readOnly={props.readOnly} />
             </div>

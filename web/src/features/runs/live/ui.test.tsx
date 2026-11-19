@@ -67,9 +67,9 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   expect(screen.queryByText('Since the run started')).toBeNull();
   expect(screen.getByRole('heading', { name: 'Target runtime' })).toBeVisible();
   expect(screen.getByRole('img', { name: /Heap and RSS: heap \(raw\) 399, RSS \(raw\) 570/ })).toBeVisible();
-  // No report or metrics downloads while live.
-  expect(screen.getByRole('button', { name: 'Download' })).toBeVisible();
-  expect(screen.queryByRole('button', { name: /download (report|metrics)/i })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+  expect(screen.getByRole('button', { name: /Report so far/ })).toBeEnabled();
+  expect(screen.getByRole('button', { name: /Metrics so far/ })).toBeEnabled();
   expect(screen.queryByRole('link', { name: /download/i })).not.toBeInTheDocument();
 });
 

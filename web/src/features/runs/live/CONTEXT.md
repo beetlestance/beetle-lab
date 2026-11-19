@@ -33,8 +33,8 @@ Bootstrap/coverage/lifetime rules: docs/system/contracts/active-history.md.
 Namespace queries have scoped retry. After verification, one workspace snapshot
 fills the passive badge; restored read-only views add no current-work polling.
 Cancellation/read-only access use session context, never a new session read.
-Live downloads offer verified JavaScript export only. Picker reads 20 summaries
-plus this run's verified revision; older history links to the suite. Cached/fresh
-revisions bind scope/suite/ID/digest. No automatic export preparation or live
-report/metrics download. Terminal attribution reads sealed sources. Header, progress and early styles have separate owners.
+Live downloads project up to 900 retained windows as provisional TXT or CSV.
+No extra read or sealed artifact publication. Script picker reads 20 summaries
+plus the pinned revision; older history links to the suite. Revisions bind scope,
+suite, ID and digest. Terminal attribution reads sealed sources.
 Checks: ui, model, Phases, backfill, target-history and live-metrics/live-history.
