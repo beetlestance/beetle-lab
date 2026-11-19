@@ -268,6 +268,8 @@ it('shows the compact phone chart and measured-average title, with unchanged cha
  const current=finished();const f=fixture(current,request=>request.path.endsWith('/metrics/chart-history')?json({...chartData,id:current.id,scope:current.scope,attemptId:current.activeAttemptId}):undefined);mount(f.client,path);
  expect(await screen.findByRole('heading',{level:1,name:/^Averaged/})).toBeVisible();
  expect(await screen.findByRole('heading',{level:2,name:'p95 latency, whole run'})).toBeVisible();
+ expect(document.querySelectorAll('#result-whole .live-ticks > span')).toHaveLength(3);
+ expect(document.querySelector('#result-whole .live-band')).toBeNull();
  fireEvent.click(screen.getByRole('radio',{name:'Requests'}));
  expect(screen.getByRole('heading',{level:2,name:'Requests, whole run'})).toBeVisible();
  expect(screen.getByRole('img',{name:/Recorded requests per one-second window/})).toBeVisible();

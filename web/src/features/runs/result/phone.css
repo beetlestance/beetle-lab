@@ -84,17 +84,31 @@
     order: 40;
   }
   #result-diagnostics {
-    order: 50;
-  }
-  #result-report {
-    order: 60;
-  }
-  #result-chart-details {
-    order: 70;
-  }
-  #result-script {
     border-radius: 0 0 var(--r-lg) var(--r-lg);
     border-bottom: 0;
-    order: 80;
+    order: 50;
+  }
+  #result-other-details {
+    margin-top: 0;
+    background: transparent;
+    border: 0;
+    order: 60;
+  }
+  .result-phone-more > summary {
+    padding-inline: 0;
+  }
+  .result-phone-more > .result-phone-content {
+    padding-inline: 0;
+    gap: 0;
+  }
+  .result-phone-more .result-phone-section {
+    margin-top: 0;
+  }
+  .result-phone-more .result-phone-section:first-child {
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+  .result-phone-more .result-phone-section:last-child {
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+    border-bottom: 0;
   }
 }

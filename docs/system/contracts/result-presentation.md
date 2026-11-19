@@ -176,14 +176,14 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |
 | `contracts/src/api/run-chart-history.ts` | `2dd377350a07` |
-| `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
+| `web/src/features/runs/result/RecordedCharts.tsx` | `d413bd4d2005` |
 | `web/src/features/runs/result/chart-model.ts` | `334c3b9b8c24` |
 | `web/src/features/runs/charts/` | `c7ae083dc754` |
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `5ff3d54b4aa0` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `b6688cca6e5a` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `c3961288919e` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
