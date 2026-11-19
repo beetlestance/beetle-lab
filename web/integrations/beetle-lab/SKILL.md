@@ -11,7 +11,8 @@ Preserve the target, workspace and resource budget authorized by the user's task
 
 ## Read the installed contracts
 
-Obtain the installation's exact configured origin, including its port. Fetch
+Obtain the installation's exact configured origin, including its port; on a
+private-network installation it is the `https://` address. Fetch
 `/reference/public-api.json` from that origin before choosing operations or payloads.
 It contains generated JSON operations, binaryOperations, message references and
 their JSON Schema catalogue. Choose operations marked implementation=implemented;

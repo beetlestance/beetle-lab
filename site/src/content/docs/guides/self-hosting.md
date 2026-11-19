@@ -61,7 +61,7 @@ Docker service restarts.
 
 ## Open the UI through a tunnel
 
-The UI listens on `127.0.0.1` on the server only. From your computer, forward the
+By default the UI listens on `127.0.0.1` on the server only. From your computer, forward the
 same port number:
 
 ```sh
@@ -80,8 +80,9 @@ automatically as the administrator.
 
 If you are the only user and reach the server over a VPN, a tailnet or your home
 LAN, you can open the UI at an `https://` address through a reverse proxy instead
-of a tunnel. Decide before the first start; see
-[Open it over a private network](/guides/private-network/).
+of a tunnel; see [Open it over a private network](/guides/private-network/). An
+existing installation can switch later with
+[the offline address change](/guides/private-network/#change-the-address-of-an-existing-installation).
 
 ## Or use the launcher
 

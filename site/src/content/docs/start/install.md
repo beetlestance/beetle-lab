@@ -54,9 +54,9 @@ Open <http://127.0.0.1:4567> locally. Tests and engines run on the server; only 
 browser runs on your computer.
 
 If you are the only user and reach the server over a VPN or another private
-network, you can instead open it at an `https://` address through a reverse proxy.
-Decide before the first start; see
-[Open it over a private network](/guides/private-network/).
+network, you can instead open it at an `https://` address through a reverse proxy;
+see [Open it over a private network](/guides/private-network/). You can switch an
+existing installation later with the offline address change described there.
 Do not expose it to the internet: there is no password.
 
 ## Launcher for a separate directory

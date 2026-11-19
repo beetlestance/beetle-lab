@@ -99,12 +99,13 @@ If the images did not move, it reports `unchanged`.
 Start the services with `docker compose up -d`. The app serves the new version
 behind the fence: you can look at everything, but it accepts no new work.
 
-| While fenced                                                                             | Allowed                        |
-| ---------------------------------------------------------------------------------------- | ------------------------------ |
-| Reading suites, runs, results, inputs, exports and settings                              | Yes                            |
-| Signing in, cancelling runs and exports, comparing runs, retention and deletion previews | Yes                            |
-| Starting runs or exports, saving suites, uploads, settings, pins, notes, deleting        | Refused                        |
-| Changing capacity with the host command                                                  | Refused with `upgrade_blocked` |
+| While fenced                                                                             | Allowed                               |
+| ---------------------------------------------------------------------------------------- | ------------------------------------- |
+| Reading suites, runs, results, inputs, exports and settings                              | Yes                                   |
+| Signing in, cancelling runs and exports, comparing runs, retention and deletion previews | Yes                                   |
+| Starting runs or exports, saving suites, uploads, settings, pins, notes, deleting        | Refused                               |
+| Changing capacity with the host command                                                  | Refused with `upgrade_blocked`        |
+| Changing the address with `setup origin`                                                 | Refused with `origin_blocked upgrade` |
 
 A refused action currently shows as `503 capacity_unavailable`, the same retryable
 error as a full installation. There is no dedicated upgrade error code yet.
@@ -152,6 +153,9 @@ Run the same command again. Every step is recorded and safe to repeat:
 - Interrupted during rollback: rollback completes the swap it had started.
 - `upgrade_blocked images_moved`: the images were rebuilt while an upgrade was
   open. Roll back, then prepare again.
+- `upgrade_blocked origin_change`: an
+  [address change](/guides/private-network/#change-the-address-of-an-existing-installation)
+  is unfinished. Finish it with the same operation ID, then prepare.
 
 `docker compose run --rm setup upgrade status` prints the current phase and the
 steps done, without changing anything. `"status":"none"` means no upgrade is open.
