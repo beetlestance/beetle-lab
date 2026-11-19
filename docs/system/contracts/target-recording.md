@@ -46,6 +46,10 @@ Active samples stay raw; the verified pinned revision supplies their unit contex
 Only declared units convert for presentation. Older reports stay explicitly raw;
 missing units never imply bytes, percent or milliseconds. Incompatible dimensions
 are rejected; non-finite converted values stay unknown. No outcome changes.
+Live chart groups normalize fully declared readings to MB, %, ms and counts.
+A known series without units keeps its whole group raw with explicit source labels;
+missing series do not block conversion. Positive underflow stays unknown, never zero.
+Hover outside observed coverage or across a marked gap stays unknown.
 
 ## Prefix transport
 
@@ -79,3 +83,5 @@ approved actor, native custody and [active-history verification](active-history.
 | `contracts/src/api/live-metrics.ts` | `49964b8426b1` |
 | `agent/src/live-metrics/` | `feac352cffc7` |
 | `engines/k6/wrapper/live/` | `9ab8c75609b9` |
+| `web/src/features/runs/live/target-charts.ts` | `788710258b75` |
+| `web/src/features/runs/live/Charts.tsx` | `37c406ecb622` |

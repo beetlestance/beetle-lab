@@ -164,9 +164,9 @@ Numeric hash and manifest bind ready source identity; restored history reads it 
 | `contracts/src/api/run-chart-history.ts` | `2dd377350a07` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `f2c47a6eb6d2` |
 | `web/src/features/runs/result/chart-model.ts` | `334c3b9b8c24` |
-| `web/src/features/runs/charts/` | `7df1caa86595` |
+| `web/src/features/runs/charts/` | `c7ae083dc754` |
 | `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
-| `web/src/features/runs/result/target-model.ts` | `193b67abb66f` |
+| `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `b3b5a1aa96af` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `1839f3f70683` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `8ca6f4c10bae` |

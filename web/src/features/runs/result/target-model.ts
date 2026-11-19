@@ -11,7 +11,8 @@ import type {
   TargetUnit,
 } from '@beetle/contracts/target-runtime';
 import type { ChartSeries, ChartTick } from '../live/LiveChart.js';
-import { clock, reading } from '../live/format.js';
+import { clock } from '../live/format.js';
+export { targetCardReading } from '../charts/target-format.js';
 
 type Point = {
   readonly ordinal: number;
@@ -159,11 +160,6 @@ function card(report: TargetRuntimeReport, points: readonly Point[], definition:
   };
 }
 
-export function targetCardReading(card: TargetCard, value: number): string {
-  const magnitude = Math.abs(value);
-  const text = magnitude >= 1e12 || (magnitude > 0 && magnitude < 0.001) ? value.toExponential(2) : reading(value);
-  return !card.normalized || card.unit === 'count' ? text : card.unit === '%' ? `${text}%` : `${text} ${card.unit}`;
-}
 export function targetClock(value: number): string {
   if (value !== 0 && Math.abs(value) < 1000)
     return `${(value / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} s`;
