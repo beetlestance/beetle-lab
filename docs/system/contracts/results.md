@@ -117,10 +117,10 @@ Advisory only; never a verdict input and never a substitute for sealed history.
 
 | Stage | Contract |
 | --- | --- |
-| Subset | ≤ 20 execute/engine descriptors chosen by `contracts/src/k6-live` before effects: first `http_req_duration` + `http_req_failed` for the first 6 requests (complete endpoint rows: count, p50/p95, failed), then the first row of each priority metric (throughput, failures, load), then the rest; omissions counted in `excludedSeries`; prepare/control excluded. A live endpoint table shows the requests present and "N of M" from the revision's request count. Agent and image must run the same selection or frames fail closed as `subset` |
+| Subset | ≤ 20 execute/engine descriptors chosen by `contracts/src/k6-live` before effects: first `http_req_duration` + `http_req_failed` for the first 6 requests (complete endpoint rows: count, p50/p95, failed), then the derived checks rate when execute assertions exist, then priority metrics and remaining series; omissions counted in `excludedSeries`; prepare/control excluded. A live endpoint table shows the requests present and "N of M" from the revision's request count. Agent and image must run the same selection or frames fail closed as `subset` |
 | Approval | scope, producer epoch UUID and subset digest derive from compile/launch inputs; readers never learn approval from a frame ([decision 014](../../decisions/014-live-metric-approval-authority.md)) |
 | Producer | one pending projection, one write original, ≤ one publish per 2 s; writes ≤ min(65536, 1 + timeout/2000); no queue, retry, restart or final flush |
-| Frame | version 1, ≤ 65536 B, `coalescedWindows = sourceSequence − publishedSequence`; series totals cover one source window only; `upstreamCoverage` unknown |
+| Frame | version 1, ≤ 65536 B, `coalescedWindows = sourceSequence − publishedSequence`; series totals cover one source window only; `upstreamCoverage` unknown. The advisory checks rate pools all native execute assertions in that window before display selection. No checks means no rate |
 | Mailbox | dedicated tmpfs volume at `/beetle/live`, 128 KiB and 4 inodes, carved from the temporary allocation ([decision 013](../../decisions/013-live-metric-mailbox-custody.md)) |
 | Envelope | `BLIVE001`, 128 B head and footer around a 65536 B payload (65792 B total); revision 1..65536 equals `publishedSequence`; payload is gzip, decoded ≤ 64 KiB |
 | Budget | ≤ min(8 MiB, total/8, execute/8), taken from history; the 65792 B extent and every write are charged to execute |
@@ -216,5 +216,5 @@ a failed revocation keeps ownership and rejects close.
 | `engines/k6/wrapper/attempt/archive/` | `b2c32badd893` |
 | `app/src/application/run-metrics/` | `58d640006ba7` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
-| `contracts/src/k6-live/` | `324516855159` |
+| `contracts/src/k6-live/` | `74dfd693e7e1` |
 | `agent/src/live-metrics/` | `feac352cffc7` |

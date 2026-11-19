@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { captureLiveMetricSnapshot, liveMetricSubsetText } from '../api/index.js';
 import { validatePrimitive } from '../validate.js';
-import { createK6LiveApproval, k6LiveSubset } from './index.js';
+import { createK6LiveApproval, K6_LIVE_CHECKS, k6LiveSubset } from './index.js';
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 function input() {
   return {source: {requests: [{id: 'one', assertions: [{id: 'status'}]}]},
@@ -13,9 +13,7 @@ function input() {
 it('assigns a stable validated producer UUID and approved frozen subset before any runtime effects', () => {
   const source = input(); const approval = createK6LiveApproval(source);
   expect(approval.producerEpoch).toBe('83100015-5f12-80d2-a421-7b5ef4c84d14');
-  expect(hash(liveMetricSubsetText(approval.subset))).toBe('9f6577cbf7b37bbbde5cfecaad68c64c2271d031a05469768ef3bc769d48c8cb');
-  // The added checks series is excluded; the selected20 are unchanged from the prior vector.
-  expect(hash(liveMetricSubsetText({...approval.subset,excludedSeries:approval.subset.excludedSeries-1}))).toBe('4f0e1d213eed06264bf8554dd7f5791c6cee1c6f4e6452a20c0a9dce5cca3ee7');
+  expect(hash(liveMetricSubsetText(approval.subset))).toBe('4cf747714499ce4cd33a9b7771c2c1b9fc0736b0dae2aba1803d133b06ca863c');
   expect(createK6LiveApproval(input())).toEqual(approval); expect(validatePrimitive('uuid', approval.producerEpoch).ok).toBe(true);
   expect(approval.subset.selected[0]).toEqual({ordinal: 0, metric: 'http_req_duration', kind: 'trend', scope: 'execute', tags: {phase: 'execute', request: 'r0'}});
   expect(approval.subset.selected.map(row => row.metric)).toEqual(expect.arrayContaining(['http_req_failed', 'vus', 'dropped_iterations', 'beetle_requests']));
@@ -62,6 +60,10 @@ it('fills complete endpoint rows (duration and failure) for up to six requests b
   const many = k6LiveSubset(source(64)); const labels = many.selected.map(label);
   expect(new Set(many.selected.flatMap(row => row.tags.request ? [row.tags.request] : [])).size).toBe(6);
   expect(labels).toEqual(expect.arrayContaining(['http_req_failed:r5', 'vus:', 'vus_max:'])); expect(labels).not.toContain('http_req_duration:r6');
-  expect(many.selected).toHaveLength(20); expect(many.excludedSeries).toBe(827);
+  expect(many.selected).toHaveLength(20); expect(many.excludedSeries).toBe(828);
   expect(many.selected.some(row=>row.metric==='checks')).toBe(false);
+  expect(many.selected.filter(row=>row.metric===K6_LIVE_CHECKS)).toHaveLength(1);
+  expect(k6LiveSubset({requests:[{id:'one',assertions:[]}]}).selected.some(row=>row.metric===K6_LIVE_CHECKS)).toBe(false);
+  expect(k6LiveSubset({requests:[{id:'one',assertions:[]}],readiness:{assertions:[{id:'health'}]}}).selected
+    .some(row=>row.metric===K6_LIVE_CHECKS)).toBe(false);
 });
