@@ -9,6 +9,7 @@ import { deletionOperation, captureDeletionOperation, deletionReplyLimit } from 
 import { executionOperation, captureExecutionOperation } from './execution-binding/index.js';
 import { artifactReadOperation, captureArtifactReadOperation } from './run-artifacts/index.js';
 import { runEventsOperation, captureRunEventsOperation } from './run-events/index.js';
+import { hasStoppedHistoryPayload, STOPPED_HISTORY_RPC_BYTES } from './output-absence/wire.js';
 import { absenceOperation, captureAbsenceOperation } from './output-absence/index.js';
 import { finalizationOperation, captureFinalizationOperation } from './output-finalization/index.js';
 import { resultOperation, captureResultOperation } from './run-results/index.js';
@@ -289,6 +290,7 @@ export function operationMessageLimit(operation: Operation): number {
   return authoringMessageLimit(operation);
 }
 function authoringMessageLimit(operation: Operation): number {
+  if (hasStoppedHistoryPayload(operation)) return STOPPED_HISTORY_RPC_BYTES;
   if (dataProperty(operation, 'kind') !== 'suite') return MAX_MESSAGE_BYTES;
   const command = dataProperty(operation, 'command');
   return dataProperty(command, 'kind') === 'createSuiteRevision' ? 2097152 : MAX_MESSAGE_BYTES;
@@ -296,6 +298,7 @@ function authoringMessageLimit(operation: Operation): number {
 
 /** One two-original allowance is shared by suites, Offers and event batches. */
 export function largeOperation(operation: Operation): boolean {
+  if (hasStoppedHistoryPayload(operation)) return true;
   if (retentionOperation(operation)) return true;
   if (dataProperty(operation, 'kind') === 'exportOutput') {
     const method = dataProperty(dataProperty(operation, 'operation'), 'method');

@@ -33,6 +33,7 @@ export {
 export type { SourceChunkRequest, SourceChunk } from '../generated/types.js';
 export {
   captureStoppedHistoryClosure,
+  captureStoredStoppedObservation,
   encodeStoppedHistoryClosure,
   STOPPED_HISTORY_ENVELOPE_BYTES,
 } from './stopped-history.js';

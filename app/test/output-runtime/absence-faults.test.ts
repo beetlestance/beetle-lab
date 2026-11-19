@@ -61,3 +61,36 @@ it('defers only finalization version conflicts and retains proof without refetch
   expect(f.absences.finalize.mock.calls.length).toBeGreaterThan(1); expect(f.absence).not.toHaveBeenCalled();
   await f.scheduler.close(); f.dispose();
 });
+
+it('defers a saturated history finalization credit without losing the proof or fencing output', async () => {
+  const f = absenceFixture();
+  const read = vi.fn(async () => ({ok:true as const,value:{absence:f.proof,observation:null}}));
+  f.options.gateway.output = vi.fn(() => ({absence:f.absence,stoppedHistory:read,source:vi.fn(),sourceChunk:vi.fn()}));
+  f.absences.read.mockResolvedValue(f.proofState);
+  f.absences.finalize
+    .mockResolvedValueOnce({kind:'pending',reason:'history'})
+    .mockRejectedValueOnce(Object.assign(new Error('Two large originals active'),{code:'queue_full'}))
+    .mockResolvedValue({kind:'pending',reason:'events'});
+  f.scheduler.start();await vi.advanceTimersByTimeAsync(100);
+  expect(read).toHaveBeenCalledOnce();
+  expect(f.absences.finalize.mock.calls.length).toBeGreaterThan(2);
+  expect(f.scheduler.state().status).toBe('running');expect(f.options.onFailure).not.toHaveBeenCalled();
+  await f.scheduler.close();f.dispose();
+});
+it('refuses history paired with a different absence receipt before issuing a finalization', async () => {
+  const f = absenceFixture();
+  const read = vi.fn(async () => ({
+    ok: true as const,
+    value: { absence: { ...f.proof, finalAgentSeq: f.proof.finalAgentSeq + 1 }, observation: null },
+  }));
+  f.options.gateway.output = vi.fn(() => ({ absence: f.absence, stoppedHistory: read, source: vi.fn(), sourceChunk: vi.fn() }));
+  f.absences.read.mockResolvedValue(f.proofState);
+  f.absences.finalize.mockResolvedValue({ kind: 'pending', reason: 'history' });
+  f.scheduler.start();
+  await vi.advanceTimersByTimeAsync(100);
+  expect(read).toHaveBeenCalledOnce();
+  expect(f.absences.finalize).toHaveBeenCalledOnce();
+  expect(f.scheduler.state().status).toBe('failed');
+  await expect(f.scheduler.close()).rejects.toThrow();
+  f.dispose();
+});

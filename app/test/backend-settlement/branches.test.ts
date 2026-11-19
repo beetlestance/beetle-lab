@@ -1,6 +1,7 @@
 import { expect,it } from 'vitest';
 import { claimsFixture } from '../storage/dispatch-claim-fixtures.js';
 import { cancelCommand } from '../storage/run-cancellation-fixtures.js';
+import { observed } from '../output-absence/stopped-history-fixture.js';
 import { absenceFixture } from '../output-absence/fixture.js';
 import { command,scope } from '../output-deletion/fixture.js';
 import { cleaned,hash } from '../output-deletion/cleanup-ack/fixture.js';
@@ -19,16 +20,23 @@ it('settles positively unsent cancellation from its funded control only and neve
   expect(f.store.execute(operation)).toEqual(result);expect(f.db.prepare('SELECT count(*) n FROM runs').get()?.n).toBe(0);
  }finally{f.db.close();}
 });
-it('settles admitted absence with retained event bytes and an exact cleaned/agent reply',()=>{
- const f=absenceFixture();f.ready();expect(f.finalize()).toMatchObject({kind:'finalized'});const deletion=command(f);
- f.store.execute({kind:'beginOutputDeletion',command:deletion});const key={scope,id:deletion.id,runId:f.key.runId};
+it.each([false,true])('settles admitted absence with retained history %s and exact cleaned/agent reply',withHistory=>{
+ const f=absenceFixture();f.adopt();f.release({exitEvidence:{exitCode:137,oomKilled:true,observedAt:'2026-01-01T00:01:00Z'}});f.ingest();f.confirm();
+ const history=withHistory?observed(f):undefined;
+ expect(f.absences.execute({kind:'absenceFinalize',request:{...f.command(),...(history?{stoppedHistory:history}:{})}})).toMatchObject({kind:'finalized'});
+ const retained=Number(f.cursor().retained_bytes)+(history?.bytes??0);const deletion=command(f);
+ expect(f.store.execute({kind:'beginOutputDeletion',command:deletion})).toMatchObject({retainedPayloadBytes:retained});
+ const key={scope,id:deletion.id,runId:f.key.runId};
  const retirement=f.store.execute({kind:'getOutputRetirementRequest',key});
  if(!retirement||!('closure' in retirement)||!('purpose' in retirement))throw Error('Missing retirement');
  const ack=f.store.execute({kind:'recordOutputCleanupAck',request:{key,reply:cleaned(retirement)}}) as OutputCleanupAck;
  const request=captureSettlementRequest({version:1,retirement,cleanupReplyDigest:ack.replyDigest});
  const agentReply={version:1 as const,state:'settled' as const,requestDigest:settlementRequestDigest(request,hash),
   cleanupReplyDigest:request.cleanupReplyDigest,tombstoneDigest:'d'.repeat(64),chargedBytes:4096 as const};
- const before=f.usage();const result=f.store.execute({kind:'settleBackendOutput',request:{key,agentReply}}) as BackendSettlementResult;
+ const before=f.usage();const operation={kind:'settleBackendOutput' as const,request:{key,agentReply}};
+ const result=f.store.execute(operation) as BackendSettlementResult;
  expect(result.kind).toBe('absence');expect(f.usage()).toBe(before-result.refundedBytes);
+ expect(f.db.prepare('SELECT count(*) n FROM execution_stopped_history').get()?.n).toBe(0);
+ const settled=f.usage();expect(f.store.execute(operation)).toEqual(result);expect(f.usage()).toBe(settled);
  expect(f.db.prepare('SELECT count(*) n FROM run_events').get()?.n).toBe(0);expect(f.db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
 });

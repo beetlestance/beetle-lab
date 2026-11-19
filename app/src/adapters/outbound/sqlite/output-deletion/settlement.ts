@@ -20,6 +20,7 @@ export function settlementProjection(db: DatabaseSync, runs: { get(key: RunKey):
     workspaceId: String(row.workspace_id),
   });
   const facts = captureFacts(db, runs, {
+    verifyHistory: true,
     request: {
       scope: key.scope,
       runId: key.runId,

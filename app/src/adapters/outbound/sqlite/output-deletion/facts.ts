@@ -7,6 +7,7 @@ import type { OutputDeletionCommand } from '../../../../ports/output-deletion-me
 import { captureEventBinding } from '../../../../domain/events/index.js';
 import { RUN_OUTPUT_METADATA_BYTES } from '../../../../ports/dispatch.js';
 import { loadOutput } from '../output-custody/index.js';
+import { requireAbsenceCharge } from '../output-absence/stopped-history.js';
 import { OutputAbsences } from '../output-absence/index.js';
 import { StorageError } from '../protocol.js';
 import { lower } from '../input-values.js';
@@ -40,7 +41,7 @@ export function binding(db: DatabaseSync, runId: string, attemptId: string): Eve
 export function captureFacts(
   db: DatabaseSync,
   runs: { get(key: RunKey): Run },
-  command: Pick<OutputDeletionCommand, 'request'>,
+  command: Pick<OutputDeletionCommand, 'request'> & { verifyHistory?: true },
 ): DeletionFacts {
   const request = command.request;
   const run = runs.get({ scope: request.scope, id: request.runId });
@@ -72,13 +73,14 @@ export function captureFacts(
     throw new StorageError('conflict');
   const owned = binding(db, lower(run.id), run.activeAttemptId);
   if (source) return sourceFacts(db, run, owned, source);
-  return absenceFacts(db, run, owned, absent);
+  return absenceFacts(db, run, owned, absent, command.verifyHistory === true);
 }
 function absenceFacts(
   db: DatabaseSync,
   run: Run,
   owned: EventBinding,
   absent: Record<string, unknown> | undefined,
+  verifyHistory: boolean,
 ): DeletionFacts {
   const proof = new OutputAbsences(db).read(owned);
   if (
@@ -89,6 +91,7 @@ function absenceFacts(
     proof.closure.finalAgentSeq !== absent.final_agent_seq
   )
     throw new StorageError('unavailable');
+  requireAbsenceCharge(db, proof, absent.retained_payload_bytes, verifyHistory);
   return {
     retirement: {
       binding: owned,

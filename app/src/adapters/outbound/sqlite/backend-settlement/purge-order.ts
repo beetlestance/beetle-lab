@@ -1,6 +1,6 @@
 import { EVENT_MAX_RETAINED_ROWS } from '../../../../ports/events.js';
 /** Exact original keys; deferred cyclic FKs remain enforced at COMMIT. */
-export const purgeOrder = [
+export const purgeOrder024 = [
   ['backend_output_cleanup_acks', 'deletion_id', 'deletion', 1],
   ['output_deletion_files', 'deletion_id', 'deletion', 128],
   ['output_deletion_intents', 'id', 'deletion', 1],
@@ -21,6 +21,7 @@ export const purgeOrder = [
   ['execution_intents', 'attempt_id', 'attempt', 1],
   ['runs', 'id', 'run', 1],
 ] as const;
+export const purgeOrder = [['execution_stopped_history', 'attempt_id', 'attempt', 1], ...purgeOrder024] as const;
 export type PurgeTable = (typeof purgeOrder)[number][0];
 export interface OriginalIds {
   readonly deletion: string;

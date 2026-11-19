@@ -103,6 +103,13 @@ backend gateway verify scope, journal authority, digest and wire bounds. The
 payload budget is 2 MiB, plus the bounded proof and envelope. The route performs
 no native archive read.
 
+The backend waits for the exact released snapshot and full event acknowledgement
+before fetching a stopped observation. It compares the companion proof to the
+retained proof and commits available history in the same transaction as finalisation.
+History consumes only payload bytes still available after events and provisional
+result custody. The refund and eventual deletion credit include every retained
+history byte. The installed agent and backend use matching release images.
+
 ## Anchors
 
 | Code | Reviewed |
