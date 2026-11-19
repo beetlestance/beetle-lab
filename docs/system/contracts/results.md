@@ -157,8 +157,8 @@ Warnings and target readings are advisory; they never change assertions or
 thresholds. Missing series or readings are unknown, never zero. Target values are
 target-reported and never relabelled as engine resource measurements.
 
-Browser artefact reads (`web/src/lib/verified-artifact.ts`) share two originals across kinds, verify length/SHA-256 and decode within one 5 s read, and retire
-on session, scope, attempt or artefact change without releasing unsettled originals.
+Browser artefact reads (`web/src/lib/verified-artifact.ts`) share two whole originals across kinds and serialize fetch/body wires; waiting, length/SHA-256 verification and decode share one 5 s budget.
+Session, scope, attempt or artefact changes retire display without releasing unsettled originals.
 The [artifact viewer](artifact-preview.md) uses a separate 32 MiB profile and bounded text excerpts.
 
 ## Run comparison

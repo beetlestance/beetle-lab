@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { ApiContext, useApi } from '../app/api.js';
-import { ReadGate } from './read-gate.js';
+import { ReadGate } from '../lib/read-gate.js';
 /** Coordinate finite detail panels without changing storage caps or retrying HTTP calls. */
 export function ReadAdmission({ children }: { children: ReactNode }) {
   const api = useApi();

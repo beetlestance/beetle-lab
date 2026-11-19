@@ -1,1 +1,1 @@
-export { ReadGate as RunReadGate } from '../../components/read-gate.js';
+export { ReadGate as RunReadGate } from '../../lib/read-gate.js';
