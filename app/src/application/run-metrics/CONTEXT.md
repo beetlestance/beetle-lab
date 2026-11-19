@@ -1,9 +1,10 @@
 # Historical metrics
 
 Public entry: createRunMetricsService with frozen RunMetricServiceOptions.
-One metadata/native read operation, no queue; caller abort returns failure while
+One metadata/native original; one captured read may wait behind background history.
+Other overlaps stay busy. Cancellation/expiry removes waiting work without IO;
 original metadata/native result AND settlement remain owned. close fences and
-drains without closing shared adapters. One original <=30 s monotonic budget via shared metric-read-lifetime.
+drains without closing shared adapters. The original <=30 s deadline includes waiting, via metric-read-lifetime.
 Private archive codec transforms sealed k6 v3 numeric and v1 NDJSON pair into
 bounded public series/sample pages. Fresh injected SHA streams full numeric/index;
 partial data ranges rely on existing pinned native custody and indexed binding.
@@ -25,4 +26,4 @@ insufficiency is a fixed reason with rise null, never a guess.
 reader.getRunChartHistory reuses scan.ts with the same full-SHA 3,600-window / 32 MiB
 bound. <= 900 actual points retain endpoints; known-window count and observed peak
 include all originals. Unknowns/gaps stay explicit, > 64 request labels refuse.
-Reply <= 1 MiB / 65,536 nodes; no window corpus or new native admission. UI pending.
+Reply <= 1 MiB / 65,536 nodes; no window corpus or new native admission.
