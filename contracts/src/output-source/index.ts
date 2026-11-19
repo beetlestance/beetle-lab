@@ -31,3 +31,9 @@ export {
   SOURCE_BASE64_CHARACTERS,
 } from './wire-limits.js';
 export type { SourceChunkRequest, SourceChunk } from '../generated/types.js';
+export {
+  captureStoppedHistoryClosure,
+  encodeStoppedHistoryClosure,
+  STOPPED_HISTORY_ENVELOPE_BYTES,
+} from './stopped-history.js';
+export type { StoppedObservation, StoppedHistoryClosure } from './stopped-history.js';

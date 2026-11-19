@@ -6,15 +6,17 @@ import { AgentHttpError } from './types.js';
 import type { RequestIdentity } from './request-identity.js';
 import type { RequestWork } from './work.js';
 import { chunkRequest, sendChunk, sendSource } from './source-json.js';
-import { readAbsence, sendAbsence } from './absence.js';
+import { readAbsence, readStoppedHistory, sendAbsence } from './absence.js';
 import { snapshotBody } from './json.js';
 
 const path = '/runner/v1/attempts/:attemptId/source';
+const historyPath = `${path}/absence/history`;
 export function sourceRoute(request: FastifyRequest): boolean {
   return (
     request.routeOptions.url === path ||
     request.routeOptions.url === `${path}/chunk` ||
-    request.routeOptions.url === `${path}/absence`
+    request.routeOptions.url === `${path}/absence` ||
+    request.routeOptions.url === historyPath
   );
 }
 function reader(outputs: OutputSourceReader | undefined): OutputSourceReader {
@@ -65,6 +67,11 @@ export function registerSources(
     });
     sendAbsence(reply, value);
     return reply;
+  });
+  server.get(historyPath, bodyless, async (request, reply) => {
+    const scope = identity.key(request);
+    const json = await operations.source(request, (budget) => readStoppedHistory(services, scope, budget));
+    return reply.type('application/json; charset=utf-8').send(json);
   });
   server.post(`${path}/chunk`, { bodyLimit: SOURCE_CHUNK_REQUEST_BYTES }, async (request, reply) => {
     const scope = identity.key(request);

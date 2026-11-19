@@ -91,8 +91,17 @@ complete approved prefix and scans the referenced extent. The shared range lease
 excludes cleanup until actual close. Stopped roots and files must keep their
 full native signature through the final named checks. The prepared output root
 must stay exclusive after stop. Partial bytes beyond
-the selected extent are ignored. This helper currently has no runner caller or
-HTTP route. The active history and sealed-result gates still apply independently.
+the selected extent are ignored. The active history and sealed-result gates
+apply independently.
+
+The agent commits the sampled observation alongside the original absence
+receipt. The authenticated runner route `GET …/source/absence/history` uses the
+same source credits as the absence route. It returns the exact committed proof
+and either an observation with its canonical byte count and digest or
+`observation: null`. An uncommitted proof returns `source_pending`. The agent and
+backend gateway verify scope, journal authority, digest and wire bounds. The
+payload budget is 2 MiB, plus the bounded proof and envelope. The route performs
+no native archive read.
 
 ## Anchors
 

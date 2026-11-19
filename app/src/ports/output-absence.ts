@@ -1,4 +1,4 @@
-import type { Owned, OutputAbsence } from '@beetle/contracts/output-source';
+import type { Owned, OutputAbsence, StoppedHistoryClosure } from '@beetle/contracts/output-source';
 import type { ClientResult } from '@beetle/contracts';
 import type { EventBinding } from './events.js';
 import type { OutputFinalizationReceipt } from './output-finalization.js';
@@ -8,6 +8,7 @@ import type { RunnerOutputClient, RunnerOutputGateway } from './output-source.js
 export const OUTPUT_ABSENCE_OPERATION_BYTES = 4096;
 export interface RunnerOutputAbsenceClient {
   absence(signal?: AbortSignal): Promise<ClientResult<Owned<OutputAbsence>>>;
+  stoppedHistory?(signal?: AbortSignal): Promise<ClientResult<StoppedHistoryClosure>>;
 }
 /** The same installation connection and original-call credits, not another pool. */
 export interface RunnerOutputAbsenceGateway extends RunnerOutputGateway {
