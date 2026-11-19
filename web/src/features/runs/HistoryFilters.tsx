@@ -32,7 +32,12 @@ export function searchField(text: string): 'name' | 'runIdPrefix' {
 }
 export type SuiteOption = { id: string; name: string };
 export function filtersActive(filter: HistoryFilter): boolean {
-  return chipOf(filter) !== 'all' || filter.name !== undefined || filter.runIdPrefix !== undefined;
+  return (
+    chipOf(filter) !== 'all' ||
+    filter.name !== undefined ||
+    filter.runIdPrefix !== undefined ||
+    filter.suiteId !== undefined
+  );
 }
 
 /**

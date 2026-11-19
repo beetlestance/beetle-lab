@@ -35,7 +35,7 @@ export function HistoryTable({
   caption: string;
 }) {
   return (
-    <Table caption={caption} columns={columns} className="history-table">
+    <Table caption={caption} columns={columns} className="history-table" scrollLabel="Run history table">
       {page.items.map((run, index) => {
         const status = runStatus(run);
         const started = startedAt(run);

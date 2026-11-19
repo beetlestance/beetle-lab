@@ -9,7 +9,10 @@ feature's `CONTEXT.md`; the stack choice is [decision 019](../../decisions/019-f
 
 | Concern                      | Owner                                                                                                                                                                       |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Routes and route builders    | `web/src/app/routes.ts`, the only source of in-app URLs                                                                                                                     |
+| Routes and route builders    | `web/src/features/runs/RunHistory.tsx` | `000000000000` |
+| `web/src/features/runs/HistoryEmpty.tsx` | `000000000000` |
+| `web/src/features/runs/HistoryHeader.tsx` | `000000000000` |
+| `web/src/app/routes.ts`, the only source of in-app URLs                                                                                                                     |
 | Server state                 | One TanStack Query client; keys from `web/src/app/queries.ts`, nested organisation → workspace → run → attempt                                                              |
 | API access                   | The generated client from `contracts/`; no hand-written DTOs, no second client factory                                                                                      |
 | Session access               | The session gate's one verified read, passed down as `SessionContext` (`web/src/app/session.tsx`: read-only and restored backup); features never read the session           |
@@ -174,6 +177,15 @@ durations only) and its latest retained run via a `suiteId` history filter. That
 filter is resolved under the workspace before any run read, and its cursors are
 bound to the suite; no retained runs does not mean never run. Resetting ordinary
 filters keeps the suite context; an explicit workspace-history link clears it.
+
+## History frame
+
+Run history uses its existing page's scoped workspace name for the workspace frame;
+a failed refresh hides cached names. Empty unfiltered history uses the exported
+Runs illustration and opens the real suite creation flow; restored history keeps
+only read navigation. A suite-filtered empty page never claims the workspace has
+no runs. Names, row contexts and numeric facts never require per-row reads.
+Wide history tables retain readable columns in a named, keyboard-scrollable region.
 
 ## Related
 

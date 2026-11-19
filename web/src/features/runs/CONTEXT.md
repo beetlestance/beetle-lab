@@ -5,9 +5,9 @@ Generated ApiClient owns request/response validation and scope bindings.
 History keeps bounded keyset pages (shared Pagination with order: Newer/Older, page N). Chips (no counts), pinned
 (runsPage key slot), suite, sort apply at once; search on Enter sends 8+ hex characters as
 runIdPrefix, else name (names and notes). Changes reset paging/selection.
-History rows prefer same-page bound suite/revision context, without row fanout.
+History frame/rows use same-page workspace and bound suite/revision names; failures hide names.
 HistorySuites reads 100 filter/fallback names; failed reads retire cached names;
-HistorySummaryCells shows stored summaries only, missing values unknown (—).
+HistorySummaryCells keeps missing values unknown. Empty authoring is absent in restored history.
 Details poll every two seconds while nonterminal, stop on errors/terminal states,
 and suspend interval work when hidden. Unmount cancels/removes scoped run queries.
 Submission fetches effective settings only after explicit opening; form state

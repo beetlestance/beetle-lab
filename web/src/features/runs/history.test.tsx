@@ -57,7 +57,7 @@ it('shows the empty board when the workspace has no runs', async () => {
   const fixture = testClient(request => suiteNames(request.path) ?? json(historyPage([])));
   mount(fixture.client, routes.runs(ids.a, ids.workspace));
   expect(await screen.findByRole('heading', { name: 'No runs yet' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Open suites' })).toHaveAttribute('href', routes.suites(ids.a, ids.workspace));
+  expect(screen.getByRole('link', { name: 'Write a suite first' })).toHaveAttribute('href', routes.newSuite(ids.a, ids.workspace, 'form'));
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 it('shows pinned badge and note text from the run row', async () => {

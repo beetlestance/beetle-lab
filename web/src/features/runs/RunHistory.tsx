@@ -9,12 +9,14 @@ import { WorkspaceTabs } from '../../app/shell/WorkspaceTabs.js';
 import { routes } from '../../app/routes.js';
 import { Button, buttonClass } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
-import { EmptyState, LoadingState } from '../../components/States.js';
+import { LoadingState } from '../../components/States.js';
 import { Pagination, usePage } from '../../components/Pagination.js';
 import { HistoryFilters, filtersActive } from './HistoryFilters.js';
 import type { HistoryFilter } from './HistoryFilters.js';
 import { HistoryTable } from './HistoryTable.js';
 import { useSuiteNames } from './HistorySuites.js';
+import { HistoryHeader } from './HistoryHeader.js';
+import { HistoryEmpty } from './HistoryEmpty.js';
 import type { RunScope } from './types.js';
 import './history.css';
 
@@ -45,86 +47,123 @@ function HistoryContext({ scope, suiteId, pinned }: { scope: RunScope; suiteId?:
   function apply(filters: HistoryFilter) {
     setContext((previous) => ({ filters: { ...filters, ...(suiteId ? { suiteId } : {}) }, epoch: previous.epoch + 1 }));
   }
-  const suiteName = suiteId ? suites.name(suiteId) : undefined;
   return (
-    <div className="history">
-      <header className="history-header">
-        <div>
-          <h1>Runs</h1>
-          {suiteId ? (
-            <p className="history-lede">
-              History for {suiteName ?? <span className="number">suite {suiteId.slice(0, 8)}</span>}.{' '}
-              <Link to={routes.runs(scope.organizationId, scope.workspaceId)}>Every suite</Link>
-            </p>
-          ) : (
-            <p className="history-lede">Every run in this workspace. Start a run from a suite.</p>
-          )}
-        </div>
-      </header>
-      <WorkspaceTabs organizationId={scope.organizationId} workspaceId={scope.workspaceId} current="runs" />
-      <HistoryFilters
-        applied={context.filters}
-        apply={apply}
-        suites={suites.suites}
-        suiteLocked={suiteId !== undefined}
-      />
-      <HistoryPage
-        key={context.epoch}
-        scope={scope}
-        filters={context.filters}
-        reset={() => apply({ order: 'newest' })}
-        name={suites.name}
-      />
-    </div>
+    <HistoryPage
+      key={context.epoch}
+      scope={scope}
+      filters={context.filters}
+      reset={() => apply({ order: 'newest' })}
+      controls={{ suites, suiteId, apply }}
+    />
   );
 }
+
 function HistoryPage({
   scope,
   filters,
   reset,
-  name,
+  controls,
 }: {
   scope: RunScope;
   filters: HistoryFilter;
   reset(): void;
-  name(suiteId: string): string | undefined;
+  controls: {
+    suites: ReturnType<typeof useSuiteNames>;
+    suiteId: string | undefined;
+    apply(value: HistoryFilter): void;
+  };
 }) {
   const { selected, setSelected, toggle, query, page, refresh } = useHistoryPage(scope, filters);
   const filtered = filtersActive(filters);
+  const empty = query.isSuccess && query.data.items.length === 0 && !page.hasBack && !filtered;
   return (
-    <>
-      <HistoryToolbar
-        scope={scope}
-        selected={selected}
-        clear={() => setSelected([])}
-        refresh={refresh}
-        fetching={query.isFetching}
-      />
+    <div className="history">
+      <div className="history-intro">
+        <HistoryHeader
+          scope={scope}
+          workspaceName={query.isError ? undefined : query.data?.workspaceName}
+          pending={query.isPending}
+          suiteId={controls.suiteId}
+          suiteName={controls.suiteId ? controls.suites.name(controls.suiteId) : undefined}
+        />
+        <WorkspaceTabs organizationId={scope.organizationId} workspaceId={scope.workspaceId} current="runs" />
+      </div>
+      {!empty && (
+        <>
+          <HistoryFilters
+            applied={filters}
+            apply={controls.apply}
+            suites={controls.suites.suites}
+            suiteLocked={controls.suiteId !== undefined}
+          />
+          <HistoryToolbar
+            scope={scope}
+            selected={selected}
+            clear={() => setSelected([])}
+            refresh={refresh}
+            fetching={query.isFetching}
+          />
+        </>
+      )}
       <QueryState query={query} loading={<LoadingState variant="table" label="Loading runs…" rows={6} />}>
         {(data: RunPage) =>
           data.items.length === 0 && !page.hasBack ? (
             <HistoryEmpty scope={scope} filtered={filtered} reset={reset} />
           ) : (
-            <>
-              <HistoryTable
-                scope={scope}
-                page={data}
-                selected={selected}
-                toggle={toggle}
-                name={name}
-                caption={filtered ? 'Matching runs' : 'Workspace runs'}
-              />
-              {data.items.length === 0 && <p className="history-cell-note">No more runs.</p>}
-              {(page.hasBack || data.nextCursor) && (
-                <Pagination page={page} next={data.nextCursor} order={filters.order ?? 'newest'} label="Run pages" />
-              )}
-            </>
+            <HistoryRows
+              scope={scope}
+              data={data}
+              selected={selected}
+              toggle={toggle}
+              name={controls.suites.name}
+              filtered={filtered}
+              page={page}
+              order={filters.order ?? 'newest'}
+            />
           )
         }
       </QueryState>
+    </div>
+  );
+}
+
+function HistoryRows({
+  scope,
+  data,
+  selected,
+  toggle,
+  name,
+  filtered,
+  page,
+  order,
+}: {
+  scope: RunScope;
+  data: RunPage;
+  selected: readonly string[];
+  toggle(id: string): void;
+  name(id: string): string | undefined;
+  filtered: boolean;
+  page: ReturnType<typeof usePage>;
+  order: 'newest' | 'oldest';
+}) {
+  return (
+    <>
+      <HistoryTable
+        scope={scope}
+        page={data}
+        selected={selected}
+        toggle={toggle}
+        name={name}
+        caption={filtered ? 'Matching runs' : 'Workspace runs'}
+      />
+      {data.items.length === 0 && <p className="history-cell-note">No more runs.</p>}
+      {(page.hasBack || data.nextCursor) && (
+        <Pagination page={page} next={data.nextCursor} order={order} label="Run pages" />
+      )}
     </>
   );
 }
+
 function HistoryToolbar({
   scope,
   selected,
@@ -168,34 +207,6 @@ function HistoryToolbar({
         </Button>
       </div>
     </div>
-  );
-}
-function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filtered: boolean; reset(): void }) {
-  if (filtered)
-    return (
-      <EmptyState
-        compact
-        title="No runs match these filters"
-        actions={
-          <Button size="sm" onClick={reset}>
-            Reset filters
-          </Button>
-        }
-      >
-        Search matches suite, folder and workspace names, run notes, or the start of a run ID.
-      </EmptyState>
-    );
-  return (
-    <EmptyState
-      title="No runs yet"
-      actions={
-        <Link className={buttonClass('primary')} to={routes.suites(scope.organizationId, scope.workspaceId)}>
-          Open suites
-        </Link>
-      }
-    >
-      Runs appear here when you start one from a saved suite revision.
-    </EmptyState>
   );
 }
 
