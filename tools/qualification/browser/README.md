@@ -117,3 +117,9 @@ run deletion. It reports its own profile and seven completed phases. It does not
 cover input/directory imports, folder deletion, settings or standalone exports;
 a pass is never a full functional-profile pass. The default twelve-phase profile
 continues to require those flows and preserves its own failures.
+
+`BEETLE_BROWSER_PROFILE=run-deletion` is a three-phase author/run/delete check with
+explicit evidence. It checks the real scoped preview contains exactly that run
+before applying, then waits for authoritative cleanup, acknowledges the batch and
+confirms the run is gone after reload. Its pass covers deletion only; it does not
+replace the run-results or full functional profiles.

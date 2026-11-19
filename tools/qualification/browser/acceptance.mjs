@@ -21,7 +21,7 @@ import { targetRuntime } from './target-runtime.mjs';
 import { configuration as targetConfiguration } from '../native-application/target-runtime/config.ts';
 import { target as configureTarget, targetCounts } from '../native-application/target-runtime/target.ts';
 const profile = process.env.BEETLE_BROWSER_PROFILE ?? 'functional';
-if (!['functional', 'run-results', 'interaction', 'reference', 'target-runtime'].includes(profile))
+if (!['functional', 'run-results', 'run-deletion', 'interaction', 'reference', 'target-runtime'].includes(profile))
   throw Error('Unsupported browser profile');
 const evidence = process.env.BEETLE_BROWSER_EVIDENCE;
 if (profile !== 'functional' && !evidence) throw Error('Selected profile requires an explicit evidence directory');
@@ -157,6 +157,9 @@ try {
     Object.assign(result, { contentStatuses });
     if (evidence)
       await writeFile(join(evidence, 'target-view-outcome.json'), JSON.stringify(result), { flag: 'wx', mode: 0o600 });
+  } else if (profile === 'run-deletion') {
+    const run = await phase('run-execution', () => execute(appPage));
+    await phase('run-deletion', () => deleteRun(appPage, run));
   } else {
     const run = await phase('run-execution', () => execute(appPage));
     await phase('report-metrics-and-download', () => results(appPage, f.root));
