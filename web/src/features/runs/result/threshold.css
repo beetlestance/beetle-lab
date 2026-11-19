@@ -34,3 +34,6 @@
 .result-threshold-card.is-failed .result-threshold-meter > span {
   background: var(--red);
 }
+.result-threshold-card[data-unjudged] .result-threshold-meter > span {
+  background: var(--mute);
+}

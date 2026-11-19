@@ -47,7 +47,10 @@ export function ThresholdReading({
   const state = unjudged ? { tone: 'neutral' as const, label: 'Not judged' } : status(threshold);
   const width = fill(threshold, rule);
   return (
-    <li className={`result-card result-threshold-card${state.tone === 'fail' ? ' is-failed' : ''}`}>
+    <li
+      data-unjudged={unjudged || undefined}
+      className={`result-card result-threshold-card${state.tone === 'fail' ? ' is-failed' : ''}`}
+    >
       <div className="result-threshold-top">
         <Status tone={state.tone}>{state.label}</Status>
         <span className="result-muted number">{readingText(threshold, rule)}</span>

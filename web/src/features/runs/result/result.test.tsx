@@ -296,7 +296,7 @@ it('retries failed result details explicitly without refreshing the run or losin
   expect(attempts).toBe(2);
 });
 
-it('replaces missing incomplete-archive sections with one explanation while retaining diagnostics', async () => {
+it.each([false, true])('keeps native figures and shows only available target detail (target report %s)', async (hasTarget) => {
   const current = finished({ state: 'errored', outcome: 'inconclusive', reason: 'artifact_incomplete' });
   const f = fixture(current, (request) => {
     if (request.path.endsWith('/result')) {
@@ -312,7 +312,10 @@ it('replaces missing incomplete-archive sections with one explanation while reta
         artifacts: [{
           artifactId: ids.request, kind: 'native-summary', relativePath: 'beetle-evidence.json', bytes: 1024,
           sha256: summarySha256, sealedAt: nativeTemplate.seal.sealedAt,
-        }],
+        }, ...(hasTarget ? [{
+          artifactId: '11111111-2222-4333-8444-555555555555', kind: 'target-runtime',
+          relativePath: 'target-runtime.json', bytes: 1024, sha256: 'b'.repeat(64), sealedAt: nativeTemplate.seal.sealedAt,
+        }] : [])],
         nativeOverview: {
           summarySha256, durationMs: 600000, requests: 712200, failureRatio: 0.0006, checkPassRatio: 0.9992,
           droppedIterations: 0, p50Ms: 48, p95Ms: 197, p99Ms: 322,
@@ -328,6 +331,8 @@ it('replaces missing incomplete-archive sections with one explanation while reta
   const nav = within(screen.getByRole('navigation', { name: 'Result sections' }));
   expect(nav.queryByRole('link', { name: 'Charts' })).not.toBeInTheDocument();
   expect(nav.queryByRole('link', { name: 'Endpoints' })).not.toBeInTheDocument();
+  expect(nav.queryAllByRole('link', { name: 'Target runtime' })).toHaveLength(hasTarget ? 1 : 0);
+  expect(screen.getByText('One note per run').closest('details')).not.toHaveAttribute('open');
   expect(screen.queryByRole('region', { name: 'The whole run' })).not.toBeInTheDocument();
   expect(screen.getByRole('tab', { name: 'Diagnostics' })).toBeVisible();
   const tiles = await screen.findByLabelText('Verified k6 summary');

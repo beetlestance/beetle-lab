@@ -16,9 +16,11 @@ const sectionFromHash = (hash: string) => sections.find(([id]) => hash === `#res
 export function ResultSectionNav({
   onSelect,
   archiveMissing,
+  hideTarget,
 }: {
   onSelect(section: Section): void;
   archiveMissing?: boolean;
+  hideTarget?: boolean;
 }) {
   const { hash } = useLocation();
   const [selected, setSelected] = useState<Section>(() => sectionFromHash(hash) ?? 'summary');
@@ -28,14 +30,18 @@ export function ResultSectionNav({
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, [hash]);
-  const available = archiveMissing ? sections.filter(([id]) => id !== 'charts' && id !== 'endpoints') : sections;
+  const available = sections.filter(([id]) => {
+    if (archiveMissing && (id === 'charts' || id === 'endpoints')) return false;
+    return !hideTarget || id !== 'target';
+  });
+  const active = available.some(([id]) => id === selected) ? selected : 'summary';
   return (
     <nav className="result-nav" aria-label="Result sections">
       {available.map(([id, label]) => (
         <a
           key={id}
           href={`#result-${id}`}
-          aria-current={selected === id ? 'location' : undefined}
+          aria-current={active === id ? 'location' : undefined}
           onClick={() => {
             setSelected(id);
             onSelect(id);
