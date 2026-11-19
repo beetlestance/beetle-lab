@@ -33,6 +33,10 @@ export async function historyComparison(page, authored, first) {
   }
   await expect(ready).toBeVisible({ timeout: 35000 });
   await expect(page.getByText('Loading comparison…', { exact: true })).toHaveCount(0);
+  const exploration = page.locator('details.compare-advanced');
+  await expect(exploration).toBeVisible();
+  if (!(await exploration.evaluate((node) => node.hasAttribute('open'))))
+    await exploration.getByText('Explore metrics and recorded evidence', { exact: true }).click();
   await expect(page.getByRole('heading', { name: `Baseline: ${ids[0]}`, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: `Run 2: ${ids[1]}`, exact: true })).toBeVisible();
   const catalogue = page.getByRole('combobox', { name: /^Baseline metric\b/ });
