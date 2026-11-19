@@ -28,7 +28,7 @@ source as overview (generation/version/hash/manifest/marker), never configured l
 The optional legacy selector still keeps <=1,000 points/1 MiB per run with its own
 UTC timestamps and vertical scale; those advanced timelines are not aligned.
 Overview supplies p50/p95/p99 estimates, invocation checks and dropped counts.
-Ready overviews never backfill nulls. The frame uses board section order.
+Ready overviews never backfill nulls; headline p95 uses the same source as the table.
 When it is unavailable, only the existing accepted history scalars can fall back.
 Average rate stays average; overflowed deltas stay unknown. Native firstFailedSlo
 shows failure/reading with a matched saved limit;

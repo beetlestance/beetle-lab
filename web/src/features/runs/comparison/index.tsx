@@ -14,6 +14,7 @@ import { RecordedComparisonCharts } from './RecordedCharts.js';
 import { ComparisonTargetRuntime } from './TargetRuntime.js';
 import { ComparisonSlos } from './Slos.js';
 import { ComparisonFailedSlos } from './FailedSlos.js';
+import { ComparisonHeadline } from './Headline.js';
 import compareArt from '../../../assets/illustrations/compare.svg';
 import './comparison.css';
 
@@ -143,7 +144,17 @@ function ComparisonHeader({ scope, ids, state }: { scope: RunScope; ids: string[
               {ids.length} runs, baseline <span className="number">{label}</span>.{' '}
             </>
           )}
-          Differences describe recorded evidence, not a statistical comparability verdict.
+          {state.view.snapshot ? (
+            <ComparisonHeadline
+              items={state.view.snapshot.items}
+              summaries={state.summaries}
+              overviews={state.overviews}
+            />
+          ) : state.view.error ? (
+            'Recorded p95 comparison unavailable.'
+          ) : (
+            'Loading recorded p95 estimates…'
+          )}
         </p>
       </div>
       <div className="compare-head-actions">

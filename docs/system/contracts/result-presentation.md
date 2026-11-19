@@ -161,6 +161,9 @@ a metric is selected. Pending retries cannot resurrect retired names.
 An empty selection resolves its breadcrumb with one history page (limit 1), never
 comparison or metric reads. Its illustration is the exported Penpot asset. Figures,
 thresholds, workload charts, target charts and configuration follow board order.
+The headline describes the same recorded p95 estimates as the table. Missing,
+zero-baseline and overflowing percentages stay explicit; subpercent differences
+are never called unchanged. It makes no statistical or native-verdict inference.
 
 ## Ownership
 
@@ -173,6 +176,7 @@ history can read it without starting work. No mutation or current-work polling.
 
 | Source | SHA-256 |
 | --- | --- |
+| `web/src/features/runs/comparison/Headline.tsx` | `79e1062ea90d` |
 | `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
@@ -212,4 +216,4 @@ history can read it without starting work. No mutation or current-work polling.
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `4bac9e44538f` |
-| `web/src/features/runs/comparison/index.tsx` | `e989f6b5cf6b` |
+| `web/src/features/runs/comparison/index.tsx` | `805a5f52c0bd` |
