@@ -37,9 +37,14 @@ export function EndpointTable({
     >
       {rows.map((row) => {
         const values = endpointValues(row, total);
+        const name = endpointName(row, requests);
         return (
           <tr key={row.request}>
-            <Th scope="row">{endpointName(row, requests)}</Th>
+            <Th scope="row">
+              <span className="result-endpoint-name" title={name}>
+                {name}
+              </span>
+            </Th>
             {order.map((key) => (
               <Td key={key} numeric>
                 {values[key]}

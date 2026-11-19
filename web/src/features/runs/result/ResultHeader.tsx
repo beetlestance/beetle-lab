@@ -1,5 +1,5 @@
 import { terminal } from '../terminal.js';
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Run } from '@beetle/contracts/api';
 import { useApi } from '../../../app/api.js';
@@ -20,6 +20,7 @@ export function ResultHeader({
   title,
   sentence,
   readOnly,
+  phone,
   onDelete,
   refresh,
   ordinal,
@@ -29,6 +30,7 @@ export function ResultHeader({
   title: string;
   sentence: string;
   readOnly: boolean;
+  phone: boolean;
   ordinal?: number | undefined;
   suiteName?: string | undefined;
   onDelete(): void;
@@ -36,19 +38,31 @@ export function ResultHeader({
   refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
 }) {
   const status = displayedStatus(run, readOnly);
+  const refreshButton = refresh && (
+    <Button variant="text" size="sm" onClick={refresh.run} disabled={refresh.busy}>
+      Refresh run
+    </Button>
+  );
+  const deleteButton = !readOnly && (
+    <Button variant="text" size="sm" onClick={onDelete}>
+      Delete run…
+    </Button>
+  );
   return (
     <header className="result-head">
-      <ResultContext run={run} suiteName={suiteName} ordinal={ordinal} />
+      <ResultContext run={run} suiteName={suiteName} ordinal={ordinal} phone={phone} />
       <div className="result-head-main">
         <h1 className="result-title">{title}</h1>
       </div>
       <div className="result-head-side">
         <div className="result-row">
           <Status tone={status.tone}>{status.label}</Status>
-          {refresh && (
-            <Button variant="text" size="sm" onClick={refresh.run} disabled={refresh.busy}>
-              Refresh run
-            </Button>
+          {!phone && refreshButton}
+          {phone && (refreshButton || deleteButton) && (
+            <MoreActions>
+              {refreshButton}
+              {deleteButton}
+            </MoreActions>
           )}
         </div>
         {readOnly ? (
@@ -61,11 +75,9 @@ export function ResultHeader({
           <div className="result-actions">
             <ResultCompare run={run} suiteName={suiteName} />
             <ResultDownloads run={run} ordinal={ordinal} />
-            <RunAgain run={run} />
-            <PinControl run={run} />
-            <Button variant="text" size="sm" onClick={onDelete}>
-              Delete run…
-            </Button>
+            <RunAgain run={run} phone={phone} />
+            <PinControl run={run} shortLabel={phone} />
+            {!phone && deleteButton}
           </div>
         )}
       </div>
@@ -74,8 +86,26 @@ export function ResultHeader({
   );
 }
 
+function MoreActions({ children }: { children: ReactNode }) {
+  return (
+    // eslint-disable-next-line jsx-a11y-x/no-noninteractive-element-interactions -- Escape closes the native disclosure.
+    <details
+      className="result-other-actions"
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !event.currentTarget.open) return;
+        event.preventDefault();
+        event.currentTarget.open = false;
+        event.currentTarget.querySelector('summary')?.focus();
+      }}
+    >
+      <summary>More actions</summary>
+      <div className="result-other-actions-panel">{children}</div>
+    </details>
+  );
+}
+
 /** Starts the same saved revision with the run's own profile, budget and policy. */
-function RunAgain({ run }: { run: Run }) {
+function RunAgain({ run, phone }: { run: Run; phone: boolean }) {
   const api = useApi();
   const navigate = useNavigate();
   const { organizationId, workspaceId } = run.scope;
@@ -98,7 +128,13 @@ function RunAgain({ run }: { run: Run }) {
   }
   return (
     <span className="result-action">
-      <Button variant="primary" size="sm" loading={write.pending} loadingLabel="Starting…" onClick={start}>
+      <Button
+        variant={phone ? 'secondary' : 'primary'}
+        size="sm"
+        loading={write.pending}
+        loadingLabel="Starting…"
+        onClick={start}
+      >
         Run again
       </Button>
       <WriteError write={write} label="Retry the same start" />

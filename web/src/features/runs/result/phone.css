@@ -5,6 +5,27 @@
   padding: 0;
 }
 @media (max-width: 759px) {
+  .result-other-actions {
+    position: relative;
+    z-index: 2;
+  }
+  .result-other-actions > summary {
+    padding: var(--s-4) var(--s-8);
+    color: var(--mute);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+  }
+  .result-other-actions-panel {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 0;
+    display: grid;
+    min-width: max-content;
+    padding: var(--s-4);
+    background: var(--panel);
+    border: var(--border-width) solid var(--line);
+    border-radius: var(--r-md);
+  }
   .result-sections {
     display: contents;
   }

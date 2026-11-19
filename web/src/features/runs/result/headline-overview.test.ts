@@ -23,7 +23,7 @@ it('retains the indexed fallback without a ready overview and preserves measured
 });
 it('makes passed phone traffic prominent without repeating its average in the sentence',()=>{
  const result=headline(current,'Checkout',historical,null,{measurements:overview(),phone:true});
- expect(result.title).toBe('Averaged 5 a second over 1 minute');
+ expect(result.title).toBe('Averaged 5 req/s over 1 min');
  expect(result.sentence).not.toContain('Averaged');expect(result.sentence).toMatch(/p95/i);
  expect(headline(current,'Checkout',historical,null,{measurements:overview({requestsPerSecond:0}),phone:true}).title).toContain('Averaged 0');
 });

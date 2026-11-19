@@ -11,13 +11,14 @@ export function ResultContext({
   run,
   suiteName,
   ordinal,
+  phone = false,
 }: {
   run: Run;
   suiteName: string | undefined;
   ordinal: number | undefined;
+  phone?: boolean;
 }) {
   const { organizationId, workspaceId } = run.scope;
-  const time = run.startedAt ?? run.requestedAt;
   return (
     <p className="result-context">
       <WorkspaceName run={run} />
@@ -25,11 +26,25 @@ export function ResultContext({
       <Link to={routes.runs(organizationId, workspaceId)}>Runs</Link>
       {' / '}
       {suiteName ?? 'Suite'} ({run.engine.id} load test), run <span className="number">{shortId(run.id)}</span>
-      {ordinal !== undefined && `, revision ${ordinal}`}, {run.startedAt ? 'started' : 'requested'}{' '}
-      <time dateTime={time}>{formatTime(time)}</time>
-      {' · '}
-      <RunRequester run={run} />
+      {ordinal !== undefined && `, revision ${ordinal}`}, <ResultTime run={run} phone={phone} />
+      {(!phone || run.requestedBy) && (
+        <>
+          {' · '}
+          <RunRequester run={run} />
+        </>
+      )}
     </p>
+  );
+}
+
+function ResultTime({ run, phone }: { run: Run; phone: boolean }) {
+  const finished = phone ? run.finishedAt : null;
+  const time = finished ?? run.startedAt ?? run.requestedAt;
+  const label = finished ? 'finished' : run.startedAt ? 'started' : 'requested';
+  return (
+    <>
+      {label} <time dateTime={time}>{formatTime(time)}</time>
+    </>
   );
 }
 

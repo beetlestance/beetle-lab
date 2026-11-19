@@ -70,11 +70,17 @@
     table-layout: fixed;
   }
   .result-endpoint-table th:first-child {
-    width: 150px;
+    width: clamp(140px, calc(100vw - 200px), 220px);
   }
   .result-endpoint-table tbody th {
     min-width: 0;
-    overflow-wrap: anywhere;
+    padding-inline: var(--s-12);
+  }
+  .result-endpoint-name {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   .result-endpoint-table th:nth-child(2) {
     width: 88px;

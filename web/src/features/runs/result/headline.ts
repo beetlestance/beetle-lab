@@ -29,11 +29,12 @@ export function variantOf(run: Pick<Run, 'state' | 'outcome' | 'reason'>): Varia
 }
 
 /** Spoken length: "16 minutes", "4 minutes 12 seconds". */
-export function spokenLength(ms: number | null): string | null {
+export function spokenLength(ms: number | null, compact = false): string | null {
   if (ms === null || !Number.isFinite(ms)) return null;
   const total = Math.round(ms / 1000);
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
+  if (compact) return minutes === 0 ? `${seconds}s` : `${minutes} min${seconds === 0 ? '' : ` ${seconds}s`}`;
   const part = (value: number, unit: string) => `${value} ${unit}${value === 1 ? '' : 's'}`;
   if (minutes === 0) return part(seconds, 'second');
   return seconds === 0 ? part(minutes, 'minute') : `${part(minutes, 'minute')} ${part(seconds, 'second')}`;
@@ -185,10 +186,14 @@ function phonePassedHeadline(
 ): Headline | null {
   if (!phone || variantOf(run) !== 'passed' || !measurements) return null;
   const rate = formatNumber(measurements.requestsPerSecond, 'integer');
-  const duration = spokenLength(measurements.testDurationMs);
+  const duration = spokenLength(measurements.testDurationMs, true);
   if (rate === null || duration === null) return null;
   return {
-    title: `Averaged ${rate} a second over ${duration}`,
-    sentence: join(qualitySentence(measurements), thresholdSentence(result)),
+    title: `Averaged ${rate} req/s over ${duration}`,
+    sentence: join(thresholdSentence(result), phoneLatency(measurements.httpP95)),
   };
+}
+
+function phoneLatency(p95: Traffic['httpP95']): string | null {
+  return p95 ? `p95 latency was about ${formatNumber(p95.estimate, 'integer')} ms.` : null;
 }
