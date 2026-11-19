@@ -120,6 +120,10 @@ export function WholeRun({
         bands={stageBands(history, plan)}
         ticks={history.fromStart ? stageTicks(plan, domain, xs.at(-1) ?? null) : undefined}
       />
+      <details className="live-history-details">
+        <summary>History coverage{sampledHistory(history) ? ' · sampled' : ''}</summary>
+        <p>{historyCaption(history, bootstrap?.status)}</p>
+      </details>
       {bootstrap?.status === 'unavailable' && (
         <p className="live-note" role="status">
           Recorded history could not refresh. Existing readings are kept.{' '}
@@ -130,6 +134,10 @@ export function WholeRun({
       )}
     </section>
   );
+}
+
+function sampledHistory(history: LiveHistory): boolean {
+  return history.liveSampled || (history.coverage !== null && recordedCount(history) < history.coverage.windows);
 }
 
 function historyCaption(history: LiveHistory, status: BootstrapState['status'] | undefined): string {

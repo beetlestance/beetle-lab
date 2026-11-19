@@ -218,7 +218,7 @@ export function LiveChart(props: ChartProps) {
         role="img"
         aria-label={`${title}: ${label}`}
         {...hoverHandlers(props)}
-        style={{ height: scale.H }}
+        style={{ height: `var(--live-plot-height, ${scale.H}px)` }}
       >
         <Guides props={props} scale={scale} />
         <SeriesPaths props={props} scale={scale} />

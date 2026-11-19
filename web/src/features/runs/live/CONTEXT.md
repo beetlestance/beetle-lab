@@ -1,16 +1,16 @@
 # Run views
 
-RunDetail owns scoped queries/cancellation. Writable nonterminal runs select live;
-terminal/restored records select results. Watched runs stay live after termination
-until Open result remounts. Route/run/attempt changes remount phase selection.
+RunDetail owns scoped queries/cancellation. Nonterminal runs select live; restored/
+terminal records select results. Watched runs stay live until Open result remounts.
+Route/run/attempt changes remount phase selection;
 copy.phaseOf selects waiting, starting, running, cancelling, finalizing and ended.
 
 Early boards use plain steps, an indeterminate bar, bottom cancellation, exported
 Starting art and skeleton figures. Queue reads share a scoped query; errors hide
 cached holders/capacity and expose retry. Preflight needs the verified revision;
 compilation needs phase.started prepare/execute, never validate.finished alone.
-Accessible step states never invent progress, initiators or elapsed-time progress.
-Engine labels use one scoped status read with exact selector matching and retry.
+Steps never invent progress, initiators or elapsed time. Phone whole chart retains source geometry, hover and sampled coverage.
+Desktop retains its caption. Engine labels use one scoped status read with exact selector matching and retry.
 
 plan reads pinned stages/requests/rules/target units; rN is request index N. Raw
 target legends use declared symbols or explicit raw labels. model derives one
