@@ -19,6 +19,20 @@ it('uses exact before/after points, known during gauge mean, compatible units an
   expect(cpu.values[0]).toBe(0); expect(cpu.values[1]).toBeCloseTo(30); expect(cpu.values[2]).toBeNull();
   expect(cpu.delta).toBeCloseTo(30); expect(cpu.deltaUnit).toBe('pp');
   expect(summary.spans).toEqual([null, 1000, null]);
+  expect(summary.cooldownMemory).toEqual({ rssMb: -1, heapMb: null });
+});
+it('compares declared memory at the exact cooldown endpoint and preserves an observed zero difference', () => {
+  const before = sample(0, 'before', { rss: 298000000, usedHeapSize: 182000000, uptime: 100 });
+  const after = sample(1000, 'after', { rss: 455000000, usedHeapSize: 182000000, uptime: 101 });
+  const declared: TargetRuntimeUnits = { rss: 'bytes', usedHeapSize: 'bytes' };
+  const compare = (samples: ReturnType<typeof sample>[], units?: TargetRuntimeUnits) =>
+    targetPhaseSummary(report(samples, units)).cooldownMemory;
+  expect(compare([before, after], declared)).toEqual({ rssMb: 157, heapMb: 0 });
+  expect(compare([before, after])).toEqual({ rssMb: null, heapMb: null });
+  const missing = sample(2000, 'after', { uptime: 102 });
+  expect(compare([before, after, missing], declared)).toEqual({ rssMb: null, heapMb: null });
+  const reset = sample(2000, 'after', { rss: 455000000, usedHeapSize: 236000000, uptime: 1 });
+  expect(compare([before, reset], declared)).toEqual({ rssMb: null, heapMb: null });
 });
 it('derives GC interval rates and mean pauses from counters, never lifetime max/avg', () => {
   const data = report([sample(-1000, 'before', {'gc.count': 1, 'gc.totalMs': 5}), sample(0, 'during', {'gc.count': 3, 'gc.totalMs': 15, 'gc.maxMs': 999, 'gc.avgMs': 888}), sample(60000, 'during', {'gc.count': 9, 'gc.totalMs': 45}), sample(61000, 'after', {'gc.count': 9, 'gc.totalMs': 45}), sample(121000, 'after', {'gc.count': 9, 'gc.totalMs': 45})], units);

@@ -28,6 +28,7 @@ export interface PhaseSummary {
   readonly counts: readonly number[];
   readonly spans: readonly (number | null)[];
   readonly ordered: boolean;
+  readonly cooldownMemory: { readonly heapMb: number | null; readonly rssMb: number | null };
 }
 
 export function targetPhaseSummary(report: TargetRuntimeReport): PhaseSummary {
@@ -40,13 +41,22 @@ export function targetPhaseSummary(report: TargetRuntimeReport): PhaseSummary {
       : 'heapInuse';
   const samples = phases.map((phase) => report.samples.filter((s) => s.phase === phase));
   const gc = gcRows(report, samples, ordered);
+  const heapRow = gauge(
+    report,
+    heap,
+    heap === 'heapInuse' ? 'Heap in use' : 'Heap allocated / used',
+    'megabytes',
+    ordered,
+  );
+  const rss = gauge(report, 'rss', 'RSS', 'megabytes', ordered);
   return {
     ordered,
     counts: samples.map((group) => group.length),
     spans: samples.map((group) => (ordered ? elapsed(group) : null)),
+    cooldownMemory: { heapMb: cooldownDifference(heapRow, ordered), rssMb: cooldownDifference(rss, ordered) },
     rows: [
-      gauge(report, heap, heap === 'heapInuse' ? 'Heap in use' : 'Heap allocated / used', 'megabytes', ordered),
-      gauge(report, 'rss', 'RSS', 'megabytes', ordered),
+      heapRow,
+      rss,
       ...gc,
       gauge(report, 'eventLoopDelay.mean', 'Event-loop delay, mean', 'milliseconds', ordered),
       gauge(report, 'eventLoopDelay.max', 'Event-loop delay, reported max', 'milliseconds', ordered),
@@ -54,6 +64,11 @@ export function targetPhaseSummary(report: TargetRuntimeReport): PhaseSummary {
       gauge(report, 'activeHandles', 'Active handles', 'count', ordered),
     ],
   };
+}
+function cooldownDifference(row: PhaseRow, ordered: boolean): number | null {
+  const [before, , after] = row.values;
+  if (!ordered || row.unit !== 'MB' || before === null || after === null) return null;
+  return after - before;
 }
 function has(report: TargetRuntimeReport, metric: TargetMetricName): boolean {
   return report.samples.some((s) => targetReading(s, metric) !== null);

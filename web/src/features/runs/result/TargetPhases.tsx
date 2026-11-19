@@ -3,6 +3,7 @@ import type { TargetRuntimeReport } from '@beetle/contracts/target-runtime';
 import { LiveChart } from '../live/LiveChart.js';
 import { recordedTargetPlot, targetCardReading } from './target-model.js';
 import { targetPhaseSummary, phaseNumber } from './phase-model.js';
+import type { PhaseSummary } from './phase-model.js';
 import './phase.css';
 
 export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeReport; nativeOrigin: number | null }) {
@@ -48,6 +49,7 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
         <p role="status">{plot.omittedTimestamps} observations could not be plotted; original values remain below.</p>
       )}
       <PhaseTable summary={summary} />
+      <CooldownMemory memory={summary.cooldownMemory} />
       <p className="result-muted">
         The table uses recorded sampler phases. HTTP landmarks are shown separately when recorded.
       </p>
@@ -73,6 +75,29 @@ export function TargetPhases({ report, nativeOrigin }: { report: TargetRuntimeRe
         </dl>
         <p>Compare repeated runs with a stable baseline and an appropriate cooldown to investigate retained memory.</p>
       </details>
+    </div>
+  );
+}
+
+function CooldownMemory({ memory }: { memory: PhaseSummary['cooldownMemory'] }) {
+  if (memory.rssMb === null && memory.heapMb === null) return null;
+  return (
+    <div className="target-phase-cooldown">
+      <h2>Last cooldown sample vs baseline</h2>
+      <dl>
+        {memory.rssMb !== null && (
+          <div>
+            <dt>RSS</dt>
+            <dd>{phaseNumber(memory.rssMb, 'MB', true)}</dd>
+          </div>
+        )}
+        {memory.heapMb !== null && (
+          <div>
+            <dt>Heap</dt>
+            <dd>{phaseNumber(memory.heapMb, 'MB', true)}</dd>
+          </div>
+        )}
+      </dl>
     </div>
   );
 }
