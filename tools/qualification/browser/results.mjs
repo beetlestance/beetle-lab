@@ -33,9 +33,15 @@ export async function start(page) {
 }
 /**
  * @param {import('@playwright/test').Page} page
+ * @param {boolean} checkLiveRate
  */
-export async function execute(page) {
+export async function execute(page, checkLiveRate = false) {
   const submitted = await start(page);
+  if (checkLiveRate) {
+    const checks = page.locator('.live-threshold').filter({ hasText: 'Checks passing' });
+    await expect(checks).toContainText('Holding', { timeout: 30000 });
+    await expect(checks).toContainText('100%');
+  }
   const open = page.getByRole('button', { name: 'Open result', exact: true });
   // The loading page also offers Refresh run; only the result owner proves this handoff.
   const ready = page.locator('.result-head');

@@ -17,7 +17,7 @@ import { cleanupBrowserInstallation } from './cleanup.mjs';
 import { keyboard, themesAndViewports } from './interactions.mjs';
 import { crossScope } from './scope.mjs';
 import { reference } from './reference.mjs';
-import { targetRuntime } from './target-runtime.mjs';
+import { indexedLatencyPreview, targetRuntime } from './target-runtime.mjs';
 import { comparisonConfiguration, configureComparisonTarget, targetComparison } from './target-comparison.mjs';
 import { prepareNetwork } from './network.mjs';
 import { connectBrowser, proxyTransport, refusals, secureContext } from './network-checks.mjs';
@@ -85,7 +85,7 @@ try {
   if (!entry[2].includes('if(++counts[key]>4)')) throw Error('Unexpected target fixture');
   entry[2] = entry[2].replace('if(++counts[key]>4)', 'if(++counts[key]>128)');
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
-  if (profile === 'target-runtime') await configureTarget(f);
+  if (profile === 'target-runtime') await configureTarget(f, true);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
   const network = profile === 'network' ? await prepareNetwork(f) : undefined;
   const origin = network?.origin ?? f.origin;
@@ -167,8 +167,13 @@ try {
       assert.deepEqual(counts(f), { ready: 0, work: 0, unexpected: 0 });
     });
   } else if (profile === 'target-runtime') {
-    await phase('target-suite-revision', () => revision(appPage, targetConfiguration(), 2));
-    await phase('target-run-execution', () => execute(appPage));
+    const config = targetConfiguration();
+    const entry = config.selections[0]?.entries[0];
+    assert(entry);
+    entry.wait.durationMs = 200;
+    config.loadPlan.slos = [{ id: 'checks-pass', metric: 'checks', stat: 'rate', operator: '>', value: 0.99 }];
+    await phase('target-suite-revision', () => revision(appPage, config, 2));
+    const run = await phase('target-run-with-live-checks-rate', () => execute(appPage, true));
     const observed = targetCounts(f);
     if (evidence)
       await writeFile(join(evidence, 'target-source-counts.json'), JSON.stringify(observed), {
@@ -182,6 +187,7 @@ try {
     const result = await phase('target-observation-view', () => targetRuntime(appPage, observed.runtime));
     assert.deepEqual(targetCounts(f), observed);
     assert(!contentOverflow);
+    await phase('indexed-native-latency-preview', () => indexedLatencyPreview(appPage, run));
     Object.assign(result, { contentStatuses });
     if (evidence)
       await writeFile(join(evidence, 'target-view-outcome.json'), JSON.stringify(result), { flag: 'wx', mode: 0o600 });
