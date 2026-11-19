@@ -47,3 +47,57 @@ export function skinDriftIssues(app: SkinTokens, docs: SkinTokens): string[] {
   }
   return issues;
 }
+
+/** Foreground/background token pairs the docs use for text; each must reach WCAG AA (4.5:1). */
+export const TEXT_PAIRS: readonly (readonly [string, string])[] = [
+  ['--ink', '--bg'],
+  ['--ink', '--panel'],
+  ['--mute', '--bg'],
+  ['--mute', '--panel'],
+  ['--on-amber', '--amber'],
+  ['--amber', '--panel'],
+  ['--doc-code', '--panel'],
+  ['--green', '--panel'],
+  ['--red', '--panel'],
+  ['--info', '--panel'],
+];
+
+function luminance(hex: string): number {
+  const channel = (offset: number) => {
+    const value = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+export function contrastRatio(foreground: string, background: string): number {
+  const [high, low] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (high! + 0.05) / (low! + 0.05);
+}
+
+/** One message per text pair under 4.5:1 in a skin; Scarab falls back to Darkroom values. */
+export function contrastIssues(docs: SkinTokens): string[] {
+  const issues: string[] = [];
+  for (const skin of SKINS)
+    for (const [fg, bg] of TEXT_PAIRS) {
+      const value = (name: string) => docs[skin].get(name) ?? docs.darkroom.get(name);
+      const [foreground, background] = [value(fg), value(bg)];
+      if (!foreground?.match(/^#[0-9a-f]{6}$/) || !background?.match(/^#[0-9a-f]{6}$/)) {
+        issues.push(`${skin}: ${fg} on ${bg} needs two #rrggbb tokens`);
+        continue;
+      }
+      const ratio = contrastRatio(foreground, background);
+      if (ratio < 4.5) issues.push(`${skin}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1, under 4.5:1`);
+    }
+  return issues;
+}
+
+/** `var(--x)` references without a fallback whose property no site stylesheet or component declares. */
+export function undefinedTokenIssues(sources: ReadonlyMap<string, string>, external = /^--sl-/): string[] {
+  const declared = new Set<string>();
+  for (const text of sources.values()) for (const [, name] of text.matchAll(/(--[\w-]+)\s*:/g)) declared.add(name!);
+  const issues: string[] = [];
+  for (const [file, text] of sources)
+    for (const [, name] of text.matchAll(/var\((--[\w-]+)\s*\)/g))
+      if (!declared.has(name!) && !external.test(name!)) issues.push(`${file}: ${name} is used but never declared`);
+  return [...new Set(issues)];
+}

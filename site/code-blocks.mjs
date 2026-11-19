@@ -25,7 +25,7 @@ function codeTheme(name, c) {
     type: 'dark',
     colors: { 'editor.background': c.panel, 'editor.foreground': c.ink },
     tokenColors: [
-      rule(['comment', 'punctuation.definition.comment'], c.dim),
+      rule(['comment', 'punctuation.definition.comment'], c.mute),
       rule(['string', 'punctuation.definition.string', 'variable', 'variable.other'], c.amber),
       rule(['constant.other.option', 'variable.parameter', 'punctuation', 'keyword.operator'], c.mute),
       rule(['constant.numeric', 'constant.language'], c['doc-code']),
