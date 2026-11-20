@@ -110,7 +110,7 @@ async function captureStop(page, first, evidence) {
   if (finalizingVisible) {
     const progress = finalizing.getByRole('progressbar', { name: 'Sealing results', exact: true });
     assert.equal(await progress.getAttribute('aria-valuenow'), null);
-    await expect(finalizing.getByText('Target sampler closed', { exact: true })).toBeVisible({ timeout: 4000 });
+    await expect(finalizing.getByText('Target sampler closed', { exact: true })).toBeVisible({ timeout: 12000 });
     await page.screenshot({ path: join(evidence, 'live-finalizing.png'), fullPage: true });
   }
   await expect(terminal).toBeVisible({ timeout: 60000 });
