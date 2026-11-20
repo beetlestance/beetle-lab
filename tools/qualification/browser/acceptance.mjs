@@ -15,6 +15,7 @@ import { offlineExport } from './exports.mjs';
 import { memoryPressure, memoryTarget } from './memory-pressure.mjs';
 import { outputPressure } from './output-pressure.mjs';
 import { cancelArchive } from './cancel-archive.mjs';
+import { livePhases, delayReadiness } from './live-phases.mjs';
 import { liveControls, liveTargetReadings } from './live-controls.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
@@ -35,6 +36,7 @@ if (
     'run-results',
     'live-reconnect',
     'live-controls',
+    'live-phases',
     'early-cancel',
     'cancel-archive',
     'output-pressure',
@@ -103,6 +105,7 @@ try {
     assert(entry[2].includes(status));
     entry[2] = entry[2].replace(status, "r.writeHead(key==='ready'?503:key==='unexpected'?404:200)");
   }
+  if (profile === 'live-phases') entry[2] = delayReadiness(entry[2]);
   if (profile === 'memory-pressure') entry[2] = memoryTarget(entry[2]);
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime' || profile === 'cancel-archive') await configureTarget(f, true);
@@ -192,6 +195,8 @@ try {
   } else if (profile === 'early-cancel') {
     await appPage.setViewportSize({ width: 1440, height: 900 });
     await phase('cancel-during-readiness', () => earlyCancel(appPage, authored, f, evidence ?? f.root));
+  } else if (profile === 'live-phases') {
+    await phase('queue-to-cancelled-result', () => livePhases(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'live-controls') {
     await appPage.setViewportSize({ width: 1440, height: 2584 });
     await phase('live-downloads-script-and-responsive-controls', () =>

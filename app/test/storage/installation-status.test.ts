@@ -64,6 +64,20 @@ it('orders queued runs, names same-workspace slot holders and only counts other 
   expect(validateApi('RunQueueStatus', { scope: own, generatedAt: new Date(0).toISOString(), ...facts }).ok).toBe(true);
 });
 
+it('reports an isolated charge without naming a holder in another workspace', () => {
+  const holder = f.add(70, 'isolated');
+  const waiting = f.addOther();
+  expect(f.claims.claim(holder).kind).toBe('claimed');
+  const scope = { kind: 'workspace' as const, organizationId: uuid(21), workspaceId: uuid(22) };
+  const facts = readInstallationStatus(f.db, f.settings, reads(), {
+    kind: 'getRunQueue',
+    key: { scope, id: waiting.runId },
+  }, (run) => f.claims.capacityReason(run));
+  expect(facts).toMatchObject({ capacityBlockReason: 'isolated', holders: [], otherWorkspaceRuns: 1 });
+  expect(validateApi('RunQueueStatus', { scope, generatedAt: new Date(0).toISOString(), ...facts }).ok).toBe(true);
+  expect(JSON.stringify(facts)).not.toContain(holder.runId);
+});
+
 it('stops waiting once cancellation is requested and denies cross-workspace queue reads', () => {
   const key = f.add(70);
   f.db.prepare('UPDATE runs SET cancellation_requested=1 WHERE id=?').run(key.runId);

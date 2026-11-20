@@ -6,6 +6,7 @@ import queueData from '../../../../../contracts/fixtures/api/valid/run-queue.jso
 import { json, liveRun, mountLive, routesFor } from './fixtures.js';
 afterEach(cleanup);
 it.each([
+  ['isolated', 'Waiting for isolated execution.'],
   ['capacity_unknown', 'Waiting for a current capacity reading from the agent.'],
   [
     'per_run_ceiling',
@@ -40,6 +41,7 @@ it.each([
   };
   mountLive(fixture.client, { run, cancel });
   expect(await screen.findByText(text)).toBeVisible();
+  if (reason === 'isolated') expect(screen.getByText(/Another job has reserved the pool for isolated execution/)).toBeVisible();
   expect(screen.getByRole('heading', { name: 'steady-1.2k is waiting for capacity' })).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel run' }));
   expect(cancel.request).toHaveBeenCalledOnce();

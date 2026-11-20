@@ -20,7 +20,7 @@ measurements live in [evidence](../evidence/README.md).
 - Configurable run budgets within installed limits and explicit retention controls;
   run pinning protects up to 256 runs per workspace.
 - Read-only installation status (agent reachability, measured host facts, verified image/engine-version
-  metadata, pool usage) and run queue position/individual-capacity wait reasons; CPU use and available memory are not measured.
+  metadata, pool usage) and run queue position and capacity or isolation reasons; CPU use and available memory are not measured.
 - Cold backup and fresh read-only historical restoration. Offline forward upgrade with
   a sealed backup and rollback until activation; downgrade and mutable restore are not claimed.
 - Opt-in HTTPS access for one administrator over a private network (decision 032) and an
@@ -37,4 +37,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `ae5c99cb0820` |
+| `contracts/api/v2/` | `374b1933a711` |

@@ -160,11 +160,15 @@ export class DispatchEligibilityOwner {
     if (this.unknown) return blocked('ownership_unknown');
     const individual = this.individual(row);
     if (individual.kind === 'blocked') return individual;
-    if (this.active.some((active) => active.mode === 'isolated') || (row.mode === 'isolated' && this.active.length > 0))
-      return blocked('isolated');
+    if (this.isolationConflict(row)) return blocked('isolated');
     if (row.mode === 'parallel' && predecessor !== null && row.queue_order! > predecessor)
       return blocked('isolated_predecessor');
     return this.remaining(row);
+  }
+  isolationConflict(row: ExecutionResourceFact): boolean {
+    return (
+      this.active.some((active) => active.mode === 'isolated') || (row.mode === 'isolated' && this.active.length > 0)
+    );
   }
   private remaining(row: ExecutionResourceFact): DispatchEligibility {
     const runtime = this.capacity.runtime;

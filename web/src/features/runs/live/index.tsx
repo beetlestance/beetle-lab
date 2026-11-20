@@ -201,7 +201,8 @@ function reconnectHeader(stream: LiveStream, at: Positions) {
 }
 
 function headerSentence(run: Run, stream: LiveStream, at: Positions, plan: RunPlan, queue: QueueRead) {
-  if (stream.phase === 'waiting') return queueSentence(queue.isError ? undefined : queue.data);
+  if (stream.phase === 'waiting')
+    return queueSentence(queue.isError ? undefined : queue.data, run.executionPolicy.mode);
   return sentenceOf(stream.phase, stream.readings, at.stoppedAtMs, plan, run);
 }
 
