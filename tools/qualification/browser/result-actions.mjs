@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { runArtifactContentPath, validateApi } from '@beetle/contracts/api';
@@ -13,6 +13,11 @@ import { execute } from './results.mjs';
 export async function resultActions(page, authored, evidence) {
   await page.setViewportSize({ width: 1440, height: 900 });
   const address = await execute(page);
+  await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Native warnings', exact: true })).toContainText(
+    'Diagnostic coverage:',
+  );
+  await page.getByRole('tab', { name: 'Report', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Verified performance report' })).toBeVisible();
   const run = await readRun(page, address);
   await expect(page.getByText('Reading recorded chart history…', { exact: true })).toHaveCount(0);
@@ -64,6 +69,7 @@ async function downloadResults(page, run, evidence) {
   assert.equal(response.status(), 200);
   const listed = validateApi('RunArtifactPage', await response.json());
   assert(listed.ok && listed.value.availability === 'ready' && listed.value.nextCursor === null);
+  await overlappingContent(page, run, listed.value.items, evidence);
   const trigger = page.getByRole('button', { name: 'Download', exact: true });
   const group = page.getByRole('group', { name: 'Run downloads' });
   await trigger.click();
@@ -106,6 +112,39 @@ async function downloadResults(page, run, evidence) {
   await page.keyboard.press('Escape');
   await expect(group).toHaveCount(0);
   await expect(trigger).toBeFocused();
+}
+
+/** @param {Page} page @param {import('@beetle/contracts/api').Run} run
+ * @param {import('@beetle/contracts').Artifact[]} items @param {string} evidence */
+async function overlappingContent(page, run, items, evidence) {
+  const sampled = items.filter((entry) => ['performance-report', 'numeric-final'].includes(entry.kind));
+  assert.equal(sampled.length, 2);
+  assert(sampled.every((item) => item.bytes > 0 && item.bytes < 262144));
+  const paths = sampled.map(({ artifactId }) =>
+    runArtifactContentPath({
+      organizationId: run.scope.organizationId,
+      workspaceId: run.scope.workspaceId,
+      runId: run.id,
+      attemptId: run.activeAttemptId,
+      artifactId,
+    }),
+  );
+  const overlap = await page.evaluate(async (urls) => {
+    return await Promise.all(
+      urls.map(async (url) => {
+        const response = await globalThis.fetch(url, { cache: 'no-store' });
+        if (response.status === 200)
+          return { status: response.status, length: (await response.arrayBuffer()).byteLength };
+        const error = await response.json();
+        return { status: response.status, code: error.code };
+      }),
+    );
+  }, paths);
+  await writeFile(join(evidence, 'overlap-receipt.json'), JSON.stringify(overlap), { mode: 0o600 });
+  assert.deepEqual(
+    overlap,
+    sampled.map(({ bytes }) => ({ status: 200, length: bytes })),
+  );
 }
 
 /** @param {Page} page @param {string} address @param {string} evidence */

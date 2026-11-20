@@ -9,6 +9,11 @@ Attachment filenames/media policy are unchanged; unknown formats stay binary.
 
 ## Verification and resources
 
+One authorized artifact download or preview may wait up to 3 s behind the active HTTP
+transfer. The waiter holds no native read credit. Excess and expired waits return
+retryable capacity errors. The active transfer keeps its credit through original
+settlement and response completion.
+
 The shared VerifiedArtifactReads admits an explicit artifact-preview profile up
 to 32 MiB. Every other reader keeps its 1 MiB default. The same two-original
 admission spans kinds/profiles; fetch/body wires serialize without cache or retries.

@@ -20,7 +20,7 @@ const scope = (p: { organizationId: string; workspaceId: string }) => ({
   workspaceId: p.workspaceId.toLowerCase(),
 });
 export function registerRunArtifactRoutes(server: FastifyInstance, options: Options): { close(): Promise<void> } {
-  const owners = new RequestLifetimes(1);
+  const owners = new RequestLifetimes(1, 30_000, 3_000);
   server.register(async (metadata) => {
     metadata.addHook('onRequest', options.authorize);
     registerApiOperation(metadata, 'listRunArtifacts', ({ params, query }) =>
@@ -28,8 +28,8 @@ export function registerRunArtifactRoutes(server: FastifyInstance, options: Opti
     );
   });
   server.register(async (content) => {
-    owners.register(content);
     content.addHook('onRequest', options.authorize);
+    owners.register(content);
     content.route({
       method: 'GET',
       url: RUN_ARTIFACT_CONTENT_ROUTE,

@@ -12,25 +12,49 @@ async function controlled() {
   const f = await published([Buffer.from('synthetic original')]); const reader = new RunArtifacts(f.db, f.reads);
   const params = {organizationId: scope.organizationId, workspaceId: scope.workspaceId, runId: f.key.runId,
     attemptId: f.key.attempt.attemptId, artifactId: executionArtifacts(f.envelope.manifest.result)[0]!.artifactId};
-  const release = deferred(); const nativeDone = deferred(); let signal: AbortSignal | undefined;
+  const release = deferred(); const nativeDone = deferred(); let signal: AbortSignal | undefined; let reads = 0;
   const http = await httpFixture({listRunArtifacts: async query => reader.execute({kind: 'listRunArtifacts', query}) as RunArtifactPage,
     getRunArtifact: async key => reader.execute({kind: 'getRunArtifact', key}) as PublishedArtifactRead}, {read: (request, context) => {
-      signal = context.signal;
+      signal = context.signal; reads++;
       const job = f.files.store.read(request, context);
       const settled = job.settled.then(async () => {nativeDone.resolve(); await release.promise;});
       return {result: job.result, settled};
     }});
-  return {f, http, release, nativeDone, path: runArtifactContentPath(params), signal: () => signal};
+  return {f, http, release, nativeDone, path: runArtifactContentPath(params), signal: () => signal, reads: () => reads};
 }
-it('withholds chunked EOF and the one HTTP credit until native settlement, then completes verified content', async () => {
+it('holds one later request behind the settled native owner and refuses further overlap', async () => {
   const c = await controlled();
   try {
     const response = await c.http.request(c.path); const body = response.arrayBuffer(); await c.nativeDone.promise;
     expect(await pending(body)).toBe(true);
-    const refused = await c.http.request(c.path); expect(refused.status).toBe(503);
-    c.release.resolve(); expect(Buffer.from(await body).toString()).toBe('synthetic original');
+    // The first later request waits. The other returns immediately regardless of arrival order.
+    const peers = [c.http.request(c.path), c.http.request(c.path)];
+    const refused = await Promise.race(peers);
+    expect(refused.status).toBe(503);
+    expect(c.reads()).toBe(1);
+    expect(await pending(body)).toBe(true);
+    c.release.resolve();
+    expect(Buffer.from(await body).toString()).toBe('synthetic original');
+    const accepted = (await Promise.all(peers)).find((reply) => reply !== refused)!;
+    expect(accepted.status).toBe(200);
+    expect(await accepted.text()).toBe('synthetic original');
+    expect(c.reads()).toBe(2);
   } finally {c.release.resolve(); await c.http.close(); await c.f.files.dispose();}
 });
+it('expires a waiting request without taking native ownership', async () => {
+  const c = await controlled();
+  try {
+    const response = await c.http.request(c.path);
+    const body = response.arrayBuffer();
+    await c.nativeDone.promise;
+    const expired = await c.http.request(c.path);
+    expect(expired.status).toBe(503);
+    expect(await expired.json()).toMatchObject({code: 'capacity_unavailable', retryable: true});
+    expect(c.reads()).toBe(1);
+    c.release.resolve();
+    expect(Buffer.from(await body).toString()).toBe('synthetic original');
+  } finally { c.release.resolve(); await c.http.close(); await c.f.files.dispose(); }
+}, 10_000);
 it('disconnect cancels the original and shutdown retains ownership until late native settlement', async () => {
   const c = await controlled();
   try {
