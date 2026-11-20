@@ -3,7 +3,14 @@ import { thresholdSentence } from './threshold-sentence.js';
 import { terminal } from '../terminal.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunHistorySummary, RunMetricOverview } from '@beetle/contracts/api';
-import { formatBytes, formatDuration, formatNumber, formatPercent, reasonLabel } from '../../run-results/format.js';
+import {
+  formatLatency,
+  formatBytes,
+  formatDuration,
+  formatNumber,
+  formatPercent,
+  reasonLabel,
+} from '../../run-results/format.js';
 
 export type Variant =
   | 'passed'
@@ -57,7 +64,7 @@ function averageSentence(summary: Traffic): string | null {
 
 /** "p95 was about 120 ms and 1% of requests failed."; either half alone is capitalised. */
 function qualitySentence(summary: Traffic): string | null {
-  const p95 = summary.httpP95 ? `p95 was about ${formatNumber(summary.httpP95.estimate, 'integer')} ms` : null;
+  const p95 = summary.httpP95 ? `p95 was about ${formatLatency(summary.httpP95.estimate)}` : null;
   const failed = formatPercent(summary.httpFailureRatio);
   const failedText = failed ? `${failed} of requests failed` : null;
   if (p95 && failedText) return `${p95} and ${failedText}.`;
@@ -201,5 +208,5 @@ function phonePassedHeadline(
 }
 
 function phoneLatency(p95: Traffic['httpP95']): string | null {
-  return p95 ? `p95 latency was about ${formatNumber(p95.estimate, 'integer')} ms.` : null;
+  return p95 ? `p95 latency was about ${formatLatency(p95.estimate)}.` : null;
 }

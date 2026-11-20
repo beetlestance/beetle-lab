@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { ComparisonSlos } from './Slos.js';
 import type { RunComparisonItem } from '@beetle/contracts/api';
 import { Table, Td, Th } from '../../../components/Table.js';
-import { formatDuration, formatNumber, formatPercent } from '../../run-results/format.js';
+import { formatLatency, formatDuration, formatNumber, formatPercent } from '../../run-results/format.js';
+import { relativePercent } from './relative-percent.js';
 import { comparisonRunLabels } from './run-labels.js';
 import { comparisonFigures } from './figures.js';
 import type { ComparisonFigures } from './figures.js';
@@ -27,24 +28,9 @@ const rows: readonly Row[] = [
     show: (v) => formatNumber(v, 'integer'),
     delta: 'relative',
   },
-  {
-    label: 'p50, histogram estimate',
-    value: (s) => s.p50,
-    show: (v) => `${formatNumber(v, 'integer')} ms`,
-    delta: 'relative',
-  },
-  {
-    label: 'p95, histogram estimate',
-    value: (s) => s.p95,
-    show: (v) => `${formatNumber(v, 'integer')} ms`,
-    delta: 'relative',
-  },
-  {
-    label: 'p99, histogram estimate',
-    value: (s) => s.p99,
-    show: (v) => `${formatNumber(v, 'integer')} ms`,
-    delta: 'relative',
-  },
+  { label: 'p50, histogram estimate', value: (s) => s.p50, show: formatLatency, delta: 'relative' },
+  { label: 'p95, histogram estimate', value: (s) => s.p95, show: formatLatency, delta: 'relative' },
+  { label: 'p99, histogram estimate', value: (s) => s.p99, show: formatLatency, delta: 'relative' },
   { label: 'Failed requests', value: (s) => s.failureRatio, show: (v) => formatPercent(v), delta: 'points' },
   { label: 'Checks passed', value: (s) => s.checksRatio, show: (v) => formatPercent(v), delta: 'points' },
   {
@@ -72,18 +58,15 @@ const deltaOf: Record<Row['delta'], (base: number, value: number) => string | nu
   },
   points(base, value) {
     const points = Math.round((value - base) * 10000) / 100;
-    return points === 0 ? 'same' : `${sign(points)}${Math.abs(points)} pp`;
+    return `${sign(value - base)}${points === 0 ? '<0.01' : Math.abs(points)} pp`;
   },
   duration(base, value) {
     const text = formatDuration(Math.abs(value - base));
     return text ? `${sign(value - base)}${text}` : null;
   },
   relative(base, value) {
-    if (base === 0) return null;
-    const change = ((value - base) / base) * 100;
-    if (!Number.isFinite(change)) return null;
-    const percent = Math.round(change);
-    return percent === 0 ? 'same' : `${sign(percent)}${Math.abs(percent)}%`;
+    const amount = relativePercent(base, value);
+    return amount === null ? null : `${sign(value - base)}${amount}`;
   },
 };
 

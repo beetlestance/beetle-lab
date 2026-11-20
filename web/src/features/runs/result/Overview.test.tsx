@@ -80,6 +80,19 @@ it('uses four phone figures without losing checks, drops or latency detail', () 
  expect(screen.getByText('Iterations dropped').parentElement).toHaveTextContent('0');
  expect(screen.getByText('p50 latency, estimate')).toBeVisible();
 });
+it.each([false, true])('keeps measured zero and sub-millisecond latency distinct (phone %s)', (phone) => {
+  const value = overview();
+  value.latency!.percentiles.p95.estimate = 0.24;
+  const view = render(<MetricSummary overview={value} phone={phone} />);
+  expect(screen.getByText(/^0[.,]24 ms$/)).toBeVisible();
+  value.latency!.percentiles.p95.estimate = 0.001;
+  view.rerender(<MetricSummary overview={value} phone={phone} />);
+  expect(screen.getByText('<0.01 ms')).toBeVisible();
+  value.latency!.percentiles.p95.estimate = 0;
+  view.rerender(<MetricSummary overview={value} phone={phone} />);
+  expect(screen.getByText('0 ms')).toBeVisible();
+});
+
 it('keeps unknown phone values explicit and partial coverage visible outside closed details', () => {
  const value=overview();value.requestsPerSecond=null;value.requestCount=null;value.latency=null;value.failure=null;
  value.source={...value.source!,coverage:{complete:false,latePoints:1,markerDelayDroppedBuckets:0}};

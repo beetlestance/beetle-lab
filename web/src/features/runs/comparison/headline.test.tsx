@@ -14,6 +14,15 @@ it('describes direction, equality and small changes without rounding them to equ
  expect(p95Change(1001,1000)).toContain('less than 1% lower');
  expect(p95Change(0,0)).toContain('unchanged');
 });
+it('reserves an exact 100% change for a measured zero or exact doubling', () => {
+  expect(p95Change(91, 0.2)).toContain('less than 100% lower');
+  expect(p95Change(91, Number.MIN_VALUE)).toContain('less than 100% lower');
+  expect(p95Change(91, 0)).toContain('100% lower');
+  expect(p95Change(100, 199.8)).toContain('less than 100% higher');
+  expect(p95Change(100, 200.2)).toContain('more than 100% higher');
+  expect(p95Change(100, 200)).toContain('100% higher');
+});
+
 it('keeps absent, zero-baseline and overflowing percentages unavailable',()=>{
  expect(p95Change(null,197)).toContain('unavailable');
  expect(p95Change(0,197)).toContain('baseline is zero');

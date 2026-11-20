@@ -150,10 +150,11 @@ comparison or metric reads. Its illustration is the exported Penpot asset. Figur
 thresholds, workload charts, target charts and configuration follow board order. Advanced
 per-series exploration and fingerprints use a disclosure; catalogue errors open it.
 Expansion survives reads and resets with the scoped selection; toggling adds no reads.
-The headline uses the table's recorded p95 estimates. Missing, zero-baseline and overflowing percentages stay explicit;
-A peer's single complete native threshold failure can share its headline line;
-baseline, partial and multiple failures retain their separate evidence list.
-subpercent differences are never called unchanged. It infers neither statistical confidence nor a native verdict.
+The headline uses the table's recorded p95 estimates. Missing, zero-baseline and
+overflowing percentages stay explicit. Small differences stay distinct from equality,
+and rounding preserves the distinction between exact and near-100% changes.
+A peer's single complete native threshold failure can share its headline line.
+Baseline, partial and multiple failures retain their separate evidence list.
 
 ## Ownership
 
@@ -170,14 +171,14 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 
 | Source | SHA-256 |
 | --- | --- |
-| `web/src/features/runs/comparison/Headline.tsx` | `a9cc39fffa62` |
+| `web/src/features/runs/comparison/Headline.tsx` | `67bdbad137b1` |
 | `web/src/features/runs/HistoryP95Sparkline.tsx` | `3f3dd9a8639b` |
 | `app/src/application/run-metrics/history.ts` | `a91fb64f3a31` |
 | `contracts/api/v2/run-history.schema.json` | `4daeaa42000e` |
 | `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
-| `web/src/features/runs/result/Overview.tsx` | `0ebf4543d649` |
+| `web/src/features/runs/result/Overview.tsx` | `26db2d0ef298` |
 | `web/src/features/runs/result/useResultReads.ts` | `5b74ebd2e159` |
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
@@ -195,7 +196,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
 | `web/src/features/runs/comparison/comparison.css` | `a3242b9d264d` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `35a884b1b52f` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/SourceNotes.tsx` | `0c63fd55d953` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `3bf347e8f56f` |

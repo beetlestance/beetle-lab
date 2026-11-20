@@ -6,7 +6,14 @@ import { routes } from '../../../app/routes.js';
 import { ThresholdReading } from './ThresholdReading.js';
 import type { PlanRule } from '../live/plan.js';
 import { buttonClass } from '../../../components/Button.js';
-import { formatDuration, formatNumber, formatPercent, formatTime, shortId } from '../../run-results/format.js';
+import {
+  formatLatency,
+  formatDuration,
+  formatNumber,
+  formatPercent,
+  formatTime,
+  shortId,
+} from '../../run-results/format.js';
 import { summaryStatus } from '../HistorySummaryCells.js';
 import type { Variant } from './headline.js';
 
@@ -31,10 +38,7 @@ export function SummaryTiles({
   if (phone) return <PhoneHistorySummary summary={summary} note={note} />;
   const tiles = [
     { value: formatNumber(summary.requestsPerSecond, 'integer'), label: 'a second on average' },
-    {
-      value: summary.httpP95 ? `${formatNumber(summary.httpP95.estimate, 'integer')} ms` : null,
-      label: 'p95, histogram estimate',
-    },
+    { value: formatLatency(summary.httpP95?.estimate), label: 'p95, histogram estimate' },
     {
       value: formatPercent(summary.httpFailureRatio),
       label:

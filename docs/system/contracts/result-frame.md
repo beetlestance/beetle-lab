@@ -64,7 +64,8 @@ run-level pass or fail label.
 For a stopped run, accepted partial threshold measurements use Not judged.
 Missing figures stay unavailable and the recorded test duration is shown only
 when provided by the accepted source. Positive durations below one second
-are shown in milliseconds.
+are shown in milliseconds. Positive sub-millisecond latency estimates stay
+distinct from zero in Results and endpoint measurements.
 
 A restored Results view links back to the live installation when the history
 viewer has a configured live origin. The link suppresses the viewer referrer.
@@ -92,16 +93,16 @@ their retry controls.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `7411e5551d8a` |
+| `web/src/features/runs/result/headline.ts` | `8e01d1114a29` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
 | `web/src/features/runs/result/phone.css` | `bc210295ad3f` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `bd57a4bf1356` |
-| `web/src/features/runs/result/EndpointTable.tsx` | `20fd4c27e821` |
+| `web/src/features/runs/result/EndpointTable.tsx` | `992cc7cfab59` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
-| `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
+| `web/src/features/runs/result/PhoneSummary.tsx` | `68d10e26b948` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
 | `web/src/features/runs/result/index.tsx` | `1270c4efb1e3` |

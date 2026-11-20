@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 import type { RunMetricOverview, RunHistorySummary } from '@beetle/contracts/api';
-import { formatNumber, formatPercent, formatDuration } from '../../run-results/format.js';
+import { formatLatency, formatNumber, formatPercent, formatDuration } from '../../run-results/format.js';
 
 const number = (value: number | null | undefined) => formatNumber(value, 'integer');
-const ms = (value: number | null | undefined) => (value == null ? null : `${number(value)} ms`);
 /** Fixed four-figure phone layout; missing and measured-zero values stay distinct. */
 export function PhoneMeasurementTiles({
   rate,
@@ -18,7 +17,7 @@ export function PhoneMeasurementTiles({
 }) {
   const tiles = [
     { label: 'requests/s on average', value: number(rate) },
-    { label: 'p95 latency estimate', value: ms(p95) },
+    { label: 'p95 latency estimate', value: formatLatency(p95) },
     { label: 'of requests failed', value: formatPercent(failed) },
     { label: 'requests in all', value: number(requests) },
   ];
@@ -85,11 +84,11 @@ function PhoneExtraMeasurements({ overview }: { overview: RunMetricOverview }) {
     <dl>
       <div>
         <dt>p50 latency, estimate</dt>
-        <dd>{recorded(ms(overview.latency?.percentiles.p50.estimate))}</dd>
+        <dd>{recorded(formatLatency(overview.latency?.percentiles.p50.estimate))}</dd>
       </div>
       <div>
         <dt>p99 latency, estimate</dt>
-        <dd>{recorded(ms(overview.latency?.percentiles.p99.estimate))}</dd>
+        <dd>{recorded(formatLatency(overview.latency?.percentiles.p99.estimate))}</dd>
       </div>
       <div>
         <dt>Checks passed</dt>
