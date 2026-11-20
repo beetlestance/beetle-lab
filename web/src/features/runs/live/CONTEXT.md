@@ -19,7 +19,7 @@ group stays raw with source labels. Shared target formatting preserves tiny valu
 model pools selected failure counts (empty endpoints contribute zero samples) and uses the slowest endpoint when pooled latency is absent. Unknown values and missing/future/unparseable starts stay
 explicit; they never become zero elapsed time or invalid geometry.
 
-Feed validates Run and UUIDs case-insensitively. stream owns leases/pause/retry;
+Feed validates scope case-insensitively. Pausing freezes figures and progress; stream owns leases and reconnect.
 history keeps <=900 actual metric windows and <=256 recorded/live target samples.
 Archive ordinals preserve duplicate UTC times, full values, phases/reasons/nulls;
 live projections cannot overwrite recorded values. Detached target identity survives

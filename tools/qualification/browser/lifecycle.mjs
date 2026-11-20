@@ -79,14 +79,32 @@ export async function cancelReconnect(page, authored, evidence) {
 /**
  * @param {import('@playwright/test').Page} page
  * @param {string | undefined} evidence
+ * @param {() => Promise<unknown>} [whilePaused]
  */
-async function verifyPaused(page, evidence) {
+export async function verifyPaused(page, evidence, whilePaused) {
   await page.getByRole('button', { name: 'Pause stream', exact: true }).click();
   await expect(page.getByText(/stream paused at/)).toBeVisible();
   const resume = page.getByRole('button', { name: 'Resume stream', exact: true });
   await expect(resume).toBeVisible();
-  if (evidence) await page.screenshot({ path: join(evidence, 'live-paused.png'), fullPage: true });
+  await expect(page.locator('.live-board')).toHaveClass(/is-stale/);
+  const figures = page.locator('.live-kpis dd');
+  const before = await figures.allTextContents();
+  const timeLine = page.locator('.live-time');
+  const pausedTime = await timeLine.textContent();
+  const reading = await figures.first().evaluate((node) => globalThis.getComputedStyle(node).opacity);
+  assert.equal(reading, '1');
+  await whilePaused?.();
+  assert(before.length > 0);
+  if (evidence)
+    await page.screenshot({ path: join(evidence, 'live-paused.png'), fullPage: true, animations: 'disabled' });
+  await expect(figures).toHaveText(before);
+  await expect(timeLine).toHaveText(pausedTime ?? '');
+  const metrics = liveMetricsPath(page);
+  const resumed = page.waitForResponse((response) => metrics.test(response.url()) && response.status() === 200);
+  void resumed.catch(() => undefined);
   await resume.click();
+  await resumed;
+  await expect(page.getByRole('heading', { name: /^No word from the agent for / })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Pause stream', exact: true })).toBeVisible();
 }
 
@@ -94,11 +112,10 @@ async function verifyPaused(page, evidence) {
  * @param {import('@playwright/test').Page} page
  * @param {string | undefined} evidence
  */
-async function interruptLiveFeed(page, evidence) {
-  const path = new URL(page.url()).pathname;
+export async function interruptLiveFeed(page, evidence) {
   const state = page.getByRole('heading', { name: /^No word from the agent for / });
   const retry = page.getByRole('button', { name: 'Retry now', exact: true });
-  const metrics = new RegExp(`^https?://[^/]+/api/v2${path}/attempts/[^/]+/metrics/live(?:\\?.*)?$`);
+  const metrics = liveMetricsPath(page);
   let interrupted = 0;
   /** @param {import('@playwright/test').Route} route */
   const interrupt = (route) => {
@@ -108,10 +125,16 @@ async function interruptLiveFeed(page, evidence) {
   await page.route(metrics, interrupt);
   try {
     await expect(state).toBeVisible({ timeout: 10000 });
-    assert(interrupted > 0, 'Expected to observe an interrupted live metric read');
+    await expect.poll(() => interrupted).toBeGreaterThan(0);
     await expect(retry).toBeEnabled();
     await currentWindow(page);
-    if (evidence) await page.screenshot({ path: join(evidence, 'live-reconnecting.png'), fullPage: true });
+    await expect(page.locator('.live-board')).toHaveClass(/is-stale/);
+    const values = page.locator('.live-kpis dd');
+    assert.equal(await values.first().evaluate((node) => globalThis.getComputedStyle(node).opacity), '0.6');
+    const plot = page.locator('.live-chart svg').first();
+    assert.equal(await plot.evaluate((node) => globalThis.getComputedStyle(node).opacity), '1');
+    if (evidence)
+      await page.screenshot({ path: join(evidence, 'live-reconnecting.png'), fullPage: true, animations: 'disabled' });
   } finally {
     await page.unroute(metrics, interrupt);
   }
@@ -123,6 +146,12 @@ async function interruptLiveFeed(page, evidence) {
   await recovered;
   await expect(state).toHaveCount(0, { timeout: 10000 });
   await currentWindow(page);
+}
+
+/** @param {import('@playwright/test').Page} page */
+function liveMetricsPath(page) {
+  const path = new URL(page.url()).pathname;
+  return new RegExp(`^https?://[^/]+/api/v2${path}/attempts/[^/]+/metrics/live(?:\\?.*)?$`);
 }
 
 /**

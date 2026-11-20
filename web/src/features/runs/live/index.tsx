@@ -186,7 +186,8 @@ function headerText(props: Parameters<typeof RunHeader>[0], suiteName: string | 
   const { run, plan, stream, at } = props;
   const reconnect = reconnectHeader(stream, at);
   if (reconnect) return reconnect;
-  const stage = at.elapsedMs === null ? null : stageAt(plan, at.elapsedMs);
+  const elapsed = stream.paused ? at.stoppedAtMs : at.elapsedMs;
+  const stage = elapsed === null ? null : stageAt(plan, elapsed);
   return {
     headline: headlineOf(stream.phase, suiteName ?? `Run ${shortId(run.id)}`, stage, run),
     sentence: headerSentence(run, stream, at, plan, props.queue),
@@ -227,7 +228,7 @@ function LiveBoard({
   const { figures, phase } = stream;
   if (!figures) return null;
   const moving = phase === 'running' || phase === 'cancelling';
-  const elapsed = moving ? at.elapsedMs : at.lastT;
+  const elapsed = stream.paused ? at.stoppedAtMs : moving ? at.elapsedMs : at.lastT;
   const lastUpdate = stream.stalled ? { elapsed: at.stoppedAtMs } : undefined;
   return (
     <Board
@@ -243,6 +244,7 @@ function LiveBoard({
       origin={at.origin}
       p95Limit={ruleLimit(plan, 'http_req_duration', 'p95')}
       failedLimit={ruleLimit(plan, 'http_req_failed', 'rate')}
+      paused={stream.paused}
       stale={stream.stalled || stream.paused || phase !== 'running'}
     />
   );
@@ -291,13 +293,18 @@ function Board(props: {
   origin: number | null;
   p95Limit: number | null;
   failedLimit: number | null;
+  paused: boolean;
   stale: boolean;
 }) {
   const domain = chartDomain(props.history, props.plan);
   const [hoverT, onHover] = useState<number | null>(null);
   const hover = { hoverT, onHover };
   return (
-    <div className={`live-board${props.stale ? ' is-stale' : ''}`}>
+    <div
+      className={`live-board${props.stale ? ' is-stale' : ''}`}
+      data-paused={props.paused || undefined}
+      data-reconnecting={props.lastUpdate !== undefined || undefined}
+    >
       {!props.finalizing && (
         <Progress
           plan={props.plan}
