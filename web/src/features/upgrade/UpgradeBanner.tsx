@@ -13,8 +13,8 @@ export function UpgradeBanner() {
       title="Beetle is paused for an upgrade"
       actions={<Link to={routes.upgradeSettings}>Upgrade status</Link>}
     >
-      You can read everything and cancel running work. New runs, uploads and changes wait until the upgrade is
-      activated or rolled back on the host.
+      You can read everything and cancel running work. New runs, uploads and changes wait until the upgrade is activated
+      or rolled back on the host.
     </Banner>
   );
 }

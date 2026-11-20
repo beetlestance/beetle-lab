@@ -53,9 +53,18 @@ function UpgradeView({ status, refresh }: { status: UpgradeStatus; refresh: () =
         </Button>
       </div>
       {status.phase === 'fenced' ? (
-        <Banner tone="warning" live={false} title="Paused for upgrade" actions={<Button size="sm" onClick={refresh}>Refresh</Button>}>
-          The host has swapped in the next release. Reading and cancelling work; new work waits. Activate or roll back on
-          the host to lift the pause.
+        <Banner
+          tone="warning"
+          live={false}
+          title="Paused for upgrade"
+          actions={
+            <Button size="sm" onClick={refresh}>
+              Refresh
+            </Button>
+          }
+        >
+          The host has swapped in the next release. Reading and cancelling work; new work waits. Activate or roll back
+          on the host to lift the pause.
         </Banner>
       ) : (
         <p className="upgrade-phase">No upgrade is in progress.</p>
@@ -64,7 +73,9 @@ function UpgradeView({ status, refresh }: { status: UpgradeStatus; refresh: () =
         <dt>Path</dt>
         <dd>One release at a time. Skipping a release is refused; upgrade through each one in turn.</dd>
         <dt>Unfinished work</dt>
-        <dd>{unfinished ? `${unfinished}. Prepare waits for it to finish.` : 'None. The installation can drain now.'}</dd>
+        <dd>
+          {unfinished ? `${unfinished}. Prepare waits for it to finish.` : 'None. The installation can drain now.'}
+        </dd>
         <dt>Backup</dt>
         <dd>{backupText(status.backup)}</dd>
       </dl>

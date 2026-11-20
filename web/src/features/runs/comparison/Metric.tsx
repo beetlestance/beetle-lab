@@ -52,8 +52,8 @@ export function MetricSelection({
       </select>
       {page.availability !== 'ready' && (
         <p role="status">
-          Baseline metric catalogue: {availabilityWithReason(page.availability, page.reason)}. Refresh manually to
-          check again.
+          Baseline metric catalogue: {availabilityWithReason(page.availability, page.reason)}. Refresh manually to check
+          again.
         </p>
       )}
       {page.availability === 'ready' && page.items.length === 0 && <p>No recorded series.</p>}

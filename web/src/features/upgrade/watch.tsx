@@ -21,24 +21,22 @@ function refusedForUpgrade(result: unknown): boolean {
 export function UpgradeWatch({ children }: { children: ReactNode }) {
   const api = useApi();
   const [paused, setPaused] = useState(false);
-  const watched = useMemo(
-    () =>
-      new Proxy(api, {
-        get(target, key, receiver) {
-          const value: unknown = Reflect.get(target, key, receiver);
-          if (typeof value !== 'function') return value;
-          return (...args: unknown[]) => {
-            const result: unknown = (value as (...a: unknown[]) => unknown).apply(target, args);
-            if (!(result instanceof Promise)) return result;
-            return result.then((reply: unknown) => {
-              if (refusedForUpgrade(reply)) setPaused(true);
-              return reply;
-            });
-          };
-        },
-      }) as ApiClient,
-    [api],
-  );
+  const watched = useMemo(() => {
+    const watch = (method: (...args: unknown[]) => unknown) => (...args: unknown[]) => {
+      const result = method.apply(api, args);
+      if (!(result instanceof Promise)) return result;
+      return result.then((reply: unknown) => {
+        if (refusedForUpgrade(reply)) setPaused(true);
+        return reply;
+      });
+    };
+    // The client is frozen, so a Proxy may not substitute its methods; a copy with wrapped methods may.
+    const entries = Object.entries(api).map(([key, value]) => [
+      key,
+      typeof value === 'function' ? watch(value as (...args: unknown[]) => unknown) : value,
+    ]);
+    return Object.freeze(Object.fromEntries(entries)) as ApiClient;
+  }, [api]);
   return (
     <ApiContext.Provider value={watched}>
       <PausedContext.Provider value={paused}>{children}</PausedContext.Provider>

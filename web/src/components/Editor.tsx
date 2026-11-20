@@ -51,7 +51,11 @@ function initialValues(fields: EditorField[]) {
   return Object.fromEntries(fields.map((field) => [field.name, field.value]));
 }
 /** Field-level conflicts the form can explain next to the field; anything else stays a form-level failure. */
-function fieldErrors(fields: EditorField[], failure: ApiClientFailure | null, values: Readonly<Record<string, string>>) {
+function fieldErrors(
+  fields: EditorField[],
+  failure: ApiClientFailure | null,
+  values: Readonly<Record<string, string>>,
+) {
   const paths = new Set((failure?.protocol?.fields ?? []).filter((f) => f.code === 'conflict').map((f) => f.path));
   return Object.fromEntries(
     fields.flatMap((field) =>
@@ -248,6 +252,8 @@ function EditorFields({
   );
 }
 function describedBy(id: string, field: EditorField, invalid: boolean): string | undefined {
-  const ids = [invalid ? `${id}-${field.name}-error` : '', field.help ? `${id}-${field.name}-help` : ''].filter(Boolean);
+  const ids = [invalid ? `${id}-${field.name}-error` : '', field.help ? `${id}-${field.name}-help` : ''].filter(
+    Boolean,
+  );
   return ids.length ? ids.join(' ') : undefined;
 }

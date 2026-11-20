@@ -15,7 +15,7 @@ const invalid = (): never => {
   throw new ClientError('invalid_input', 2);
 };
 
-function parse(argv: readonly string[]): { kind: Kind; file: string } {
+function flags(argv: readonly string[]): Map<string, string> {
   if (argv.length !== 5 && !(argv.length === 6 && argv.includes('--json'))) return invalid();
   const values = new Map<string, string>();
   for (let index = 1; index < argv.length; index++) {
@@ -26,6 +26,10 @@ function parse(argv: readonly string[]): { kind: Kind; file: string } {
       return invalid();
     values.set(key, value);
   }
+  return values;
+}
+function parse(argv: readonly string[]): { kind: Kind; file: string } {
+  const values = flags(argv);
   const kind = values.get('--kind');
   const file = values.get('--request-file');
   if (!kind || !Object.hasOwn(schemas, kind) || !file || !isAbsolute(file) || file.includes('\0')) return invalid();

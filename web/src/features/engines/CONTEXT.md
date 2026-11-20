@@ -8,7 +8,7 @@ the agent state. `unreachable`, `unavailable` and `stale` mark the card Unavaila
 and show the notice (minutes since `lastSeenAt` for stale) with a link to
 installation status; `disabled` shows the notice without the Unavailable mark.
 `status.ts` owns the status read (one read per mount, no polling) and is reused by
-installation settings. `planned.tsx` holds the planned-engine cards: fixed product
-copy whose bars are captioned as samples, not data. Per-engine run counts and the
+installation settings. `listEngines` says which engines are planned; `planned.tsx` holds
+the board copy per id, whose bars are captioned as samples, not data. Per-engine run counts and the
 board illustration are not built: no API reports the counts.
 Check: vitest run web/src/features/engines.

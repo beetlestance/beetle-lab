@@ -136,13 +136,18 @@ function dependencies(error: unknown): Pick<ApiError, 'dependencies'> {
     return {};
   }
 }
+/** Each field issue names one field and the only top-level code it may refine. */
+const fieldIssues = {
+  suite_name_conflict: { code: 'conflict', field: { path: '/metadata/name', code: 'conflict' } },
+  folder_name_conflict: { code: 'conflict', field: { path: '/name', code: 'conflict' } },
+  organization_slug_conflict: { code: 'conflict', field: { path: '/slug', code: 'conflict' } },
+  folder_depth: { code: 'invalid_value', field: { path: '/parentFolderId', code: 'range' } },
+} as const;
 function fieldErrors(error: unknown, code: Code, describe: ApiErrorOptions['fieldIssue']): ApiError['fields'] {
   try {
     const issue = describe?.(error);
-    if (issue === 'suite_name_conflict' && code === 'conflict') return [{ path: '/metadata/name', code: 'conflict' }];
-    if (issue === 'folder_name_conflict' && code === 'conflict') return [{ path: '/name', code: 'conflict' }];
-    if (issue === 'organization_slug_conflict' && code === 'conflict') return [{ path: '/slug', code: 'conflict' }];
-    if (issue === 'folder_depth' && code === 'invalid_value') return [{ path: '/parentFolderId', code: 'range' }];
+    const known = issue ? fieldIssues[issue] : undefined;
+    if (known && known.code === code) return [{ ...known.field }];
   } catch {
     /* A failed diagnostic must not replace or broaden the original failure. */
   }

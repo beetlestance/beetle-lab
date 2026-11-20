@@ -107,8 +107,9 @@ behind the fence: you can look at everything, but it accepts no new work.
 | Changing capacity with the host command                                                  | Refused with `upgrade_blocked`        |
 | Changing the address with `setup origin`                                                 | Refused with `origin_blocked upgrade` |
 
-A refused action currently shows as `503 capacity_unavailable`, the same retryable
-error as a full installation. There is no dedicated upgrade error code yet.
+A refused action shows as `503 upgrade_pending`; nothing was changed. The app shows a
+**Beetle is paused for an upgrade** banner, and **Settings › Installation › Upgrade** shows
+the release, unfinished work and backup size. `/health/ready` reports `not_ready`.
 
 When you are satisfied, stop the services and activate.
 

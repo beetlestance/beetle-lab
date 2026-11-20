@@ -21,10 +21,13 @@ measurements live in [evidence](../evidence/README.md).
   run pinning protects up to 256 runs per workspace.
 - Read-only installation status (agent reachability, measured host facts, verified image/engine-version
   metadata, pool usage) and run queue position and capacity or isolation reasons; CPU use and available memory are not measured.
+  An engine catalogue (installed k6 and the engines still to come), `/health/ready`, and a read-only upgrade status.
 - Cold backup and fresh read-only historical restoration. Offline forward upgrade with
-  a sealed backup and rollback until activation; downgrade and mutable restore are not claimed.
+  a sealed backup and rollback until activation; the app explains the pause (`upgrade_pending`) and shows
+  release, schema, unfinished work and backup size. Downgrade and mutable restore are not claimed.
 - Opt-in HTTPS access for one administrator over a private network (decision 032) and an
-  offline `setup origin` address change (decision 033); the automation client stays loopback-only.
+  offline `setup origin` address change (decision 033); the automation client is loopback unless
+  `--private-network` admits an RFC 1918 or IPv6 unique-local origin.
 
 The legacy executable source and automatic publishing path are removed in the rewrite.
 No replacement default image was promoted. Use source Compose; the old single-image
@@ -37,4 +40,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `b4b81f3ea924` |
+| `contracts/api/v2/` | `eeb1ae086dfe` |

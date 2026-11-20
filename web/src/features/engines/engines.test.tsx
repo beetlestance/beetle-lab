@@ -6,20 +6,39 @@ import { validateApi } from '@beetle/contracts/api';
 import { apiError, json, mount, testClient } from '../../app/test-fixtures.js';
 import { routes } from '../../app/routes.js';
 import { settings } from '../settings/test-fixtures.js';
-import { installationStatus } from './test-fixtures.js';
+import { engineCatalogue, installationStatus } from './test-fixtures.js';
 
 afterEach(cleanup);
 
-function client(status: Response | (() => Response)) {
+function client(status: Response | (() => Response), catalogue: () => Response = () => json(engineCatalogue())) {
   return testClient((request) => {
     if (request.path === '/api/v2/settings') return json(settings());
+    if (request.path === '/api/v2/engines') return catalogue();
     if (request.path === '/api/v2/installation/status') return typeof status === 'function' ? status() : status;
     return json({ scope: { kind: 'installation' }, items: [], nextCursor: null });
   });
 }
 
-it('keeps the status fixture inside the public schema', () => {
+it('keeps the status and catalogue fixtures inside the public schema', () => {
   expect(validateApi('InstallationStatus', installationStatus()).ok).toBe(true);
+  expect(validateApi('EngineCatalogue', engineCatalogue()).ok).toBe(true);
+});
+
+it('shows only the planned engines the catalogue lists, in its order', async () => {
+  const listed = engineCatalogue();
+  listed.engines = listed.engines.filter((engine) => engine.id === 'k6' || engine.id === 'lint');
+  const api = client(json(installationStatus()), () => json(listed));
+  mount(api.client, routes.engines);
+  const planned = (await screen.findByRole('heading', { name: 'Planned' })).closest('section')!;
+  expect(within(planned).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Lint checks']);
+});
+
+it('says planned engines could not be read instead of inventing them', async () => {
+  const api = client(json(installationStatus()), () => json(apiError('storage_unavailable'), 503));
+  mount(api.client, routes.engines);
+  expect(await screen.findByText('Planned engines could not be read.')).toBeVisible();
+  expect(screen.queryByRole('heading', { name: 'Planned' })).not.toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'k6 load tests' })).toBeVisible();
 });
 
 it('groups k6 profiles in one installed card with image facts and the default profile', async () => {

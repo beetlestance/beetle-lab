@@ -16,11 +16,7 @@ export function registerStorageHealth(server: FastifyInstance, status: () => Sto
  * installation facts beyond whether this backend takes new work. A fenced backend serves
  * reads but is not ready for new work until the upgrade is activated.
  */
-export function registerReadiness(
-  server: FastifyInstance,
-  status: () => StorageStatus,
-  fenced: boolean,
-): void {
+export function registerReadiness(server: FastifyInstance, status: () => StorageStatus, fenced: boolean): void {
   server.get('/health/ready', async (_request, reply) => {
     const storage = status();
     const ready = storage === 'ready' && !fenced;

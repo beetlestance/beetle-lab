@@ -107,7 +107,12 @@ class InstallationStatusReads {
   }
   unfinished(): UnfinishedWorkFacts {
     const row = this.db.prepare(unfinishedSql).get() as Record<keyof UnfinishedWorkFacts, unknown>;
-    return { runs: count(row.runs), exports: count(row.exports), uploads: count(row.uploads), removals: count(row.removals) };
+    return {
+      runs: count(row.runs),
+      exports: count(row.exports),
+      uploads: count(row.uploads),
+      removals: count(row.removals),
+    };
   }
   queue(key: RunKey): RunQueueFacts {
     const run = this.runReads.get(key);

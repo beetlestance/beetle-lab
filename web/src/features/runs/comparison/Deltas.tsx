@@ -238,8 +238,8 @@ function ComparisonReadNotes({
         if (read.value.availability !== 'ready')
           return (
             <p key={item.run.id}>
-              {labels.get(item.run.id.toLowerCase())}: detailed measurements{' '}
-              {availabilityText(read.value.availability)}. Unknown fields stay missing.
+              {labels.get(item.run.id.toLowerCase())}: detailed measurements {availabilityText(read.value.availability)}
+              . Unknown fields stay missing.
             </p>
           );
         return read.value.source?.coverage.complete === false ? (

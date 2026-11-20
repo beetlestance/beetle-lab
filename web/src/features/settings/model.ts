@@ -115,7 +115,12 @@ export function installationRows(data: Extract<SettingsData, { values: unknown }
   return { pool, ceilings, admin };
 }
 
-function fixedRow(id: string, copy: NumericCopy, base: number, here: Pick<RowFacts, 'origin' | 'setHere' | 'canInherit'>) {
+function fixedRow(
+  id: string,
+  copy: NumericCopy,
+  base: number,
+  here: Pick<RowFacts, 'origin' | 'setHere' | 'canInherit'>,
+) {
   const unit = displayUnit(base, copy.unit);
   return { id, ...copy, unit, text: toUnit(base, unit), ...here };
 }

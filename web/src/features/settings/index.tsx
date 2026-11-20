@@ -126,11 +126,7 @@ function SettingsView({ data }: { data: SettingsData }) {
       </header>
       {data.scope.kind === 'workspace' ? <ParentLevels scope={data.scope} /> : <ScopeTabs scope={data.scope} />}
       {installation && <ViewSwitch view={view} onChange={setView} />}
-      {upgrade ? (
-        <Upgrade />
-      ) : (
-        <SettingsForm data={data} name={name} capacity={!!capacity} form={form} />
-      )}
+      {upgrade ? <Upgrade /> : <SettingsForm data={data} name={name} capacity={!!capacity} form={form} />}
     </section>
   );
 }
@@ -190,13 +186,7 @@ function isConflict(state: SavePhase): boolean {
   return state.phase === 'failed' && state.failure.protocol?.code === 'conflict';
 }
 
-function ViewSwitch({
-  view,
-  onChange,
-}: {
-  view: SettingsView;
-  onChange: (view: SettingsView) => void;
-}) {
+function ViewSwitch({ view, onChange }: { view: SettingsView; onChange: (view: SettingsView) => void }) {
   return (
     <SegmentedFilter
       label="Installation settings"

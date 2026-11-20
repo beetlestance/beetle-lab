@@ -24,7 +24,11 @@ export function releaseName(value: string | undefined): string | null {
 }
 /** What the upgrade status reports about this process: its release, metadata schema and fence. */
 export function upgradeFacts(options: { readonly upgradeFence?: string; readonly release?: string }) {
-  return { release: options.release ?? null, metadataSchema: METADATA_SCHEMA_VERSION, fence: options.upgradeFence ?? null };
+  return {
+    release: options.release ?? null,
+    metadataSchema: METADATA_SCHEMA_VERSION,
+    fence: options.upgradeFence ?? null,
+  };
 }
 const permitted = new Set([
   'openLocalBrowserSession',

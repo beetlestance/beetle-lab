@@ -45,11 +45,14 @@ export function explainMetadataError(error: unknown): NonNullable<ApiError['reas
 }
 
 /** Fixed field categories; no database message or submitted value crosses HTTP. */
-export function metadataFieldIssue(
-  error: unknown,
-): FieldIssue | undefined {
+export function metadataFieldIssue(error: unknown): FieldIssue | undefined {
   if (!(error instanceof StorageError)) return undefined;
   return (fieldIssues as readonly string[]).includes(error.code) ? (error.code as FieldIssue) : undefined;
 }
-const fieldIssues = ['folder_name_conflict', 'folder_depth', 'suite_name_conflict', 'organization_slug_conflict'] as const;
+const fieldIssues = [
+  'folder_name_conflict',
+  'folder_depth',
+  'suite_name_conflict',
+  'organization_slug_conflict',
+] as const;
 type FieldIssue = (typeof fieldIssues)[number];

@@ -32,7 +32,11 @@ export function registerInstallationStatusRoutes(
     );
     registerApiOperation(scoped, 'listEngines', async () =>
       engineCatalogue(
-        await getInstallationStatus({ reader: dependencies.reader, agent: dependencies.agent(), nowMs: dependencies.nowMs() }),
+        await getInstallationStatus({
+          reader: dependencies.reader,
+          agent: dependencies.agent(),
+          nowMs: dependencies.nowMs(),
+        }),
       ),
     );
     registerApiOperation(scoped, 'getUpgradeStatus', () =>

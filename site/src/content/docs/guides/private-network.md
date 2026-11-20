@@ -95,8 +95,8 @@ differs from `BEETLE_ORIGIN`, often by the port, or the proxy rewrote `Host`.
 
 Setup refuses an address or bind on another host without `BEETLE_ACCESS=network`
 (`network_access_required`). The local launcher, the
-[history viewer](/guides/backup-and-restore/) and the
-[automation client](/guides/automation/) work only with a loopback address.
+[history viewer](/guides/backup-and-restore/) work only with a loopback address. The
+[automation client](/guides/automation/) connects to a private address only with `--private-network`.
 
 ## Change the address of an existing installation
 

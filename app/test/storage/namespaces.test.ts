@@ -51,7 +51,7 @@ describe('scoped namespace persistence', () => {
       .rejects.toMatchObject({ code: 'conflict' });
     await expect(metadata.namespaces.execute(command({ kind: 'createOrganization', id: uuid(9), request: {
       requestId: requestId(), scope: { kind: 'installation' }, name: 'Other', slug: 'org-1' } })))
-      .rejects.toMatchObject({ code: 'conflict' });
+      .rejects.toMatchObject({ code: 'organization_slug_conflict' });
   });
   it('serializes opposing moves so one cannot create a cycle and derives descendant paths', async () => {
     const metadata = await fixture.open(); await seed(metadata);

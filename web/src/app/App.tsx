@@ -52,27 +52,27 @@ export function App({
   return (
     <ApiContext.Provider value={apiClient}>
       <UpgradeWatch>
-      <SessionContext.Provider value={session}>
-        <InputTransferContext.Provider value={inputTransfers ?? null}>
-          <QueryClientProvider client={client}>
-            <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
-              <ToastProvider>
-                {/* Outside the shell: the header's organization menu opens the same editor. */}
-                <EditorProvider>
-                  <AppShell onSearch={commands.show}>
-                    <Suspense fallback={<LoadingState label="Loading view…" />}>
-                      <PageTransition>
-                        <AppRoutes />
-                      </PageTransition>
-                    </Suspense>
-                  </AppShell>
-                </EditorProvider>
-              </ToastProvider>
-            </div>
-            {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
-          </QueryClientProvider>
-        </InputTransferContext.Provider>
-      </SessionContext.Provider>
+        <SessionContext.Provider value={session}>
+          <InputTransferContext.Provider value={inputTransfers ?? null}>
+            <QueryClientProvider client={client}>
+              <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
+                <ToastProvider>
+                  {/* Outside the shell: the header's organization menu opens the same editor. */}
+                  <EditorProvider>
+                    <AppShell onSearch={commands.show}>
+                      <Suspense fallback={<LoadingState label="Loading view…" />}>
+                        <PageTransition>
+                          <AppRoutes />
+                        </PageTransition>
+                      </Suspense>
+                    </AppShell>
+                  </EditorProvider>
+                </ToastProvider>
+              </div>
+              {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
+            </QueryClientProvider>
+          </InputTransferContext.Provider>
+        </SessionContext.Provider>
       </UpgradeWatch>
     </ApiContext.Provider>
   );

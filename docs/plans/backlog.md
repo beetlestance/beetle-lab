@@ -28,7 +28,7 @@ None is committed work; each needs its own plan before it starts.
 
 | Area | Not built |
 | --- | --- |
-| Public API | SSE live event stream with cursor resume; installed engine catalogue routes; explicit run retry (a new attempt under one run; generation is fixed at 1); public `/capacity` and `/health/ready`; automation client `validate` |
+| Public API | SSE live event stream with cursor resume; explicit run retry (a new attempt under one run; generation is fixed at 1); an unauthenticated `/capacity` (the authenticated `getInstallationStatus` reports pool and host capacity) |
 | Namespaces | Recursive organisation and workspace cleanup that frees retained rows and bytes |
 | Execution | Process (non-Docker) backend; browser and mutation engine profiles; per-profile cancellation grace; checkpointed work units; explicit finalisation ACK endpoints; a container retention sweeper |
 | Events | Rebuilding event coverage marked `partial`; recovery authority for blocked event problems (`quota_exhausted`, `missing_receipt`, `replay_conflict`) |

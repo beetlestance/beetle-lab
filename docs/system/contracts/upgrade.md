@@ -33,8 +33,8 @@ host command; normal startup never re-pins. Default action is `prepare`.
   root has changed, so a resume before it retakes the backup.
 - While `upgradeFence` is set the backend refuses every mutation except browser-session
   exchanges, run/export cancellation, comparison and previews with retryable `503
-  capacity_unavailable` (no `upgrade_pending` code exists in the API contract yet); reads
-  continue. Capacity changes refuse with `upgrade_blocked`. Releases that predate the fence
+  upgrade_pending`, before body parsing, so nothing is written; reads continue and
+  `/health/ready` reports `not_ready` with reason `upgrade_pending`. Capacity changes refuse with `upgrade_blocked`. Releases that predate the fence
   refuse the selector outright, because their receipt capture rejects unknown fields.
 - `activate` requires the selected configuration to match freshly inspected images, removes
   the fence and records `activated`; it is idempotent. Images that moved again refuse with
@@ -45,11 +45,17 @@ host command; normal startup never re-pins. Default action is `prepare`.
   under `rolling_back`; a rerun completes an interrupted swap. The old pins remain, so normal
   startup reports `upgrade_required` again. The replaced root stays under
   `upgrade/<operation>/replaced` for the operator to remove.
-- Not yet built: the in-app drain and activation UI, the backend upgrade status endpoint, a
-  bounded health check of the candidate before `awaiting_activation`, and a dedicated
-  `upgrade_pending` API code ([plan](../../plans/proposed/in-place-upgrade.md)).
+- `GET /api/v2/installation/upgrade` (`getUpgradeStatus`, read-only) reports the running
+  release (`BEETLE_RELEASE`, else null) and metadata schema, the fence (`open` or `fenced` with the
+  operation UUID), the rule `next_release_only`, unfinished runs, exports, uploads and removals,
+  and the backup's lower bound (charged storage) against fresh agent free space, else unknown.
+  The host phase and steps stay with `upgrade status`. Settings › Installation › Upgrade shows it;
+  the web shell explains a refused action once. Beetle never checks for releases online.
+- Not yet built: in-app activation, and a bounded health check of the candidate before
+  `awaiting_activation` ([plan](../../plans/proposed/in-place-upgrade.md)).
 
 Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgrade-fence.test.ts`,
+`app/test/application/installation-status.test.ts`,
 `app/test/storage/upgrade-schema029.test.ts`.
 
 ## Related
@@ -63,6 +69,6 @@ Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgra
 | --- | --- |
 | `tools/install/upgrade/` | `38551fa22bcd` |
 | `tools/install/src/selection.ts` | `9567b14e41c3` |
-| `app/src/bootstrap/upgrade-fence.ts` | `347ef48487bc` |
+| `app/src/bootstrap/upgrade-fence.ts` | `8088db82568c` |
 | `agent/src/journal/cold-inspection/` | `5a89d6d464a1` |
 | `app/src/adapters/outbound/sqlite/cold-inspection/` | `9cb07aa057fd` |

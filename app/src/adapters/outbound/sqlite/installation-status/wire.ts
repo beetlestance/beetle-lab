@@ -3,9 +3,7 @@ import type { RunKey } from '../../../../ports/runs.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 
 export type StatusOperation =
-  | { kind: 'getPoolUsage' }
-  | { kind: 'getUnfinishedWork' }
-  | { kind: 'getRunQueue'; key: RunKey };
+  { kind: 'getPoolUsage' } | { kind: 'getUnfinishedWork' } | { kind: 'getRunQueue'; key: RunKey };
 const kinds = ['getPoolUsage', 'getUnfinishedWork', 'getRunQueue'];
 
 /** Inspects the data descriptor only; accessors are rejected by the bounded copy owner. */

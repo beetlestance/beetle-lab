@@ -1,4 +1,4 @@
-import type { InstallationStatus } from '@beetle/contracts/api';
+import type { EngineCatalogue, InstallationStatus } from '@beetle/contracts/api';
 
 const measured = (value: number) => ({ status: 'measured' as const, value });
 const unmeasured = { status: 'not_measured' as const, value: null };
@@ -37,5 +37,21 @@ export function installationStatus(
       queuedExports: 0,
     },
     ...overrides,
+  };
+}
+
+export function engineCatalogue(status: InstallationStatus = installationStatus()): EngineCatalogue {
+  return {
+    scope: { kind: 'installation' },
+    generatedAt: status.generatedAt,
+    engines: [
+      { id: 'k6', availability: 'installed', state: 'ready', profiles: status.engines },
+      ...(['unit-tests', 'integration-tests', 'lint', 'formatting', 'mutation-testing'] as const).map((id) => ({
+        id,
+        availability: 'planned' as const,
+        state: 'planned' as const,
+        profiles: [],
+      })),
+    ],
   };
 }

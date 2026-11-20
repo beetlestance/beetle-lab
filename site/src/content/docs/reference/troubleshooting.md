@@ -69,8 +69,8 @@ cannot start runs or change anything. See
 ## Actions are refused after an upgrade
 
 If the app shows everything but refuses to start runs, save suites or change
-settings with `503 capacity_unavailable`, check whether an upgrade is awaiting
-activation: `docker compose run --rm setup upgrade status`. The fence refuses new
+settings with `503 upgrade_pending`, an upgrade is awaiting activation. Check it with
+`docker compose run --rm setup upgrade status`. The fence refuses new
 work until you [activate or roll back](/guides/upgrade/#check-the-new-version).
 
 ## Setup stops with a code
