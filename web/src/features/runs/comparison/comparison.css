@@ -1,6 +1,7 @@
 /* Compare and Compare / Empty boards. Tokens only. */
 .compare {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-20);
 }
 .compare h1 {
@@ -36,6 +37,7 @@
 }
 .compare-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-12);
 }
 .compare-evidence summary {
@@ -70,8 +72,9 @@
   overflow-wrap: anywhere;
 }
 
-/* Preserve readable row labels; wide comparisons scroll within their own region. */
+/* Keep wide cells and positioned accessibility labels inside the scroll region. */
 .compare .data-table-scroll {
+  position: relative;
   min-width: 0;
   max-width: 100%;
 }
@@ -126,6 +129,10 @@
   margin: 0;
   font-size: var(--fs-xl);
   line-height: var(--lh-lede);
+}
+.compare-empty-text .compare-empty-note {
+  color: var(--mute);
+  font-size: var(--fs-sm);
 }
 .compare-empty-art {
   width: 100%;

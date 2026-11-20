@@ -52,7 +52,7 @@ function CompareEmpty({ scope }: { scope: RunScope }) {
         <div className="compare-empty-text">
           <h1>Pick runs to compare</h1>
           <p>
-            Tick two to four finished runs in Runs. The first one is the baseline, and every other run shows how far it
+            Tick two to four ended runs in Runs. The first one is the baseline, and every other run shows how far it
             moved from it.
           </p>
           <div>
@@ -60,6 +60,7 @@ function CompareEmpty({ scope }: { scope: RunScope }) {
               Go to runs
             </Link>
           </div>
+          <p className="compare-empty-note">Active runs become available for comparison after they end.</p>
         </div>
         <img className="compare-empty-art" src={compareArt} width="560" height="392" alt="" />
       </div>
