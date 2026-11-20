@@ -111,6 +111,14 @@
   color: var(--mute);
   font-size: var(--fs-sm);
 }
+.history-loading-labels {
+  display: grid;
+  grid-template-columns: minmax(0, 90px) minmax(0, 220px) minmax(0, 120px) minmax(0, 70px);
+  gap: var(--s-28);
+  padding: var(--s-8) var(--s-14);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
 .history-empty {
   width: 100%;
   display: grid;

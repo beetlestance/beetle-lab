@@ -102,7 +102,7 @@ function HistoryPage({
           compare={<HistoryCompare scope={scope} selected={selected} />}
         />
       )}
-      <QueryState query={query} loading={<LoadingState variant="table" label="Loading runs…" rows={6} />}>
+      <QueryState query={query} loading={<HistoryLoading />}>
         {(data: RunPage) =>
           data.items.length === 0 && !page.hasBack ? (
             <HistoryEmpty scope={scope} filtered={filtered} reset={reset} />
@@ -129,6 +129,20 @@ function HistoryPage({
           counted={current.counts !== undefined}
         />
       )}
+    </div>
+  );
+}
+
+function HistoryLoading() {
+  return (
+    <div className="history-loading">
+      <div className="history-loading-labels" aria-hidden="true">
+        <span>Result</span>
+        <span>Suite</span>
+        <span>Started</span>
+        <span>p95</span>
+      </div>
+      <LoadingState variant="table" label="Loading runs…" rows={9} />
     </div>
   );
 }

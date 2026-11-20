@@ -25,7 +25,9 @@ async function emptyHistory(page, workspace, evidence) {
   const history = workspace + '/runs';
   const api = new URL(workspace);
   const matches = /** @param {URL} url */ (url) =>
-    url.origin === api.origin && url.pathname === '/api/v2' + api.pathname + '/runs';
+    url.origin === api.origin &&
+    url.pathname === '/api/v2' + api.pathname + '/runs' &&
+    url.searchParams.get('includeCounts') === 'true';
   let release = () => {};
   const gate = new Promise((resolve) => {
     release = () => resolve(undefined);
@@ -49,6 +51,7 @@ async function emptyHistory(page, workspace, evidence) {
     await screenshot(page, evidence, 'compare-empty');
     await page.getByRole('link', { name: 'Go to runs', exact: true }).click();
     await expect(page.getByText('Loading runs…', { exact: true })).toBeVisible();
+    await expect(page.locator('.history-loading .skeleton-row')).toHaveCount(9);
     await screenshot(page, evidence, 'runs-loading');
   } finally {
     release();
