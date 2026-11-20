@@ -8,7 +8,17 @@ import type { ProcessObservation } from '../process/index.js';
 type Unsealed<T> = T extends unknown ? Omit<T, 'seal'> : never;
 export type K6ResultBody = DeepReadonly<Unsealed<EngineResult>>;
 export type OrchestrationFailure =
-  'cancelled' | 'deadline' | 'clock' | 'profile' | 'build' | 'native' | 'metrics' | 'summary' | 'cleanup' | 'closed';
+  | 'cancelled'
+  | 'deadline'
+  | 'clock'
+  | 'profile'
+  | 'build'
+  | 'native'
+  | 'metrics'
+  | 'summary'
+  | 'cleanup'
+  | 'closed'
+  | 'output_limit';
 export interface K6ResultInput {
   readonly suite: DeepReadonly<CompiledSuite>;
   readonly scope: JournalScope;

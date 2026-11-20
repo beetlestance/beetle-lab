@@ -42,7 +42,7 @@ The result reading remains a native statistic; the UI never computes its verdict
 | --- | --- |
 | `contracts/runner/v1/result-evidence.schema.json` | `379ecd645141` |
 | `contracts/runner/v1/engine-result.schema.json` | `e377fc467e47` |
-| `engines/k6/wrapper/result/` | `bc94b5adb495` |
+| `engines/k6/wrapper/result/` | `6e239652679b` |
 | `web/src/features/runs/run-revision.ts` | `d57756f98b8a` |
 | `web/src/features/runs/result/ThresholdReading.tsx` | `cd060ae04f02` |
 | `web/src/features/runs/result/threshold-sentence.ts` | `a5ccdb7f0a16` |

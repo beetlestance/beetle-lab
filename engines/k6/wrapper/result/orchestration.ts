@@ -12,6 +12,7 @@ const reasons: Readonly<Record<OrchestrationFailure, Reason>> = Object.freeze({
   native: 'engine_crash',
   closed: 'engine_crash',
   metrics: 'artifact_incomplete',
+  output_limit: 'output_limit',
   summary: 'artifact_incomplete',
   cleanup: 'artifact_incomplete',
 });

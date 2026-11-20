@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { DurationHistogram } from '../../aggregation/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
-import { ArchiveDigestMismatch, MetricArchive } from '../../wrapper/attempt/archive/index.js';
+import { ArchiveCapacityReached, ArchiveDigestMismatch, MetricArchive } from '../../wrapper/attempt/archive/index.js';
 import { MetricFiles } from '../../wrapper/attempt/archive/files.js';
 import { AttemptFence } from '../../wrapper/lifecycle/index.js';
 
@@ -78,7 +78,7 @@ it('reserves footer room and refuses over-budget history without a seal', async 
 it('bounds collect-only growth while retaining earlier execute history', async () => {
   const f = await fixture(); for (let i = 0; i < 20; i++) await f.archive.append(window(i * 1000));
   const before = f.archive.bytes; f.archive.beginCollection(1024);
-  await expect(f.archive.append(window(21_000))).rejects.toMatchObject({ reason: 'output_limit' });
+  await expect(f.archive.append(window(21_000))).rejects.toBeInstanceOf(ArchiveCapacityReached);
   expect(f.archive.bytes).toBe(before);
 });
 it.each(['overlap', 'length', 'frame'] as const)('rejects %s without publishing partial history', async mode => {

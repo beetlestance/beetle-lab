@@ -10,6 +10,7 @@ import {
   artifactBytes,
   presentArtifacts,
   finishMetricEvidence,
+  acceptArchiveCapacityStop,
 } from './result-evidence.js';
 import { captureOptions } from './options.js';
 import { blank, type Quiet } from './state.js';
@@ -24,7 +25,7 @@ import { publishK6Result, type ResultPublication } from '../publication/index.js
 import { Artifacts, outputRoot } from '../artifact-custody/index.js';
 import { AttemptTarget } from './target.js';
 import { executionLimits } from './reservation.js';
-import { MetricArchive } from './archive/index.js';
+import { ArchiveCapacityReached, MetricArchive } from './archive/index.js';
 import type { MetricWindow } from '../../aggregation/index.js';
 import { AttemptLive, syncHistory } from './live.js';
 import { AttemptFence, Notifications, Phases } from '../lifecycle/index.js';
@@ -75,8 +76,6 @@ class Attempt {
       const compiled = await this.compile();
       await this.invoke(compiled);
       await this.finishResult(compiled);
-      this.state.ok = this.state.execution?.ok === true && this.state.publication?.ok === true;
-      if (!this.state.ok) this.state.reason = 'execution';
     } catch (error) {
       this.state.reason = this.fence.reason ?? (error instanceof AttemptError ? error.reason : this.stage);
       this.fence.stop(this.state.reason);
@@ -195,7 +194,8 @@ class Attempt {
         await closeLive(this.live);
         this.collecting = true;
         this.historyAtCollect = this.archive?.bytes ?? 0;
-        this.archive?.beginCollection(reservation.historyCollect);
+        if (!(this.archiveFailure instanceof ArchiveCapacityReached))
+          this.archive?.beginCollection(reservation.historyCollect);
         await this.phases!.transition(
           'collect',
           this.measured ? 1 : 0,
@@ -208,7 +208,6 @@ class Attempt {
       },
     });
     await this.execution.result;
-    // First failure may precede original work. Preserve late actual facts without upgrading it.
     const results = await Promise.allSettled([
       this.execution.final,
       this.execution.quiesced,
@@ -223,7 +222,7 @@ class Attempt {
     await this.notifications.quiesce();
     this.quiet.notifications = 'confirmed';
     if (this.quiet.execution !== 'confirmed' || this.quiet.input !== 'confirmed') fail('cleanup');
-    if (this.archiveFailure) throw this.archiveFailure;
+    if (this.archiveFailure) acceptArchiveCapacityStop(this.state, this.archiveFailure, this.collecting);
     if (this.target.failure) throw this.target.failure;
     this.fence.check();
   }
@@ -370,6 +369,8 @@ class Attempt {
     if (!published.ok) fail('publication');
     await this.phases!.result(event);
     await this.phases!.finish(1, published.bytes);
+    this.state.ok = this.state.execution?.ok === true;
+    if (!this.state.ok) this.state.reason ??= 'execution';
   }
   private cleanup(): Promise<void> {
     return cleanupAttempt(this.state, this.quiet, {

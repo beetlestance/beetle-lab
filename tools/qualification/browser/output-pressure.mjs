@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { expect } from '@playwright/test';
 import { K6_WRAPPER_OUTPUT_LIMIT_EXIT } from '@beetle/contracts/k6-diagnostics';
 import { validateApi } from '@beetle/contracts/api';
@@ -59,6 +60,7 @@ export async function outputPressure(page, authored, fixture, installation, evid
     assert.equal(stopped.state.ExitCode, K6_WRAPPER_OUTPUT_LIMIT_EXIT);
     await expect(page.getByRole('heading', { name: /filled its output/ })).toBeVisible();
     const retained = await retainedHistory(page, submitted, ended);
+    const reportSha256 = await verifiedReport(page, submitted, evidence);
     const observed = counts(fixture);
     assert(observed.work > 0 && observed.unexpected === 0);
     await writeFile(
@@ -69,9 +71,11 @@ export async function outputPressure(page, authored, fixture, installation, evid
         reason: ended.reason,
         wrapperStop: attached.failures[0],
         exitCode: stopped.state.ExitCode,
+        reportSha256,
       }),
       { mode: 0o600, flag: 'wx' },
     );
+    await page.evaluate(() => globalThis.scrollTo(0, 0));
     await page.screenshot({ path: join(evidence, 'output-pressure-result.png'), fullPage: true });
   } finally {
     await capture.close();
@@ -98,4 +102,33 @@ async function retainedHistory(page, submitted, run) {
   assert(history.ok && history.value.scope.attemptId === run.activeAttemptId);
   await expect(recovered).toBeVisible();
   return history.value.samples.length;
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {Awaited<ReturnType<import('./results.mjs').start>>} submitted
+ * @param {string} evidence
+ */
+async function verifiedReport(page, submitted, evidence) {
+  const reply = await page.request.get(submitted.origin + '/api/v2' + submitted.path + '/result');
+  const snapshot = validateApi('RunResultSnapshot', await reply.json());
+  assert(reply.ok() && snapshot.ok && snapshot.value.id === submitted.id);
+  const result = snapshot.value.result;
+  assert(result, 'Expected independently verifiable reports after the paired archive limit');
+  assert.equal(result.execution.status, 'error');
+  assert.equal(result.execution.reason, 'output_limit');
+  assert.equal(result.outcome, 'inconclusive');
+  assert(result.completeness !== 'complete');
+  assert(!result.artifacts.some((artifact) => artifact.kind === 'metric-windows' || artifact.kind === 'metric-index'));
+  const report = result.artifacts.find((artifact) => artifact.kind === 'performance-report');
+  assert(report && report.bytes > 0 && report.bytes <= 262144);
+  await expect(page.getByRole('region', { name: 'Verified performance report', exact: true })).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('link', { name: 'Download report', exact: true }).click();
+  const path = join(evidence, 'output-limit-performance-report.txt');
+  await (await download).saveAs(path);
+  const bytes = await readFile(path);
+  assert.equal(bytes.length, report.bytes);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), report.sha256);
+  return report.sha256;
 }

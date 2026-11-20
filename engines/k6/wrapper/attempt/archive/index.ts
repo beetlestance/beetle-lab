@@ -40,6 +40,12 @@ export class ArchiveDigestMismatch extends AttemptError {
     super('artifact');
   }
 }
+// Only the paired-record preflight may produce this error. Neither file was written.
+export class ArchiveCapacityReached extends AttemptError {
+  constructor() {
+    super('output_limit');
+  }
+}
 class ArchiveBusy extends AttemptError {
   readonly code = 'busy';
   constructor() {
@@ -214,7 +220,7 @@ export class MetricArchive {
         256,
       );
       if (this.charged + data.byteLength + index.byteLength + footerReserve > this.ceiling)
-        throw new AttemptError('output_limit');
+        throw new ArchiveCapacityReached();
       await this.write('data', data);
       await this.write('index', index);
       this.count = sequence;
