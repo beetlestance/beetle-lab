@@ -351,6 +351,10 @@ it.each([false, true])('keeps native figures and shows only available target det
   expect(tiles).toHaveTextContent('197 ms');
   expect(tiles).toHaveTextContent('99.92%');
   expect(tiles).not.toHaveTextContent('histogram');
+  expect(screen.getByRole('link', { name: 'Export script' })).toHaveAttribute(
+    'href',
+    expect.stringContaining(`/revisions/${current.revisionId}/script?run=${current.id}&export=script`),
+  );
   expect(screen.getAllByText('Not judged').length).toBeGreaterThan(0);
 });
 

@@ -73,15 +73,16 @@ function NativeSummary({ evidence }: { evidence: NonNullable<EngineResult['nativ
   ] as const;
   const recordedTail = latency.flatMap(([value, percentile]) => (value === null ? [] : [`${percentile} ${ms(value)}`]));
   const requests = formatNumber(evidence.requests, 'integer');
+  const requestLabel = evidence.requests === 1 ? 'HTTP request' : 'HTTP requests';
   const rate = formatNumber(k6RequestsPerSecond(evidence.requests, evidence.durationMs), 'integer');
   const tiles = [
     {
       value: rate ?? requests,
       label:
         rate === null
-          ? 'HTTP requests in all'
+          ? `${requestLabel} in all`
           : requests
-            ? `a second on average · ${requests} HTTP requests`
+            ? `a second on average · ${requests} ${requestLabel}`
             : 'a second on average',
     },
     ...(evidence.p95Ms === null
