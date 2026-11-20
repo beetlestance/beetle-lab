@@ -12,8 +12,10 @@ import { targetCounts } from '../native-application/target-runtime/target.ts';
 const endpoints = { checkout: 60, cart: 35, catalog: 20, product: 45, health: 5 };
 
 /** Container program for the owned synthetic target. */
-async function serve(delays = endpoints, runs = 1) {
+async function serve(delays = endpoints, runs = 1, latencyRise = false) {
   const http = await import('node:http');
+  const workLimit = runs * (latencyRise ? 1600 : 180);
+  const delayPulse = () => (latencyRise && counts.work > 550 && counts.work <= 850 ? 135 : 0);
   const counts = { ready: 0, work: 0, runtime: 0, unexpected: 0 };
   http
     .createServer((request, response) => {
@@ -44,8 +46,11 @@ async function serve(delays = endpoints, runs = 1) {
       }
       const key = request.url?.slice(1);
       if (key && Object.hasOwn(delays, key)) {
-        if (++counts.work > runs * 180) process.exit(3);
-        globalThis.setTimeout(() => response.end('ok'), delays[/** @type {keyof typeof delays} */ (key)]);
+        if (++counts.work > workLimit) process.exit(3);
+        globalThis.setTimeout(
+          () => response.end('ok'),
+          delays[/** @type {keyof typeof delays} */ (key)] + delayPulse(),
+        );
         return;
       }
       counts.unexpected++;
@@ -54,11 +59,11 @@ async function serve(delays = endpoints, runs = 1) {
     .listen(8080, '0.0.0.0');
 }
 
-/** @param {import('../native-application/compose/fixture.ts').Fixture} fixture @param {1 | 2} runs */
-export async function configureStagedTarget(fixture, runs = 1) {
+/** @param {import('../native-application/compose/fixture.ts').Fixture} fixture @param {1 | 2} runs @param {boolean} latencyRise */
+export async function configureStagedTarget(fixture, runs = 1, latencyRise = false) {
   const path = join(fixture.root, 'target.json');
   const override = JSON.parse(await readFile(path, 'utf8'));
-  const program = `(${serve.toString()})(${JSON.stringify(endpoints)},${runs})`;
+  const program = `(${serve.toString()})(${JSON.stringify(endpoints)},${runs},${latencyRise})`;
   assert(Buffer.byteLength(program) <= 8192);
   override.services['synthetic-target'].entrypoint = ['node', '-e', program];
   await writeFile(path, JSON.stringify(override), { mode: 0o600 });

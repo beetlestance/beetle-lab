@@ -20,6 +20,7 @@ import { outputPressure } from './output-pressure.mjs';
 import { cancelArchive } from './cancel-archive.mjs';
 import { livePhases } from './live-phases.mjs';
 import { configureStagedTarget, liveStaged } from './live-staged.mjs';
+import { stagedLatencyActivity } from './staged-latency-activity.mjs';
 import { desktopResultsFamily } from './desktop-results-family.mjs';
 import { stagedStreamStates } from './staged-stream-states.mjs';
 import { liveMotion } from './live-motion.mjs';
@@ -52,6 +53,7 @@ if (
     'staged-stream-states',
     'live-motion',
     'desktop-results-family',
+    'staged-latency-activity',
     'early-cancel',
     'cancel-archive',
     'output-pressure',
@@ -126,6 +128,7 @@ try {
   if (profile === 'live-controls') await configureTarget(f, true, liveTargetReadings);
   if (['live-staged', 'staged-stream-states', 'live-motion'].includes(profile)) await configureStagedTarget(f);
   if (profile === 'desktop-results-family') await configureStagedTarget(f, 2);
+  if (profile === 'staged-latency-activity') await configureStagedTarget(f, 1, true);
   if (profile === 'live-phases') await configureTarget(f, true, liveTargetReadings, 4);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
   const network = profile === 'network' ? await prepareNetwork(f) : undefined;
@@ -225,6 +228,10 @@ try {
     await phase('cancel-during-readiness', () => earlyCancel(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'live-phases') {
     await phase('queue-to-cancelled-result', () => livePhases(appPage, authored, f, evidence ?? f.root));
+  } else if (profile === 'staged-latency-activity') {
+    await phase('observed-stage-activity-and-native-latency-rise', () =>
+      stagedLatencyActivity(appPage, authored, f, evidence ?? f.root),
+    );
   } else if (profile === 'desktop-results-family') {
     await phase('desktop-results-runs-and-compare', () =>
       desktopResultsFamily(appPage, authored, f, evidence ?? f.root),

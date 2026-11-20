@@ -9,9 +9,10 @@ import { PublishedDiagnostics } from '../diagnostics/index.js';
 import { RunPerformanceReport } from '../performance-report/index.js';
 import type { RiseOrigin } from '../live/rise-position.js';
 import { LatencyRise } from '../live/Extras.js';
-import type { PlanRequest, PlanStage } from '../live/plan.js';
+import type { PlanRequest } from '../live/plan.js';
 import { ExecutionActivity } from '../timeline/index.js';
 import { RecordedScenarioStart } from '../timeline/StageSchedule.js';
+import type { StageScheduleRow } from '../timeline/StageSchedule.js';
 import { RunWarnings } from '../warnings/index.js';
 
 import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
@@ -97,7 +98,7 @@ type ReportTabsProps = {
   tab: ReportTab;
   onSelect: (tab: ReportTab) => void;
   requests?: readonly PlanRequest[];
-  stages?: readonly PlanStage[];
+  stages?: readonly StageScheduleRow[];
   origin?: RiseOrigin | undefined;
   phoneTarget?: ReactNode;
   phoneExtras?: ReactNode;
@@ -111,7 +112,7 @@ function Activity({
   origin,
 }: {
   run: Run;
-  stages: readonly PlanStage[];
+  stages: readonly StageScheduleRow[];
   requests: readonly PlanRequest[];
   origin: RiseOrigin | undefined;
 }) {

@@ -19,6 +19,11 @@ An available single-scenario saved plan contributes its scheduled stage labels a
 offsets, including drain. The schedule has a separate heading and list from recorded
 observations. A scheduled offset never establishes that a transition occurred or
 that an interrupted run reached that stage. Other plans omit the schedule.
+One positive HTTP window from the existing chart read may be attached to a
+stage. It must fit wholly inside that stage relative to the native scenario
+origin, and both reads must match scope, attempt, numeric artifact and manifest.
+Windows crossing a stage boundary, drain, missing evidence and unavailable chart
+sources add no observation. A window attests HTTP samples, not stage entry.
 
 ## Recorded scenario origin
 
@@ -59,9 +64,9 @@ These source checks do not qualify a packaged native deployment.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/timeline/index.tsx` | `30e06040ddfd` |
-| `web/src/features/runs/timeline/StageSchedule.tsx` | `0793af469c9b` |
+| `web/src/features/runs/timeline/index.tsx` | `ed62d2481c81` |
+| `web/src/features/runs/timeline/StageSchedule.tsx` | `b7331e2bb95f` |
 | `web/src/features/runs/timeline/Milestones.tsx` | `ba2b2f78e6f1` |
 | `web/src/features/runs/live/Extras.tsx` | `ad293364de0f` |
 | `web/src/features/runs/live/rise-position.ts` | `3c11b2690525` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `19dc348e7d88` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `6fb1422279c5` |

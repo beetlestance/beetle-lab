@@ -100,11 +100,11 @@ their retry controls.
 | `web/src/features/runs/result/RunNote.tsx` | `77d15ea26068` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
 | `web/src/features/runs/result/phone.css` | `ad8d1f8fbea4` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `19dc348e7d88` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `6fb1422279c5` |
 | `web/src/features/runs/result/EndpointTable.tsx` | `992cc7cfab59` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `68d10e26b948` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `e465042f3077` |
+| `web/src/features/runs/result/index.tsx` | `3b1ed714809a` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

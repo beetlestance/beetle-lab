@@ -1,8 +1,8 @@
+import { stagesWithActivity } from './stage-activity.js';
 import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
-import { ResultSectionNav } from './SectionNav.js';
-import type { Section } from './SectionNav.js';
+import { ResultSectionNav, type Section } from './SectionNav.js';
 import { measurementOrigin } from '../live/rise-position.js';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { TargetHeader, usePhaseMode } from './TargetHeader.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunMetricOverview } from '@beetle/contracts/api';
@@ -75,7 +75,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const ready = readyOverview(reads.overview);
   const engine = view.status === 'ready' ? view.result : null;
   const archiveMissing = incompleteArchiveMissing(run, reads, engine);
-  const plan = readPlan(reads.revision?.config);
+  const plan = useMemo(() => readPlan(reads.revision?.config), [reads.revision?.config]);
   const charts = useRecordedCharts(reads.chartHistory, plan.totalMs, run.state);
   const { showTarget, recordedTarget, nativeLayout, beforeNote, afterNote, phoneNote } = useResultLayout({
     run,
@@ -342,7 +342,7 @@ function SupplementaryResult({
         tab={tab}
         onSelect={onSelect}
         requests={plan.requests}
-        stages={plan.stages}
+        stages={stagesWithActivity(plan.stages, overview, charts.data)}
         origin={measurementOrigin(overview)}
         phoneTarget={
           showTarget && (
