@@ -37,7 +37,12 @@ export function Thresholds({
                   {reading.value !== null && (
                     <>
                       {reading.bound === 'at-most' ? '≤ ' : ''}
-                      {observedRuleValue(reading.unit, reading.value, reading.rule.value)}{' '}
+                      {observedRuleValue(
+                        reading.unit,
+                        reading.value,
+                        reading.rule.value,
+                        reading.bound === 'at-most',
+                      )}{' '}
                     </>
                   )}
                   {opText[reading.rule.operator]} {fmt(reading.rule.value)}

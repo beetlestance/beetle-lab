@@ -8,7 +8,7 @@
 }
 .live-stages {
   display: flex;
-  gap: var(--s-8);
+  gap: min(var(--s-8), calc(25% / var(--live-stage-count)));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -17,7 +17,7 @@
   display: grid;
   gap: var(--s-12);
   flex-basis: 0;
-  min-width: 48px;
+  min-width: 0;
 }
 .live-stage-label {
   font-size: var(--fs-sm);
@@ -150,7 +150,7 @@
   .live-stages {
     position: relative;
     font-size: var(--fs-sm);
-    padding-top: calc(1.5em + var(--s-12));
+    padding-top: calc(1.5em + var(--s-8));
   }
   .live-stage {
     gap: 0;

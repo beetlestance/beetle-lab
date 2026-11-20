@@ -129,6 +129,9 @@ export async function liveStaged(page, authored, fixture, evidence) {
   for (const name of Object.keys(endpoints)) await expect(rows.filter({ hasText: '/' + name })).toHaveCount(1);
   await expect(page.locator('.live-threshold.is-holding')).toHaveCount(3);
   await expect(page.getByRole('region', { name: 'Target runtime', exact: true }).locator('figure')).toHaveCount(4);
+  const progress = page.locator('.live-percent');
+  await expect(progress).toHaveText(/^(?:4[5-9]|5\d|6[0-5])%$/, { timeout: 18000 });
+  const captures = [];
   for (const view of [
     { key: 'desktop', width: 1440, height: 2584 },
     { key: 'ultrawide', width: 2560, height: 1751 },
@@ -137,6 +140,7 @@ export async function liveStaged(page, authored, fixture, evidence) {
     await page.setViewportSize({ width: view.width, height: view.height });
     await expect(stage).toContainText(/Hold|Steady/);
     assert(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth));
+    captures.push({ viewport: view.key, progress: await progress.textContent() });
     await page.screenshot({ path: join(evidence, `staged-${view.key}.png`), fullPage: true, animations: 'disabled' });
   }
   const result = page.locator('.result-head').getByText('Passed', { exact: true });
@@ -148,5 +152,8 @@ export async function liveStaged(page, authored, fixture, evidence) {
   const observed = targetCounts(fixture);
   assert(observed.ready === 1 && observed.work >= 90 && observed.work <= 180 && observed.runtime >= 12);
   assert.equal(observed.unexpected, 0);
-  await writeFile(join(evidence, 'staged-live-coverage.json'), JSON.stringify(observed), { mode: 0o600, flag: 'wx' });
+  await writeFile(join(evidence, 'staged-live-coverage.json'), JSON.stringify({ observed, captures }), {
+    mode: 0o600,
+    flag: 'wx',
+  });
 }

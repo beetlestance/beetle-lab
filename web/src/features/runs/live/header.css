@@ -142,12 +142,17 @@
   }
   .live-title-row {
     align-items: start;
+    gap: var(--s-12);
   }
   .live-side {
     justify-items: start;
   }
   .live-actions {
     justify-content: start;
+    gap: var(--s-8);
+  }
+  .live-actions > .btn:not(.live-icon-action) {
+    padding-inline: var(--s-12);
   }
   .live-download-menu {
     right: auto;
