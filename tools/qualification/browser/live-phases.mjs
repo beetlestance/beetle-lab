@@ -153,7 +153,7 @@ async function captureStop(page, first, evidence) {
 async function captureClosingSampler(finalizing, terminal, evidence) {
   const progress = finalizing.getByRole('progressbar', { name: 'Sealing results', exact: true });
   assert.equal(await progress.getAttribute('aria-valuenow'), null);
-  const closed = finalizing.getByText('Target sampler closed', { exact: true });
+  const closed = finalizing.getByRole('listitem').filter({ hasText: /Target sampler closed$/ });
   await expect(closed.or(terminal)).toBeVisible({ timeout: 15000 });
   if (!(await closed.isVisible())) return false;
   await finalizing.screenshot({ path: join(evidence, 'live-finalizing.png'), animations: 'disabled' });
