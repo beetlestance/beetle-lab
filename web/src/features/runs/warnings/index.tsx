@@ -6,7 +6,15 @@ import { useApi } from '../../../app/api.js';
 import { useArtifactReport } from '../../../lib/use-artifact-report.js';
 import { planningWithMedian } from '../load-advice/model.js';
 import { warningReads } from './read.js';
-export function RunWarnings({ params, artifact }: { params: RunArtifactParams; artifact: Artifact }) {
+export function RunWarnings({
+  params,
+  artifact,
+  cleanExit = false,
+}: {
+  params: RunArtifactParams;
+  artifact: Artifact;
+  cleanExit?: boolean;
+}) {
   const { state, retry } = useArtifactReport({ params, artifact }, warningReads, useApi());
   return (
     <section aria-label="Native warnings">
@@ -18,14 +26,22 @@ export function RunWarnings({ params, artifact }: { params: RunArtifactParams; a
           <button onClick={retry}>Reload warnings</button>
         </>
       )}
-      {state.status === 'ready' && <WarningSummary key={artifact.sha256} report={state.value} />}
+      {state.status === 'ready' && <WarningSummary key={artifact.sha256} report={state.value} cleanExit={cleanExit} />}
     </section>
   );
 }
-export function WarningSummary({ report }: { report: K6WarningArtifact }) {
+function noWarnings(native: K6WarningArtifact['native']): boolean {
+  const { insufficientVus, highCardinality, maxDuration, otherWarnings, discardedSegments } = native;
+  return (
+    native.coverage === 'complete' &&
+    [insufficientVus, highCardinality, maxDuration, otherWarnings, discardedSegments].every((count) => count === 0)
+  );
+}
+export function WarningSummary({ report, cleanExit = false }: { report: K6WarningArtifact; cleanExit?: boolean }) {
   const { native } = report;
   return (
     <>
+      {cleanExit && noWarnings(native) && <p>No warnings recorded. k6 exited cleanly.</p>}
       <p>
         Diagnostic coverage: {native.coverage}. Counts represent observed log records, not unique incidents or dropped
         iterations.

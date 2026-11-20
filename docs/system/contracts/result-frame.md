@@ -53,7 +53,9 @@ bounded metrics lane so archive reads cannot hold up lightweight details.
 
 An incomplete run whose chart and overview reads confirm a missing archive
 shows one explanation in place of chart and endpoint sections. The report,
-diagnostics and artifact tabs retain their usual publication checks.
+diagnostics and artifact tabs retain their usual publication checks. Diagnostics
+shows a clean-exit summary only with a recorded exit code of zero and a complete
+verified warning capture with no warnings or discarded segments.
 
 An incomplete result can display whole-run figures from the verified native k6
 summary. They carry native provenance, with endpoints absent when no verified archive exists. Charts may use
@@ -96,7 +98,7 @@ their retry controls.
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
 | `web/src/features/runs/result/phone.css` | `bc210295ad3f` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `c3961288919e` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `bd57a4bf1356` |
 | `web/src/features/runs/result/EndpointTable.tsx` | `20fd4c27e821` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |

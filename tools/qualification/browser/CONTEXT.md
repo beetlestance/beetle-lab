@@ -6,6 +6,8 @@ Six explicit matching source images are mandatory; no build/pull is implicit.
 
 `authoring.mjs` creates namespaces and immutable revisions through visible UI.
 `results.mjs` submits runs and verifies terminal state, metrics and downloads.
+The `failed-results` profile runs clean and failed cases with an explicit evidence
+directory for diagnostics, verified artifacts, milestones and phone captures.
 `run-state.mjs` binds submission/reads to the selected suite, revision and origin;
 its scope-guard regressions run with cleanup tests. New UI harness awaits native proof.
 `inputs-settings.mjs` checks input bytes, empty folder deletion and settings.

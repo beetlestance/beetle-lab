@@ -7,8 +7,9 @@ import { captureK6Warnings } from '@beetle/contracts/k6-warnings';
 import { WarningSummary } from './index.js';
 afterEach(cleanup);
 it('shows partial coverage without implying no warnings and explains absent guidance', () => {
-  render(<WarningSummary report={captureK6Warnings({...source, native: {...source.native, coverage: 'partial'}})} />);
+  render(<WarningSummary report={captureK6Warnings({...source, native: {...source.native, coverage: 'partial'}})} cleanExit />);
   expect(screen.getByText(/may hide additional warnings/)).toBeInTheDocument();
+  expect(screen.queryByText(/k6 exited cleanly/)).not.toBeInTheDocument();
   expect(screen.getByText(/requires one arrival scenario/)).toBeInTheDocument();
 });
 it('plans from configured peak and complete iteration evidence without changing configuration', () => {
@@ -22,4 +23,14 @@ it('plans from configured peak and complete iteration evidence without changing 
   expect(screen.getByText(/Planning estimate: 10 VUs/)).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Headroom (%)'), {target: {value: ''}});
   expect(screen.getByText(/Enter valid headroom/)).toBeInTheDocument(); expect(report.configuration.arrival!.maxVUs).toBe(2);
+});
+
+it.each([
+  { cleanExit: true, otherWarnings: 0, expected: true },
+  { cleanExit: false, otherWarnings: 0, expected: false },
+  { cleanExit: true, otherWarnings: 1, expected: false },
+])('requires both a clean exit and zero warnings (%o)', ({ cleanExit, otherWarnings, expected }) => {
+  const report = captureK6Warnings({ ...source, native: { ...source.native, otherWarnings } });
+  render(<WarningSummary report={report} cleanExit={cleanExit} />);
+  expect(screen.queryByText('No warnings recorded. k6 exited cleanly.') !== null).toBe(expected);
 });
