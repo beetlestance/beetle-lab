@@ -17,17 +17,12 @@ export function SessionApp(options: SessionOptions) {
   }, [gate]);
   if (state.kind === 'paired')
     return (
-      <>
-        {state.session.readOnly && (
-          <p role="status">Read-only restored history. Runs, settings and stored data cannot be changed.</p>
-        )}
-        <App
-          key={state.generation}
-          apiClient={state.client}
-          inputTransfers={state.transfers}
-          session={sessionAccess(state.session, gate.logout)}
-        />
-      </>
+      <App
+        key={state.generation}
+        apiClient={state.client}
+        inputTransfers={state.transfers}
+        session={sessionAccess(state.session, gate.logout)}
+      />
     );
   return (
     <SessionScreen state={state} address={new URL(options.baseUrl).host} check={gate.reconnect}>

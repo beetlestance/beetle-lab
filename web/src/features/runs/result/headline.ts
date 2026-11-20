@@ -31,13 +31,19 @@ export function variantOf(run: Pick<Run, 'state' | 'outcome' | 'reason'>): Varia
 /** Spoken length: "16 minutes", "4 minutes 12 seconds". */
 export function spokenLength(ms: number | null, compact = false): string | null {
   if (ms === null || !Number.isFinite(ms)) return null;
+  if (ms > 0 && ms < 1000) return `${Math.max(1, Math.round(ms))} ms`;
   const total = Math.round(ms / 1000);
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
-  if (compact) return minutes === 0 ? `${seconds}s` : `${minutes} min${seconds === 0 ? '' : ` ${seconds}s`}`;
+  if (compact) return compactDuration(minutes, seconds);
   const part = (value: number, unit: string) => `${value} ${unit}${value === 1 ? '' : 's'}`;
   if (minutes === 0) return part(seconds, 'second');
   return seconds === 0 ? part(minutes, 'minute') : `${part(minutes, 'minute')} ${part(seconds, 'second')}`;
+}
+
+function compactDuration(minutes: number, seconds: number): string {
+  if (minutes === 0) return `${seconds}s`;
+  return seconds === 0 ? `${minutes} min` : `${minutes} min ${seconds}s`;
 }
 
 /** Recorded whole-run average, never a claim that a rate held steadily. */

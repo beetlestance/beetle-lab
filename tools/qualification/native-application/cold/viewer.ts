@@ -4,12 +4,15 @@ import type { Fixture } from '../compose/fixture.js';
 import { ownedOrigin, pause, value } from '../public-api.js';
 import { automaticSession } from '../compose/public.js';
 import { verifyHistoricalClient } from '../recovery.js';
+type ArchivedArtifact = { artifactId: string; kind: string; bytes: number; sha256: string };
+export type ViewerCheck = (origin: string, run: Run, artifacts: readonly ArchivedArtifact[]) => Promise<unknown>;
+
 export async function historicalViewer(
   f: Fixture,
   owner: string,
   history: string,
-  run: Run,
-  artifacts: readonly { artifactId: string; kind: string; bytes: number; sha256: string }[],
+  { run, artifacts }: { run: Run; artifacts: readonly ArchivedArtifact[] },
+  inspect?: ViewerCheck,
 ) {
   const network = `beetle-cold-${owner}`;
   const ingress = `beetle-cold-ingress-${owner}`;
@@ -55,6 +58,7 @@ export async function historicalViewer(
   assert.equal(listed.nextCursor, null);
   const descriptors = listed.items.map(({ artifactId, kind, bytes, sha256 }) => ({ artifactId, kind, bytes, sha256 }));
   assert.deepEqual(descriptors, artifacts);
+  const browser = await inspect?.(origin, run, descriptors);
   f.docker.run(['restart', '--time', '30', backend]);
   let persisted = false;
   for (let n = 0; n < 80; n++) {
@@ -68,7 +72,7 @@ export async function historicalViewer(
   }
   assert(persisted);
   f.docker.run(['stop', '--time', '30', backend]);
-  return { ...reads, mutationsRefused: true, sessionPersisted: true };
+  return { ...reads, mutationsRefused: true, sessionPersisted: true, ...(browser !== undefined ? { browser } : {}) };
 }
 
 function startHistoryBackend(

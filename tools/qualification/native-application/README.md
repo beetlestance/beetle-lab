@@ -14,6 +14,22 @@ qualification at a user's installation or data.
 | Resource/flood/cardinality and telemetry | Their focused directories and the workflow-selected profiles |
 | Native insufficient-VU warning oracle | [smoke-warnings.ts](smoke-warnings.ts) |
 
+## Restored history in the browser
+
+The cold-history browser check seeds a synthetic run, backs it up, and opens the
+restored installation in the packaged read-only viewer. It follows Runs to Results,
+checks that write controls are absent, verifies the downloaded report's SHA-256,
+and saves desktop and phone screenshots. It also runs the cold fixture's
+read-only API, restart, metadata and cleanup checks.
+
+```sh
+BEETLE_BROWSER_EVIDENCE=/absolute/absent/evidence \
+  node --import tsx tools/qualification/browser/restored-history.mjs \
+  FRONTEND BACKEND AGENT INSTALLER ENGINE EXPORT
+```
+
+## Maintained coverage
+
 The warning oracle is retained because it forces insufficient VUs and checks the
 configured advice, diagnostic matching and unchanged artifact hashes after reopen.
 A generic artifact-integrity check does not replace those assertions.

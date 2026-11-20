@@ -3,7 +3,7 @@ import {pendingRunHistorySummary,validateApi} from '@beetle/contracts/api';
 import type {Run,RunHistorySummary,RunMetricOverview} from '@beetle/contracts/api';
 import template from '../../../../../contracts/fixtures/api/valid/run-metric-overview.json' with {type:'json'};
 import {run} from '../test-fixtures.js';
-import {headline} from './headline.js';
+import { headline, spokenLength } from './headline.js';
 const current:Run={...run(),state:'finished',outcome:'passed'};
 function overview(patch:Partial<RunMetricOverview>={}):RunMetricOverview{
  const checked=validateApi('RunMetricOverview',{...template,id:current.id,scope:current.scope,attemptId:current.activeAttemptId,testDurationMs:60000,requestsPerSecond:5,...patch});
@@ -31,4 +31,12 @@ it('does not fill a missing phone title field from history, conceal failure, or 
  expect(headline(current,'Checkout',historical,null,{measurements:overview({requestsPerSecond:null}),phone:true}).title).toBe('Checkout passed');
  expect(headline({...current,outcome:'failed'},'Checkout',historical,null,{measurements:overview(),phone:true}).title).toBe('Checkout failed');
  expect(headline({...current,state:'active',outcome:'pending'},'Checkout',historical,null,{measurements:overview(),phone:true,readOnly:true}).title).toContain('at backup');
+});
+
+
+it('formats nonzero subsecond measurements in milliseconds', () => {
+  expect(spokenLength(7.2)).toBe('7 ms');
+  expect(spokenLength(7.2, true)).toBe('7 ms');
+  expect(spokenLength(0)).toBe('0 seconds');
+  expect(spokenLength(1000)).toBe('1 second');
 });
