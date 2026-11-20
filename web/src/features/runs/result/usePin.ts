@@ -30,7 +30,11 @@ export function usePin(run: Run) {
       (signal) => (pin ? api.pinRun({ params, body, signal }) : api.unpinRun({ params, body, signal })),
       (value) => {
         setReceipt(value);
-        toast.show(value.pinned ? `Run ${shortId(run.id)} is pinned` : `Run ${shortId(run.id)} is unpinned`);
+        toast.show(
+          value.pinned
+            ? `Run ${shortId(run.id)} is pinned. Retention will not remove it.`
+            : `Run ${shortId(run.id)} is unpinned`,
+        );
         void client.invalidateQueries({ queryKey: queryKeys.run(organizationId, workspaceId, run.id), exact: true });
         void client.invalidateQueries({ queryKey: [...queryKeys.runs(organizationId, workspaceId), 'page'] });
       },
