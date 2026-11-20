@@ -89,7 +89,7 @@ it('pins from the receipt, shows the toast and re-reads the run', async () => {
   mount(f.client, path);
   fireEvent.click(await screen.findByRole('button', { name: 'Pin this run' }));
   expect(await screen.findByRole('button', { name: '✓ Pinned' })).toHaveAttribute('aria-pressed', 'true');
-  expect(await screen.findByText(`Run ${runId.slice(0, 4)} is pinned`)).toBeVisible();
+  expect(await screen.findByText(`Run ${runId.slice(0, 4)} is pinned. Retention will not remove it.`)).toBeVisible();
   const post = f.records.find((record) => record.method === 'POST')!;
   expect(post.path).toMatch(/\/runs\/[0-9a-f-]+\/pin$/);
   expect(post.body).toMatchObject({ scope: finished().scope });

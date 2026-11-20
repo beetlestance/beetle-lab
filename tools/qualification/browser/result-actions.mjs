@@ -15,8 +15,9 @@ export async function resultActions(page, authored, evidence) {
   const address = await execute(page);
   await expect(page.getByRole('region', { name: 'Verified performance report' })).toBeVisible();
   const run = await readRun(page, address);
-  await pinToast(page, run.id, evidence);
+  await expect(page.getByText('Reading recorded chart history…', { exact: true })).toHaveCount(0);
   await downloadResults(page, run, evidence);
+  await pinToast(page, run.id, evidence);
   const note = await keepLatestNote(page, address, evidence);
   await page.goto(authored.workspace + '/runs');
   const search = page.getByRole('searchbox', { name: 'Search runs' });
@@ -88,6 +89,13 @@ async function downloadResults(page, run, evidence) {
     await expect(download).toHaveAttribute('href', runArtifactContentPath(params));
     const [saved] = await Promise.all([page.waitForEvent('download'), download.click()]);
     const path = join(evidence, kind);
+    const problem = await saved.failure();
+    if (problem) {
+      const diagnostic = await page.request.get(runRoute.origin + runArtifactContentPath(params));
+      const status = diagnostic.status();
+      await diagnostic.dispose();
+      throw Error(`${kind} browser download failed: ${problem}. A separate diagnostic read returned ${status}.`);
+    }
     await saved.saveAs(path);
     const bytes = await readFile(path);
     assert.equal(bytes.length, artifact.bytes);
