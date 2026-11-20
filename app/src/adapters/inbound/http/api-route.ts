@@ -56,6 +56,10 @@ function jsonObject(value: unknown): object {
   }
 }
 
+export function apiRoutePath(path: ApiOperation['path']): string {
+  return path.replace(/\{([A-Za-z]+)\}/g, ':$1');
+}
+
 /** Register only shipped operations, after compiler and authentication setup.
  * Handlers receive validated DTOs, never a reply or transport response object.
  * Artifact/SSE byte routes have a separate bounded transfer owner.
@@ -73,7 +77,7 @@ export function registerApiOperation<N extends ApiOperation['name']>(
   const signalFor = options.signalFor;
   server.route({
     method: operation.method,
-    url: operation.path.replace(/\{([A-Za-z]+)\}/g, ':$1'),
+    url: apiRoutePath(operation.path),
     ...(limit === undefined ? {} : { bodyLimit: limit }),
     schema: {
       ...('params' in operation ? { params: apiMessageSchemas[operation.params] } : {}),

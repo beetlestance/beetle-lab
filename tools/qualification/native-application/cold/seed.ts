@@ -9,7 +9,7 @@ import { automaticClient, readContent, hash } from '../compose/public.js';
 import { readyContent } from '../compose/content-readiness.js';
 import { saveRevision, value, finished } from '../public-api.js';
 import { targetCounts, controlBudget, agentState } from '../compose/evidence.js';
-export async function seed(f: Fixture, own: (installation: string) => Promise<void>) {
+export async function seed(f: Fixture, own: (installation: string) => Promise<void>, withPeer = false) {
   f.compose('up', '-d', '--no-build');
   const client = await automaticClient(f.origin);
   const installation = client.installation.id;
@@ -18,20 +18,23 @@ export async function seed(f: Fixture, own: (installation: string) => Promise<vo
   const reserve = controlBudget(f);
   const config = await seedConfiguration();
   const saved = await saveRevision(client.api, { offer: { config } });
-  const queued = value(
-    await client.api.createRun({
-      params: saved.params,
-      body: {
-        scope: saved.scope,
-        requestId: randomUUID(),
-        revisionId: saved.revision.id,
-        engineProfile: 'k6-local',
-        budget: client.installation.values.runDefaults.budget,
-        executionPolicy: { mode: 'parallel', preferIdle: false },
-      },
-    }),
-  );
-  const terminal = await finished(client.api, queued, 200);
+  const runOnce = async () => {
+    const queued = value(
+      await client.api.createRun({
+        params: saved.params,
+        body: {
+          scope: saved.scope,
+          requestId: randomUUID(),
+          revisionId: saved.revision.id,
+          engineProfile: 'k6-local',
+          budget: client.installation.values.runDefaults.budget,
+          executionPolicy: { mode: 'parallel', preferIdle: false },
+        },
+      }),
+    );
+    return await finished(client.api, queued, 200);
+  };
+  const terminal = await runOnce();
   const listed = value(
     await client.api.listRunArtifacts({
       params: { ...terminal.params, attemptId: terminal.run.activeAttemptId },
@@ -66,7 +69,8 @@ export async function seed(f: Fixture, own: (installation: string) => Promise<vo
     assert.equal(hash(bytes), item.sha256);
     artifacts.push({ artifactId: item.artifactId, kind: item.kind, bytes: item.bytes, sha256: item.sha256 });
   }
-  return { installation, run: terminal.run, reserve, artifacts, requests: targetCounts(f) };
+  const peer = withPeer ? (await runOnce()).run : undefined;
+  return { installation, run: terminal.run, reserve, artifacts, peer, requests: targetCounts(f, withPeer ? 2 : 1) };
 }
 
 async function seedConfiguration() {

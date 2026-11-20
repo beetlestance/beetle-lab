@@ -57,13 +57,13 @@ export function controlBudget(f: Fixture) {
   assert.deepEqual(reserve, { ...total, outputBytes: 0, stagingBytes: 0 });
   return total;
 }
-export function targetCounts(f: Fixture) {
+export function targetCounts(f: Fixture, executions = 1) {
   const id = f.compose('ps', '-q', 'synthetic-target');
   assert(/^[a-f0-9]{64}$/.test(id));
   const program =
     "fetch('http://127.0.0.1:8080/counts',{signal:AbortSignal.timeout(2000)}).then(r=>r.text()).then(s=>{if(s.length>256)process.exit(3);console.log(s)}).catch(()=>process.exit(2));";
   const counts = f.docker.json(['exec', id, 'node', '-e', program]);
-  assert.deepEqual(counts, { ready: 1, work: 1, unexpected: 0 });
+  assert.deepEqual(counts, { ready: executions, work: executions, unexpected: 0 });
   return counts;
 }
 export function engines(f: Fixture, installation: string) {

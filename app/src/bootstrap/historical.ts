@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { apiOperations, validateApi } from '@beetle/contracts/api';
 import type { RestoredBackup } from '@beetle/contracts/api';
 import { ApiFault } from '../adapters/inbound/http/api-errors.js';
+import { apiRoutePath } from '../adapters/inbound/http/api-route.js';
 import type { LocalSessionStore } from '../ports/local-session.js';
 import type { InputStore } from '../ports/inputs.js';
 import type { InputService } from '../ports/input-service.js';
@@ -62,15 +63,15 @@ export function restoredBackup(backup: HistoricalOptions['backup']): RestoredBac
   return Object.freeze(value);
 }
 export function protectHistorical(server: FastifyInstance): void {
-  const names = new Set(['openLocalBrowserSession', 'pairBrowserSession', 'logoutBrowserSession']);
-  const exchanges = new Set(
+  const names = new Set(['openLocalBrowserSession', 'pairBrowserSession', 'logoutBrowserSession', 'compareRuns']);
+  const permitted = new Set(
     apiOperations
       .filter((operation) => names.has(operation.name))
-      .map((operation) => `${operation.method} ${operation.path}`),
+      .map((operation) => `${operation.method} ${apiRoutePath(operation.path)}`),
   );
   server.addHook('onRequest', async (request) => {
     if (request.method === 'GET' || request.method === 'HEAD') return;
-    if (!exchanges.has(`${request.method} ${request.routeOptions.url}`)) throw new ApiFault('forbidden');
+    if (!permitted.has(`${request.method} ${request.routeOptions.url}`)) throw new ApiFault('forbidden');
   });
 }
 

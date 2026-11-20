@@ -28,14 +28,18 @@ export async function executeCold({ f, output, legacy, inspectViewer }: ColdOpti
   let status = 'failed';
   const results: Record<string, unknown> = {};
   try {
-    const seeded = await seed(f, async (id) => {
-      installation = id;
-      await writeFile(
-        join(output, 'installation-owner.json'),
-        JSON.stringify({ project: f.project, installationId: id }),
-        { flag: 'wx', mode: 0o600 },
-      );
-    });
+    const seeded = await seed(
+      f,
+      async (id) => {
+        installation = id;
+        await writeFile(
+          join(output, 'installation-owner.json'),
+          JSON.stringify({ project: f.project, installationId: id }),
+          { flag: 'wx', mode: 0o600 },
+        );
+      },
+      inspectViewer !== undefined,
+    );
     results.seed = seeded;
     phase = 'cold-stop';
     f.compose('stop');
