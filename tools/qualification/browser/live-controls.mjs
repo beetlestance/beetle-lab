@@ -249,7 +249,9 @@ async function capturePhone(page, evidence) {
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
   await capture(page, evidence, 'live-scarab-phone');
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('radio', { name: 'Darkroom', exact: true }).click();
+  await page.keyboard.press('Escape');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'darkroom');
   await capture(page, evidence, 'live-darkroom-phone');
 }
