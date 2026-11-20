@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { sealEngineResult } from '@beetle/contracts';
 import { nativeOverview } from './native-overview.js';
-import { ArchiveDigestMismatch } from './archive/index.js';
+import { ArchiveCapacityReached, ArchiveDigestMismatch } from './archive/index.js';
 import type { MetricArchive, ArchiveEvidence } from './archive/index.js';
 import { renderPerformanceReports, ReportError } from '../../report/index.js';
 import type { EngineResult } from '@beetle/contracts';
@@ -47,6 +47,23 @@ function canRetainNativeSummary(receipt: NonNullable<State['execution']>, mapped
   );
 }
 
+/** Retain bounded non-archive artifacts after a pre-write limit stopped the measured child. */
+export function acceptArchiveCapacityStop(state: State, failure: AttemptError, collecting: boolean): void {
+  if (!(failure instanceof ArchiveCapacityReached) || !collecting || !stoppedAtSink(state.execution)) throw failure;
+  state.reason = 'output_limit';
+}
+
+function stoppedAtSink(execution: State['execution']): boolean {
+  return (
+    execution?.ok === false &&
+    execution.code === 'metrics' &&
+    execution.metricFailure?.source === 'callback' &&
+    execution.process?.cause === 'sink' &&
+    execution.process.collection === 'partial' &&
+    execution.metrics === null
+  );
+}
+
 export function resultEvidence(
   state: State,
   compiled: CompiledInput,
@@ -62,7 +79,7 @@ export function resultEvidence(
     scope: state.scope!,
     process: receipt.process,
     terminalObservedAt: receipt.terminalObservedAt,
-    orchestrationFailure: failure,
+    orchestrationFailure: state.reason === 'output_limit' ? 'output_limit' : failure,
     orchestrationQuiescent: true,
     summary: receipt.summary?.ok ? receipt.summary.evidence : null,
     metrics: receipt.metrics,

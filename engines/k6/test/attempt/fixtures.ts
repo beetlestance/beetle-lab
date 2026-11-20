@@ -14,7 +14,7 @@ import type { StagedK6Options } from '../../wrapper/attempt/index.js';
 
 const native = vi.hoisted(() => ({ calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false,
   closeFails: false, buildFails: false, summaryTamper: false, built: undefined as BuildInput | undefined,
-  warnings: false, diagnostics: false, summaryPadding: 0, withDispatch: false,
+  warnings: false, diagnostics: false, summaryPadding: 0, withDispatch: false, observeSinkStop: false,
   metricOffsets: undefined as readonly number[] | undefined, wallOffset: 0,
   blockBuild: undefined as Promise<void> | undefined, blockClose: undefined as Promise<void> | undefined }));
 export { native };
@@ -28,7 +28,15 @@ vi.mock('../../wrapper/process/index.js', () => ({ createNativeProcess: (input: 
   run: async () => {
     native.calls++;
     const bytes = stream();
-    if (bytes.length) await deliverMetrics(input, bytes);
+    try {
+      if (bytes.length) await deliverMetrics(input, bytes);
+    } catch (error) {
+      if (!native.observeSinkStop) throw error;
+      return {
+        spawned: true, exitCode: null, signal: 'SIGKILL', cause: 'sink', metricBytes: bytes.length,
+        diagnosticBytes: 0, collection: 'partial', state: 'stopped', stdioClosed: true, groupAbsent: true, quiescent: true,
+      };
+    }
     const raw = projected(native.built!);
     await writeFile(join(input.directory, 'beetle-evidence.json'), (native.summaryTamper ? raw + ' ' : raw)
       + ' '.repeat(native.summaryPadding), { mode: 0o600, flag: 'wx' });
@@ -39,7 +47,7 @@ vi.mock('../../wrapper/process/index.js', () => ({ createNativeProcess: (input: 
 }) }));
 async function deliverMetrics(input: NativeProcessOptions, bytes: Uint8Array): Promise<void> {
   const budget = { signal: input.signal!, deadlineMs: input.attempt.mode === 'managed' ? input.attempt.deadlineMs : now + 1000 };
-  if (!native.metricOffsets) { await input.sink(bytes, budget); return; }
+  if (!native.metricOffsets || native.observeSinkStop) { await input.sink(bytes, budget); return; }
   const offsets = [...native.metricOffsets];
   for (const [index, line] of Buffer.from(bytes).toString('utf8').trimEnd().split('\n').entries()) {
     if (index >= 3) native.wallOffset = offsets[index - 3]!;
@@ -76,7 +84,7 @@ function projected(input: BuildInput): string {
 export function resetNative(): void {
   native.withDispatch = false;
   Object.assign(native, { calls: 0, closes: 0, failed: false, discovery: false, missingMarker: false, closeFails: false,
-    buildFails: false, summaryTamper: false, warnings: false, diagnostics: false, summaryPadding: 0, withDispatch: false, metricOffsets: undefined, wallOffset: 0,
+    buildFails: false, summaryTamper: false, warnings: false, diagnostics: false, summaryPadding: 0, withDispatch: false, observeSinkStop: false, metricOffsets: undefined, wallOffset: 0,
     built: undefined, blockBuild: undefined, blockClose: undefined });
 }
 export async function fixture() {

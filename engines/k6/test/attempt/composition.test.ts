@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { sealEngineResult, verifyEngineResultSeal } from '@beetle/contracts';
 import type { ControlEvent } from '@beetle/contracts';
+import { MetricArchive } from '../../wrapper/attempt/archive/index.js';
+import { AttemptError } from '../../wrapper/attempt/types.js';
 import { MetricFiles } from '../../wrapper/attempt/archive/files.js';
 import { replayControl } from '../../wrapper/control/index.js';
 import { fixture, native, resetNative } from './fixtures.js';
@@ -40,6 +42,54 @@ it('accounts execute history and collect final drain separately through real sta
   expect(events.find(event => event.kind === 'phase.finished' && event.phase === 'collect'))
     .toMatchObject({ payload: { outputBytes: total - executeBytes } });
   expect(Object.values(receipt.quiescence).every(value => value === 'confirmed')).toBe(true);
+});
+it.each([true, false])('publishes bounded reports only for a confirmed paired-window cap (%s)', async pairedCap => {
+  const f = await setup();
+  native.observeSinkStop = true;
+  native.metricOffsets = Array.from({ length: 450 }, (_, index) => index * 1000);
+  f.manifest.phases.find(phase => phase.phase === 'execute')!.outputBytes = 1_048_576 + 65_536;
+  f.offer.installedIdentity = syntheticInstalledIdentity(f.manifest);
+  await f.save();
+  // In the paired-cap case the real producer exhausts the 64 KiB archive allowance.
+  const rejectUnknown = pairedCap ? undefined : vi.spyOn(MetricArchive.prototype, 'append')
+    .mockRejectedValueOnce(new AttemptError('output_limit'));
+  try {
+    const events: ControlEvent[] = [];
+    const receipt = await f.run({ onEvent: async event => { events.push(event); } });
+    expect(receipt).toMatchObject({
+      ok: false, reason: 'output_limit',
+      execution: { ok: false, code: 'metrics', process: { cause: 'sink' }, metrics: null },
+    });
+    if (!pairedCap) {
+      expect(receipt.result).toBeNull();
+      return;
+    }
+    const retainedBytes = (await stat(join(f.outputRoot, 'metric-windows.ndjson'))).size
+      + (await stat(join(f.outputRoot, 'metric-index.ndjson'))).size;
+    expect(retainedBytes).toBeGreaterThan(60_000);
+    expect(retainedBytes).toBeLessThanOrEqual(65_536);
+    for (const name of ['metric-windows.ndjson', 'metric-index.ndjson']) {
+      const rows = (await readFile(join(f.outputRoot, name), 'utf8')).trimEnd().split('\n');
+      expect(JSON.parse(rows.at(-1)!)).not.toMatchObject({ kind: 'end' });
+    }
+    expect(events.find(event => event.kind === 'phase.finished' && event.phase === 'execute'))
+      .toMatchObject({ payload: { outputBytes: retainedBytes } });
+    expect(receipt.publication?.ok).toBe(true);
+    expect(receipt.result).toMatchObject({ outcome: 'inconclusive', execution: { status: 'error', reason: 'output_limit' } });
+    const artifacts = receipt.result!.artifacts;
+    expect(artifacts.map(artifact => artifact.kind)).toEqual(['numeric-final', 'performance-report', 'metrics-csv']);
+    expect(events.find(event => event.kind === 'phase.finished' && event.phase === 'collect'))
+      .toMatchObject({ payload: { outputBytes: artifacts.reduce((bytes, artifact) => bytes + artifact.bytes, 0) } });
+    expect(events.find(event => event.kind === 'phase.finished' && event.phase === 'seal'))
+      .toMatchObject({ payload: { outputBytes: await stat(join(f.outputRoot, 'engine-result.json')).then(value => value.size) } });
+    const report = artifacts[1]!;
+    expect(createHash('sha256').update(await readFile(join(f.outputRoot, report.relativePath))).digest('hex'))
+      .toBe(report.sha256);
+    const numeric = JSON.parse(await readFile(join(f.outputRoot, 'numeric-final.json'), 'utf8'));
+    expect(numeric).toMatchObject({ metrics: null, windowsRetained: false, history: null });
+  } finally {
+    rejectUnknown?.mockRestore();
+  }
 });
 it.each([false, true])('composes actual compiler/execution/parser/collector/mapper/seal/publication (required failure %s)', async failed => {
   const f = await setup(); native.failed = failed;

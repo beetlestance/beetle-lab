@@ -25,7 +25,7 @@ reports 512 KiB, target 1 MiB if enabled, live min(8 MiB, total/8) if enabled; o
 further capped at the execute-phase allowance less the 1 MiB summary reserve and the
 live allowance. History or build below 64 KiB, or a collect phase with less than
 64 KiB drain room, fails `output_limit` before native load; history is never
-silently disabled or thinned. Charged bytes count once, in the phase that wrote them.
+silently disabled or thinned. A paired-window preflight stop may publish verified reports without the archive after confirmed native stop and collection. Bytes are charged in their producing phase.
 
 All artefacts share one custody rule (`engines/k6/wrapper/artifact-custody`):
 exclusive no-follow create, mode 0600, expected UID, one link, streaming SHA-256
@@ -213,7 +213,7 @@ a failed revocation keeps ownership and rejects close.
 | Code | Reviewed |
 | --- | --- |
 | `engines/k6/wrapper/attempt/reservation.ts` | `bb58468fcfdd` |
-| `engines/k6/wrapper/attempt/archive/` | `7683fd6aee33` |
+| `engines/k6/wrapper/attempt/archive/` | `99c7e6430715` |
 | `app/src/application/run-metrics/` | `d4944e23743b` |
 | `app/src/application/run-comparison/` | `7e89cc89c778` |
 | `contracts/src/k6-live/` | `3b8aa2acc2e3` |
