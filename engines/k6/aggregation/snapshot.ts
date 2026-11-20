@@ -26,6 +26,7 @@ export interface MetricSnapshot {
   readonly totals: readonly SeriesTotal[];
   readonly totalsComplete: true;
   readonly requestSpan?: RequestSpan;
+  readonly scenarioStartedAtMs?: number;
   readonly measurement: Readonly<{ complete: true; sourceTimeMs: number }>;
   readonly windowCoverage: Readonly<{ complete: boolean; latePoints: number; markerDelayDroppedBuckets: number }>;
   readonly quantiles: 'histogram-estimate';

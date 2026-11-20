@@ -1,13 +1,13 @@
 import { sleep, check } from 'k6';
 import execution from 'k6/execution';
 import http from 'k6/http';
-import { Counter } from 'k6/metrics';
-import { counterNames, metricLayout } from '../plan/index.js';
+import { Counter, Gauge } from 'k6/metrics';
+import { counterNames, metricLayout, scenarioStartedMetric } from '../plan/index.js';
 import type { CompiledSuite, CounterName, DeepReadonly } from '../plan/index.js';
 import { utf8Bytes } from './bounds.js';
 import { attemptDeadline, setupDeadline, validateAttempt } from './attempt.js';
 import type { AttemptBudget } from './attempt.js';
-import { nativeMetric, nativePhase } from './phase.js';
+import { nativeControlMetric, nativeMetric, nativePhase } from './phase.js';
 import { stop } from './failure.js';
 import { createRuntime } from './index.js';
 import type { HttpRequest, HttpResponse, Runtime, RuntimeAdapters } from './types.js';
@@ -55,7 +55,9 @@ function stagedSecrets(suite: DeepReadonly<CompiledSuite>): (name: string) => st
   }
   return (name) => values.get(name) ?? stop('secret');
 }
-export function createNativeRuntime(suite: DeepReadonly<CompiledSuite>, attempt: AttemptBudget): Runtime {
+type NativeRuntime = Runtime & { observeScenarioStart?(): void };
+
+export function createNativeRuntime(suite: DeepReadonly<CompiledSuite>, attempt: AttemptBudget): NativeRuntime {
   validateAttempt(attempt);
   if (attempt.mode === 'managed') attemptDeadline(attempt, Date.now());
   metricLayout(suite);
@@ -71,7 +73,22 @@ export function createNativeRuntime(suite: DeepReadonly<CompiledSuite>, attempt:
       if (name === 'beetle_assertion_failures') check(value, { assertion_passed: (failed) => failed === 0 }, tags);
     },
   };
-  return createRuntime({ suite, adapters, resolveSecret: stagedSecrets(suite) });
+  const runtime = createRuntime({ suite, adapters, resolveSecret: stagedSecrets(suite) });
+  if (attempt.mode !== 'managed' || suite.loadPlan.execution.scenarios.length !== 1) return runtime;
+  const scenarioStarted = new Gauge(scenarioStartedMetric);
+  let firstIteration = true;
+  return {
+    ...runtime,
+    observeScenarioStart() {
+      if (!firstIteration) return;
+      firstIteration = false;
+      if (execution.scenario.iterationInInstance !== 0) return;
+      const startTime = execution.scenario.startTime;
+      if (Number.isSafeInteger(startTime) && startTime > 0) {
+        nativeControlMetric(scenarioStarted, startTime);
+      }
+    },
+  };
 }
 export function nativeSetup(runtime: Runtime, attempt: AttemptBudget): { deadlineMs: number } {
   nativePhase('prepare');
@@ -80,7 +97,7 @@ export function nativeSetup(runtime: Runtime, attempt: AttemptBudget): { deadlin
   return { deadlineMs };
 }
 export function nativeIteration(
-  runtime: Runtime,
+  runtime: NativeRuntime,
   suite: DeepReadonly<CompiledSuite>,
   index: number,
   data: unknown,
@@ -92,6 +109,7 @@ export function nativeIteration(
     setupDeadline(data),
     execution.scenario.startTime + scenario.upperBoundMs - scenario.startOffsetMs,
   );
+  runtime.observeScenarioStart?.();
   const result = runtime.iterate({
     scenarioId: scenario.id,
     vu: execution.vu.idInTest,

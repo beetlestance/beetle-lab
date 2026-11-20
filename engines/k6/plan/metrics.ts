@@ -6,6 +6,8 @@ export { measureStartedMetric, counterNames, metricDefinitions } from '@beetle/c
 export type { CounterName, NativeMetricDefinition } from '@beetle/contracts/k6-metrics';
 export type { MetricKind } from '@beetle/contracts/metrics';
 export type MetricLayout = K6MetricLayout;
+// Private managed-stream evidence, outside the queryable metric catalogue.
+export const scenarioStartedMetric = 'beetle_scenario_started_at_ms';
 const kinds = new Map(metricDefinitions.map((metric) => [metric.name, metric.kind]));
 const trendStats = new Set(['avg', 'min', 'max', 'med', 'p50', 'p90', 'p95', 'p99']);
 function supported(metric: string, stat: string): boolean {

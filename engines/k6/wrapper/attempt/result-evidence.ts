@@ -131,6 +131,17 @@ function numericSnapshot(snapshot: NonNullable<State['execution']>['metrics']) {
   return { totals, totalsComplete, measurement, windowCoverage, quantiles };
 }
 
+function advisoryNumeric(
+  base: object,
+  preview: ArchiveEvidence['httpP95Preview'],
+  scenarioStartedAtMs: number | undefined,
+): readonly unknown[] {
+  const withPreview = preview ? { ...base, version: 5, httpP95Preview: preview } : undefined;
+  if (scenarioStartedAtMs === undefined) return withPreview ? [withPreview] : [];
+  const withOrigin = { ...base, scenarioStartedAtMs };
+  return withPreview ? [{ ...withPreview, scenarioStartedAtMs }, withPreview, withOrigin] : [withOrigin];
+}
+
 export function writeNumericEvidence(
   artifacts: Pick<Artifacts, 'numeric'>,
   state: State,
@@ -162,7 +173,11 @@ export function writeNumericEvidence(
       : null,
     quantiles: state.execution!.metrics?.quantiles ?? 'unknown',
   };
-  return artifacts.numeric(base, allowance, preview ? { ...base, version: 5, httpP95Preview: preview } : undefined);
+  return artifacts.numeric(
+    base,
+    allowance,
+    advisoryNumeric(base, preview, state.execution!.metrics?.scenarioStartedAtMs),
+  );
 }
 export function buildUsage(state: State): { bytes: number; peakBytes: number } | null {
   const build = state.execution?.build;

@@ -81,7 +81,10 @@ function aggregateMatches(value: RunMetricOverview): boolean {
 function sourceMatches(value: RunMetricOverview): boolean {
   const source = value.source;
   if (!source) return false;
-  if (source.numericVersion === 3 && value.testDurationMs !== null) return false;
+  if (source.numericVersion === 3 && (value.testDurationMs !== null || value.scenarioStartedAtMs !== undefined))
+    return false;
+  if (value.scenarioStartedAtMs !== undefined && value.scenarioStartedAtMs < source.measurementSourceTimeMs)
+    return false;
   return (
     source.coverage.complete === (source.coverage.latePoints === 0 && source.coverage.markerDelayDroppedBuckets === 0)
   );
@@ -98,7 +101,12 @@ function unready(value: RunMetricOverview): boolean {
     value.checks,
     value.droppedIterations,
   ];
-  return missing.every((field) => field === null) && value.endpoints.length === 0 && value.omittedEndpoints === 0;
+  return (
+    value.scenarioStartedAtMs === undefined &&
+    missing.every((field) => field === null) &&
+    value.endpoints.length === 0 &&
+    value.omittedEndpoints === 0
+  );
 }
 function checksMatch(check: RunMetricOverview['checks']): boolean {
   return (

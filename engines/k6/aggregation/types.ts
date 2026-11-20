@@ -29,6 +29,7 @@ export class MetricStreamError extends Error {
 }
 export interface MetricStreamOptions {
   readonly metrics: readonly MetricDefinition[];
+  readonly scenarioOrigin?: boolean;
   readonly allowedSeries?: readonly AllowedMetricSeries[];
   readonly requestLabels: readonly string[];
   readonly assertionLabels: readonly string[];

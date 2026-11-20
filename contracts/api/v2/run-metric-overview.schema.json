@@ -95,6 +95,11 @@
             }
           ]
         },
+        "scenarioStartedAtMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8640000000000000
+        },
         "testDurationMs": {
           "anyOf": [
             {

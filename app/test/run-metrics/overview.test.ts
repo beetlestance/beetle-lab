@@ -33,6 +33,18 @@ it('uses measured duration and native assertion counters, excluding engine count
   expect(value.endpoints[0]).toMatchObject({ request: 'r0', requestCount: 8, requestsPerSecond: 4 });
   expect(runMetricOverviewMatches(value, key(f))).toBe(true);
 });
+it('projects the sealed scenario origin using the same verified numeric read', async () => {
+  const f = await fixture(); rewrite(f, 'numeric-final', text => {
+    const value = JSON.parse(text);
+    return JSON.stringify({ ...value, version: 4, timing: { testRunDurationMs: 2000 },
+      scenarioStartedAtMs: value.metrics.measurement.sourceTimeMs + 600 });
+  });
+  const service = f.service(); services.push(service);
+  const value = await service.reader.getRunMetricOverview(key(f), context());
+  expect(value.scenarioStartedAtMs).toBe(value.source!.measurementSourceTimeMs + 600);
+  expect(runMetricOverviewMatches(value, key(f))).toBe(true);
+  expect(runMetricOverviewMatches({ ...value, scenarioStartedAtMs: value.source!.measurementSourceTimeMs - 1 }, key(f))).toBe(false);
+});
 it('keeps missing assertion failures unknown rather than assuming no failures', async () => {
   const f = await fixture(); rewrite(f, 'numeric-final', text => {
     const v = JSON.parse(text); v.metrics.totals.push({ metric: 'beetle_assertions', kind: 'counter', scope: 'execute', tags: { phase: 'execute', assertion: 'a0' }, total: { kind: 'counter', sum: 9 } }); return JSON.stringify(v);

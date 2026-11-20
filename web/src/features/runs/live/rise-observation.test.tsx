@@ -14,6 +14,14 @@ it('uses the verified marker and request alias while keeping the native observat
  query.mockReturnValue({data:source,isError:false});render(<LatencyRise {...props} />);
  expect(screen.getByText(/06:40 into recorded engine execution/).closest('p')).toHaveTextContent('mostly POST /checkout');
 });
+it('uses the recorded scenario clock only for the matching native sample source', () => {
+  const scenarioStartedAtMs = origin.measurementSourceTimeMs + 3000;
+  query.mockReturnValue({data:source,isError:false});
+  const view = render(<LatencyRise {...props} origin={{ ...origin, scenarioStartedAtMs }} />);
+  expect(screen.getByText(/06:37 into the recorded scenario/)).toBeVisible();
+  view.rerender(<LatencyRise {...props} origin={{ ...origin, scenarioStartedAtMs, manifestDigest: 'different' }} />);
+  expect(screen.getByText(/Recorded source timestamp/)).toBeVisible();
+});
 it('hides cached native figures after a failure and provides explicit non-overlapping retry',()=>{
  const refetch=vi.fn();query.mockReturnValue({data:source,isError:true,isFetching:false,refetch});
  render(<LatencyRise {...props} />);expect(screen.queryByText(/mostly POST/)).toBeNull();

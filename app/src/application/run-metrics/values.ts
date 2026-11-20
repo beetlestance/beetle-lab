@@ -43,6 +43,7 @@ export function descriptor(value: SeriesTotal, ordinal: number): RunMetricSeries
 export interface NumericEvidence {
   readonly version: 3 | 4 | 5;
   readonly httpP95Preview?: RunHistorySummary['httpP95Preview'];
+  readonly scenarioStartedAtMs?: number;
   readonly testDurationMs: number | null;
   readonly totals: readonly SeriesTotal[];
   readonly coverage: RunMetricCoverage;
@@ -86,19 +87,34 @@ function snapshot(value: unknown) {
 export function captureNumeric(input: unknown, scope: unknown): NumericEvidence | null {
   const version = artifactVersion(input);
   if (version !== 3 && version !== 4 && version !== 5) return null;
-  const keys = ['version', 'scope', 'metrics', 'diagnostics', 'buildUsage', 'windowsRetained', 'history', 'quantiles'];
-  if (version >= 4) keys.push('timing');
-  if (version === 5) keys.push('httpP95Preview');
-  const v = fields(input, keys);
+  const v = numericFields(input, version);
   numericScope(v.scope, scope);
   if (v.windowsRetained !== true || v.quantiles !== 'histogram-estimate') return fail();
+  const measurements = snapshot(v.metrics);
   return {
-    ...snapshot(v.metrics),
+    ...measurements,
+    ...scenarioOrigin(v, measurements.sourceTimeMs),
     ...archiveMetadata(v.history),
     version,
     testDurationMs: version >= 4 ? testDuration(v.timing) : null,
     ...(version === 5 ? { httpP95Preview: numericPreview(v.httpP95Preview) } : {}),
   };
+}
+function numericFields(input: unknown, version: NumericEvidence['version']) {
+  const keys = ['version', 'scope', 'metrics', 'diagnostics', 'buildUsage', 'windowsRetained', 'history', 'quantiles'];
+  if (version >= 4) keys.push('timing');
+  if (version === 5) keys.push('httpP95Preview');
+  if (version >= 4 && Object.hasOwn(input as object, 'scenarioStartedAtMs')) keys.push('scenarioStartedAtMs');
+  return fields(input, keys);
+}
+function scenarioOrigin(
+  value: Record<string, unknown>,
+  markerMs: number,
+): Pick<NumericEvidence, 'scenarioStartedAtMs'> {
+  if (!Object.hasOwn(value, 'scenarioStartedAtMs')) return {};
+  const scenarioStartedAtMs = safe(value.scenarioStartedAtMs, 8640000000000000);
+  if (scenarioStartedAtMs === 0 || scenarioStartedAtMs < markerMs) return fail();
+  return { scenarioStartedAtMs };
 }
 function archiveMetadata(input: unknown) {
   const h = fields(input, ['windows', 'bytes', 'dataArtifactId', 'indexArtifactId']);

@@ -87,9 +87,19 @@ it('omits an oversized advisory latency preview before writing the numeric artif
   const f = await setup();
   const baseline = { version: 4, quantiles: 'unknown' };
   const allowance = Buffer.byteLength(encodeJson(baseline, 1024)) + 1;
-  const artifact = await f.artifacts.numeric(baseline, allowance, {
+  const artifact = await f.artifacts.numeric(baseline, allowance, [{
     ...baseline, version: 5, httpP95Preview: [{ p95Ms: 10 }, { p95Ms: 20 }],
-  });
+  }]);
   expect(artifact.bytes).toBe(allowance);
   expect(JSON.parse(await fs.readFile(join(f.directory, 'numeric-final.json'), 'utf8'))).toEqual(baseline);
+});
+
+it('keeps the existing advisory preview when the combined native timestamps cannot fit', async () => {
+  const f = await setup();
+  const baseline = { version: 4, quantiles: 'unknown' };
+  const preview = { ...baseline, version: 5, httpP95Preview: [{ p95Ms: 10 }] };
+  const allowance = Buffer.byteLength(encodeJson(preview, 1024)) + 1;
+  const artifact = await f.artifacts.numeric(baseline, allowance, [{ ...preview, scenarioStartedAtMs: 1700000000000 }, preview]);
+  expect(artifact.bytes).toBe(allowance);
+  expect(JSON.parse(await fs.readFile(join(f.directory, 'numeric-final.json'), 'utf8'))).toEqual(preview);
 });

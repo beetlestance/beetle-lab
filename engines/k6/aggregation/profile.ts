@@ -10,6 +10,7 @@ export interface K6MetricProfile {
   readonly assertions: readonly Readonly<{ id: string; label: string }>[];
   readonly readinessLabel?: string;
   readonly maximumSeries: number;
+  readonly scenarioOrigin: boolean;
   readonly allowedSeries: readonly AllowedMetricSeries[];
 }
 const trusted = new WeakSet<K6MetricProfile>();
@@ -34,6 +35,7 @@ export function createK6MetricProfile(suite: DeepReadonly<CompiledSuite>): K6Met
     assertionLabels: Object.freeze(assertions.map((assertion) => assertion.label)),
     ...(layout.readiness ? { readinessLabel: layout.readiness.label } : {}),
     maximumSeries: evidence.series.length,
+    scenarioOrigin: suite.loadPlan.execution.scenarios.length === 1,
     allowedSeries: evidence.series,
   });
   trusted.add(profile);

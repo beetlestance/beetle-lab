@@ -1,4 +1,4 @@
-import { measureStartedMetric, metricSeriesKey } from '../plan/index.js';
+import { measureStartedMetric, metricSeriesKey, scenarioStartedMetric } from '../plan/index.js';
 import { MetricStreamError } from './types.js';
 import type { MetricDefinition, MetricKind, MetricPoint, MetricStreamOptions } from './types.js';
 const kinds = new Set<MetricKind>(['counter', 'gauge', 'rate', 'trend']);
@@ -72,6 +72,7 @@ function exactSeries(options: MetricStreamOptions, required: boolean): ReadonlyS
   if (!Array.isArray(catalogue) || !catalogue.length || catalogue.length > 4600) fail('invalid_profile');
   const allowed = new Set(catalogue.map((item) => metricSeriesKey(item.metric, item.tags)));
   if (allowed.size !== catalogue.length) fail('invalid_profile');
+  if (options.scenarioOrigin) allowed.add(metricSeriesKey(scenarioStartedMetric, {}));
   return allowed;
 }
 function exactTags(input: unknown, metric: string, allowed: ReadonlySet<string>): MetricPoint['tags'] {
@@ -96,10 +97,11 @@ export class Records {
     if (!Array.isArray(options.metrics) || options.metrics.length < 1 || options.metrics.length > 64)
       fail('invalid_profile');
     for (const definition of options.metrics) this.definition(definition);
+    if (options.scenarioOrigin) this.definition({ name: scenarioStartedMetric, kind: 'gauge' });
     this.requests = labels(options.requestLabels, 'r');
     this.assertions = labels(options.assertionLabels, 'a');
     if (1 + this.requests.size + this.assertions.size > 200) fail('invalid_profile');
-    this.allowed = exactSeries(options, this.metrics.has(measureStartedMetric));
+    this.allowed = exactSeries(options, this.metrics.has(measureStartedMetric) || options.scenarioOrigin === true);
   }
   private definition(definition: MetricDefinition): void {
     if (

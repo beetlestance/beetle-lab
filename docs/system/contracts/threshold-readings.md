@@ -47,5 +47,5 @@ The result reading remains a native statistic; the UI never computes its verdict
 | `web/src/features/runs/result/ThresholdReading.tsx` | `cd060ae04f02` |
 | `web/src/features/runs/result/threshold-sentence.ts` | `a5ccdb7f0a16` |
 | `contracts/src/k6-metrics/index.ts` | `ae909fa57f1f` |
-| `engines/k6/runtime/native.ts` | `f2277e65a4b4` |
-| `engines/k6/runtime/native-api.d.ts` | `1d0f5d2b55d1` |
+| `engines/k6/runtime/native.ts` | `f34ae7c25c3e` |
+| `engines/k6/runtime/native-api.d.ts` | `53614e437591` |

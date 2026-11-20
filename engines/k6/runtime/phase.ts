@@ -13,11 +13,14 @@ export function nativeMetric(
     counter.add(value, tags);
     return;
   }
+  nativeControlMetric(counter, value);
+}
+export function nativeControlMetric(metric: Pick<Counter, 'add'>, value: number): void {
   const vuTags = execution.vu.metrics.tags;
   const previous = vuTags.phase;
   delete vuTags.phase;
   try {
-    counter.add(value, tags);
+    metric.add(value, {});
   } finally {
     if (previous === undefined) delete vuTags.phase;
     else vuTags.phase = previous;
