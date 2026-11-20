@@ -5,6 +5,7 @@ import type { OutputDeletionSummary } from '../../ports/output-deletion-metadata
 import type { OutputDeletionRuntime, OutputDeletionRuntimeOptions } from './types.js';
 import { deletionPage, capacityRefusal, sameDeletion } from './values.js';
 import { Retirements } from './retirements.js';
+import { Reclaims } from './reclaims.js';
 import { deletionStep, check } from './step.js';
 export type { OutputDeletionRuntime, OutputDeletionRuntimeOptions, DeletionProgress } from './types.js';
 class Deletions implements OutputDeletionRuntime {
@@ -21,8 +22,10 @@ class Deletions implements OutputDeletionRuntime {
   private readonly retirements: Retirements | undefined;
   private turnNumber = 0;
   private readonly settlements: Settlements | undefined;
+  private readonly reclaims: Reclaims | undefined;
   constructor(private readonly options: OutputDeletionRuntimeOptions) {
     this.settlements = options.settlement ? new Settlements(options.settlement) : undefined;
+    this.reclaims = options.reclaim ? new Reclaims(options.reclaim) : undefined;
     this.retirements = options.retirement ? new Retirements(options.retirement) : undefined;
   }
   start(): void {
@@ -56,7 +59,11 @@ class Deletions implements OutputDeletionRuntime {
       () => this.fail(Error('Deletion deadline')),
       Math.max(0, context.deadline - performance.now()),
     );
-    this.turnNumber = (this.turnNumber + 1) % (this.settlements ? 3 : 2);
+    this.turnNumber = (this.turnNumber + 1) % (this.reclaims ? 4 : this.settlements ? 3 : 2);
+    if (this.turnNumber === 3 && this.reclaims) {
+      await this.reclaims.step(context);
+      return;
+    }
     if (this.turnNumber === 2 && this.settlements) {
       await this.settlements.step(context);
       return;
@@ -156,12 +163,7 @@ class Deletions implements OutputDeletionRuntime {
 }
 /** Shares installed owners; reconciles existing deletion intents and exact settlement. */
 export function startOutputDeletionRuntime(options: OutputDeletionRuntimeOptions): OutputDeletionRuntime {
-  const interval = options.intervalMs ?? 250;
-  if (!Number.isSafeInteger(interval) || interval < 25 || interval > 60000) throw Error('Invalid deletion interval');
-  if (!Number.isSafeInteger(options.freeSpaceReserveBytes) || options.freeSpaceReserveBytes < 0)
-    throw Error('Invalid deletion reserve');
-  if (options.settlement && !options.retirement) throw Error('Settlement requires retirement');
-  if (Boolean(options.fileOnly) === Boolean(options.retirement)) throw Error('Explicit deletion mode required');
+  requireOptions(options);
   const m = options.metadata;
   const f = options.files;
   const metadata = Object.freeze({
@@ -178,9 +180,22 @@ export function startOutputDeletionRuntime(options: OutputDeletionRuntimeOptions
     files,
     ...captureRetirement(options),
     ...captureSettlement(options),
+    ...captureReclaim(options),
   });
   runtime.start();
   return runtime;
+}
+function requireOptions(options: OutputDeletionRuntimeOptions): void {
+  requireBounds(options);
+  if (options.settlement && !options.retirement) throw Error('Settlement requires retirement');
+  if (options.reclaim && !options.settlement) throw Error('Reclamation requires settlement');
+  if (Boolean(options.fileOnly) === Boolean(options.retirement)) throw Error('Explicit deletion mode required');
+}
+function requireBounds(options: OutputDeletionRuntimeOptions): void {
+  const interval = options.intervalMs ?? 250;
+  if (!Number.isSafeInteger(interval) || interval < 25 || interval > 60000) throw Error('Invalid deletion interval');
+  if (!Number.isSafeInteger(options.freeSpaceReserveBytes) || options.freeSpaceReserveBytes < 0)
+    throw Error('Invalid deletion reserve');
 }
 function captureRetirement(options: OutputDeletionRuntimeOptions): Pick<OutputDeletionRuntimeOptions, 'retirement'> {
   const r = options.retirement;
@@ -216,5 +231,14 @@ function captureSettlement(options: OutputDeletionRuntimeOptions): Pick<OutputDe
         cleanupAck: m.cleanupAck.bind(m),
       }),
     }),
+  };
+}
+
+function captureReclaim(options: OutputDeletionRuntimeOptions): Pick<OutputDeletionRuntimeOptions, 'reclaim'> {
+  const r = options.reclaim;
+  if (!r) return {};
+  const m = r.metadata;
+  return {
+    reclaim: Object.freeze({ clock: r.clock, metadata: Object.freeze({ reclaimRetired: m.reclaimRetired.bind(m) }) }),
   };
 }

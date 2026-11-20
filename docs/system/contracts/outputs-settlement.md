@@ -155,8 +155,8 @@ holding a file's token blocks its preparation and removal until the read physica
   shared checked primitive, fsyncs the parent and confirms absence after every close. Staging and
   unknown files are preserved; a missing file never yields a fresh plan. Bytes cap 8192.
 - The driver (`app/src/application/output-deletion-runtime`) is one sequential child of the output
-  runtime with one 30 s budget per turn, one intent and one ordinal at a time. Busy defers; permanent
-  failures fence and notify. Unknown outcomes reread durable rows; no replacement token.
+  runtime with one 30 s budget per turn, one intent and one ordinal at a time; with settlement, a fourth turn begins
+  ≤ 32 retired-workspace intents ([namespaces](namespaces.md)). Busy defers; permanent failures fence and notify. Unknown outcomes reread durable rows; no replacement token.
 
 ## Retention selection
 
@@ -216,5 +216,5 @@ settles in the backend alone. Rejected never-admitted originals use a 16384-byte
 | `agent/src/journal/output-delivery-protocol.ts` | `9c029c3752ab` |
 | `app/src/adapters/outbound/sqlite/output-finalization/` | `3e695ef5851f` |
 | `app/src/adapters/outbound/sqlite/output-absence/` | `9bada888516d` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `1b41d5b10521` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `990130371f09` |
 | `app/src/adapters/outbound/sqlite/backend-settlement/` | `83a061e649a5` |

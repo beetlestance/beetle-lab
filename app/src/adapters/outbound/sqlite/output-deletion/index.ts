@@ -5,6 +5,7 @@ import { recordCleanupAck, readCleanupAck } from './acks.js';
 import { reserveCleanupControl, requireCleanupControl } from '../cleanup-control/index.js';
 import type { CleanupCapacity } from '../cleanup-control/index.js';
 import { retirementRequest } from './retirement-request.js';
+import { reclaimRetired } from '../retired-reclaim/index.js';
 import { encodeCanonicalJson } from '@beetle/contracts';
 import type { DatabaseSync } from 'node:sqlite';
 import type { Run } from '@beetle/contracts/api';
@@ -83,6 +84,8 @@ export class OutputDeletions {
         return this.plan(operation.request);
       case 'recordOutputDeletionAbsence':
         return this.absence(operation.request);
+      case 'reclaimRetiredOutputs':
+        return reclaimRetired(this.db, this.runs, (command) => this.begin(command), operation.query);
       default:
         throw new StorageError('invalid_input');
     }

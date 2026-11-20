@@ -11,7 +11,7 @@ cleaned persists the exact immutable ACK. Permanent/unknown failures fence+notif
 Each turn's fixed 30 s budget includes discovery. Actual native result+settled,
 gateway and metadata carrier originals remain owned through close. Failed worker
 termination keeps deletion calls pending and prevents parent namespace release.
-No selector, intent creation, settlement, tombstone or public API.
+No retention selector, user intent creation, tombstone or public API.
 Contract:docs/system/contracts/outputs-settlement.md.
 Checks:vitest run app/test/output-deletion-runtime app/test/output-deletion/retirement-scan.
 
@@ -20,3 +20,8 @@ physical discovery. Agent delivery uncertainty keeps backend debt; unsent never 
 agent. Released and rejected absences qualify for both lanes (sqlite/output-deletion/readiness.ts).
 Contract: docs/system/contracts/outputs-settlement.md. Actual native chain qualification is
 separate from scoped gateway/driver tests.
+
+B5 reclaims.ts adds a fourth turn only beside settlement: it asks metadata to begin <=32
+retired-workspace intents per page, keeps the cursor in memory and idles 30 s after an
+empty pass. File, retirement and settlement turns then free bytes (decision 034).
+Checks: vitest run app/test/output-deletion-runtime/reclaim.test.ts app/test/retired-reclaim.

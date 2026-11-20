@@ -44,17 +44,23 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
   viewer uses its own read-only authority. SQL is the final guard.
 - Organisation lists and overviews, counts, recent activity and retention discovery
   exclude a retired organisation or workspace; private delivery, cleanup and settlement reads skip the visibility check.
-  "Cleanup complete" means visibility or metadata retirement, never freed bytes.
+- Retirement itself frees no bytes. Reclamation (`retired-reclaim`, decision 034) has the
+  backend begin the ordinary deletion intent for eligible terminal Runs of a retired
+  workspace, at most 32 rows a turn. Files, ACK and settlement follow [retirement](retirement.md).
+  Bytes are freed only at settlement; receipts, marker, replay floors and tombstones stay.
+  Pinned, noted, retried, export-linked and legacy Runs are skipped and stay charged.
 
 ## Related
 
 - [Retirement](retirement.md), [recovery](recovery.md), [inputs](inputs.md)
 - [Decision 020: workspace retirement](../../decisions/020-workspace-retirement.md)
+- [Decision 034: retired namespace reclamation](../../decisions/034-retired-namespace-reclamation.md)
 
 ## Anchors
 
 | Code | Reviewed |
 | --- | --- |
-| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `1fbaf1299023` |
-| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `77bff3228ae0` |
+| `app/src/adapters/outbound/sqlite/namespace-deletion/` | `61ec0e63ba1e` |
+| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `bf734e210895` |
 | `app/src/adapters/inbound/http/workspace-visibility.ts` | `89d870a75696` |
+| `app/src/adapters/outbound/sqlite/retired-reclaim/` | `69408bf0b59b` |

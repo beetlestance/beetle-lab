@@ -76,6 +76,12 @@ export interface OutputDeletionScan {
   readonly limit: number;
   readonly cursor?: string;
 }
+/** Backend-owned reclamation of retired workspaces; `limit` bounds examined rows, not begun intents. */
+export interface RetiredReclaimQuery {
+  readonly limit: number;
+  readonly requestedAt: string;
+  readonly cursor?: string;
+}
 export interface OutputDeletionPage {
   readonly items: readonly OutputDeletionSummary[];
   readonly nextCursor: string | null;
@@ -92,7 +98,8 @@ export type OutputDeletionOperation =
   | { readonly kind: 'recordOutputDeletionAbsence'; readonly request: OutputDeletionAbsenceWrite }
   | { readonly kind: 'scanOutputDeletions'; readonly query: OutputDeletionScan }
   | { readonly kind: 'scanOutputRetirements'; readonly query: OutputDeletionScan }
-  | { readonly kind: 'scanOutputSettlements'; readonly query: OutputDeletionScan };
+  | { readonly kind: 'scanOutputSettlements'; readonly query: OutputDeletionScan }
+  | { readonly kind: 'reclaimRetiredOutputs'; readonly query: RetiredReclaimQuery };
 export type OutputDeletionValue =
   | OutputCleanupAck
   | OutputCleanupAckState
@@ -119,4 +126,6 @@ export interface OutputDeletionMetadata {
   scanRetirements(query: OutputDeletionScan): Promise<OutputDeletionPage>;
   /** Bounded physical original horizon; only funded/proven branches are selected. */
   scanSettlements(query: OutputDeletionScan): Promise<OutputDeletionPage>;
+  /** Begins intents for eligible terminal Runs of retired workspaces; items are the intents begun. */
+  reclaimRetired(query: RetiredReclaimQuery): Promise<OutputDeletionPage>;
 }

@@ -16,6 +16,7 @@ inventory, not a release certificate. Historical reports are indexed in
 | Formatting | Implemented in source: authored-source formatting and line limits are enforced by `format:check` and lint in CI (`74a87dbc`, `049c4d5b`). CI at `5b8e016c` (run 44108058789) failed in checks, test shard 3 and the amd64 container, so no green run covers it yet. |
 | Publishing | No replacement image is published; publication needs explicit authorisation after integration. |
 | Design assets | The shared asset release declares GPL-3.0-only; distribution terms must be settled before bundling ([decision 019](../decisions/019-frontend-stack-and-engine-sdk.md)). |
+| Retired reclamation | Implemented in source, not yet in CI: retired workspaces' terminal Run output is reclaimed through the deletion pipeline ([decision 034](../decisions/034-retired-namespace-reclamation.md)). No hosted run covers it yet. |
 | Presentation | Long report lines overflow the page horizontally; responsive visual quality is uncertified and belongs to the UI redesign. |
 
 Each new migration needs its own upgrade test; that is a rule in
@@ -29,7 +30,7 @@ None is committed work; each needs its own plan before it starts.
 | Area | Not built |
 | --- | --- |
 | Public API | SSE live event stream with cursor resume; installed engine catalogue routes; explicit run retry (a new attempt under one run; generation is fixed at 1); public `/capacity` and `/health/ready`; automation client `validate` |
-| Namespaces | Recursive organisation and workspace cleanup that frees retained rows and bytes |
+| Namespaces | Reclaiming pinned, noted, retried, export-linked or legacy Runs and published inputs of retired workspaces; [decision 034](../decisions/034-retired-namespace-reclamation.md) reclaims other terminal Run output |
 | Execution | Process (non-Docker) backend; browser and mutation engine profiles; per-profile cancellation grace; checkpointed work units; explicit finalisation ACK endpoints; a container retention sweeper |
 | Events | Rebuilding event coverage marked `partial`; recovery authority for blocked event problems (`quota_exhausted`, `missing_receipt`, `replay_conflict`) |
 | Resources | Backend data-root disk observation with its own reserve; qualified idle and thermal producers; a reserved guard lane in the agent scheduler if guard freshness needs it; OpenTelemetry export |

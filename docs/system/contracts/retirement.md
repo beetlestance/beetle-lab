@@ -217,4 +217,4 @@ recovery reuses only an exactly matching record and still proves absence first.
 | `agent/src/cleanup-control/` | `df348f0e5282` |
 | `agent/src/retirement-pipeline/` | `fd680b9ef3ea` |
 | `agent/src/transport/retirement.ts` | `01fa56695d4b` |
-| `app/src/adapters/outbound/sqlite/output-deletion/` | `1b41d5b10521` |
+| `app/src/adapters/outbound/sqlite/output-deletion/` | `990130371f09` |

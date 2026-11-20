@@ -1,4 +1,6 @@
-import type { OutputDeletionScan } from '../../../../ports/output-deletion-metadata.js';
+import type { RetiredReclaimQuery } from '../../../../ports/output-deletion-metadata.js';
+import { validateApi } from '@beetle/contracts/api';
+import { reclaimPosition } from '../retired-reclaim/cursor.js';
 import { encodeJson, validate } from '@beetle/contracts';
 import type {
   OutputDeletionOperation,
@@ -25,6 +27,7 @@ const kinds = [
   'recordOutputDeletionPlan',
   'recordOutputDeletionAbsence',
   'scanOutputDeletions',
+  'reclaimRetiredOutputs',
 ];
 export function deletionOperation(value: unknown): value is OutputDeletionOperation {
   const descriptor = value && typeof value === 'object' ? Object.getOwnPropertyDescriptor(value, 'kind') : undefined;
@@ -79,6 +82,15 @@ function captureScan(value: unknown) {
   if (value.cursor !== undefined) requireRule(typeof value.cursor === 'string' && value.cursor.length <= 256);
   return { limit: value.limit, ...(value.cursor === undefined ? {} : { cursor: value.cursor as string }) };
 }
+function captureReclaim(value: unknown): RetiredReclaimQuery {
+  requireRule(value !== null && typeof value === 'object');
+  closed(value, Object.hasOwn(value, 'cursor') ? ['limit', 'requestedAt', 'cursor'] : ['limit', 'requestedAt']);
+  natural(value.limit, 32, 1);
+  requireRule(validateApi('RunTimestamp', value.requestedAt).ok && String(value.requestedAt).length === 24);
+  if (value.cursor !== undefined) reclaimPosition(value.cursor as string);
+  const owned = { limit: value.limit, requestedAt: value.requestedAt as string };
+  return value.cursor === undefined ? owned : { ...owned, cursor: value.cursor as string };
+}
 function captureWrite(
   kind: 'recordOutputDeletionPlan' | 'recordOutputDeletionAbsence',
   value: unknown,
@@ -110,6 +122,7 @@ const property: Record<OutputDeletionOperation['kind'], string> = {
   scanOutputDeletions: 'query',
   scanOutputRetirements: 'query',
   scanOutputSettlements: 'query',
+  reclaimRetiredOutputs: 'query',
 };
 export function captureDeletionOperation(input: unknown): OutputDeletionOperation {
   const copy = boundedCopy(input, 12288) as OutputDeletionOperation & { messageId?: number };
@@ -128,6 +141,8 @@ export function captureDeletionOperation(input: unknown): OutputDeletionOperatio
       return { kind: copy.kind, key: key(copy.key) };
     case 'getOutputDeletionFile':
       return { kind: copy.kind, key: key(copy.key, true) as OutputDeletionFileKey };
+    case 'reclaimRetiredOutputs':
+      return { kind: copy.kind, query: captureReclaim(copy.query) };
     default:
       return captureWrite(copy.kind, copy.request);
   }
@@ -149,6 +164,9 @@ function captureEnvelope(copy: OutputDeletionOperation & { messageId?: number })
 
 function isScan(
   operation: OutputDeletionOperation,
-): operation is Extract<OutputDeletionOperation, { query: OutputDeletionScan }> {
+): operation is Extract<
+  OutputDeletionOperation,
+  { kind: 'scanOutputSettlements' | 'scanOutputRetirements' | 'scanOutputDeletions' }
+> {
   return ['scanOutputSettlements', 'scanOutputRetirements', 'scanOutputDeletions'].includes(operation.kind);
 }
