@@ -77,7 +77,7 @@ Methods and original observations stay inspectable without a second artifact rea
 
 Top Report, Artifacts and Diagnostics anchors select the desktop report tab; supported hash deep links select their panel on entry.
 Permanent desktop anchors keep native scrolling valid before a panel mounts.
-Phone disclosures defer reads, retain state and open addressed anchors; Notes survives resize.
+The first chart read waits for the overview to settle. Retry remains explicit. Phone panels defer reads, retain state and open addressed anchors. Notes survives resize.
 Navigation adds no reader of its own; selected feature owners retain their existing admission,
 publication, retry and retirement rules.
 
@@ -178,7 +178,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
 | `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
 | `web/src/features/runs/result/Overview.tsx` | `26db2d0ef298` |
-| `web/src/features/runs/result/useResultReads.ts` | `5b74ebd2e159` |
+| `web/src/features/runs/result/useResultReads.ts` | `a7b812def9d6` |
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
 | `app/src/application/run-metrics/scan.ts` | `66af9695701f` |
 | `contracts/api/v2/run-chart-history.schema.json` | `03316213a5dd` |
