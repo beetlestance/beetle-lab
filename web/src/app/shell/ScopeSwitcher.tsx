@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { readResult, useApi } from '../api.js';
+import { Button } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
+import { useOrganizationEditor } from '../../features/organizations/index.js';
 import { queryKeys } from '../queries.js';
 import { routes } from '../routes.js';
 import type { ShellScope } from '../navigation.js';
@@ -29,6 +31,8 @@ export function ScopeSwitcher({ scope, path }: { scope: ShellScope; path: string
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  // Lives here, not in the dropdown: the dialog outlives the dropdown it was opened from.
+  const editor = useOrganizationEditor();
 
   useEffect(() => {
     if (!open) return;
@@ -66,51 +70,74 @@ export function ScopeSwitcher({ scope, path }: { scope: ShellScope; path: string
           ▾
         </span>
       </button>
-      {open && <OrganizationLinks path={path} selected={scope.organizationId} close={() => setOpen(false)} />}
+      {open && (
+        <OrganizationLinks
+          path={path}
+          selected={scope.organizationId}
+          close={() => setOpen(false)}
+          create={() => {
+            setOpen(false);
+            editor.create();
+          }}
+        />
+      )}
     </div>
   );
 }
 
+/** Every organization, 20 at a time, then the one action the app has for organizations. */
 function OrganizationLinks({
   path,
   selected,
   close,
+  create,
 }: {
   path: string;
   selected: string | undefined;
   close: () => void;
+  create: () => void;
 }) {
   const inWorkspaces = path === routes.workspaces || path === routes.organizationWorkspaces(selected ?? '');
   const api = useApi();
-  const query = useQuery({
+  const query = useInfiniteQuery({
     queryKey: [...queryKeys.organizations, 'switcher'],
-    queryFn: ({ signal }) => readResult(api.listOrganizations({ query: { limit: 20 }, signal })),
+    queryFn: ({ signal, pageParam }) =>
+      readResult(api.listOrganizations({ query: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) }, signal })),
+    initialPageParam: '',
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
   return (
     <nav id="shell-organizations" aria-label="Switch organization" className="shell-scope-links">
       <QueryState query={query}>
-        {({ items }) => (
+        {({ pages }) => (
           <ul role="list">
-            {items.map((org) => {
-              const to = inWorkspaces ? routes.organizationWorkspaces(org.id) : routes.organization(org.id);
-              return (
-                <li key={org.id}>
-                  <Link
-                    to={to}
-                    aria-current={org.id === selected ? 'true' : undefined}
-                    onClick={to === path ? close : undefined}
-                  >
-                    {org.name}
-                  </Link>
-                </li>
-              );
-            })}
+            {pages
+              .flatMap((page) => page.items)
+              .map((org) => {
+                const to = inWorkspaces ? routes.organizationWorkspaces(org.id) : routes.organization(org.id);
+                return (
+                  <li key={org.id}>
+                    <Link
+                      to={to}
+                      aria-current={org.id === selected ? 'true' : undefined}
+                      onClick={to === path ? close : undefined}
+                    >
+                      {org.name}
+                    </Link>
+                  </li>
+                );
+              })}
           </ul>
         )}
       </QueryState>
-      <Link to={routes.organizations} onClick={path === routes.organizations ? close : undefined}>
-        All organizations
-      </Link>
+      {query.hasNextPage && (
+        <Button size="sm" variant="text" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
+          {query.isFetchingNextPage ? 'Loading…' : 'Show more'}
+        </Button>
+      )}
+      <Button size="sm" className="shell-scope-create" onClick={create}>
+        Create organization
+      </Button>
     </nav>
   );
 }

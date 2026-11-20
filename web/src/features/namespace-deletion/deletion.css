@@ -1,3 +1,6 @@
+.retire-panel.organization-identity {
+  border-color: var(--line);
+}
 .retire-panel {
   display: flex;
   gap: var(--s-20);

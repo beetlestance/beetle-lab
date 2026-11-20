@@ -16,9 +16,7 @@ import { AppShell } from './shell/AppShell.js';
 import { CommandPalette, useCommandNavigation } from '../features/command-search/index.js';
 import type { WorkspaceView } from '../features/workspaces/index.js';
 
-const Organizations = lazy(() =>
-  import('../features/organizations/index.js').then((module) => ({ default: module.Organizations })),
-);
+const Home = lazy(() => import('../features/organizations/index.js').then((module) => ({ default: module.Home })));
 const OrganizationScope = lazy(() =>
   import('../features/workspaces/index.js').then((module) => ({ default: module.OrganizationScope })),
 );
@@ -57,15 +55,16 @@ export function App({
           <QueryClientProvider client={client}>
             <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
               <ToastProvider>
-                <AppShell onSearch={commands.show}>
-                  <EditorProvider>
+                {/* Outside the shell: the header's organization menu opens the same editor. */}
+                <EditorProvider>
+                  <AppShell onSearch={commands.show}>
                     <Suspense fallback={<LoadingState label="Loading view…" />}>
                       <PageTransition>
                         <AppRoutes />
                       </PageTransition>
                     </Suspense>
-                  </EditorProvider>
-                </AppShell>
+                  </AppShell>
+                </EditorProvider>
               </ToastProvider>
             </div>
             {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
@@ -92,9 +91,9 @@ function AppRoutes() {
       <Route path={routes.settings} element={<Settings scope={{ kind: 'installation' }} />} />
       <Route path={routes.organizationSettingsPattern} element={<SettingsRoute />} />
       <Route path={routes.workspaceSettingsPattern} element={<ScopeRoute view="settings" />} />
-      <Route path={routes.workspaces} element={<Organizations workspaceDirectory />} />
+      <Route path={routes.workspaces} element={<Home to="workspaces" />} />
       <Route path={routes.organizationWorkspacesPattern} element={<ScopeRoute directory />} />
-      <Route path={routes.organizations} element={<Organizations />} />
+      <Route path={routes.organizations} element={<Home to="overview" />} />
       <Route path={routes.organizationPattern} element={<ScopeRoute />} />
       <Route path={routes.workspacePattern} element={<ScopeRoute />} />
       <Route path="*" element={<InvalidRoute />} />

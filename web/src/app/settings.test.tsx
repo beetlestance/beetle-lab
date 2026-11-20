@@ -72,7 +72,7 @@ describe('settings scope reads and values', () => {
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Main navigation' })).getByRole('link', { name: 'Overview' }));
     await waitFor(() => expect(api.records[0]?.signal?.aborted).toBe(true));
     reply.resolve(json(settings()));
-    await screen.findByRole('heading', { name: 'Organizations' });
+    await screen.findByRole('heading', { name: 'Create your first organization' });
     expect(screen.queryByRole('list', { name: /Settings for/ })).not.toBeInTheDocument();
   });
   it('normalizes UUID case while preserving URN identity', () => {

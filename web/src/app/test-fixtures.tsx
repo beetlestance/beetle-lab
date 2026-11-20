@@ -78,7 +78,7 @@ export function testClient(handler: (request: RequestRecord) => Response | Promi
   return { client: createApiClient({ baseUrl: 'http://localhost', fetch: fetcher }), records };
 }
 export function readNamespace(request: RequestRecord): Response {
-  if (request.path === '/api/v2/organizations?limit=100')
+  if (/^\/api\/v2\/organizations\?limit=(20|100)$/.test(request.path))
     return json({ scope: { kind: 'installation' }, items: [org(), org(ids.b)], nextCursor: null });
   const organizationId = request.path.includes(ids.b) ? ids.b : ids.a;
   if (request.path.endsWith(`/organizations/${organizationId}`)) return json(org(organizationId));

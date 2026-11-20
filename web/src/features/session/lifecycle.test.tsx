@@ -4,11 +4,15 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, describe, expect, it } from 'vitest';
 import { apiError, browser, calls, deferred, json, namespace, org, pair, session, token, unpaired } from './test-fixtures.js';
 import { BrowserSessionGate } from './session.js';
-import { ids } from '../../app/test-fixtures.js';
+import { ids, workspace } from '../../app/test-fixtures.js';
 import { routes } from '../../app/routes.js';
 import overview from '../../../../contracts/fixtures/api/valid/organization-overview.json';
 
 afterEach(cleanup);
+async function createOrganization() {
+  fireEvent.click(await screen.findByRole('button', { name: /, switch organization$/ }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Create organization' }));
+}
 describe('session lifetime and uncertain writes', () => {
   it.each([200, 401])('unmounts App immediately and sends logout with its own live signal, status %s', async status => {
     const logout = deferred<Response>();
@@ -46,17 +50,17 @@ describe('session lifetime and uncertain writes', () => {
       }
       return namespace(record);
     });
-    await screen.findByRole('table', { name: 'Organizations' });
+    await screen.findByRole('table', { name: 'Workspaces' });
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Sign-out could not be confirmed');
     expect(screen.getByRole('alert')).toHaveTextContent('session may still be active');
     expect(calls(api.records, '/auth/session')).toHaveLength(1);
     expect(calls(api.records, '/auth/logout')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Check session status' }));
-    await screen.findByRole('table', { name: 'Organizations' });
+    await screen.findByRole('table', { name: 'Workspaces' });
     expect(calls(api.records, '/auth/session')).toHaveLength(2);
     expect(calls(api.records, '/auth/logout')).toHaveLength(1);
-    expect(api.records.filter(record => record.path.includes('/organizations?'))).toHaveLength(2);
+    expect(api.records.filter(record => record.path.includes('/workspaces?'))).toHaveLength(2);
   });
   it('fences a mutation 401, aborts all old requests, discards drafts/cache, and never replays the write', async () => {
     let reads = 0;
@@ -64,14 +68,14 @@ describe('session lifetime and uncertain writes', () => {
     const api = browser(record => {
       if (record.path.endsWith('/auth/session') || record.path.endsWith('/auth/pair')) return json(session);
       if (record.method === 'POST') return write.promise;
-      if (record.path.includes('/organizations?')) {
+      if (record.path.includes('/workspaces?')) {
         reads++;
-        return json({ scope: { kind: 'installation' }, items: [{ ...org(), name: reads === 1 ? 'Old cached name' : 'Fresh name' }], nextCursor: null });
+        return json({ scope: workspace().scope, items: [{ ...workspace(), name: reads === 1 ? 'Old cached name' : 'Fresh name' }], nextCursor: null });
       }
       return namespace(record);
     });
     await screen.findByRole('link', { name: 'Old cached name' });
-    fireEvent.click(screen.getByRole('button', { name: 'Create organization' }));
+    await createOrganization();
     fireEvent.change(screen.getByLabelText('Organization name'), { target: { value: 'Unacknowledged change' } });
     fireEvent.change(screen.getByLabelText('Organization slug'), { target: { value: 'unacknowledged' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -85,7 +89,7 @@ describe('session lifetime and uncertain writes', () => {
     await pair();
     await screen.findByRole('link', { name: 'Fresh name' });
     expect(screen.queryByRole('link', { name: 'Old cached name' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Create organization' }));
+    await createOrganization();
     expect(screen.getByLabelText('Organization name')).toHaveValue('');
     expect(api.records.filter(record => record.method === 'POST' && !record.path.includes('/auth/'))).toHaveLength(1);
     expect(calls(api.records, '/auth/session')).toHaveLength(1);
@@ -140,7 +144,7 @@ describe('session lifetime and uncertain writes', () => {
     if (pairingPhase) await pair();
     if (phase === 'logout') fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
     const suffix = { read: '/auth/session', pair: '/auth/pair', recovery: '/auth/session',
-      resource: '/organizations?limit=100', logout: '/auth/logout' }[phase];
+      resource: '/organizations?limit=20', logout: '/auth/logout' }[phase];
     await waitFor(() => expect(calls(api.records, suffix)).toHaveLength(phase === 'recovery' ? 2 : 1));
     const retained = calls(api.records, suffix).at(-1);
     api.unmount();

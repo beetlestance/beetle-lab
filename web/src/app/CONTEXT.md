@@ -13,8 +13,9 @@ Cache GC is 60 seconds; page limit 100; cursor history 20. Scope departure remov
 its remaining queries. UUID validation uses the public API schema, including URNs.
 EditorProvider retains one draft across navigation and snapshots mutation intents.
 Unknown results allow identical replay; editing begins a new request ID.
-Workspaces opens the organization chooser or the current organization's workspace list.
-The header switcher reads up to 20 organizations on demand and links to the full list.
+`/` and `/workspaces` open the remembered or first organization; with none, a first-run
+screen offers Create organization. The header switcher is the only organization list:
+20 at a time on demand, Show more, then Create organization (EditorProvider wraps the shell).
 Direct Compare resolves one scoped organization label independently of its comparison reads.
 Settings (installation, organization) lazy-loads one feature with two level tabs; a
 workspace's settings are its Settings section. The shell remembers the organization.

@@ -77,7 +77,7 @@ export function OrganizationScope({
     <ScopeState
       query={org}
       kind="organization"
-      back={{ to: routes.organizations, label: 'Back to organizations' }}
+      back={{ to: routes.organizations, label: 'Back to overview' }}
       loading={<LoadingState variant="page" label="Loading organization…" />}
     >
       {(organization) =>
