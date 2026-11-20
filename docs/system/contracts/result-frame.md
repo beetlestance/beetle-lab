@@ -64,6 +64,9 @@ Missing figures stay unavailable and the recorded test duration is shown only
 when provided by the accepted source. Positive durations below one second
 are shown in milliseconds.
 
+A restored Results view links back to the live installation when the history
+viewer has a configured live origin. The link suppresses the viewer referrer.
+
 ## Recovered observations
 
 For a cancelled or errored run without a published chart archive, Results calls
@@ -99,5 +102,5 @@ their retry controls.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `3fe841d6d930` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `d734e00724d2` |
+| `web/src/features/runs/result/index.tsx` | `1270c4efb1e3` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

@@ -108,6 +108,7 @@ than rebuilt from old observations.
 | `BEETLE_HISTORY_PORT` | `4568` | Published loopback port |
 | `BEETLE_HISTORY_INSTANCE` | | Name of another viewer project |
 | `BEETLE_HISTORY_USER` | `1000:1000` | Runtime user |
+| `BEETLE_HISTORY_LIVE_ORIGIN` | | Optional **Back to live** link on restored Results. Use the live installation's canonical loopback or HTTPS origin. |
 | `BEETLE_HISTORY_MAXIMUM_BYTES`, `_MAXIMUM_ENTRIES`, `_TIMEOUT_MS` | | Startup limits |
 
 Stop it with the same environment and

@@ -23,3 +23,20 @@ it('refuses a backup date on a serving (writable) session', () => {
   const session = createLocalSession({ externalOrigin: origin, readOnly: true, cookieName: 'beetle_history_x', restoredBackup: backup });
   session.close();
 });
+
+it('refuses a live destination on a serving session', () => {
+  const liveOrigin = 'https://beetle.example.test';
+  expect(() => createLocalSession({ externalOrigin: origin, liveOrigin })).toThrow('Historical live destination only');
+});
+
+it.each([
+  'javascript:alert(1)',
+  'https://user@beetle.example.test',
+  'https://beetle.example.test/sign-in',
+  'https://beetle.example.test/?next=other',
+  'https://beetle.example.test/#keep',
+  'http://beetle.example.test',
+  origin,
+])('refuses an invalid live destination on a historical session (%s)', (liveOrigin) => {
+  expect(() => createLocalSession({ externalOrigin: origin, readOnly: true, liveOrigin })).toThrow();
+});

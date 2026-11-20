@@ -13,7 +13,9 @@ export async function runHistoricalContainer(
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
   try {
+    const liveOrigin = environment.BEETLE_HISTORY_LIVE_ORIGIN;
     const request = captureRequest({
+      ...(liveOrigin ? { liveOrigin } : {}),
       version: 1,
       command: 'serve',
       root: environment.BEETLE_HISTORY_ROOT,

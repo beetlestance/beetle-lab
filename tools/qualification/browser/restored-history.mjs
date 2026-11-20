@@ -30,7 +30,7 @@ async function inspect(origin, run, artifacts, evidence) {
     const results = page.getByRole('region', { name: 'Run history table', exact: true });
     await results.locator(`a[href="${result}"]`).click();
     await expect(page).toHaveURL(origin + result);
-    await checkResult(page);
+    await checkResult(page, f.origin);
 
     const report = artifacts.find((item) => item.kind === 'performance-report');
     assert(report && report.bytes > 0 && report.bytes <= 262144);
@@ -45,12 +45,12 @@ async function inspect(origin, run, artifacts, evidence) {
     await capture(page, evidence, 'darkroom', 'desktop');
     await page.getByRole('radio', { name: 'Scarab', exact: true }).click();
     await page.reload();
-    await checkResult(page);
+    await checkResult(page, f.origin);
     await capture(page, evidence, 'scarab', 'desktop');
     await page.setViewportSize({ width: 1180, height: 900 });
     await assertNoOverflow(page);
     await page.setViewportSize({ width: 390, height: 844 });
-    await checkResult(page, false);
+    await checkResult(page, f.origin, false);
     await capture(page, evidence, 'scarab', 'phone');
     await page.getByRole('button', { name: 'Menu', exact: true }).click();
     await expect(page.getByText('Restored · read-only', { exact: true })).toBeVisible();
@@ -64,10 +64,14 @@ async function inspect(origin, run, artifacts, evidence) {
   }
 }
 
-/** @param {import('@playwright/test').Page} page @param {boolean} desktop */
-async function checkResult(page, desktop = true) {
+/** @param {import('@playwright/test').Page} page @param {string} liveOrigin @param {boolean} desktop */
+async function checkResult(page, liveOrigin, desktop = true) {
   const banner = page.getByText(/^You are looking at a restored backup from /);
   await expect(banner).toBeVisible();
+  const live = page.getByRole('link', { name: 'Back to live', exact: true });
+  await expect(live).toBeVisible();
+  await expect(live).toHaveAttribute('href', liveOrigin);
+  await expect(live).toHaveAttribute('referrerpolicy', 'no-referrer');
   await expect(page.getByText('Read-only history: changes are unavailable.', { exact: true })).toBeVisible();
   await expect(page.locator('.result-sentence')).not.toContainText(/over 0 seconds/);
   if (desktop) {

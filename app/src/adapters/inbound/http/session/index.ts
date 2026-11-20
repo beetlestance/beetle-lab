@@ -20,6 +20,7 @@ export interface LocalSessionOptions {
   readonly cookieName?: string;
   /** Sealed-manifest backup identity of a historical viewer; never the restore time. */
   readonly restoredBackup?: RestoredBackup;
+  readonly liveOrigin?: string;
   readonly automatic?: { readonly initial: LocalSessionRecord; readonly store: LocalSessionStore };
   /** Trusted test clocks only; cryptographic randomness is never injectable. */
   readonly clocks?: SessionClocks;
@@ -72,11 +73,13 @@ function checkExchange(
 export function createLocalSession(options: LocalSessionOptions): LocalSession {
   const origin = externalOrigin(options.externalOrigin, options.access);
   const name = cookieName(options);
+  const liveOrigin = historyDestination(options, origin.origin);
   const view = (session: object) =>
     jsonObject({
       ...session,
       ...(options.readOnly ? { readOnly: true } : {}),
       ...(options.restoredBackup ? { restoredBackup: { ...options.restoredBackup } } : {}),
+      ...(liveOrigin ? { liveOrigin } : {}),
       ...(options.automatic ? { accessMode: 'automatic' } : {}),
     });
   const authority = new SessionAuthority(
@@ -167,6 +170,14 @@ function admitExchange(
   } catch (error) {
     throw exchange === 'local' ? localAccessError(error) : error;
   }
+}
+
+function historyDestination(options: LocalSessionOptions, viewerOrigin: string): string | undefined {
+  if (options.liveOrigin === undefined) return;
+  if (!options.readOnly) throw new TypeError('Historical live destination only');
+  const { origin } = externalOrigin(options.liveOrigin, 'network');
+  if (origin === viewerOrigin) throw new TypeError('Historical live destination must differ from viewer origin');
+  return origin;
 }
 
 function cookieName(options: LocalSessionOptions): string {

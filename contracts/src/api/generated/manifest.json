@@ -39,7 +39,7 @@
     "api/v2/run-requests.schema.json": "0cca9488189a0dbdf97f34f7ded18302a0090a299f945be9ee3a61b54ad37722",
     "api/v2/run-result.schema.json": "297cc10fe77e5ca7c2e9d11124a7e4abff461eaba85f3472d1e6a0f0f81d0829",
     "api/v2/run.schema.json": "c5bbc4e932d1a44ab1e8b0b8c75d339b4de9493626e9a4140b37d15eafb853fe",
-    "api/v2/session.schema.json": "4f0b417ac26f9c7eb6904db5060304e2c6a06c9339ccce812e0e30f10eb503bb",
+    "api/v2/session.schema.json": "3d22af6d0c4863a9444cf4c67c115c60d7d48672200703bcc834b918b12c084b",
     "api/v2/settings-overrides.schema.json": "940f93d1591c4b562fef35248a6e3e11b79d436358bd0b740c5b63bfc6e9d088",
     "api/v2/settings-values.schema.json": "c9c1942e3df0420d0d1b4c6178f423ecd492e063978748ed44bbfe330d152434",
     "api/v2/settings.schema.json": "aaf9c415020b25b04bce515956e2077bb74f15614a04c137d6211a345c1ec2f8",

@@ -21,6 +21,7 @@ const stranded = new Set<unknown>();
 interface HistoryViewerOptions {
   root: string;
   externalOrigin: string;
+  liveOrigin?: string;
   metadataWorkerUrl: URL;
   limits: RecoveryLimits;
   operation: RecoveryOperation;
@@ -80,6 +81,7 @@ export async function openHistoryViewer(input: HistoryViewerOptions): Promise<Ap
       metadata,
       historical: {
         historyId: claim.historyId,
+        ...(input.liveOrigin !== undefined ? { liveOrigin: input.liveOrigin } : {}),
         backup: { backupId: manifest.header.backupId, createdAt: manifest.header.createdAt },
         sessions: gate.sessions,
         bytes: reader.outputs,

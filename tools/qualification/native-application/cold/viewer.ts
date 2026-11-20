@@ -42,6 +42,7 @@ export async function historicalViewer(
   f.docker.run(['network', 'connect', network, ui]);
   const client = await automaticSession(origin);
   assert.equal(client.session.readOnly, true);
+  assert.equal(client.session.liveOrigin, f.origin);
   const reads = await verifyHistoricalClient(client, run);
   const listed = value(
     await client.api.listRunArtifacts({
@@ -107,6 +108,8 @@ function startHistoryBackend(
     `BEETLE_HISTORY_ROOT=${history}`,
     '-e',
     `BEETLE_HISTORY_EXTERNAL_ORIGIN=${origin}`,
+    '-e',
+    `BEETLE_HISTORY_LIVE_ORIGIN=${f.origin}`,
     '-e',
     'BEETLE_HISTORY_MAXIMUM_BYTES=134217728',
     '--entrypoint',

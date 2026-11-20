@@ -20,6 +20,7 @@ export type RecoveryRequest = Common &
         readonly command: 'serve';
         readonly root: string;
         readonly externalOrigin: string;
+        readonly liveOrigin?: string;
         readonly host: '127.0.0.1' | '0.0.0.0' | '::1';
         readonly port: number;
       }
@@ -61,10 +62,11 @@ function commandFields(value: Record<string, unknown>): string[] {
       !Number.isSafeInteger(value.port) ||
       Number(value.port) < 1 ||
       Number(value.port) > 65535 ||
-      typeof value.externalOrigin !== 'string'
+      typeof value.externalOrigin !== 'string' ||
+      (value.liveOrigin !== undefined && typeof value.liveOrigin !== 'string')
     )
       throw new RecoveryError('invalid_input');
-    return ['command', 'root', 'externalOrigin', 'host', 'port'];
+    return ['command', 'root', 'externalOrigin', 'liveOrigin', 'host', 'port'];
   }
   throw new RecoveryError('invalid_input');
 }

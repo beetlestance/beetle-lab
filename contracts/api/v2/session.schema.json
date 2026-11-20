@@ -48,6 +48,12 @@
         },
         "restoredBackup": {
           "$ref": "https://beetle-lab.dev/contracts/api/v2/session#/$defs/RestoredBackup"
+        },
+        "liveOrigin": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 256,
+          "pattern": "^https?://[^/?#@\\s]+$"
         }
       },
       "required": [
@@ -57,6 +63,9 @@
       ],
       "dependentRequired": {
         "restoredBackup": [
+          "readOnly"
+        ],
+        "liveOrigin": [
           "readOnly"
         ]
       },

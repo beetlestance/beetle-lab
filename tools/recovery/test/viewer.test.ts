@@ -22,12 +22,13 @@ it('opens real worker-backed historical HTTP with separate persistent auth, no m
   const root = join(f.root, 'history'); const limits = {maximumBytes: 8388608, maximumEntries: 1000};
   await restoreHistory({archive: f.destination, destination: root, operationId: randomUUID(), limits, operation: operation()});
   const restoredMetadata = join(root, 'data', header.roles.metadata); const before = await hash(restoredMetadata);
-  const options = {root, externalOrigin: origin, metadataWorkerUrl: storage.workerUrl(), limits};
+  const options = {root, externalOrigin: origin, liveOrigin: 'https://beetle.example.test/', metadataWorkerUrl: storage.workerUrl(), limits};
   let app = await openHistoryViewer({...options, operation: operation()});
   const headers = {host: '127.0.0.1:43129', origin, 'content-type': 'application/json', 'x-beetle-local': '1'};
   try {
     const opened = await app.server.inject({method: 'POST', url: '/api/v2/auth/local', headers, payload: {}});
     expect(opened.statusCode).toBe(200); expect(opened.json()).toMatchObject({readOnly: true, accessMode: 'automatic',
+      liveOrigin: 'https://beetle.example.test',
       restoredBackup: {backupId: header.backupId, createdAt: '2026-11-14T00:00:00.000Z'}});
     const setCookie = opened.headers['set-cookie']; const cookie = (Array.isArray(setCookie) ? setCookie[0]! : setCookie!).split(';')[0]!;
     expect(cookie).toMatch(/^beetle_history_[a-f0-9]{32}=/); const auth = {...headers, cookie, 'x-beetle-csrf': opened.json<{csrfToken: string}>().csrfToken};
@@ -35,7 +36,9 @@ it('opens real worker-backed historical HTTP with separate persistent auth, no m
     expect((await app.server.inject({method: 'POST', url: '/api/v2/organizations', headers: auth, payload: {}})).statusCode).toBe(403);
     expect(app.runtimeState()).toBe('disabled'); expect(app.inputRecoveryState()).toBe('disabled'); expect(app.historySummaryState()).toBe('disabled');
     await app.close(); app = await openHistoryViewer({...options, operation: operation()});
-    expect((await app.server.inject({url: '/api/v2/auth/session', headers: auth})).statusCode).toBe(200);
+    const reopened = await app.server.inject({url: '/api/v2/auth/session', headers: auth});
+    expect(reopened.statusCode).toBe(200);
+    expect(reopened.json()).toMatchObject({readOnly: true, liveOrigin: 'https://beetle.example.test'});
     expect((await app.server.inject({url: '/api/v2/auth/session', headers: {...headers, cookie: 'beetle_session=' + 'a'.repeat(43)}})).statusCode).toBe(401);
   } finally {await app.close();}
   expect(await hash(restoredMetadata)).toBe(before);

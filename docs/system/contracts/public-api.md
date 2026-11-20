@@ -58,7 +58,7 @@ One administrator per installation; no accounts, roles, invitations or SSO. Orga
 
 - Sessions: `POST /auth/local` (automatic mode) or `POST /auth/pair` (paired
   mode, single-use 15 min startup token) issue an HttpOnly, SameSite Strict
-  cookie with an 8 h absolute lifetime; `GET /auth/session`, `POST /auth/logout`.
+  cookie with an 8 h lifetime; `GET /auth/session`, `POST /auth/logout`. See [historical sessions](recovery.md#fresh-historical-restore).
   Exchanges are limited to 5 per minute. Logout revokes durably before replying.
 - Guard: exact canonical `Host`/`Origin` (loopback, or one HTTPS origin with decision 032
   network access), no forwarded trust or CORS, CSRF on every mutation. A GET never
@@ -212,9 +212,9 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `374b1933a711` |
+| `contracts/api/v2/` | `1d617b764e64` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
-| `app/src/adapters/inbound/http/session/` | `902456a694b1` |
+| `app/src/adapters/inbound/http/session/` | `4730d8aa11c6` |
 | `app/src/client/cli/` | `c7eb756df145` |
