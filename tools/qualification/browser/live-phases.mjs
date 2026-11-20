@@ -3,20 +3,14 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { validateApi } from '@beetle/contracts/api';
-import { counts } from '../resources/lifecycle/observations.ts';
+import { targetCounts } from '../native-application/target-runtime/target.ts';
+import { liveSamplerConfiguration } from './live-controls.mjs';
 import { revision } from './authoring.mjs';
 import { start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('./run-state.mjs').SubmittedRun} SubmittedRun */
-
-/** @param {string} program */
-export function delayReadiness(program) {
-  const status = "r.writeHead(key==='unexpected'?404:200)";
-  assert(program.includes(status));
-  return program.replace(status, "r.writeHead(key==='ready'&&counts.ready<=4?503:key==='unexpected'?404:200)");
-}
 
 /**
  * @param {Page} page
@@ -25,33 +19,31 @@ export function delayReadiness(program) {
  * @param {string} evidence
  */
 export async function livePhases(page, authored, fixture, evidence) {
-  const config = structuredClone(authored.config);
+  const config = liveSamplerConfiguration();
   assert(config.readiness);
   Object.assign(config.readiness, { attempts: 8, intervalMs: 1000, wallBudgetMs: 16000 });
-  const scenario = config.loadPlan.scenarios[0];
-  scenario.iterations = 95;
-  scenario.maxDuration = '50s';
-  config.selections[0].entries[0].wait = { durationMs: 500, jitterMs: 0 };
   await page.goto(authored.suite);
   await revision(page, config, 2);
   await page.setViewportSize({ width: 1440, height: 799 });
   const first = await start(page, 8388608, undefined, true);
-  await expect.poll(() => counts(fixture).ready, { timeout: 14000 }).toBeGreaterThan(0);
-  assert.equal(counts(fixture).work, 0);
+  await expect.poll(() => targetCounts(fixture).ready, { timeout: 14000 }).toBeGreaterThan(0);
+  assert.equal(targetCounts(fixture).work, 0);
   await captureStarting(page, evidence);
   await expect(page.getByText('Running', { exact: true })).toBeVisible({ timeout: 18000 });
-  assert(counts(fixture).work > 0);
+  assert(targetCounts(fixture).work > 0);
 
   await page.goto(authored.suite);
   const second = await start(page);
   const queue = await captureQueue(page, first, second, evidence);
   await cancelQueued(page, second);
-  const queuedTargetCounts = counts(fixture);
+  const queuedTargetCounts = targetCounts(fixture);
   assert.equal(queuedTargetCounts.ready, 5, 'The queued second run never reached the target');
 
   await page.setViewportSize({ width: 1440, height: 2584 });
   await page.goto(first.origin + first.path);
   await expect(page.getByText('Running', { exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('img', { name: /^CPU:.*process 64%.*system 38%/ })).toBeVisible();
+  assert(targetCounts(fixture).runtime >= 4);
   const stopped = await captureStop(page, first, evidence);
   await writeFile(join(evidence, 'live-phase-coverage.json'), JSON.stringify({ queue, queuedTargetCounts, stopped }), {
     mode: 0o600,
@@ -108,16 +100,21 @@ async function captureStop(page, first, evidence) {
   await page.getByRole('button', { name: 'Cancel run', exact: true }).click();
   await expect(cancelling.or(finalizing).or(terminal)).toBeVisible({ timeout: 15000 });
   const cancellationVisible = await cancelling.isVisible();
-  if (cancellationVisible) await page.screenshot({ path: join(evidence, 'live-cancelling.png'), fullPage: true });
+  if (cancellationVisible) {
+    await expect(page.getByRole('button', { name: 'Cancelling…', exact: true })).toBeDisabled();
+    await page.mouse.move(4, 4);
+    await page.screenshot({ path: join(evidence, 'live-cancelling.png'), fullPage: true });
+  }
   await expect(finalizing.or(terminal)).toBeVisible({ timeout: 60000 });
   const finalizingVisible = await finalizing.isVisible();
   if (finalizingVisible) {
     const progress = finalizing.getByRole('progressbar', { name: 'Sealing results', exact: true });
     assert.equal(await progress.getAttribute('aria-valuenow'), null);
+    await expect(finalizing.getByText('Target sampler closed', { exact: true })).toBeVisible({ timeout: 4000 });
     await page.screenshot({ path: join(evidence, 'live-finalizing.png'), fullPage: true });
   }
   await expect(terminal).toBeVisible({ timeout: 60000 });
   await terminal.click();
   await assertRunState(page, { state: 'cancelled', outcome: 'inconclusive' }, first);
-  return { cancellationVisible, finalizingVisible, resultOpened: true };
+  return { cancellationVisible, finalizingVisible, samplerClosureVisible: finalizingVisible, resultOpened: true };
 }

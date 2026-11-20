@@ -22,7 +22,7 @@ export const liveTargetReadings = { cpuPercent: 0.64, systemCpuPercent: 38, acti
  */
 export async function liveControls(page, authored, fixture, evidence) {
   await page.goto(authored.suite);
-  await revision(page, liveConfiguration(), 2);
+  await revision(page, liveSamplerConfiguration(), 2);
   const submitted = await start(page);
   const target = page.getByRole('region', { name: 'Target runtime', exact: true });
   await expect(target.getByRole('img', { name: /^CPU:.*process 64%.*system 38%/ })).toBeVisible({ timeout: 16000 });
@@ -50,7 +50,7 @@ export async function liveControls(page, authored, fixture, evidence) {
   });
 }
 
-function liveConfiguration() {
+export function liveSamplerConfiguration() {
   const config = configuration();
   const scenario = config.loadPlan.scenarios[0];
   assert(scenario?.executor === 'per-vu-iterations' && config.targetSampling);

@@ -15,7 +15,7 @@ import { offlineExport } from './exports.mjs';
 import { memoryPressure, memoryTarget } from './memory-pressure.mjs';
 import { outputPressure } from './output-pressure.mjs';
 import { cancelArchive } from './cancel-archive.mjs';
-import { livePhases, delayReadiness } from './live-phases.mjs';
+import { livePhases } from './live-phases.mjs';
 import { liveControls, liveTargetReadings } from './live-controls.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
@@ -105,11 +105,11 @@ try {
     assert(entry[2].includes(status));
     entry[2] = entry[2].replace(status, "r.writeHead(key==='ready'?503:key==='unexpected'?404:200)");
   }
-  if (profile === 'live-phases') entry[2] = delayReadiness(entry[2]);
   if (profile === 'memory-pressure') entry[2] = memoryTarget(entry[2]);
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime' || profile === 'cancel-archive') await configureTarget(f, true);
   if (profile === 'live-controls') await configureTarget(f, true, liveTargetReadings);
+  if (profile === 'live-phases') await configureTarget(f, true, liveTargetReadings, 4);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
   const network = profile === 'network' ? await prepareNetwork(f) : undefined;
   const origin = network?.origin ?? f.origin;

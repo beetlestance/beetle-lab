@@ -189,7 +189,7 @@ function headerText(props: Parameters<typeof RunHeader>[0], suiteName: string | 
 }
 
 function reconnectHeader(stream: LiveStream, at: Positions) {
-  if (!stream.stalled || !stream.latest) return null;
+  if (stream.phase !== 'running' || !stream.stalled || !stream.latest) return null;
   const seconds = Math.max(0, Math.round((stream.now - stream.latest.receivedWall) / 1000));
   const lastUpdate = at.stoppedAtMs === null ? 'the last received window' : clock(at.stoppedAtMs);
   return {
