@@ -6,13 +6,8 @@
   flex-wrap: wrap;
   margin: var(--s-24) 0 var(--s-32);
 }
-.inputs-kicker {
-  margin-bottom: var(--s-8);
-  color: var(--mute);
-  font-size: var(--fs-md);
-}
-.inputs-header h1 {
-  font-size: var(--fs-4xl);
+.inputs-header h2 {
+  font-size: var(--fs-2xl);
   line-height: var(--lh-heading);
 }
 .inputs-summary {

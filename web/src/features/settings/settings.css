@@ -2,6 +2,11 @@
   font-size: var(--fs-4xl);
   line-height: var(--lh-heading);
 }
+/* Inside a workspace the workspace name is the page heading. */
+.settings-header h2 {
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-heading);
+}
 .settings-header p {
   margin-top: var(--s-12);
   max-width: 64ch;
@@ -10,6 +15,10 @@
 .settings-page > nav,
 .settings-page > .segmented {
   margin-top: var(--s-32);
+}
+.settings-parents {
+  margin: var(--s-16) 0 0;
+  color: var(--mute);
 }
 .settings-editing {
   margin: var(--s-16) 0 var(--s-32);

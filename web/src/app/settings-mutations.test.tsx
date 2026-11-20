@@ -18,12 +18,13 @@ describe('settings save bar', () => {
     const data = settings(workspaceScope);
     if ('overrides' in data) data.overrides.runDefaults = { budget: { cpuMillis: 1200 } };
     data.effective.runDefaults.budget.cpuMillis = { value: 1200, source: workspaceScope, allowedRange: { minimum: 1, maximum: 2000 } };
-    const api = testClient(() => json(data)); mount(api.client, routes.workspaceSettings(ids.a, ids.workspace));
+    const api = testClient(request => request.method === 'GET' && /\/(organizations|workspaces)\/[^/?]+$/.test(request.path) ? readNamespace(request) : json(data));
+    mount(api.client, routes.workspaceSettings(ids.a, ids.workspace));
     expect(await screen.findByLabelText('CPU per run')).toHaveValue('1.2');
     change('CPU per run', '1.3');
     expect(within(row('CPU per run')).getByText('Changed here, not saved yet')).toBeVisible();
-    expect(screen.getByText('1 unsaved change in this workspace.')).toBeVisible();
-    save('this workspace'); await screen.findByText(/^Saved\. New runs in/);
+    expect(screen.getByText('1 unsaved change in Same workspace.')).toBeVisible();
+    save('Same workspace'); await screen.findByText(/^Saved\. New runs in/);
     expect(api.records.find(record => record.method === 'PATCH')).toMatchObject({
       path: `/api/v2/organizations/${ids.a}/workspaces/${ids.workspace}/settings`,
       body: { scope: workspaceScope, patch: { runDefaults: { budget: { cpuMillis: 1300 } } } },

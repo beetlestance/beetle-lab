@@ -3,42 +3,30 @@ import { Link, useSearchParams } from 'react-router-dom';
 import type { SettingsScope } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
-import { routes, validId } from '../../app/routes.js';
+import { routes } from '../../app/routes.js';
 import { Pagination, usePage } from '../../components/Pagination.js';
 import { QueryState } from '../../components/QueryState.js';
 import { ScopeTabs } from './ScopeTabs.js';
 
-interface Choice {
-  level: 'organization' | 'workspace';
-  organizationId?: string;
-}
-
-export function useSettingsChoice(scope: SettingsScope): Choice | undefined {
+/** Organization settings entered from the installation level pick an organization first. */
+export function useSettingsChoice(scope: SettingsScope): boolean {
   const [search] = useSearchParams();
-  const level = search.get('level');
-  if (scope.kind !== 'installation' || (level !== 'organization' && level !== 'workspace')) return;
-  const organizationId = search.get('organization') ?? undefined;
-  return level === 'workspace' && validId(organizationId) ? { level, organizationId } : { level };
+  return scope.kind === 'installation' && search.get('level') === 'organization';
 }
 
-export function SettingsScopeChooser({ level, organizationId }: Choice) {
-  const chooseWorkspace = level === 'workspace' && organizationId;
+export function SettingsScopeChooser() {
   return (
     <section className="content-section settings-page">
       <header className="settings-header">
         <h1>Settings</h1>
       </header>
-      <ScopeTabs scope={{ kind: 'installation' }} choose={level} />
-      {chooseWorkspace ? (
-        <WorkspaceChoices key={organizationId} organizationId={organizationId} />
-      ) : (
-        <OrganizationChoices level={level} />
-      )}
+      <ScopeTabs scope={{ kind: 'installation' }} choose="organization" />
+      <OrganizationChoices />
     </section>
   );
 }
 
-function OrganizationChoices({ level }: Pick<Choice, 'level'>) {
+function OrganizationChoices() {
   const api = useApi();
   const page = usePage(queryKeys.organizations);
   const query = useQuery({
@@ -52,36 +40,8 @@ function OrganizationChoices({ level }: Pick<Choice, 'level'>) {
         {({ items, nextCursor }) => (
           <Choices
             items={items}
-            href={(id) =>
-              level === 'organization' ? routes.organizationSettings(id) : routes.chooseSettings(level, id)
-            }
+            href={(id) => routes.organizationSettings(id)}
             empty="No organizations yet."
-            page={page}
-            next={nextCursor}
-          />
-        )}
-      </QueryState>
-    </div>
-  );
-}
-
-function WorkspaceChoices({ organizationId }: { organizationId: string }) {
-  const api = useApi();
-  const page = usePage(queryKeys.workspaces(organizationId));
-  const query = useQuery({
-    queryKey: queryKeys.workspacesPage(organizationId, page.cursor),
-    queryFn: ({ signal }) => readResult(api.listWorkspaces({ params: { organizationId }, query: page.query, signal })),
-  });
-  return (
-    <div>
-      <h2>Choose a workspace</h2>
-      <Link to={routes.chooseSettings('workspace')}>Choose another organization</Link>
-      <QueryState query={query}>
-        {({ items, nextCursor }) => (
-          <Choices
-            items={items}
-            href={(id) => routes.workspaceSettings(organizationId, id)}
-            empty="No workspaces in this organization yet."
             page={page}
             next={nextCursor}
           />

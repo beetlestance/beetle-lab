@@ -68,12 +68,14 @@ export function AppShell({ children, onSearch }: AppShellProps) {
             <button
               type="button"
               className="btn btn-sm shell-search"
-              aria-label="Search commands"
               aria-haspopup="dialog"
               aria-keyshortcuts="Control+K Meta+K"
               onClick={onSearch}
             >
-              Search
+              {/* The name extends the visible word, so it stays "Search commands" without an
+                  aria-label that would hide the visible label (label-content-name-mismatch). */}
+              {'Search '}
+              <span className="sr-only">commands</span>
               <kbd aria-hidden="true">⌘K</kbd>
             </button>
             <ThemeSwitch className="shell-theme" />

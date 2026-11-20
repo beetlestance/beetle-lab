@@ -55,34 +55,34 @@ it('opens the switcher, supports Escape and navigates to a selected organization
   expect(screen.queryByRole('navigation', { name: 'Switch organization' })).not.toBeInTheDocument();
 });
 
-it('opens the workspace directory and retains all settings levels across navigation', async () => {
+it('keeps workspace settings inside the workspace and the levels above in Settings', async () => {
   mount(fixture().client);
   fireEvent.click(mainNav().getByRole('link', { name: 'Workspaces' }));
   expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeVisible();
   fireEvent.click(await screen.findByRole('link', { name: 'First org' }));
   fireEvent.click(await screen.findByRole('link', { name: 'Same workspace' }));
+  const sections = () => within(screen.getByRole('navigation', { name: 'Workspace sections' }));
   fireEvent.click(await screen.findByRole('link', { name: 'Suites' }));
+  fireEvent.click(sections().getByRole('link', { name: 'Settings' }));
+  await screen.findByRole('list', { name: 'Settings for Same workspace' });
+  expect(screen.getByRole('heading', { level: 1, name: 'Same workspace' })).toBeVisible();
+  expect(mainNav().getByRole('link', { name: 'Workspaces' })).toHaveAttribute('aria-current', 'page');
+  expect(screen.queryByRole('navigation', { name: 'Settings level' })).not.toBeInTheDocument();
   fireEvent.click(mainNav().getByRole('link', { name: 'Settings' }));
-  await screen.findByRole('list', { name: /Settings for/ });
-  expect(settingsNav().getByRole('link', { name: 'Workspace' })).toHaveAttribute('aria-current', 'page');
+  await screen.findByRole('navigation', { name: 'Settings level' });
+  expect(settingsNav().getByRole('link', { name: 'Organization' })).toHaveAttribute('aria-current', 'page');
   fireEvent.click(settingsNav().getByRole('link', { name: 'Installation' }));
   await screen.findByRole('list', { name: 'Settings for installation' });
-  fireEvent.click(settingsNav().getByRole('link', { name: 'Organization' }));
-  await screen.findByRole('list', { name: /Settings for this organization/ });
-  fireEvent.click(settingsNav().getByRole('link', { name: 'Workspace' }));
-  await screen.findByRole('list', { name: /Settings for this workspace/ });
-  expect(settingsNav().getAllByRole('link')).toHaveLength(3);
+  expect(settingsNav().getAllByRole('link')).toHaveLength(2);
 });
 
-it('lets a user entering settings from installation choose a workspace', async () => {
+it('lets a user entering settings from installation choose an organization', async () => {
   mount(fixture().client);
   fireEvent.click(mainNav().getByRole('link', { name: 'Settings' }));
   await screen.findByRole('list', { name: 'Settings for installation' });
-  fireEvent.click(settingsNav().getByRole('link', { name: 'Workspace' }));
+  fireEvent.click(settingsNav().getByRole('link', { name: 'Organization' }));
   await screen.findByRole('heading', { name: 'Choose an organization' });
   fireEvent.click(await screen.findByRole('link', { name: 'First org' }));
-  await screen.findByRole('heading', { name: 'Choose a workspace' });
-  fireEvent.click(await screen.findByRole('link', { name: 'Same workspace' }));
-  await screen.findByRole('list', { name: 'Settings for this workspace' });
-  expect(settingsNav().getAllByRole('link')).toHaveLength(3);
+  await screen.findByRole('list', { name: /Settings for/ });
+  expect(settingsNav().getByRole('link', { name: 'Organization' })).toHaveAttribute('aria-current', 'page');
 });

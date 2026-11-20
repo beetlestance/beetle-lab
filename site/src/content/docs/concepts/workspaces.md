@@ -27,8 +27,8 @@ right now and the last run, and **Create workspace** adds one.
 A workspace has five tabs: **Suites** (with its folders), **Runs**, **Inputs**,
 **Exports** and **Settings**. **Overview** in the header shows the current
 workspace at a glance: runs in progress, the last 24 hours, recent runs and the
-agent's status. **Settings** in the header holds the installation, organisation
-and workspace levels as tabs.
+agent's status. **Settings** in the header holds the installation and organisation
+levels as tabs; a workspace's own values are in its **Settings** tab.
 
 ## Organisations
 

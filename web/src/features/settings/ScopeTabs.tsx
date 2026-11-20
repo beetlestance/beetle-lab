@@ -4,6 +4,7 @@ import type { SettingsScope } from '@beetle/contracts/api';
 import { queryKeys } from '../../app/queries.js';
 import { routes } from '../../app/routes.js';
 import { useRememberedSettingsScope } from '../../app/settings-scope.js';
+import { Link } from 'react-router-dom';
 import { NavTabs } from '../../components/Tabs.js';
 import type { NavTabItem } from '../../components/Tabs.js';
 
@@ -39,10 +40,11 @@ function draftCount(get: (key: readonly unknown[]) => unknown, key: readonly str
   return count > 0 ? count : undefined;
 }
 
-/** Installation / Organization / Workspace, with the number of unsaved changes kept at each level. */
-export function ScopeTabs({ scope, choose }: { scope: SettingsScope; choose?: 'organization' | 'workspace' }) {
-  const { organizationId, workspaceId } = useScopeIds(scope);
-  const [installation, organization, workspace] = useScopeDraftCounts(organizationId, workspaceId);
+/** Installation / Organization, with the number of unsaved changes kept at each level. */
+export function ScopeTabs({ scope, choose }: { scope: SettingsScope; choose?: 'organization' }) {
+  const remembered = useRememberedSettingsScope();
+  const organizationId = scope.kind === 'installation' ? remembered.organizationId : scope.organizationId;
+  const [installation, organization] = useScopeDraftCounts(organizationId);
   const items: NavTabItem[] = [
     {
       to: routes.settings,
@@ -51,45 +53,32 @@ export function ScopeTabs({ scope, choose }: { scope: SettingsScope; choose?: 'o
       count: installation ?? undefined,
     },
     {
-      to: organizationId ? routes.organizationSettings(organizationId) : routes.chooseSettings('organization'),
+      to: organizationId ? routes.organizationSettings(organizationId) : routes.chooseSettings(),
       label: 'Organization',
       current: scope.kind === 'organization' || choose === 'organization',
       count: organization ?? undefined,
-    },
-    {
-      to:
-        organizationId && workspaceId
-          ? routes.workspaceSettings(organizationId, workspaceId)
-          : routes.chooseSettings('workspace', organizationId),
-      label: 'Workspace',
-      current: scope.kind === 'workspace' || choose === 'workspace',
-      count: workspace ?? undefined,
     },
   ];
   return <NavTabs label="Settings level" items={items} size="md" />;
 }
 
-function useScopeDraftCounts(organizationId: string | undefined, workspaceId: string | undefined) {
+/** Inside a workspace, the levels it inherits from are plain links, not tabs. */
+export function ParentLevels({ scope }: { scope: Extract<SettingsScope, { kind: 'workspace' }> }) {
+  return (
+    <p className="settings-parents">
+      Values not set here come from{' '}
+      <Link to={routes.organizationSettings(scope.organizationId)}>organization settings</Link>, then{' '}
+      <Link to={routes.settings}>installation settings</Link>.
+    </p>
+  );
+}
+
+function useScopeDraftCounts(organizationId: string | undefined) {
   const counts = useCached((get) =>
     JSON.stringify([
       draftCount(get, queryKeys.installationSettings),
       organizationId ? draftCount(get, queryKeys.organizationSettings(organizationId)) : undefined,
-      organizationId && workspaceId
-        ? draftCount(get, queryKeys.workspaceSettings(organizationId, workspaceId))
-        : undefined,
     ]),
   );
   return JSON.parse(counts) as (number | null)[];
-}
-
-function useScopeIds(scope: SettingsScope) {
-  const remembered = useRememberedSettingsScope();
-  const organizationId = scope.kind === 'installation' ? remembered.organizationId : scope.organizationId;
-  const workspaceId =
-    scope.kind === 'workspace'
-      ? scope.workspaceId
-      : organizationId === remembered.organizationId
-        ? remembered.workspaceId
-        : undefined;
-  return { organizationId, workspaceId };
 }

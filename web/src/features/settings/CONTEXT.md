@@ -3,6 +3,8 @@
 Penpot "Settings", "Settings / Installation", "Settings / Installation / Capacity",
 "Settings / Workspace" and "Settings / Loading". Inputs: validated installation,
 organization or workspace scope and the required ApiClient.
+Workspace scope renders inside the workspace (h2, no level tabs; ParentLevels links up);
+installation and organization share ScopeTabs. The chooser picks an organization only.
 Rows (`model.ts`) show each value in a display unit (`units.ts`: min, GB, CPUs; exact
 BigInt conversion, never truncated) with where it comes from: "Set here",
 "Inherited from …". Scoped levels offer Inherit instead (explicit null) for values set

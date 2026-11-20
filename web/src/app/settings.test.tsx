@@ -2,7 +2,8 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { ids, json, mount, testClient, deferred } from './test-fixtures.js';
+import { ids, json, mount, readNamespace, testClient, deferred } from './test-fixtures.js';
+import type { RequestRecord } from './test-fixtures.js';
 import { settings, orgScope, workspaceScope } from '../features/settings/test-fixtures.js';
 import { routes } from './routes.js';
 import { queryKeys } from './queries.js';
@@ -10,6 +11,9 @@ import { fromUnit, toUnit, units } from '../features/settings/units.js';
 import { parseRow, retentionRow } from '../features/settings/model.js';
 
 afterEach(cleanup);
+/** A workspace's settings page also reads its organization and workspace for the heading. */
+const settingsOr = (data: unknown) => (request: RequestRecord) =>
+  /\/(organizations|workspaces)\/[^/?]+$/.test(request.path) ? readNamespace(request) : json(data);
 const settingsReads = (records: { method: string; path: string }[]) =>
   records.filter((record) => record.method === 'GET' && record.path.endsWith('/settings'));
 
@@ -17,9 +21,9 @@ describe('settings scope reads and values', () => {
   it.each([
     [routes.settings, { kind: 'installation' as const }, 'Settings for installation'],
     [routes.organizationSettings(ids.a), orgScope, 'Settings for this organization'],
-    [routes.workspaceSettings(ids.a, ids.workspace), workspaceScope, 'Settings for this workspace'],
+    [routes.workspaceSettings(ids.a, ids.workspace), workspaceScope, 'Settings for Same workspace'],
   ])('renders typed settings at %s', async (path, scope, list) => {
-    const api = testClient(() => json(settings(scope)));
+    const api = testClient(settingsOr(settings(scope)));
     mount(api.client, path);
     const rows = await screen.findByRole('list', { name: list });
     expect(within(rows).getByRole('heading', { name: 'Longest run allowed' })).toBeVisible();
@@ -34,7 +38,7 @@ describe('settings scope reads and values', () => {
     if ('overrides' in data) data.overrides.runDefaults = { budget: { pids: 50 } };
     data.effective.runDefaults.budget.pids = { value: 50, source: workspaceScope, allowedRange: { minimum: 1, maximum: 100 } };
     data.effective.runDefaults.budget.cpuMillis.source = orgScope;
-    const api = testClient(() => json(data));
+    const api = testClient(settingsOr(data));
     mount(api.client, routes.workspaceSettings(ids.a, ids.workspace));
     const pids = (await screen.findByRole('heading', { name: 'Processes per run' })).closest('li')!;
     expect(within(pids).getByText('Set here')).toBeVisible();
@@ -42,9 +46,11 @@ describe('settings scope reads and values', () => {
     const cpu = screen.getByRole('heading', { name: 'CPU per run' }).closest('li')!;
     expect(within(cpu).getByText('Inherited from organization')).toBeVisible();
     expect(within(cpu).queryByRole('button', { name: 'Inherit instead' })).not.toBeInTheDocument();
-    const tabs = screen.getByRole('navigation', { name: 'Settings level' });
-    expect(within(tabs).getByRole('link', { name: 'Workspace' })).toHaveAttribute('aria-current', 'page');
-    expect(within(tabs).getByRole('link', { name: 'Organization' })).toHaveAttribute('href', routes.organizationSettings(ids.a));
+    expect(screen.getByRole('heading', { level: 1, name: 'Same workspace' })).toBeVisible();
+    const sections = screen.getByRole('navigation', { name: 'Workspace sections' });
+    expect(within(sections).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('navigation', { name: 'Settings level' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'organization settings' })).toHaveAttribute('href', routes.organizationSettings(ids.a));
   });
   it.each(['/organizations/bad/settings', `/organizations/${ids.a}/workspaces/bad/settings`])('rejects malformed settings IDs at %s before fetch', async path => {
     const api = testClient(() => json(settings())); mount(api.client, path);

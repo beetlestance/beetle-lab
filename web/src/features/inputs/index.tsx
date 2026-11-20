@@ -62,8 +62,7 @@ function InventoryScope({ workspace, children, actions, renderActions }: Invento
     <section className="content-section input-inventory" aria-label="Input inventory">
       <header className="inputs-header">
         <div>
-          <p className="inputs-kicker">{workspace.name}</p>
-          <h1>Inputs</h1>
+          <h2>Inputs</h2>
           <p className="inputs-summary">{summary(context, query.data !== undefined)}</p>
         </div>
         <div className="inputs-actions">

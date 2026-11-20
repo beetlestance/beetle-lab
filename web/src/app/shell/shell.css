@@ -302,3 +302,17 @@
 .shell-scope-links a[aria-current] {
   background: var(--line);
 }
+.workspace-heading {
+  margin-bottom: var(--s-16);
+}
+.workspace-heading-eyebrow {
+  margin: 0 0 var(--s-8);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
+.workspace-heading h1 {
+  margin: 0;
+  font-size: var(--fs-4xl);
+  line-height: var(--lh-heading);
+  overflow-wrap: anywhere;
+}

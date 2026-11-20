@@ -14,6 +14,7 @@ import { ToastProvider } from '../components/Toast.js';
 import { PageTransition } from '../components/NavigationMotion.js';
 import { AppShell } from './shell/AppShell.js';
 import { CommandPalette, useCommandNavigation } from '../features/command-search/index.js';
+import type { WorkspaceView } from '../features/workspaces/index.js';
 
 const Organizations = lazy(() =>
   import('../features/organizations/index.js').then((module) => ({ default: module.Organizations })),
@@ -90,7 +91,7 @@ function AppRoutes() {
       <Route path={routes.suiteScriptPattern} element={<SuiteScriptRoute />} />
       <Route path={routes.settings} element={<Settings scope={{ kind: 'installation' }} />} />
       <Route path={routes.organizationSettingsPattern} element={<SettingsRoute />} />
-      <Route path={routes.workspaceSettingsPattern} element={<SettingsRoute />} />
+      <Route path={routes.workspaceSettingsPattern} element={<ScopeRoute view="settings" />} />
       <Route path={routes.workspaces} element={<Organizations workspaceDirectory />} />
       <Route path={routes.organizationWorkspacesPattern} element={<ScopeRoute directory />} />
       <Route path={routes.organizations} element={<Organizations />} />
@@ -101,7 +102,7 @@ function AppRoutes() {
   );
 }
 
-function ScopeRoute({ view, directory }: { view?: 'inputs' | 'exports'; directory?: boolean }) {
+function ScopeRoute({ view, directory }: { view?: WorkspaceView; directory?: boolean }) {
   const { organizationId, workspaceId } = useParams();
   if (
     !validId(organizationId) ||
@@ -125,12 +126,11 @@ function InvalidRoute() {
   );
 }
 
+/** Organization settings; a workspace's settings are a section inside its workspace. */
 function SettingsRoute() {
-  const { organizationId, workspaceId } = useParams();
-  if (!validId(organizationId) || (workspaceId !== undefined && !validId(workspaceId))) return <InvalidRoute />;
-  const scope = workspaceId
-    ? { kind: 'workspace' as const, organizationId, workspaceId }
-    : { kind: 'organization' as const, organizationId };
+  const { organizationId } = useParams();
+  if (!validId(organizationId)) return <InvalidRoute />;
+  const scope = { kind: 'organization' as const, organizationId };
   return <Settings key={JSON.stringify(scope)} scope={scope} />;
 }
 
