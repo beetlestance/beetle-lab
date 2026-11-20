@@ -3,6 +3,7 @@ import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunHistorySummary, Suite, SuiteRevision } from '@beetle/contracts/api';
 import { Link } from 'react-router-dom';
 import { routes } from '../../../app/routes.js';
+import { useSessionAccess } from '../../../app/session.js';
 import { ThresholdReading } from './ThresholdReading.js';
 import type { PlanRule } from '../live/plan.js';
 import { buttonClass } from '../../../components/Button.js';
@@ -146,7 +147,9 @@ export function ScriptVersion({
   revision: SuiteRevision | undefined;
   failed: boolean;
 }) {
+  const { readOnly } = useSessionAccess();
   const { organizationId, workspaceId } = run.scope;
+  const script = routes.suiteScriptFromRun(organizationId, workspaceId, run.suiteId, run.revisionId, run.id);
   return (
     <section className="result-card result-script" aria-labelledby="result-script-title">
       <h2 id="result-script-title">Script version</h2>
@@ -160,15 +163,14 @@ export function ScriptVersion({
         Engine {run.engine.id} ({run.engine.profileId}), run <span className="number">{shortId(run.id)}</span>.
       </p>
       <div className="result-row">
-        <Link
-          className={buttonClass('secondary', 'sm')}
-          to={routes.suiteScriptFromRun(organizationId, workspaceId, run.suiteId, run.revisionId, run.id)}
-        >
+        <Link className={buttonClass('secondary', 'sm')} to={script}>
           View script
         </Link>
-        <Link className={buttonClass('text', 'sm')} to={routes.suite(organizationId, workspaceId, run.suiteId)}>
-          Open suite
-        </Link>
+        {!readOnly && (
+          <Link className={buttonClass('secondary', 'sm')} to={script + '&export=script'}>
+            Export script
+          </Link>
+        )}
       </div>
     </section>
   );

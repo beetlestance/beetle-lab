@@ -109,10 +109,10 @@ function routes(job: ExportJob | null, overrides: { revision?: SuiteRevision; co
     return json(match[1]);
   };
 }
-function mount(handler: (request: RequestRecord) => Response) {
+function mount(handler: (request: RequestRecord) => Response, path = '/') {
   const api = testClient(handler);
   environment(api.client).mount(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <SuiteScript
         organizationId={organizationId}
         workspaceId={workspaceId}
@@ -154,6 +154,15 @@ it('renders the header and offers to prepare a script when none exists', async (
   expect(await screen.findByText('This revision has no script yet')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Copy script' })).toBeDisabled();
   expect(await screen.findAllByRole('button', { name: 'Run this revision' })).toHaveLength(1);
+});
+
+it('opens the saved revision export from its URL without preparing a job', async () => {
+  const api = mount(routes(null), '/?export=script');
+  const dialog = await screen.findByRole('dialog', { name: 'Export revision 2 as a k6 script' });
+  expect(within(dialog).getByRole('button', { name: 'Prepare script' })).toBeVisible();
+  expect(api.records.every((record) => record.method === 'GET')).toBe(true);
+  fireEvent.click(within(dialog).getByRole('button', { name: /^Close$/ }));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
 
 it('runs this revision through the suite Start run dialog without sending anything until confirmed', async () => {

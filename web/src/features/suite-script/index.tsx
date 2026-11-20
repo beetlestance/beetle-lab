@@ -152,10 +152,11 @@ function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: Su
   const [tab, setTab] = useState<Tab>('script');
   const [exporting, setExporting] = useState(false);
   const [search, setSearch] = useSearchParams();
-  const zip = search.get('export') === 'zip';
+  const format = search.get('export');
+  const requestedExport = format === 'script' || format === 'zip';
   function closeExport() {
     setExporting(false);
-    if (zip) {
+    if (requestedExport) {
       const next = new URLSearchParams(search);
       next.delete('export');
       setSearch(next, { replace: true });
@@ -201,13 +202,13 @@ function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: Su
           />
         )}
       </TabPanel>
-      {(exporting || zip) && (
+      {(exporting || requestedExport) && (
         <ExportDialog
           revision={revision}
           suiteName={suite.name}
           flow={flow}
           close={closeExport}
-          zip={zip}
+          zip={format === 'zip'}
           editHref={suiteHref}
         />
       )}
