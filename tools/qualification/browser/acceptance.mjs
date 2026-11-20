@@ -22,6 +22,7 @@ import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
 import { cleanupBrowserInstallation } from './cleanup.mjs';
 import { keyboard, themesAndViewports } from './interactions.mjs';
 import { crossScope } from './scope.mjs';
+import { shellNavigation, shellMotion, phoneShellNavigation } from './shell-navigation.mjs';
 import { reference } from './reference.mjs';
 import { indexedLatencyPreview, targetRuntime } from './target-runtime.mjs';
 import { comparisonConfiguration, configureComparisonTarget, targetComparison } from './target-comparison.mjs';
@@ -169,6 +170,9 @@ try {
     });
   const authored = await phase('automatic-access-and-authoring', () => author(appPage, origin));
   if (profile === 'interaction') {
+    await phase('shell-workspace-and-settings-navigation', () => shellNavigation(appPage, authored.workspace));
+    await phase('phone-workspace-navigation', () => phoneShellNavigation(appPage, authored.workspace));
+    await phase('shell-route-motion', () => shellMotion(appPage, authored.workspace));
     await phase('keyboard-navigation', () => keyboard(appPage, origin));
     await phase('themes-viewports-reduced-motion', () => themesAndViewports(appPage, authored.workspace));
     await phase('cross-scope-cache-and-refusal', () => crossScope(appPage, authored));

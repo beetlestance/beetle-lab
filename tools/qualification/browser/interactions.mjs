@@ -47,9 +47,7 @@ export async function keyboard(page, origin) {
 export async function themesAndViewports(page, workspace) {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto(workspace);
-  const section = page.locator('.content-section').first();
-  await expect(section).toBeVisible();
-  expect(await section.evaluate((node) => globalThis.getComputedStyle(node).animationName)).not.toBe('none');
+  await expect(page.getByRole('link', { name: 'Suites', exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'Scarab', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'scarab');
   const scarab = await page
@@ -89,7 +87,7 @@ export async function themesAndViewports(page, workspace) {
     await page.getByRole('button', { name: 'Search commands', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Search commands', exact: true });
     await expect(dialog).toBeVisible();
-    const motion = await section.evaluate((node) => {
+    const motion = await dialog.evaluate((node) => {
       const style = globalThis.getComputedStyle(node);
       return {
         duration: parseFloat(style.animationDuration),
@@ -98,9 +96,10 @@ export async function themesAndViewports(page, workspace) {
         scroll: style.scrollBehavior,
       };
     });
-    expect(motion.duration).toBeLessThanOrEqual(0.00001);
+    // The stylesheet uses 0.01ms; Chromium serializes computed durations in seconds.
+    expect(motion.duration * 1000).toBeCloseTo(0.01, 4);
     expect(motion.iterations).toBe('1');
-    expect(motion.transition).toBeLessThanOrEqual(0.00001);
+    expect(motion.transition * 1000).toBeCloseTo(0.01, 4);
     expect(motion.scroll).toBe('auto');
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
