@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react';
-import type { StageScheduleRow } from './StageSchedule.js';
 import { Milestones } from './Milestones.js';
-import { StageSchedule } from './StageSchedule.js';
 import { Button } from '../../../components/Button.js';
 import { useId } from 'react';
 import type { Run } from '@beetle/contracts/api';
@@ -22,7 +20,7 @@ export function ExecutionActivity({
 }: {
   run: Run;
   terminal: boolean;
-  narrative?: { stages: readonly StageScheduleRow[]; observation: ReactNode };
+  narrative?: ReactNode;
 }) {
   const heading = useId();
   const query = useTimeline(run, terminal);
@@ -32,7 +30,6 @@ export function ExecutionActivity({
       <header className="section-header">
         <div>
           <h2 id={heading}>{narrative ? 'What happened' : 'Execution activity'}</h2>
-          <p>Source timestamps correlate observations; they do not measure elapsed time.</p>
         </div>
         <Button
           variant="text"
@@ -43,13 +40,7 @@ export function ExecutionActivity({
           Refresh activity
         </Button>
       </header>
-      {narrative && (
-        <>
-          <StageSchedule stages={narrative.stages} />
-          <h3 className="result-milestone-heading">Recorded observations</h3>
-          {narrative.observation}
-        </>
-      )}
+      {narrative}
       {query.isPending && <p role="status">Loading execution activity…</p>}
       {query.isError && (
         <p role="alert">
@@ -64,13 +55,12 @@ export function ExecutionActivity({
           )}
           {data.omitted && <p>Recent history only: earlier activity was omitted to keep this view bounded.</p>}
           {narrative ? (
-            <>
+            <details>
+              <summary>Inspect recorded activity and resource observations</summary>
+              <p>Activity timestamps use the source clock.</p>
               <Milestones rows={data.rows} />
-              <details>
-                <summary>Inspect recorded activity and resource observations</summary>
-                <ActivityFacts data={data} />
-              </details>
-            </>
+              <ActivityFacts data={data} />
+            </details>
           ) : (
             <ActivityFacts data={data} />
           )}

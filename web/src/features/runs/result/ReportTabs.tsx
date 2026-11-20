@@ -11,7 +11,7 @@ import type { RiseOrigin } from '../live/rise-position.js';
 import { LatencyRise } from '../live/Extras.js';
 import type { PlanRequest } from '../live/plan.js';
 import { ExecutionActivity } from '../timeline/index.js';
-import { RecordedScenarioStart } from '../timeline/StageSchedule.js';
+import { StageSchedule } from '../timeline/StageSchedule.js';
 import type { StageScheduleRow } from '../timeline/StageSchedule.js';
 import { RunWarnings } from '../warnings/index.js';
 
@@ -120,15 +120,22 @@ function Activity({
     <ExecutionActivity
       run={run}
       terminal
-      narrative={{
-        stages,
-        observation: (
-          <>
-            <RecordedScenarioStart milliseconds={origin?.scenarioStartedAtMs} />
-            <LatencyRise run={run} requests={requests} origin={origin} explain />
-          </>
-        ),
-      }}
+      narrative={
+        <LatencyRise
+          run={run}
+          requests={requests}
+          origin={origin}
+          explain
+          render={(offset, content) => (
+            <StageSchedule
+              stages={stages}
+              scenarioStartedAtMs={origin?.scenarioStartedAtMs}
+              riseOffset={offset}
+              latency={content}
+            />
+          )}
+        />
+      }
     />
   );
 }

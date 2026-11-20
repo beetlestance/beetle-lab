@@ -90,6 +90,7 @@ async function verifyPreview(page, evidence) {
 /** @param {import('@playwright/test').Page} page @param {string} evidence */
 async function recordedActivity(page, evidence) {
   await page.getByRole('tab', { name: 'What happened', exact: true }).click();
+  await page.getByText('Inspect recorded activity and resource observations', { exact: true }).click();
   const activity = page.getByRole('list', { name: 'Recorded run milestones', exact: true });
   await expect(activity).toContainText('Admission accepted');
   await expect(activity).toContainText('Native runtime exited');

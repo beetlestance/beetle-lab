@@ -21,6 +21,9 @@
 .result-milestones li span {
   overflow-wrap: anywhere;
 }
+.result-milestones .live-rise {
+  margin: 0;
+}
 .stage-activity {
   display: block;
   color: var(--mute);

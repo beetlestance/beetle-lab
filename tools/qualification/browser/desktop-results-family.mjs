@@ -60,7 +60,7 @@ export async function desktopResultsFamily(page, authored, fixture, evidence) {
 /** @param {Page} page @param {string} evidence */
 async function capturedActivity(page, evidence) {
   await page.getByRole('tab', { name: 'What happened', exact: true }).click();
-  const schedule = page.getByRole('list', { name: 'Scheduled stages', exact: true }).getByRole('listitem');
+  const schedule = page.getByRole('list', { name: 'Scenario timeline', exact: true }).getByRole('listitem');
   await expect(schedule).toHaveText([
     /00:00.*Ramp to 4 a second/,
     /00:05.*Steady at 4 a second/,
@@ -71,12 +71,15 @@ async function capturedActivity(page, evidence) {
   await expect(nativeStart).toBeVisible();
   const startedAt = await nativeStart.locator('time').getAttribute('datetime');
   assert(startedAt && Number.isFinite(Date.parse(startedAt)));
+  const details = page.getByText('Inspect recorded activity and resource observations', { exact: true });
+  await details.click();
   const recorded = page.getByRole('list', { name: 'Recorded run milestones', exact: true });
   await expect(recorded).toContainText('Admission accepted');
   await expect(recorded).toContainText('Native runtime exited');
   await expect(recorded).not.toContainText('Steady at 4 a second');
+  await details.click();
   await captureThemes(page, evidence, 'desktop-result-activity', 3662, async () => {
-    await expect(recorded).toContainText('Native runtime exited');
+    await expect(details).toBeVisible();
     await expect(nativeStart).toBeVisible();
     await expect(page.getByText('Loading latency observations…', { exact: true })).toHaveCount(0);
   });
