@@ -136,8 +136,14 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
       )}
       {isEarlyPhase(stream.phase) && <EarlyArt />}
       <EndedBanner run={run} requests={plan.requests} showResult={showResult} />
-      {stream.phase === 'finalizing' && (
-        <Finalizing run={run} plan={plan} figures={stream.figures} lastT={at.stoppedAtMs} />
+      {(stream.phase === 'cancelling' || stream.phase === 'finalizing') && (
+        <Finalizing
+          run={run}
+          plan={plan}
+          figures={stream.figures}
+          lastT={at.stoppedAtMs}
+          visible={stream.phase === 'finalizing'}
+        />
       )}
       <PhaseBody phase={stream.phase} run={run} revision={revision.data} cancel={cancel} reads={phaseReads} />
       {isEarlyPhase(stream.phase) && <EarlyMetricsSkeleton />}

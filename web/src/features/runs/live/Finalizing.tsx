@@ -13,13 +13,16 @@ export function Finalizing({
   plan,
   figures,
   lastT,
+  visible = true,
 }: {
   run: Run;
   plan: RunPlan;
   figures: LiveFigures | null;
   lastT: number | null;
+  visible?: boolean;
 }) {
   const timeline = useTimeline(run, false);
+  if (!visible) return null;
   const rows = timeline.data?.rows ?? [];
   const retained = timeline.isError && timeline.data !== undefined;
   const incomplete = timeline.data?.coverage !== 'contiguous' || timeline.data.omitted || timeline.data.backlog;

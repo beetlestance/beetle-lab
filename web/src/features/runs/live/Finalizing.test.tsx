@@ -18,6 +18,18 @@ it('shows an indeterminate card and unknown figures before sealing evidence arri
   expect(screen.queryByText(/0 files sealed|Summary written|Hashing artifacts/)).not.toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Sealing results' }).querySelectorAll('dd')).toHaveLength(4);
 });
+it('reads sealing evidence during cancellation and presents it once sealing becomes visible', () => {
+  timeline.mockReturnValue({
+    isError: false,
+    data: { coverage: 'contiguous', rows: [{ kind: 'phase.started', phase: 'collect' }] },
+  });
+  const plan = { ...props.plan, samplingIntervalMs: 1000 };
+  const view = render(<Finalizing {...props} plan={plan} visible={false} />);
+  expect(timeline).toHaveBeenCalledWith(props.run, false);
+  expect(screen.queryByRole('region', { name: 'Sealing results' })).toBeNull();
+  view.rerender(<Finalizing {...props} plan={plan} />);
+  expect(screen.getByText('Target sampler closed')).toBeVisible();
+});
 it('labels retained evidence after a read error and retries without overlapping the read', () => {
   const refetch = vi.fn();
   timeline.mockReturnValue({
