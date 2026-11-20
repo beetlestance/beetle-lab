@@ -13,10 +13,9 @@ describe('typed browser pairing boundary', () => {
     const api = browser(record => record.path.endsWith('/auth/session') ? pending.promise : namespace(record));
     await waitFor(() => expect(api.records).toHaveLength(1));
     expect(screen.getByRole('status')).toHaveTextContent('Checking session');
-    expect(screen.queryByRole('button', { name: 'Create organization' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /switch organization$/ })).not.toBeInTheDocument();
     await act(async () => pending.resolve(json(session)));
-    expect(await screen.findByRole('button', { name: 'Create organization' })).toBeVisible();
-    await screen.findByRole('table', { name: 'Organizations' });
+    expect(await screen.findByRole('table', { name: 'Workspaces' })).toBeVisible();
     expect(api.records[1]?.headers.get('X-Beetle-CSRF')).toBe(session.csrfToken);
     expect(api.records.every(record => record.credentials === 'same-origin')).toBe(true);
   });
@@ -32,7 +31,7 @@ describe('typed browser pairing boundary', () => {
     expect(input).toHaveAttribute('autocomplete', 'off');
     await user.click(input);
     await user.keyboard(token + '{Enter}');
-    await screen.findByRole('table', { name: 'Organizations' });
+    await screen.findByRole('table', { name: 'Workspaces' });
     const request = calls(api.records, '/auth/pair')[0];
     expect(request?.body).toEqual({ bootstrapToken: token });
     expect(request?.headers.get('X-Beetle-Pair')).toBe('1');
@@ -65,7 +64,7 @@ describe('typed browser pairing boundary', () => {
       return namespace(record);
     });
     await pair();
-    await screen.findByRole('table', { name: 'Organizations' });
+    await screen.findByRole('table', { name: 'Workspaces' });
     expect(calls(api.records, '/auth/session')).toHaveLength(2);
     expect(calls(api.records, '/auth/pair')).toHaveLength(1);
     expect(document.body).not.toHaveTextContent('PRIVATE');

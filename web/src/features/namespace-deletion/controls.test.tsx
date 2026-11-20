@@ -4,7 +4,7 @@ import {cleanup,fireEvent,screen,waitFor,within} from '@testing-library/react';
 import {afterEach,expect,it} from 'vitest';
 import {apiError,json,mount,readNamespace,testClient,org,ids,workspace} from '../../app/test-fixtures.js';
 import {routes} from '../../app/routes.js';
-import {settings,workspaceScope} from '../settings/test-fixtures.js';
+import {orgScope,settings,workspaceScope} from '../settings/test-fixtures.js';
 afterEach(cleanup);
 
 it('retires a workspace from its settings with the read version and returns to the organization',async()=>{
@@ -22,18 +22,18 @@ it('retires a workspace from its settings with the read version and returns to t
  expect(request?.path).toBe(`/api/v2/organizations/${ids.a}/workspaces/${ids.workspace}`);
  expect(request?.body).toMatchObject({scope:workspace().scope,expectedVersion:workspace().version});
 });
-it('confirms empty-only deletion and retries an unknown outcome with the identical versioned request',async()=>{
+it('retires an organization from its settings and retries an unknown outcome with the identical versioned request',async()=>{
  let writes=0;
  const api=testClient(request=>{
-  if(request.method==='GET')return readNamespace(request);
+  if(request.method==='GET')return request.path.endsWith('/settings')?json(settings(orgScope)):readNamespace(request);
   writes++;if(writes===1)return json(apiError('storage_unavailable'),503);
   return json({id:org().id,scope:org().scope,version:2,state:'tombstoned',cleanup:'complete',requestId:request.body!.requestId});
  });
- mount(api.client);
- const buttons=await screen.findAllByRole('button',{name:'Delete Same organization'});fireEvent.click(buttons[0]!);
- const dialog=screen.getByRole('alertdialog',{name:'Delete Same organization?'});
- expect(within(dialog).getByText(/Delete its workspaces first/)).toBeVisible();
- const confirm=within(dialog).getByRole('button',{name:'Delete Same organization'});expect(confirm).toBeDisabled();
+ mount(api.client,routes.organizationSettings(ids.a));
+ fireEvent.click(await screen.findByRole('button',{name:'Retire organization…'}));
+ const dialog=screen.getByRole('alertdialog',{name:'Retire Same organization?'});
+ expect(within(dialog).getByText(/Retire its workspaces first/)).toBeVisible();
+ const confirm=within(dialog).getByRole('button',{name:'Retire organization'});expect(confirm).toBeDisabled();
  fireEvent.change(within(dialog).getByLabelText('Type Same organization to confirm'),{target:{value:'Same org'}});expect(confirm).toBeDisabled();
  fireEvent.change(within(dialog).getByLabelText('Type Same organization to confirm'),{target:{value:'Same organization'}});
  fireEvent.click(confirm);
@@ -41,7 +41,9 @@ it('confirms empty-only deletion and retries an unknown outcome with the identic
  fireEvent.click(within(dialog).getByRole('button',{name:'Retry identical request'}));
  await waitFor(()=>expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
  const requests=api.records.filter(x=>x.method==='DELETE');expect(requests).toHaveLength(2);
+ expect(requests[1]!.path).toBe(`/api/v2/organizations/${ids.a}`);
  expect(requests[1]!.body).toEqual(requests[0]!.body);expect(requests[0]!.body).toMatchObject({scope:{kind:'installation'},expectedVersion:1});
+ expect(await screen.findByText('Same organization is retired.')).toBeVisible();
 });
 
 it('explains retained workspace contents, removes the acknowledged list entry and refreshes organisation counts',async()=>{

@@ -6,10 +6,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { apiError, deferred, folder, ids, json, mount, org, readNamespace, testClient, workspace } from './test-fixtures.js';
 import type { RequestRecord } from './test-fixtures.js';
 import { routes } from './routes.js';
+import { orgScope, settings } from '../features/settings/test-fixtures.js';
 
 afterEach(cleanup);
 const field = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+const organizationSettings = (request: RequestRecord) =>
+  request.path.endsWith('/settings') ? json(settings(orgScope)) : readNamespace(request);
 const mutations = (records: RequestRecord[]) => records.filter(record => record.method !== 'GET');
 // JSDOM has no native popover methods or button activation. The isolated browser
 // checks that boundary; these tests exercise the real mutation controls inside it.
@@ -24,6 +27,7 @@ function openFolderActions(name: string) {
 
 
 async function openCreateOrganization() {
+  fireEvent.click(await screen.findByRole('button', { name: /switch organization/ }));
   fireEvent.click(await screen.findByRole('button', { name: 'Create organization' }));
   field('Organization name', 'New organization');
   field('Organization slug', 'new-organization');
@@ -50,7 +54,7 @@ describe('mutation identity and draft ownership', () => {
       committed.set(requestId, entity);
       return json(apiError(code), status);
     });
-    mount(api.client, operation === 'create' ? '/' : routes.organization(ids.a));
+    mount(api.client, routes.organization(ids.a));
     if (operation === 'create') await openCreateOrganization();
     else {
       fireEvent.click(await screen.findByRole('button', { name: 'Rename Same workspace' }));
@@ -81,7 +85,7 @@ describe('mutation identity and draft ownership', () => {
       if (committed.size === 1) return json(apiError(code), status);
       return json({ ...org(), name: 'Explicitly edited organization', slug: 'new-organization' }, 201);
     });
-    mount(api.client);
+    mount(api.client, routes.organization(ids.a));
     await openCreateOrganization();
     save();
     await screen.findByRole('button', { name: 'Retry identical request' });
@@ -105,7 +109,7 @@ describe('mutation identity and draft ownership', () => {
       }
       return readNamespace(request);
     });
-    mount(api.client);
+    mount(api.client, routes.organization(ids.a));
     await openCreateOrganization();
     save();
     expect(await screen.findByText(/The outcome is unknown/)).toBeVisible();
@@ -120,7 +124,7 @@ describe('mutation identity and draft ownership', () => {
   });
   it('starts a new intent when editing after an unreadable mutation response', async () => {
     const api = testClient(request => request.method === 'POST' ? new Response('Unreadable', { status: 201 }) : readNamespace(request));
-    mount(api.client);
+    mount(api.client, routes.organization(ids.a));
     await openCreateOrganization();
     save();
     await screen.findByRole('button', { name: 'Retry identical request' });
@@ -133,7 +137,7 @@ describe('mutation identity and draft ownership', () => {
   });
   it('preserves a known validation failure without offering unknown-result replay', async () => {
     const api = testClient(request => request.method === 'POST' ? json(apiError('invalid_value'), 422) : readNamespace(request));
-    mount(api.client);
+    mount(api.client, routes.organization(ids.a));
     await openCreateOrganization();
     save();
     expect(await screen.findByText('Invalid value')).toBeVisible();
@@ -158,11 +162,11 @@ describe('mutation identity and draft ownership', () => {
     let version = 1;
     const api = testClient(request => {
       if (request.method === 'PATCH') return json(apiError('conflict'), 409);
-      if (request.path.startsWith('/api/v2/organizations?')) return json({ scope: { kind: 'installation' }, items: [{ ...org(), version }], nextCursor: null });
-      return readNamespace(request);
+      if (request.path === `/api/v2/organizations/${ids.a}`) return json({ ...org(), version });
+      return organizationSettings(request);
     });
-    mount(api.client);
-    fireEvent.click(await screen.findByRole('button', { name: 'Rename Same organization' }));
+    mount(api.client, routes.organizationSettings(ids.a));
+    fireEvent.click(await screen.findByRole('button', { name: 'Rename…' }));
     field('Organization name', 'Edited organization');
     field('Organization slug', 'edited-slug');
     save();
@@ -175,7 +179,7 @@ describe('mutation identity and draft ownership', () => {
     expect(screen.getByLabelText('Organization name')).toHaveValue('Edited organization');
     expect(mutations(api.records)).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Same organization' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rename…' }));
     field('Organization name', 'New version edit');
     save();
     await waitFor(() => expect(mutations(api.records)).toHaveLength(2));
@@ -185,11 +189,11 @@ describe('mutation identity and draft ownership', () => {
     const legacy = { ...org(), name: 'L'.repeat(60) };
     const api = testClient(request => {
       if (request.method === 'PATCH') return json({ ...legacy, slug: 'edited-slug', version: 2 }, 200);
-      if (request.path.startsWith('/api/v2/organizations?')) return json({ scope: { kind: 'installation' }, items: [legacy], nextCursor: null });
-      return readNamespace(request);
+      if (request.path === `/api/v2/organizations/${ids.a}`) return json(legacy);
+      return organizationSettings(request);
     });
-    mount(api.client);
-    fireEvent.click(await screen.findByRole('button', { name: `Rename ${legacy.name}` }));
+    mount(api.client, routes.organizationSettings(ids.a));
+    fireEvent.click(await screen.findByRole('button', { name: 'Rename…' }));
     expect(screen.getByLabelText('Organization name')).toHaveAttribute('maxLength', '48');
     field('Organization slug', 'edited-slug');
     save();
@@ -279,25 +283,28 @@ describe('mutation identity and draft ownership', () => {
   it('supports labeled fields, initial focus, keyboard submission and explicit discard', async () => {
     const user = userEvent.setup();
     const api = testClient(request => request.method === 'POST' ? json({ ...org(), name: 'Keyboard', slug: 'keyboard' }, 201) : readNamespace(request));
-    mount(api.client);
-    await user.click(await screen.findByRole('button', { name: 'Create organization' }));
+    mount(api.client, routes.organization(ids.a));
+    const createFromMenu = async () => {
+      await user.click(await screen.findByRole('button', { name: /switch organization/ }));
+      await user.click(await screen.findByRole('button', { name: 'Create organization' }));
+    };
+    await createFromMenu();
     expect(screen.getByLabelText('Organization name')).toHaveFocus();
     await user.keyboard('Keyboard{Tab}keyboard{Tab}{Tab}{Enter}');
     expect(await screen.findByText('Changes saved.')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Close editor' }));
-    await user.click(screen.getByRole('button', { name: 'Create organization' }));
+    await createFromMenu();
     await user.click(screen.getByRole('button', { name: 'Discard draft' }));
     expect(screen.queryByLabelText('Organization name')).not.toBeInTheDocument();
   });
 });
 
-it('keeps confirmed changes closable after navigating so the next namespace can be edited', async () => {
+it('opens a created organization and keeps the confirmation closable there', async () => {
   const api = testClient(request => request.method === 'GET' ? readNamespace(request)
     : json({...org(), name: 'New organization', slug: 'new-organization'}, 201));
-  mount(api.client); await openCreateOrganization(); save();
+  mount(api.client, routes.organization(ids.b)); await openCreateOrganization(); save();
   expect(await screen.findByText('Changes saved.')).toBeVisible();
-  fireEvent.click(screen.getAllByRole('link', {name: 'Same organization'})[0]!);
-  expect(await screen.findByRole('heading', {name: 'Workspaces'})).toBeVisible();
+  await waitFor(() => expect(screen.getByRole('link', {name: 'Same workspace'})).toHaveAttribute('href', routes.workspace(ids.a, ids.workspace)));
   expect(screen.queryByText(/Your create organization draft is preserved/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', {name: 'Close editor'}));
   expect(screen.getByRole('button', {name: 'Create workspace'})).toBeEnabled();

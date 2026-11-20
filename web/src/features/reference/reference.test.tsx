@@ -17,7 +17,7 @@ it('opens the shell reference without API calls and selects the generated exact 
  expect(screen.getByRole('link',{name:'Download schema catalogue'})).toHaveAttribute('download','public-api.json');expect(api.records).toEqual([]);
 });
 it('uses the ordinary sidebar link and keeps empty search honest',async()=>{
- const api=testClient(readNamespace);mount(api.client);await screen.findByRole('heading',{name:'Organizations'});
+ const api=testClient(readNamespace);mount(api.client);await screen.findByRole('table',{name:'Workspaces'});
  fireEvent.click(screen.getByRole('link',{name:'Docs'}));await screen.findByRole('heading',{name:'Public API reference'});
  const before=api.records.length;fireEvent.change(screen.getByRole('searchbox'),{target:{value:'not-an-operation'}});
  expect(screen.getByText('No matching operations.')).toBeVisible();expect(screen.queryByRole('region',{name:'Selected operation'})).not.toBeInTheDocument();

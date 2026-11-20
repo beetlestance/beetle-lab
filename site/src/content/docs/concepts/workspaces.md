@@ -131,6 +131,8 @@ their space. You can create a new workspace with the same name; the retired one
 never comes back. A workspace with an active run, export or unfinished upload
 cannot be deleted until that work ends.
 
+To retire an organisation, choose **Retire organization…** at the bottom of its
+settings and type its name; **Rename…** in the same place changes its name and slug.
 An organisation with no workspaces at all is removed. One whose workspaces are all
 retired is **retired** the same way: it disappears from lists, its settings and
 retired workspaces are kept, and its slug becomes free for a new organisation.

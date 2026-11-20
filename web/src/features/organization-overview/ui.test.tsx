@@ -127,7 +127,7 @@ it('shows not found for a missing organization instead of an empty dashboard', a
   const api = testClient(() => json(apiError('not_found'), 404));
   mount(api.client, routes.organization(ids.a));
   expect(await screen.findByRole('heading', { name: "That organization isn't here" })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Back to organizations' })).toHaveAttribute('href', routes.organizations);
+  expect(screen.getByRole('link', { name: 'Back to overview' })).toHaveAttribute('href', routes.organizations);
   expect(api.records).toHaveLength(1);
 });
 

@@ -12,7 +12,7 @@ it('opens the administrator automatically after an unauthenticated read, without
     if (record.path.endsWith('/auth/local')) {opened = true; return json(automatic);}
     expect(opened).toBe(true); return namespace(record);
   }, '/', true);
-  await screen.findByRole('table', {name: 'Organizations'});
+  await screen.findByRole('table', {name: 'Workspaces'});
   expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
   expect(calls(api.records, '/auth/pair')).toHaveLength(0); const request = calls(api.records, '/auth/local')[0]!;
   expect(request.method).toBe('POST'); expect(request.body).toEqual({}); expect(request.headers.get('X-Beetle-Local')).toBe('1');
@@ -30,7 +30,7 @@ it('recovers a lost automatic exchange reply from the cookie once, without resen
     if (record.path.endsWith('/auth/local')) throw new Error('reply lost after cookie application');
     return namespace(record);
   }, '/', true);
-  await screen.findByRole('table', {name: 'Organizations'});
+  await screen.findByRole('table', {name: 'Workspaces'});
   expect(calls(api.records, '/auth/session')).toHaveLength(2); expect(calls(api.records, '/auth/local')).toHaveLength(1);
 });
 it('keeps logout signed out until explicit reconnect and never shows automatic users a token form', async () => {
@@ -41,11 +41,11 @@ it('keeps logout signed out until explicit reconnect and never shows automatic u
     if (record.path.endsWith('/auth/local')) {signedOut = false; return json(automatic);}
     return namespace(record);
   }, '/', true);
-  await screen.findByRole('table', {name: 'Organizations'}); fireEvent.click(screen.getByRole('button', {name: 'Sign out'}));
+  await screen.findByRole('table', {name: 'Workspaces'}); fireEvent.click(screen.getByRole('button', {name: 'Sign out'}));
   await screen.findByText(/This browser is signed out/); expect(calls(api.records, '/auth/local')).toHaveLength(0);
   expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', {name: 'Reconnect'}));
-  await screen.findByRole('table', {name: 'Organizations'}); await waitFor(() => expect(calls(api.records, '/auth/local')).toHaveLength(1));
+  await screen.findByRole('table', {name: 'Workspaces'}); await waitFor(() => expect(calls(api.records, '/auth/local')).toHaveLength(1));
 });
 it('reconciles a pending credential write on explicit retry after a503 without replaying resource mutations', async () => {
   let opened = false; let grants = 0;
@@ -60,11 +60,11 @@ it('reconciles a pending credential write on explicit retry after a503 without r
   await screen.findByText(/Installation access could not be confirmed/); expect(grants).toBe(1);
   expect(screen.queryByLabelText('Pairing token')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', {name: 'Check session status'}));
-  await screen.findByRole('table', {name: 'Organizations'}); expect(grants).toBe(2);
+  await screen.findByRole('table', {name: 'Workspaces'}); expect(grants).toBe(2);
   expect(api.records.filter(record => record.method === 'POST' && !record.path.includes('/auth/'))).toHaveLength(0);
 });
 it('identifies authenticated restored history as read-only', async () => {
   browser(record => record.path.endsWith('/auth/session') ? json({...automatic, readOnly: true}) : namespace(record), '/', true);
-  await screen.findByRole('table', {name: 'Organizations'});
+  await screen.findByRole('table', {name: 'Workspaces'});
   expect(screen.getByText('Restored · read-only')).toBeVisible();
 });

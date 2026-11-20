@@ -14,10 +14,10 @@ describe('honest data and error states', () => {
     mount(api.client);
     expect(await screen.findByRole('status')).toHaveTextContent('Loading');
     await act(async () => reply.resolve(json({ scope: { kind: 'installation' }, items: [], nextCursor: null })));
-    expect(await screen.findByRole('heading', { name: 'No organizations yet' })).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Create your first organization' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Create organization' })).toBeEnabled();
     expect(api.records).toHaveLength(1);
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
   it('surfaces unavailable transport without automatic retries and allows a read retry', async () => {
     let available = false;
@@ -31,8 +31,8 @@ describe('honest data and error states', () => {
     expect(api.records).toHaveLength(1);
     available = true;
     fireEvent.click(screen.getByRole('button', { name: 'Retry loading' }));
-    expect(await screen.findAllByRole('link', { name: 'Same organization' })).toHaveLength(2);
-    expect(api.records).toHaveLength(2);
+    expect(await screen.findByRole('link', { name: 'Same workspace' })).toHaveAttribute('href', routes.workspace(ids.a, ids.workspace));
+    expect(api.records.filter(record => record.path.startsWith('/api/v2/organizations?'))).toHaveLength(2);
   });
   it('shows the unpaired response and no authenticated data fallback', async () => {
     const api = testClient(() => json(apiError('unpaired'), 401));

@@ -7,7 +7,7 @@ it('derives only exact validated route namespaces and never partially adopts a b
  expect(searchContext(routes.runs(org.toUpperCase(),workspace.toUpperCase()))).toEqual({organizationId:org,workspaceId:workspace});
  expect(searchContext(routes.organization(org))).toEqual({organizationId:org});
  for(const value of [routes.workspace(org,'bad'),routes.workspace('bad',workspace),'/other'+routes.workspace(org,workspace),routes.reference])expect(searchContext(value)).toEqual({});
- expect(navigation({}).map(item=>item.path)).toEqual([routes.organizations,routes.settings,routes.reference]);
+ expect(navigation({}).map(item=>item.path)).toEqual([routes.settings,routes.reference]);
 });
 it('bounds result display and literal query work without hiding the full matching count',()=>{
  const items=Array.from({length:310},(_,index)=>({id:String(index),label:'Suite '+index,description:'Suite',path:'/suites/'+index}));

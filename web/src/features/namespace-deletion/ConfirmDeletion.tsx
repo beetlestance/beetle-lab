@@ -17,7 +17,7 @@ interface Copy {
   refused: string;
 }
 
-/** Board copy: Overlay / Delete workspace, Retire workspace, and the Refused / Blocked / Not empty titles. */
+/** Board copy: Overlay / Delete workspace, Retire workspace, Retire organization, and the Refused / Blocked / Not empty titles. */
 function copyFor(target: Target, mode: Mode): Copy {
   const name = target.entity.name;
   if (target.kind === 'workspace' && mode === 'retire')
@@ -35,6 +35,14 @@ function copyFor(target: Target, mode: Mode): Copy {
       cancel: 'Not now',
       action: `Delete ${name}`,
       refused: `${name} can't be deleted yet`,
+    };
+  if (target.kind === 'organization' && mode === 'retire')
+    return {
+      title: `Retire ${name}?`,
+      body: `${name} disappears from the organization menu and search, and its address becomes free to reuse. Retire its workspaces first; an organization with active workspaces is refused. Its history stays on disk and still counts toward storage. You cannot undo this.`,
+      cancel: 'Cancel',
+      action: 'Retire organization',
+      refused: `${name} still has active workspaces`,
     };
   if (target.kind === 'organization')
     return {

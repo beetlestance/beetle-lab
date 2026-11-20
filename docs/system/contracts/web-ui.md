@@ -194,7 +194,7 @@ The last column shares receipt-only pinning: unfinished runs hide it, restored p
 Accepted writes refresh history; uncertain writes permit identical replay; retention refusals preserve state.
 Row and checkbox labels expand colliding source UUIDs, never inventing an ordinal.
 
-Workspaces opens an organization chooser or the scoped workspace directory. Settings
+`/` and Workspaces open the remembered or first organization; the header switcher is the only organization list and ends with Create organization. Settings
 offers Installation and Organization; a workspace's settings are its own Settings section,
 under the workspace heading and tabs, linking to both levels. Page and tab entry honor reduced motion. Docs opens the bundled `/docs/` site as a full
 document navigation. `/reference` remains the standalone generated API viewer.
@@ -216,5 +216,5 @@ document navigation. `/reference` remains the standalone generated API viewer.
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `c683fdfec49a` |
-| `web/src/features/command-search/model.ts` | `6d1867832757` |
+| `web/src/features/command-search/model.ts` | `a08a274dfa8f` |
 | `web/src/features/input-directory/plan.ts` | `f0ec22cf9b89` |

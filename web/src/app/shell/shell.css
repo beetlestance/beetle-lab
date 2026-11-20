@@ -302,6 +302,14 @@
 .shell-scope-links a[aria-current] {
   background: var(--line);
 }
+.shell-scope-links .btn-text {
+  width: 100%;
+  justify-content: flex-start;
+}
+.shell-scope-links .shell-scope-create {
+  width: 100%;
+  margin-top: var(--s-8);
+}
 .workspace-heading {
   margin-bottom: var(--s-16);
 }

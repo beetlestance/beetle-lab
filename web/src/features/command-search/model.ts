@@ -28,11 +28,7 @@ export function navigation(context: SearchContext): CommandItem[] {
     path,
     description: 'Navigation',
   });
-  const items = [
-    item('Organizations', routes.organizations),
-    item('Installation settings', routes.settings),
-    item('API reference', routes.reference),
-  ];
+  const items = [item('Installation settings', routes.settings), item('API reference', routes.reference)];
   const org = context.organizationId;
   const workspace = context.workspaceId;
   if (org) {

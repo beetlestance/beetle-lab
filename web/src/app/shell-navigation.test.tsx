@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { ids, json, mount, org, readNamespace, testClient } from './test-fixtures.js';
+import { routes } from './routes.js';
 import { orgScope, settings, workspaceScope } from '../features/settings/test-fixtures.js';
 
 afterEach(cleanup);
@@ -35,13 +36,15 @@ function fixture() {
 
 it('opens the switcher, supports Escape and navigates to a selected organization', async () => {
   const { client, records } = fixture();
-  mount(client);
-  await screen.findByRole('link', { name: 'First org' });
+  mount(client, routes.organization(ids.a));
+  await screen.findByRole('link', { name: 'Same workspace' });
   expect(records.some((record) => record.path.includes('limit=20'))).toBe(false);
   const trigger = screen.getByRole('button', { name: /switch organization/ });
   fireEvent.click(trigger);
   const dropdown = () => within(screen.getByRole('navigation', { name: 'Switch organization' }));
   const second = await dropdown().findByRole('link', { name: 'Second org' });
+  expect(dropdown().getByRole('button', { name: 'Create organization' })).toBeVisible();
+  expect(dropdown().queryByRole('link', { name: 'All organizations' })).not.toBeInTheDocument();
   second.focus();
   fireEvent.keyDown(second, { key: 'Escape' });
   expect(trigger).toHaveFocus();
@@ -58,9 +61,9 @@ it('opens the switcher, supports Escape and navigates to a selected organization
 it('keeps workspace settings inside the workspace and the levels above in Settings', async () => {
   mount(fixture().client);
   fireEvent.click(mainNav().getByRole('link', { name: 'Workspaces' }));
-  expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeVisible();
-  fireEvent.click(await screen.findByRole('link', { name: 'First org' }));
-  fireEvent.click(await screen.findByRole('link', { name: 'Same workspace' }));
+  const opened = await screen.findByRole('link', { name: 'Same workspace' });
+  expect(opened).toHaveAttribute('href', routes.workspace(ids.a, ids.workspace));
+  fireEvent.click(opened);
   const sections = () => within(screen.getByRole('navigation', { name: 'Workspace sections' }));
   fireEvent.click(await screen.findByRole('link', { name: 'Suites' }));
   fireEvent.click(sections().getByRole('link', { name: 'Settings' }));
@@ -77,8 +80,7 @@ it('keeps workspace settings inside the workspace and the levels above in Settin
 });
 
 it('lets a user entering settings from installation choose an organization', async () => {
-  mount(fixture().client);
-  fireEvent.click(mainNav().getByRole('link', { name: 'Settings' }));
+  mount(fixture().client, routes.settings);
   await screen.findByRole('list', { name: 'Settings for installation' });
   fireEvent.click(settingsNav().getByRole('link', { name: 'Organization' }));
   await screen.findByRole('heading', { name: 'Choose an organization' });

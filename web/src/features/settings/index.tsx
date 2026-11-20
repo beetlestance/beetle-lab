@@ -10,6 +10,7 @@ import { readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { validId } from '../../app/routes.js';
 import { RetireWorkspace } from '../namespace-deletion/Retire.js';
+import { ManageOrganization } from '../organizations/Manage.js';
 import { ParentRetentionControls } from '../retention/Parent.js';
 import { RetentionControls } from '../retention/index.js';
 import { Capacity } from './Capacity.js';
@@ -212,6 +213,9 @@ function Retention({ data }: { data: SettingsData }) {
       </>
     );
   return (
-    <ParentRetentionControls key={JSON.stringify(scope)} scope={scope} settingsId={data.id} version={data.version} />
+    <>
+      <ParentRetentionControls key={JSON.stringify(scope)} scope={scope} settingsId={data.id} version={data.version} />
+      {scope.kind === 'organization' && <ManageOrganization organizationId={scope.organizationId} />}
+    </>
   );
 }
