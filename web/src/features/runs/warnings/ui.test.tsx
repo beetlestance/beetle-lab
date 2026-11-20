@@ -26,11 +26,11 @@ it('plans from configured peak and complete iteration evidence without changing 
 });
 
 it.each([
-  { cleanExit: true, otherWarnings: 0, expected: true },
-  { cleanExit: false, otherWarnings: 0, expected: false },
-  { cleanExit: true, otherWarnings: 1, expected: false },
-])('requires both a clean exit and zero warnings (%o)', ({ cleanExit, otherWarnings, expected }) => {
-  const report = captureK6Warnings({ ...source, native: { ...source.native, otherWarnings } });
+  { cleanExit: true, insufficientVus: 0, expected: true },
+  { cleanExit: false, insufficientVus: 0, expected: false },
+  { cleanExit: true, insufficientVus: 1, expected: false },
+])('requires both a clean exit and zero warnings (%o)', ({ cleanExit, insufficientVus, expected }) => {
+  const report = captureK6Warnings({ ...source, native: { ...source.native, insufficientVus } });
   render(<WarningSummary report={report} cleanExit={cleanExit} />);
   expect(screen.queryByText('No warnings recorded. k6 exited cleanly.') !== null).toBe(expected);
 });

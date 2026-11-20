@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { join } from 'node:path';
+import { writeFile } from 'node:fs/promises';
 import { revision } from './authoring.mjs';
 import { execute, results, start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
@@ -48,8 +49,21 @@ export async function failedResults(page, authored, evidence) {
 /** @param {import('@playwright/test').Page} page @param {string} evidence */
 async function cleanDiagnostics(page, evidence) {
   await execute(page);
-  await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
-  await expect(page.getByText('No warnings recorded. k6 exited cleanly.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Verified performance report' })).toBeVisible();
+  const statuses = /** @type {number[]} */ ([]);
+  /** @param {import('@playwright/test').Response} response */
+  const observed = (response) => {
+    if (statuses.length < 8 && new URL(response.url()).pathname.endsWith('/content')) statuses.push(response.status());
+  };
+  page.on('response', observed);
+  try {
+    await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
+    await readWarnings(page);
+    await expect(page.getByText('No warnings recorded. k6 exited cleanly.', { exact: true })).toBeVisible();
+  } finally {
+    page.off('response', observed);
+    await writeFile(join(evidence, 'clean-diagnostic-read-statuses.json'), JSON.stringify(statuses), { mode: 0o600 });
+  }
   await capture(page, evidence, 'clean-diagnostics');
   const trigger = page.getByRole('button', { name: 'Open the sanitized log', exact: true });
   await trigger.click();
@@ -81,11 +95,19 @@ async function recordedActivity(page, evidence) {
   await expect(activity).toContainText('Native runtime exited');
   await capture(page, evidence, 'failed-timeline');
   await page.getByRole('tab', { name: 'Diagnostics', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Native warnings', exact: true })).toContainText(
-    'Diagnostic coverage:',
-  );
+  await readWarnings(page);
   await expect(page.getByText('No warnings recorded. k6 exited cleanly.', { exact: true })).toHaveCount(0);
   await capture(page, evidence, 'failed-diagnostics');
+}
+
+/** @param {import('@playwright/test').Page} page */
+async function readWarnings(page) {
+  const warnings = page.getByRole('region', { name: 'Native warnings', exact: true });
+  await expect(warnings).toBeVisible();
+  await expect(warnings.getByText('Loading warning evidence…')).toHaveCount(0);
+  const retry = warnings.getByRole('button', { name: 'Reload warnings', exact: true });
+  if (await retry.isVisible()) await retry.click();
+  await expect(warnings).toContainText('Diagnostic coverage:');
 }
 
 /** @param {import('@playwright/test').Page} page @param {string} evidence */
@@ -93,9 +115,7 @@ async function phoneDiagnostics(page, evidence) {
   await page.getByRole('radio', { name: 'Scarab', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#result-diagnostics > summary').click();
-  await expect(page.getByRole('region', { name: 'Native warnings', exact: true })).toContainText(
-    'Diagnostic coverage:',
-  );
+  await readWarnings(page);
   expect(await page.evaluate(() => globalThis.document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
   await capture(page, evidence, 'failed-diagnostics-scarab-phone');
 }
