@@ -21,6 +21,10 @@ engine uses for runs.
    file you downloaded, for example with `sha256sum suite.js`. The automation
    client's `export-download` checks size and SHA-256 for you.
 
+To export exactly what a run executed, choose **Export script…** on its result.
+That export uses the run's own revision, engine profile, budget and time limit
+instead of the workspace defaults.
+
 You can close the dialog while it works and come back later. The **Exports** tab of
 the workspace lists every export with its suite revision, status, result, size
 and time, with **Download** for ready ones and **Cancel** for unfinished ones.

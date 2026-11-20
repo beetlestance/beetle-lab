@@ -540,6 +540,16 @@
     "valid": false
   },
   {
+    "path": "valid/create-run-export.json",
+    "schema": "CreateRunExportRequest",
+    "valid": true
+  },
+  {
+    "path": "invalid/create-run-export-revision.json",
+    "schema": "CreateRunExportRequest",
+    "valid": false
+  },
+  {
     "path": "valid/run-cancelling.json",
     "schema": "Run",
     "valid": true

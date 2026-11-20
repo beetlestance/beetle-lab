@@ -61,6 +61,6 @@ These proofs do not qualify a newly built frontend image or a native publication
 | `web/src/features/exports/scriptText.ts` | `d5e7ac244ac6` |
 | `web/src/features/exports/VerifiedDownload.tsx` | `c86f2076e683` |
 | `web/src/lib/response-body.ts` | `253992da68f6` |
-| `web/src/features/exports/ExportDialog.tsx` | `60b97e77a311` |
+| `web/src/features/exports/ExportDialog.tsx` | `66a89164c07c` |
 | `web/src/features/exports/ExportsTable.tsx` | `0d1892c56502` |
 | `web/src/features/exports/Job.tsx` | `97a3808af9c3` |

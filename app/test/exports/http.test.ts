@@ -23,7 +23,7 @@ it('enqueues via authorized public API, replays one immutable receipt, automatic
  const revision=await append(metadata,await createSuite(metadata),60,body);const input=createCommand(revision.id).request;
  const files=await nativeFixture();const server=createApiServer({classify:classifyMetadataError});
  configureSchemaCompilers(server,{schemas:apiSchemas,encodeJson});const session=createLocalSession({externalOrigin:origin});session.registerRoutes(server);
- const routes=registerExportRoutes(server,{store:metadata.exports,outputs:metadata.exportOutputs,bytes:files.store,newId:randomUUID,digest:hash,
+ const routes=registerExportRoutes(server,{store:metadata.exports,runs:metadata.runs,outputs:metadata.exportOutputs,bytes:files.store,newId:randomUUID,digest:hash,
   now:()=>new Date().toISOString(),authorize:session.authorize});
  const base=`/api/v2/organizations/${scope.organizationId}/workspaces/${scope.workspaceId}`;const url=`${base}/revisions/${revision.id}/exports`;
  const paired=await server.inject({method:'POST',url:'/api/v2/auth/pair',headers:{host,origin,'x-beetle-pair':'1'},payload:{bootstrapToken:session.bootstrapToken}});
@@ -44,6 +44,9 @@ it('enqueues via authorized public API, replays one immutable receipt, automatic
   expect((await server.inject({method:'POST',url,headers:{host,origin},payload:input})).statusCode).toBe(401);
   expect((await server.inject({method:'POST',url,headers:{...headers,origin:'http://127.0.0.1:1'},payload:input})).statusCode).toBe(403);
   expect((await server.inject({method:'POST',url,headers,payload:{...input,revisionId:uuid(999)}})).statusCode).toBe(404);
+  const runExports=`${base}/runs/${uuid(998)}/exports`;
+  expect((await server.inject({method:'POST',url:runExports,headers,payload:{scope,requestId:requestId()}})).statusCode).toBe(404);
+  expect((await server.inject({method:'POST',url:runExports,headers,payload:{scope:{...scope,workspaceId:uuid(999)},requestId:requestId()}})).statusCode).toBe(404);
   expect((await server.inject({method:'POST',url,headers,payload:{...input,options:{...input.options,maximumBuildBytes:input.budget.outputBytes}}})).statusCode).toBe(422);
   const response=await server.inject({method:'POST',url,headers,payload:input});expect(response.statusCode).toBe(202);const job=response.json<ExportJob>();
   expect((await server.inject({method:'POST',url,headers,payload:input})).json()).toEqual(job);

@@ -1,11 +1,13 @@
 import type { FastifyInstance, onRequestAsyncHookHandler } from 'fastify';
 import type { WorkspaceScope } from '@beetle/contracts/api';
 import type { ExportStore, ExportArtifacts } from '../../../../ports/exports.js';
+import type { RunReader } from '../../../../ports/runs.js';
 import type { OutputByteStore } from '../../../../ports/output-bytes.js';
 import type { OutputBinding } from '../../../../domain/output-owner/index.js';
 import type { IntentDigest } from '../../../../application/namespaces/index.js';
 import {
   createExport,
+  createRunExport,
   cancelExport,
   getExport,
   getLatestRevisionExport,
@@ -16,6 +18,8 @@ import { registerApiOperation } from '../api-route.js';
 import { registerExportContent } from './content.js';
 interface Options {
   readonly store: ExportStore;
+  /** Reads the run a run export reproduces. */
+  readonly runs: Pick<RunReader, 'getRun'>;
   readonly outputs: Pick<ExportArtifacts, 'published'>;
   readonly bytes?: Pick<OutputByteStore<OutputBinding>, 'read'>;
   readonly newId: () => string;
@@ -51,6 +55,27 @@ export function registerExportRoutes(server: FastifyInstance, options: Options):
           options.digest,
           options.store,
         );
+      },
+      { bodyLimit: 65536 },
+    );
+    registerApiOperation(
+      scoped,
+      'createRunExport',
+      ({ params, body }) => {
+        requireRule(sameScope(exportScope(params), body.scope), 'not_found');
+        return createRunExport({
+          operation: {
+            kind: 'createRunExport',
+            runId: params.runId,
+            id: options.newId(),
+            attemptId: options.newId(),
+            requestedAt: options.now(),
+            request: body,
+          },
+          digest: options.digest,
+          runs: options.runs,
+          store: options.store,
+        });
       },
       { bodyLimit: 65536 },
     );

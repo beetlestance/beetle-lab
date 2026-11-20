@@ -6,7 +6,8 @@ import { useApi } from '../../../app/api.js';
 import { routes } from '../../../app/routes.js';
 import { Status } from '../../../components/Badge.js';
 import { Button } from '../../../components/Button.js';
-import { runStatus } from '../../run-results/format.js';
+import { runStatus, shortId } from '../../run-results/format.js';
+import { RunExportAction } from '../../exports/RunExport.js';
 import { PinControl } from './PinControl.js';
 import { WriteError } from './WriteError.js';
 import { useWrite } from './useWrite.js';
@@ -109,6 +110,7 @@ function ResultActions({
       ) : (
         <>
           {phone ? [...sourceActions, again] : [again, ...sourceActions]}
+          <RunExportAction run={run} label={shortId(run.id)} />
           <PinControl run={run} shortLabel={phone} />
           {!phone && deleteButton}
         </>

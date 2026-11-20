@@ -15,6 +15,7 @@ and use the authoring session, origin and CSRF policy. Shapes: `contracts/api/v2
 | Operation | Route | Reply |
 | --- | --- | --- |
 | Submit | `POST /revisions/{revisionId}/exports` | 202 `ExportJob` |
+| Submit from a run | `POST /runs/{runId}/exports` | 202 `ExportJob` |
 | List | `GET /exports` | `ExportJobPage`, ≤ 262144 B |
 | Latest for revision | `GET /revisions/{revisionId}/exports/latest` | `LatestRevisionExport`, ≤ 65536 B |
 | Read | `GET /exports/{exportId}` | `ExportJob`, ≤ 32768 B |
@@ -26,6 +27,13 @@ The UI offers export only when an installed profile advertises the export
 capability, and downloads only a `ready` job's native publication. Submission is
 rejected before mutation when `maximumBuildBytes + 64 KiB control + 8 KiB result`
 exceeds the budget's `outputBytes` (`app/src/application/exports/intent.ts`).
+
+A run export (`app/src/application/exports/run.ts`) reads the run in the exact
+workspace, then submits its revision, engine profile, budget and execution policy
+as an ordinary revision export; a missing or foreign run is not-found. Omitted
+options become the run's timeout and a 1 MiB script limit lowered to fit the run's
+output budget. The job records no run ID. The result header's **Export script…**
+starts it and follows that job (`web/src/features/exports/RunExport.tsx`).
 
 The latest lookup checks revision existence in the exact workspace and returns
 `{scope, revisionId, job}`; `job: null` means the revision has no export. Missing or
@@ -173,13 +181,14 @@ is not a claim that the browser wrote a file.
 | Code | Reviewed |
 | --- | --- |
 | `contracts/src/export-job/` | `ee5dbee9e357` |
-| `app/src/application/exports/` | `31ac98ced322` |
+| `app/src/application/exports/` | `ce13ac278d1a` |
 | `app/src/application/export-runtime/` | `23cbf619a3fc` |
 | `app/src/adapters/outbound/sqlite/export-jobs/` | `e98230e78f90` |
 | `app/src/adapters/outbound/sqlite/migration035.ts` | `44762d1ad5ac` |
 | `contracts/src/api/export-latest.ts` | `5f08c834aac2` |
 | `web/src/features/exports/prepare.ts` | `4f600d24a45a` |
 | `web/src/features/exports/Form.tsx` | `e22238cb12ce` |
-| `web/src/features/exports/ExportDialog.tsx` | `60b97e77a311` |
+| `web/src/features/exports/ExportDialog.tsx` | `66a89164c07c` |
+| `web/src/features/exports/RunExport.tsx` | `ac8b54dd7910` |
 | `engines/k6/export/` | `120bf16f289c` |
 | `agent/src/journal/migration015.ts` | `e43499b5bd89` |

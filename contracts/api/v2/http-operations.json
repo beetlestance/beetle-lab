@@ -634,6 +634,17 @@
     "implementation": "implemented"
   },
   {
+    "name": "createRunExport",
+    "method": "POST",
+    "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/exports",
+    "response": "ExportJob",
+    "successStatus": 202,
+    "error": "ApiError",
+    "params": "RunParams",
+    "request": "CreateRunExportRequest",
+    "implementation": "implemented"
+  },
+  {
     "name": "getLatestRevisionExport",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/revisions/{revisionId}/exports/latest",

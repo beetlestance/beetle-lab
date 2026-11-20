@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { CreateExportRequest, CancelExportRequest, ExportParams, ApiClientFailure } from '@beetle/contracts/api';
+import type {
+  ApiClientFailure,
+  CancelExportRequest,
+  CreateExportRequest,
+  CreateRunExportRequest,
+  ExportParams,
+  RunParams,
+} from '@beetle/contracts/api';
 import { useApi, errorMessage, unknownOutcome } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 export type ExportAction =
-  { kind: 'create'; body: CreateExportRequest } | { kind: 'cancel'; params: ExportParams; body: CancelExportRequest };
+  | { kind: 'create'; body: CreateExportRequest }
+  | { kind: 'createRun'; params: RunParams; body: CreateRunExportRequest }
+  | { kind: 'cancel'; params: ExportParams; body: CancelExportRequest };
 /** Unknown replies retain exactly one frozen intent; retirement ignores late replies. */
 export function useExportWrite() {
   const api = useApi();
@@ -35,20 +44,7 @@ export function useExportWrite() {
     setFailure(null);
     let reply;
     try {
-      const body = captured.body;
-      const scope = body.scope;
-      reply =
-        captured.kind === 'create'
-          ? await api.createExport({
-              params: {
-                organizationId: scope.organizationId,
-                workspaceId: scope.workspaceId,
-                revisionId: captured.body.revisionId,
-              },
-              body: captured.body,
-              signal: current.abort.signal,
-            })
-          : await api.cancelExport({ params: captured.params, body: captured.body, signal: current.abort.signal });
+      reply = await sendAction(api, captured, current.abort.signal);
     } catch {
       reply = { ok: false as const, error: { kind: 'transport' as const } };
     }
@@ -72,4 +68,12 @@ export function useExportWrite() {
     unknown: failure !== null && unknownOutcome(failure),
     message: failure ? errorMessage(failure) : null,
   };
+}
+
+function sendAction(api: ReturnType<typeof useApi>, action: ExportAction, signal: AbortSignal) {
+  if (action.kind === 'createRun') return api.createRunExport({ params: action.params, body: action.body, signal });
+  if (action.kind === 'cancel') return api.cancelExport({ params: action.params, body: action.body, signal });
+  const { organizationId, workspaceId } = action.body.scope;
+  const params = { organizationId, workspaceId, revisionId: action.body.revisionId };
+  return api.createExport({ params, body: action.body, signal });
 }

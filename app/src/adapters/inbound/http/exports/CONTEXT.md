@@ -2,7 +2,7 @@
 
 Entry registerExportRoutes. Session-authorized JSON intake/list/detail/cancel and
 profile discovery and exact-revision latest job reads; schema-v2 operations own DTOs. Scope and revision path/body
-agreement precede storage. Creating a job does not run a performance test.
+agreement precede storage. createRunExport reads the path run through the run reader. Creating a job does not run a performance test.
 
 Content requires a ready scoped native publication. Shared attachment transport
 owns bounded streaming, digest verification, abort and original settlement.
