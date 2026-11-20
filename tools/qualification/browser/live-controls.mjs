@@ -34,6 +34,9 @@ export async function liveControls(page, authored, fixture, evidence) {
 
   await compareTooltip(page, evidence);
   await capture(page, evidence, 'live-darkroom-desktop');
+  await page.setViewportSize({ width: 2560, height: 1751 });
+  await capture(page, evidence, 'live-darkroom-ultrawide');
+  await page.setViewportSize({ width: 1440, height: 2584 });
   const menu = await openDownloads(page);
   await expect(menu.getByRole('button', { name: /^Metrics so far/ })).toBeEnabled({ timeout: 8000 });
   await capture(page, evidence, 'live-download-darkroom-desktop');
@@ -88,6 +91,11 @@ async function compareTooltip(page, evidence) {
   await expect(compare).toBeDisabled();
   await compare.hover();
   await expect(tooltip).toBeVisible();
+  const trigger = await compare.boundingBox();
+  const bubble = await tooltip.boundingBox();
+  assert(trigger && bubble);
+  assert(bubble.y + bubble.height < trigger.y, 'Compare tooltip appears above the trigger');
+  assert(Math.abs(bubble.x + bubble.width / 2 - (trigger.x + trigger.width / 2)) <= 1);
   await capture(page, evidence, 'live-compare-tooltip-darkroom');
   await page.getByRole('heading', { level: 1 }).hover();
   await expect(tooltip).toBeHidden();
@@ -241,6 +249,9 @@ async function capturePhone(page, evidence) {
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
   await capture(page, evidence, 'live-scarab-phone');
+  await page.getByRole('radio', { name: 'Darkroom', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'darkroom');
+  await capture(page, evidence, 'live-darkroom-phone');
 }
 
 /** @param {Page} page @param {string} evidence @param {string} name */
@@ -251,5 +262,5 @@ async function capture(page, evidence, name) {
   }));
   assert(size.contentWidth <= size.viewport + 1, `Layout overflows: ${JSON.stringify(size)}`);
   await page.evaluate(() => globalThis.scrollTo(0, 0));
-  await page.screenshot({ path: join(evidence, `${name}.png`), fullPage: true });
+  await page.screenshot({ path: join(evidence, `${name}.png`), fullPage: true, animations: 'disabled' });
 }

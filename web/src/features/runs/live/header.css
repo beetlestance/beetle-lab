@@ -45,8 +45,9 @@
 }
 .live-tip {
   position: absolute;
-  right: 0;
-  top: calc(100% + var(--s-8));
+  left: 50%;
+  bottom: calc(100% + var(--s-8));
+  transform: translateX(-50%);
   z-index: 5;
   width: max-content;
   padding: var(--s-4) var(--s-8);
@@ -136,7 +137,7 @@
 @media (max-width: 760px) {
   .live-tip {
     left: 0;
-    right: auto;
+    transform: none;
     max-width: calc(100vw - 32px);
   }
   .live-title-row {

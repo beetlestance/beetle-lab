@@ -166,7 +166,7 @@ it('keeps the compare action disabled with an explanation, and lists script vers
   await running();
   const compare = screen.getByRole('button', { name: 'Compare' });
   expect(compare).toHaveAttribute('aria-disabled', 'true');
-  expect(compare).toHaveAccessibleDescription(/once this one has finished/);
+  expect(compare).toHaveAccessibleDescription(/after this run has finished and its results are sealed/);
   fireEvent.focus(compare);
   fireEvent.keyDown(compare, { key: 'Escape' });
   expect(compare.parentElement).toHaveAttribute('data-dismissed', 'true');
