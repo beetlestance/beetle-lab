@@ -25,7 +25,7 @@ Legacy timestamps remain unrecorded; restored views have no note controls.
 
 Source browser checks do not prove packaged/native delivery or whole-family
 visual acceptance. Phone disclosures now cover What happened, Target runtime,
-Artifacts, Notes and Diagnostics. More run details holds Report, additional charts
+Artifacts, Notes and Diagnostics in both display and keyboard order. More run details holds Report, additional charts
 and the saved script, and a direct hash opens both disclosure levels. Readers
 mount readers on first open and retain visited children; the single Notes owner
 survives collapse and resize, including unresolved identical-replay saves. Hashes
@@ -96,14 +96,14 @@ their retry controls.
 | `web/src/features/runs/result/headline.ts` | `8e01d1114a29` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
-| `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
+| `web/src/features/runs/result/RunNote.tsx` | `77d15ea26068` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
-| `web/src/features/runs/result/phone.css` | `bc210295ad3f` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `bd57a4bf1356` |
+| `web/src/features/runs/result/phone.css` | `ad8d1f8fbea4` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `e81edc2aba0e` |
 | `web/src/features/runs/result/EndpointTable.tsx` | `992cc7cfab59` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `68d10e26b948` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `1270c4efb1e3` |
+| `web/src/features/runs/result/index.tsx` | `c34ed6235ad2` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

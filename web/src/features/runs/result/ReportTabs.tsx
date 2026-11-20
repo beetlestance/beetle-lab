@@ -99,6 +99,7 @@ export function ReportTabs({
   origin,
   phoneTarget,
   phoneExtras,
+  phoneNote,
 }: {
   run: Run;
   view: ResultView;
@@ -108,6 +109,7 @@ export function ReportTabs({
   origin?: RiseOrigin | undefined;
   phoneTarget?: ReactNode;
   phoneExtras?: ReactNode;
+  phoneNote?: ReactNode;
 }) {
   const idBase = useId();
   const phone = useResultPhone();
@@ -137,6 +139,7 @@ export function ReportTabs({
         <PhoneDisclosure id="result-artifacts" title="Artifacts" description="Summary, metrics and logs to download">
           {panels.artifacts.body}
         </PhoneDisclosure>
+        {phoneNote}
         <PhoneDisclosure id="result-diagnostics" title="Diagnostics" description="Engine and agent details">
           {panels.diagnostics.body}
         </PhoneDisclosure>

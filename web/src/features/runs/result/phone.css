@@ -72,27 +72,15 @@
   #result-activity {
     margin-top: 0;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
-    order: 10;
-  }
-  #result-target-details {
-    order: 20;
-  }
-  #result-artifacts {
-    order: 30;
-  }
-  #result-notes {
-    order: 40;
   }
   #result-diagnostics {
     border-radius: 0 0 var(--r-lg) var(--r-lg);
     border-bottom: 0;
-    order: 50;
   }
   #result-other-details {
     margin-top: 0;
     background: transparent;
     border: 0;
-    order: 60;
   }
   .result-phone-more > summary {
     padding-inline: 0;
