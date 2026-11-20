@@ -34,6 +34,7 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   RunPage: 'run-page',
   CreateRunRequest: 'create-run',
   CancelRunRequest: 'cancel-run',
+  CreateRunExportRequest: 'create-run-export',
   RunPinRequest: 'run-pin',
   RunPinReceipt: 'run-pin-receipt',
   InputColumns: 'input-columns',

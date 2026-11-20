@@ -1,0 +1,12 @@
+{
+  "scope": {
+    "kind": "workspace",
+    "organizationId": "00000000-0000-4000-8000-000000000001",
+    "workspaceId": "00000000-0000-4000-8000-000000000002"
+  },
+  "requestId": "00000000-0000-4000-8000-000000000010",
+  "options": {
+    "scriptTimeoutMs": 180000,
+    "maximumBuildBytes": 1048576
+  }
+}

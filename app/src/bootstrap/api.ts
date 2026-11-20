@@ -326,6 +326,7 @@ function downloadRoutes(
   });
   const exports = registerExportRoutes(server, {
     store: store.exports,
+    runs: store.runs,
     outputs: store.exportOutputs,
     newId: randomUUID,
     digest,

@@ -202,6 +202,7 @@ export const apiMessageSchemas = freezeSchema({
   SetRunNoteRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/SetRunNoteRequest' },
   RunPinRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/RunPinRequest' },
   RunListQuery: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/RunListQuery' },
+  CreateRunExportRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-requests#/$defs/CreateRunExportRequest' },
   RunResultSnapshot: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run-result#/$defs/RunResultSnapshot' },
   RunExecutionPolicy: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunExecutionPolicy' },
   RunEngine: { $ref: 'https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunEngine' },

@@ -37,4 +37,4 @@ The Docker host trust boundary is recorded in
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `6de77fe54add` |
+| `contracts/api/v2/` | `b4b81f3ea924` |

@@ -35,5 +35,5 @@ Checks: web/src/features/exports/*.test.tsx.
 - `ExportsTable.tsx` (`WorkspaceExports`) is the Exports workspace tab, mounted at
   `routes.exports` through the workspace scope route. Suite names come from one page of 100
   suites; revision ordinals from at most 32 reads.
-
-Checks: `dialog.test.tsx`.
+- `RunExport.tsx` (result header **Export script…**) posts `createRunExport` once per job,
+  follows it and reuses `parts.tsx` with the revision dialog. Checks: `run-export.test.tsx`.

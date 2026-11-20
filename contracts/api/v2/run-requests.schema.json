@@ -166,6 +166,26 @@
           "runIdPrefix"
         ]
       }
+    },
+    "CreateRunExportRequest": {
+      "description": "Exports the run's saved revision, engine profile, budget and execution policy. Options default to the run's timeout and a script limit of 1 MiB, lowered to fit the run's output budget.",
+      "type": "object",
+      "properties": {
+        "scope": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/WorkspaceScope"
+        },
+        "requestId": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid"
+        },
+        "options": {
+          "$ref": "https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/StandaloneExportOptions"
+        }
+      },
+      "required": [
+        "scope",
+        "requestId"
+      ],
+      "additionalProperties": false
     }
   }
 }
