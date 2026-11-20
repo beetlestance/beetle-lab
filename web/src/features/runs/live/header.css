@@ -45,17 +45,18 @@
 }
 .live-tip {
   position: absolute;
-  right: 0;
-  top: calc(100% + var(--s-8));
+  left: 50%;
+  bottom: calc(100% + var(--s-8));
+  transform: translateX(-50%);
   z-index: 5;
-  width: 260px;
-  padding: var(--s-10) var(--s-12);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--panel);
+  width: max-content;
+  padding: var(--s-4) var(--s-8);
+  border-radius: var(--r-sm);
+  background: var(--inverse);
+  color: var(--on-inverse);
   box-shadow: var(--shadow-popover);
   font-size: var(--fs-sm);
-  color: var(--ink);
+  line-height: 18px;
   visibility: hidden;
   opacity: 0;
   transition: opacity var(--motion-fast) var(--ease-out);
@@ -136,7 +137,7 @@
 @media (max-width: 760px) {
   .live-tip {
     left: 0;
-    right: auto;
+    transform: none;
     max-width: calc(100vw - 32px);
   }
   .live-title-row {

@@ -40,9 +40,19 @@ export async function runScriptZip(page, run, root) {
   await page.getByRole('button', { name: 'Download', exact: true }).click();
   const group = page.getByRole('group', { name: 'Run downloads' });
   await group.getByRole('link', { name: /^Script for revision/ }).click();
+  await verifyScriptZip(page, run, root);
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {{ id: string, revisionId: string }} run
+ * @param {string} root
+ */
+export async function verifyScriptZip(page, run, root) {
   const url = new URL(page.url());
   expect(url.pathname).toContain(`/revisions/${run.revisionId}/script`);
   expect(url.searchParams.get('run')).toBe(run.id);
+  expect(url.searchParams.get('export')).toBe('zip');
   const prepare = page.getByRole('dialog').getByRole('button', { name: 'Prepare script', exact: true });
   await expect(prepare).toBeVisible();
   await prepare.click();
