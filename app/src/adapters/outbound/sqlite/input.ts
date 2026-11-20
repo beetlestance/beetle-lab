@@ -326,6 +326,7 @@ const fixedReplyLimits: Partial<Record<Operation['kind'], number>> = {
   historySummary: 16384,
   getWorkspaceOverview: 32768,
   getPoolUsage: 4096,
+  getUnfinishedWork: 1024,
   getRunQueue: 16384,
   settleBackendOutput: 1536,
   readBackendSettlement: 1536,

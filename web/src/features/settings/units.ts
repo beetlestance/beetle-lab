@@ -100,6 +100,21 @@ export const ceilingCopy = Object.fromEntries(
   ]),
 ) as Record<keyof Budget, NumericCopy>;
 
+const GIB = 1_073_741_824;
+const MIB = 1_048_576;
+/**
+ * Byte rows show the unit the value is whole in, so 536870912 reads "512 MiB", not
+ * "0.536871 GB". The unit follows the saved value, so it stays put while a row is edited.
+ */
+export function displayUnit(base: number, unit: Unit): Unit {
+  if (unit !== units.gigabytes || base === 0) return unit;
+  if (base % GIB === 0) return { label: 'GiB', factor: GIB };
+  if (base % 1_000_000_000 === 0) return unit;
+  if (base % MIB === 0) return { label: 'MiB', factor: MIB };
+  if (base % 1_000_000 === 0) return { label: 'MB', factor: 1_000_000 };
+  return unit;
+}
+
 /** Exact display: whole numbers stay whole; other values keep up to six significant digits. */
 export function toUnit(base: number, unit: Unit): string {
   const value = base / unit.factor;

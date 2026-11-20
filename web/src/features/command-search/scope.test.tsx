@@ -23,27 +23,29 @@ it('rejects wrong-owner pages, keeps navigation available and retries only on ex
 });
 it('retires immediately on scope switch and never adopts a late old-scope same-name item',async()=>{
  const held=deferred<Response>();const f=testClient(request=>request.path.includes(ids.a)&&request.path.includes('/suites?')?held.promise:read(request));
- mount(f.client,routes.workspace(ids.a,ids.workspace));await screen.findByRole('heading',{name:'Folders'});const first=await open();await within(first).findByText('Loading suites…');
+ mount(f.client,routes.workspace(ids.a,ids.workspace));await screen.findByRole('navigation',{name:'Workspace sections'});const first=await open();await within(first).findByText('Loading suites…');
  fireEvent.click(screen.getByRole('button',{name:'Switch workspace B'}));await waitFor(()=>expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
- await screen.findByRole('heading',{name:'Folders'});const second=await open();const link=await within(second).findByRole('link',{name:/Shared suite/});
+ await screen.findByRole('navigation',{name:'Workspace sections'});const second=await open();const link=await within(second).findByRole('link',{name:/Shared suite/});
  expect(link).toHaveAttribute('href',routes.suite(ids.b,ids.workspace,suite().id));
  await act(async()=>held.resolve(json({scope:suite().scope,items:[suite()],nextCursor:null})));
  expect(within(second).getByRole('link',{name:/Shared suite/})).toHaveAttribute('href',routes.suite(ids.b,ids.workspace,suite().id));expect(f.records.every(row=>row.method==='GET')).toBe(true);
 });
 it('shows more-page and unavailable groups without turning failed reads into empty success',async()=>{
  const f=testClient(request=>request.path.includes('/suites?')?json(fullSuitePage()):request.path.includes('/runs?')?json(apiError('storage_unavailable'),503):read(request));
- mount(f.client,routes.workspace(ids.a,ids.workspace));await screen.findByRole('heading',{name:'Folders'});const dialog=await open();
+ mount(f.client,routes.workspace(ids.a,ids.workspace));await screen.findByRole('navigation',{name:'Workspace sections'});const dialog=await open();
  expect(await within(dialog).findByText('More suites are available in the list view.')).toBeVisible();expect(await within(dialog).findByText('Recent runs could not be loaded.')).toBeVisible();
  const reads=f.records.length;fireEvent.change(within(dialog).getByRole('searchbox'),{target:{value:'Shared'}});await waitFor(()=>expect(within(dialog).getAllByRole('link')).toHaveLength(2));expect(f.records).toHaveLength(reads);
  const [found,start]=within(dialog).getAllByRole('link');expect(found).toHaveTextContent('Shared suiteSuite');expect(start).toHaveTextContent('Start Shared suiteAction');
  expect(start).toHaveAttribute('href',found!.getAttribute('href'));
 });
-it('shares only the identical unfiltered history first page with command search', async () => {
- const held=deferred<Response>();const f=testClient(request=>request.path.includes('/runs?')?held.promise:read(request));
- mount(f.client,routes.runs(ids.a,ids.workspace));await screen.findByRole('heading',{name:'Runs'});const dialog=await open();
- expect(f.records.filter(row=>row.path.includes('/runs?'))).toHaveLength(1);
- const original=f.records.find(row=>row.path.includes('/runs?'))!;expect(original.path).toContain('limit=100&order=newest');
- fireEvent.keyDown(within(dialog).getByRole('searchbox'),{key:'Escape'});expect(original.signal?.aborted).toBe(false);
- await act(async()=>held.resolve(json(historyPage([]))));
+it('keeps the counted history page separate from the uncounted command search page', async () => {
+ const held=deferred<void>();const f=testClient(request=>request.path.includes('/runs?')?held.promise.then(()=>json(historyPage([]))):read(request));
+ mount(f.client,routes.runs(ids.a,ids.workspace));await screen.findByRole('navigation',{name:'Workspace sections'});const dialog=await open();
+ const reads=()=>f.records.filter(row=>row.path.includes('/runs?'));
+ await waitFor(()=>expect(reads()).toHaveLength(2));
+ const history=reads().find(row=>row.path.includes('includeCounts=true'))!;
+ expect(reads().map(row=>row.path.includes('includeCounts=true')).sort()).toEqual([false,true]);
+ fireEvent.keyDown(within(dialog).getByRole('searchbox'),{key:'Escape'});expect(history.signal?.aborted).toBe(false);
+ await act(async()=>held.resolve());
  await screen.findByRole('heading',{name:'No runs yet'});
 });

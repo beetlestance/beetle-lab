@@ -9,16 +9,16 @@ it('opens the shell reference without API calls and selects the generated exact 
  const api=testClient(()=>{throw Error('Reference must not call the runtime API');});mount(api.client,routes.reference);
  expect(await screen.findByRole('heading',{name:'Public API reference'})).toBeVisible();
  fireEvent.change(screen.getByRole('searchbox',{name:'Filter JSON operations'}),{target:{value:'createRun'}});
- expect(screen.getByRole('status')).toHaveTextContent('1 of 1 matching operations');
+ expect(screen.getByText(/2 of 2 matching operations/)).toBeVisible();
  fireEvent.click(screen.getByRole('button',{name:'Inspect createRun'}));
  const request=screen.getByRole('region',{name:'Request body schema'});const schema=JSON.parse(request.textContent!) as {required:string[];properties:Record<string,unknown>};
  expect(schema.required).toEqual(expect.arrayContaining(['scope','requestId','revisionId','budget']));expect(schema.properties).toHaveProperty('engineProfile');
  expect(screen.getByRole('link',{name:'Download agent instructions'})).toHaveAttribute('href',referenceDownloads.skill);
  expect(screen.getByRole('link',{name:'Download schema catalogue'})).toHaveAttribute('download','public-api.json');expect(api.records).toEqual([]);
 });
-it('uses the ordinary sidebar link and keeps empty search honest',async()=>{
- const api=testClient(readNamespace);mount(api.client);await screen.findByRole('table',{name:'Workspaces'});
- fireEvent.click(screen.getByRole('link',{name:'Docs'}));await screen.findByRole('heading',{name:'Public API reference'});
+it('marks the Docs link current and keeps empty search honest',async()=>{
+ const api=testClient(readNamespace);mount(api.client,routes.reference);await screen.findByRole('heading',{name:'Public API reference'});
+ expect(within(screen.getByRole('navigation',{name:'Main navigation'})).getByRole('link',{name:'Docs'})).toHaveAttribute('href',routes.docs);
  const before=api.records.length;fireEvent.change(screen.getByRole('searchbox'),{target:{value:'not-an-operation'}});
  expect(screen.getByText('No matching operations.')).toBeVisible();expect(screen.queryByRole('region',{name:'Selected operation'})).not.toBeInTheDocument();
  expect(api.records).toHaveLength(before);expect(within(screen.getByRole('navigation',{name:'Main navigation'})).getByRole('link',{name:'Docs'})).toHaveAttribute('aria-current','page');

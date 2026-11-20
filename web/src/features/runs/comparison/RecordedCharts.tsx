@@ -1,3 +1,4 @@
+import { availabilityText } from './availability.js';
 import { useMemo, useState } from 'react';
 import type { RunComparisonItem, RunChartHistory } from '@beetle/contracts/api';
 import { LiveChart } from '../live/LiveChart.js';
@@ -135,7 +136,7 @@ function RecordedNotes({
         attention: true,
         content: (
           <p>
-            {label}: recorded charts {value.reason.replaceAll('_', ' ')}.
+            {label}: recorded charts {availabilityText(value.reason)}.
           </p>
         ),
       };

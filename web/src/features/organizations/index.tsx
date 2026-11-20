@@ -29,6 +29,7 @@ function organizationFields(org?: Organization): EditorField[] {
       value: org?.slug ?? '',
       pattern: '[a-z0-9]+(-[a-z0-9]+)*',
       help: 'Lowercase letters, numbers, and single hyphens.',
+      conflict: (slug) => `“${slug}” is taken by another organization. Choose a different slug.`,
     },
   ];
 }

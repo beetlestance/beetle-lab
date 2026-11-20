@@ -1,7 +1,7 @@
 import { selectInstalledConfiguration } from '@beetle/contracts/installation-generation';
 import { captureInstallationReceipt, receiptDigest } from './installation-receipt.js';
 import { loadAgentConfiguration } from './agent-configuration.js';
-import { upgradeFenced } from './upgrade-fence.js';
+import { releaseName, upgradeFenced } from './upgrade-fence.js';
 import { captureLocalExternalOrigin, loopbackOrigin } from '../adapters/inbound/http/session/index.js';
 import { constants } from 'node:fs';
 import { access, open, realpath, stat } from 'node:fs/promises';
@@ -31,6 +31,8 @@ export interface BackendEnvironment {
   readonly BEETLE_EXTERNAL_ORIGIN?: string;
   readonly BEETLE_LISTEN_HOST?: string;
   readonly BEETLE_LISTEN_PORT?: string;
+  /** Optional release name baked into the image; reported, never used for decisions. */
+  readonly BEETLE_RELEASE?: string;
 }
 export interface BackendConfiguration {
   readonly application: ApplicationOptions;
@@ -132,7 +134,7 @@ async function agentConnection(path: string, installationId: string, receipt: un
     throw new BootstrapError('configuration', { cause: error });
   }
 }
-function fenceFor(receipt: unknown): boolean {
+function fenceFor(receipt: unknown): string | null {
   try {
     return upgradeFenced(receipt);
   } catch (error) {
@@ -168,7 +170,8 @@ export async function loadBackendConfiguration(
   return Object.freeze({
     listen,
     application: {
-      ...(fenced ? { upgradeFence: true as const } : {}),
+      ...(fenced ? { upgradeFence: fenced } : {}),
+      ...(releaseName(environment.BEETLE_RELEASE) ? { release: releaseName(environment.BEETLE_RELEASE)! } : {}),
       externalOrigin,
       access: originMode,
       configurationCheck: receipt.assertCurrent,

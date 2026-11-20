@@ -45,8 +45,16 @@ export interface PoolUsageFacts {
   readonly storage: { readonly chargedBytes: number; readonly allocationBytes: number; readonly reserveBytes: number };
 }
 export type RunQueueFacts = Omit<RunQueueStatus, 'generatedAt' | 'scope'>;
+/** Counts that keep an upgrade from draining (docs/plans/proposed/in-place-upgrade.md). */
+export interface UnfinishedWorkFacts {
+  readonly runs: number;
+  readonly exports: number;
+  readonly uploads: number;
+  readonly removals: number;
+}
 export interface InstallationStatusReader {
   poolUsage(): Promise<PoolUsageFacts>;
   runQueue(key: RunKey): Promise<RunQueueFacts>;
+  unfinishedWork(): Promise<UnfinishedWorkFacts>;
 }
 export type { PoolUsage, RunQueueStatus, SlotUsage };

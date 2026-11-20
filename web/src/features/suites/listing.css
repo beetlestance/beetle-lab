@@ -212,3 +212,10 @@
     flex-direction: column;
   }
 }
+/* "Overlay / Engine picker": Choose is the accent text action; planned engines read as unavailable. */
+.engine-option-ready .btn-text {
+  color: var(--amber);
+}
+.engine-option:not(.engine-option-ready) {
+  opacity: 0.7;
+}

@@ -52,32 +52,37 @@ const extras: Record<Command, readonly string[]> = {
   'export-status': ['organization', 'workspace', 'export', 'wait-ms'],
   'export-download': ['organization', 'workspace', 'export', 'out'],
 };
-function origin(value: string, local = false): string {
+function loopback(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '[::1]' || (isIP(hostname) === 4 && hostname.startsWith('127.'));
+}
+/** RFC 1918 IPv4 and IPv6 unique-local addresses; public addresses and names stay refused. */
+function privateNetwork(hostname: string): boolean {
+  if (isIP(hostname) === 4) {
+    const [a, b] = hostname.split('.').map(Number) as [number, number];
+    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+  const bare = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : '';
+  return isIP(bare) === 6 && /^f[cd][0-9a-f]{2}:/i.test(bare);
+}
+type OriginRule = 'any' | 'loopback' | 'private';
+function origin(value: string, rule: OriginRule = 'any'): string {
   try {
     const url = new URL(value);
     if (value !== url.origin || !['http:', 'https:'].includes(url.protocol)) return invalid();
-    if (
-      local &&
-      !(
-        url.hostname === 'localhost' ||
-        url.hostname === '[::1]' ||
-        (isIP(url.hostname) === 4 && url.hostname.startsWith('127.'))
-      )
-    )
-      return invalid();
-    return url.origin;
+    if (rule === 'any' || loopback(url.hostname)) return url.origin;
+    return rule === 'private' && privateNetwork(url.hostname) ? url.origin : invalid();
   } catch {
     return invalid();
   }
 }
 function flags(argv: readonly string[], command: Command): Map<string, string> {
   const values = new Map<string, string>();
-  const allowed = ['endpoint', 'origin', 'session-file', 'json', ...extras[command]];
+  const allowed = ['endpoint', 'origin', 'session-file', 'json', 'private-network', ...extras[command]];
   for (let index = 1; index < argv.length; index++) {
     const flag = argv[index]!;
     const key = flag.slice(2);
     if (!flag.startsWith('--') || !allowed.includes(key) || values.has(key)) return invalid();
-    const value = key === 'json' ? 'true' : argv[++index];
+    const value = key === 'json' || key === 'private-network' ? 'true' : argv[++index];
     if (!value || value.startsWith('--')) return invalid();
     values.set(key, value);
   }
@@ -128,7 +133,8 @@ export function parseOptions(argv: readonly string[]): ClientOptions {
   return Object.freeze({
     command,
     endpoint: origin(values.get('endpoint') ?? ''),
-    origin: origin(values.get('origin') ?? '', true),
+    // Loopback by default; a private-network installation is an explicit opt-in.
+    origin: origin(values.get('origin') ?? '', values.has('private-network') ? 'private' : 'loopback'),
     sessionFile: file(values, 'session-file'),
     ...specificOptions(command, values),
     ...waiting(values),

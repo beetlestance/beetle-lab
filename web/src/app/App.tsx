@@ -13,6 +13,7 @@ import { NotFound } from '../components/NotFound.js';
 import { ToastProvider } from '../components/Toast.js';
 import { PageTransition } from '../components/NavigationMotion.js';
 import { AppShell } from './shell/AppShell.js';
+import { UpgradeWatch } from '../features/upgrade/watch.js';
 import { CommandPalette, useCommandNavigation } from '../features/command-search/index.js';
 import type { WorkspaceView } from '../features/workspaces/index.js';
 
@@ -50,6 +51,7 @@ export function App({
   const location = useLocation();
   return (
     <ApiContext.Provider value={apiClient}>
+      <UpgradeWatch>
       <SessionContext.Provider value={session}>
         <InputTransferContext.Provider value={inputTransfers ?? null}>
           <QueryClientProvider client={client}>
@@ -71,6 +73,7 @@ export function App({
           </QueryClientProvider>
         </InputTransferContext.Provider>
       </SessionContext.Provider>
+      </UpgradeWatch>
     </ApiContext.Provider>
   );
 }

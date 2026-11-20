@@ -131,11 +131,14 @@ it('shows not found for a missing organization instead of an empty dashboard', a
   expect(api.records).toHaveLength(1);
 });
 
-it('shows not found for a missing workspace with a link back to its organization', async () => {
+it('shows not found for a missing workspace with a link back to its organization’s workspaces', async () => {
   const api = testClient((request) =>
     request.path.endsWith(`/workspaces/${ids.workspace}`) ? json(apiError('not_found'), 404) : readNamespace(request),
   );
   mount(api.client, routes.workspace(ids.a, ids.workspace));
   expect(await screen.findByRole('heading', { name: "That workspace isn't here" })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Back to workspaces' })).toHaveAttribute('href', routes.organization(ids.a));
+  expect(screen.getByRole('link', { name: 'Back to workspaces' })).toHaveAttribute(
+    'href',
+    routes.organizationWorkspaces(ids.a),
+  );
 });

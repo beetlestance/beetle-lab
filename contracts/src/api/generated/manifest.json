@@ -12,7 +12,8 @@
     "runner/v1/supervisor-events.schema.json": "c55be82182f18875f3902b106a1c6d14655dda64e9f70509d5126fb7b2e2d62a",
     "runner/v1/target-runtime-report.schema.json": "57771e3c2d2448194f32a30ac9e75e0886f6311857fb37ebdea382aed1883c40",
     "runner/v1/target-runtime-units.schema.json": "061efb4a78d48ed632df848959cded132dce847a9991f1e6917e5e00f71b158b",
-    "api/v2/common.schema.json": "370fcbef515512168721e13fe17c02a282fb9446a55b6619224383262481f7a4",
+    "api/v2/common.schema.json": "9ce6b10ef5241a1468f25229d89f4006b529acc03fdaf5efca145e4723fbef33",
+    "api/v2/engine-catalogue.schema.json": "fcabe61579088705f2faa90f82049d616c4e7dc2dc2dd19cb76fe3db229e14f3",
     "api/v2/export-jobs.schema.json": "1bdc13dcae8eaf8993fc76851b0247670e164f261c248ac77dd4384436d38e25",
     "api/v2/input-columns.schema.json": "1c67bd9f3374844f39c7362ab7f82d3bbbc34146d84046cc131eb57cf7ec00ed",
     "api/v2/input-requests.schema.json": "e5970ad4ad54d9f229436e83b6e8cededa3eccab878554f2896c19c927de3897",
@@ -45,12 +46,15 @@
     "api/v2/settings.schema.json": "aaf9c415020b25b04bce515956e2077bb74f15614a04c137d6211a345c1ec2f8",
     "api/v2/suite-listing.schema.json": "2aba95e18b1ab3d205d5e2a7590ad0d73fa0c3c59cf111845e08b5585117199b",
     "api/v2/suite-requests.schema.json": "0116fdbd31844237a17491f3cc4e2ed866aea8312d00ef49f4c7ca5a65573a5e",
-    "api/v2/suite.schema.json": "5124e1b8a2c85bb5107af81743bcf1d3a153cd5d4bd0f0c4345a01b15da353b5"
+    "api/v2/suite.schema.json": "5124e1b8a2c85bb5107af81743bcf1d3a153cd5d4bd0f0c4345a01b15da353b5",
+    "api/v2/upgrade.schema.json": "5ddf526ffd1f61d2416f41609a2a86cf17d18069cbc0ea18f48d04851c7abf2e"
   },
-  "operationsSha256": "c3223b8b048a73bb9e02cd28e86e44f95726d93691a2cd8ec186f79837641efb",
+  "operationsSha256": "febc65e22b78dec9d0586e27e52100c6d8517ae900157e638c582e24fd013f7b",
   "outputs": [
     "common.inference.ts",
     "common.ts",
+    "engine-catalogue.inference.ts",
+    "engine-catalogue.ts",
     "export-jobs.inference.ts",
     "export-jobs.ts",
     "input-columns.inference.ts",
@@ -121,6 +125,8 @@
     "suite-requests.ts",
     "suite.inference.ts",
     "suite.ts",
-    "types.ts"
+    "types.ts",
+    "upgrade.inference.ts",
+    "upgrade.ts"
   ]
 }

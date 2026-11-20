@@ -7,7 +7,7 @@ import { deferred, ids, json, mount, run, runId, runRead, testClient } from './t
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 // The live header shows the cancelling sentence; RunCancellation is no longer composed.
-const waiting = /Waiting for in-flight requests to finish before the results are sealed/;
+const waiting = /Cancellation requested; waiting for the agent to confirm that execution has stopped/;
 const path = routes.run(ids.a, ids.workspace, runId);
 
 it('requests intent once and shows waiting without inventing a terminal outcome', async () => {

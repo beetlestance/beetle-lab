@@ -10,6 +10,8 @@ import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BeetleMark } from './BeetleMark.js';
 import { ScopeSwitcher } from './ScopeSwitcher.js';
 import { ActiveRunBadge } from './ActiveRunBadge.js';
+import { ConnectionBanner } from './ConnectionBanner.js';
+import { UpgradeBanner } from '../../features/upgrade/UpgradeBanner.js';
 import './shell.css';
 
 export type AppShellProps = {
@@ -88,6 +90,8 @@ export function AppShell({ children, onSearch }: AppShellProps) {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="shell-main">
+        <ConnectionBanner />
+        <UpgradeBanner />
         <SettingsScopeContext.Provider value={settingsScope}>{children}</SettingsScopeContext.Provider>
       </main>
     </div>

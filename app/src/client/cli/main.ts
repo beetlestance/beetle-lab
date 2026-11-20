@@ -7,6 +7,7 @@ import { execute } from './execute.js';
 import { ClientError } from './errors.js';
 import { parseOptions } from './options.js';
 import { waitClock } from './wait.js';
+import { validateRequestFile } from './validate.js';
 export type { ClientOutput, ClientStreams } from './output.js';
 import { streamOutput } from './output.js';
 import type { ClientStreams } from './output.js';
@@ -16,6 +17,10 @@ export async function runClient(argv: readonly string[], streams: ClientStreams,
   let timer: ReturnType<typeof setTimeout> | undefined;
   const abort = () => controller?.abort();
   try {
+    if (argv[0] === 'validate') {
+      await streams.stdout.write(JSON.stringify(await validateRequestFile(argv)) + '\n', AbortSignal.timeout(1000));
+      return 0;
+    }
     const options = parseOptions(argv);
     controller = new AbortController();
     const duration = options.waitMs ?? 30000;

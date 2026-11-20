@@ -1,8 +1,8 @@
 import { createRunLiveHistoryService } from '../application/run-live-history/index.js';
 import { registerRunLiveHistoryRoutes } from '../adapters/inbound/http/run-live-history/index.js';
-import { registerStorageHealth } from './storage-health.js';
+import { registerReadiness, registerStorageHealth } from './storage-health.js';
 import { applicationMode } from './historical.js';
-import { protectUpgrade } from './upgrade-fence.js';
+import { protectUpgrade, upgradeFacts } from './upgrade-fence.js';
 import type { HistoricalOptions } from './historical.js';
 import type { BackendServingLease } from './recovery-control/index.js';
 import { openBackendServing } from './recovery-control/index.js';
@@ -60,7 +60,8 @@ export interface ApplicationOptions {
   /** Canonical installation-owned child of the private data directory. */
   readonly inputsDirectory?: string;
   /** Set only from the installer's configuration selector while an offline upgrade awaits activation. */
-  readonly upgradeFence?: true;
+  readonly upgradeFence?: string;
+  readonly release?: string;
 }
 export interface Application {
   readonly server: FastifyInstance;
@@ -156,6 +157,7 @@ class ApplicationOwner {
         agent: () => this.agentRuntime?.agentStatus?.() ?? null,
         authorize: publicAuthorize,
         nowMs: () => Date.now(),
+        upgrade: upgradeFacts(this.options),
       });
       const inputs = readInputs(this.historicalInputs, this.inputRuntime);
       if (inputs)
@@ -179,9 +181,10 @@ class ApplicationOwner {
     }
   }
   private async finish(store: Metadata, session: LocalSession): Promise<Application> {
-    registerStorageHealth(this.server, () =>
-      store.storageStatus() === 'unavailable' ? 'unavailable' : this.closing ? 'closing' : store.storageStatus(),
-    );
+    const storage = () =>
+      store.storageStatus() === 'unavailable' ? 'unavailable' : this.closing ? 'closing' : store.storageStatus();
+    registerStorageHealth(this.server, storage);
+    registerReadiness(this.server, storage, this.options.upgradeFence !== undefined);
     await this.server.ready();
     return Object.freeze({
       server: this.server,

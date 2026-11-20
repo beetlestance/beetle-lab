@@ -1,0 +1,14 @@
+{
+  "scope": { "kind": "installation" },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "engines": [
+    {
+      "id": "k6",
+      "availability": "installed",
+      "state": "ready",
+      "profiles": [{ "profileId": "k6-standard", "imageDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "image": "verified_at_agent_start" }]
+    },
+    { "id": "unit-tests", "availability": "planned", "state": "planned", "profiles": [] },
+    { "id": "lint", "availability": "planned", "state": "planned", "profiles": [] }
+  ]
+}

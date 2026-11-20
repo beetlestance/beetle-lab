@@ -65,8 +65,8 @@ export class BackendDisk {
     await this.check(check);
     const space = await this.port.statfs(this.path, { bigint: true });
     check();
-    const total = bytes(space.blocks, space.bsize);
-    const available = bytes(space.bavail, space.bsize);
+    const total = bytes(space.blocks, fragmentSize(space));
+    const available = bytes(space.bavail, fragmentSize(space));
     if (available > total || total === 0) throw new CapacityError();
     await this.check(check);
     return { total, available };
@@ -74,6 +74,13 @@ export class BackendDisk {
   close(): Promise<void> {
     return (this.closing ??= retainedClose(this.port, this.handle));
   }
+}
+/**
+ * Block counts are in fragment units (`f_frsize`). FUSE and virtiofs mounts, such as Docker
+ * Desktop's, report a much larger `f_bsize`, which multiplied the disk size by up to 256.
+ */
+export function fragmentSize(space: Pick<BigIntStatsFs, 'bsize' | 'frsize'>): bigint {
+  return typeof space.frsize === 'bigint' && space.frsize > 0n ? space.frsize : space.bsize;
 }
 function bytes(blocks: bigint, size: bigint): number {
   if (blocks < 0n || size <= 0n) throw new CapacityError();

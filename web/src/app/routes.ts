@@ -48,6 +48,7 @@ export const routes = {
   organizationWorkspaces: (id: string) => `/organizations/${encodeURIComponent(id)}/workspaces`,
   settings: '/settings',
   chooseSettings: () => '/settings?level=organization',
+  upgradeSettings: '/settings?view=upgrade',
   organizationSettingsPattern: '/organizations/:organizationId/settings',
   workspaceSettingsPattern: '/organizations/:organizationId/workspaces/:workspaceId/settings',
   organizationSettings: (id: string) => `/organizations/${encodeURIComponent(id)}/settings`,

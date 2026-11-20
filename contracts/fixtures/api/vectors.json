@@ -750,6 +750,26 @@
     "valid": false
   },
   {
+    "path": "valid/upgrade-status.json",
+    "schema": "UpgradeStatus",
+    "valid": true
+  },
+  {
+    "path": "invalid/upgrade-status-skip-release.json",
+    "schema": "UpgradeStatus",
+    "valid": false
+  },
+  {
+    "path": "valid/engine-catalogue.json",
+    "schema": "EngineCatalogue",
+    "valid": true
+  },
+  {
+    "path": "invalid/engine-catalogue-unknown-engine.json",
+    "schema": "EngineCatalogue",
+    "valid": false
+  },
+  {
     "path": "valid/run-queue.json",
     "schema": "RunQueueStatus",
     "valid": true

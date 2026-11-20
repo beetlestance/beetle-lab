@@ -105,7 +105,7 @@ describe('native input staging', () => {
 
   it('checks BigInt statfs reserves and reports fixed ENOSPC failures', async () => {
     files = await fixture({ ...nativePort, statfs: async (...args) => {
-      const value = await nativePort.statfs(...args); return { ...value, bavail: 0n, bsize: 4096n } as typeof value;
+      const value = await nativePort.statfs(...args); return { ...value, bavail: 0n, bsize: 4096n, frsize: 4096n } as typeof value;
     } });
     await expect(finish(files.store.prepare(record(), { freeSpaceReserveBytes: 1 }))).rejects.toMatchObject({ code: 'capacity_unavailable', message: 'Input byte operation failed' });
     const store = await files.reopen({ ...nativePort, write: async () => { throw Object.assign(new Error('private synthetic path'), { code: 'ENOSPC' }); } });

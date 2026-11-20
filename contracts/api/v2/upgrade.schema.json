@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://beetle-lab.dev/contracts/api/v2/upgrade",
+  "title": "ApiUpgrade",
+  "$defs": {
+    "UpgradeRelease": {
+      "type": "object",
+      "description": "What this backend runs. name is the bundle's release name, or null when the build carries none.",
+      "properties": {
+        "name": {
+          "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[0-9A-Za-z][0-9A-Za-z.+-]*$" }, { "type": "null" }]
+        },
+        "metadataSchema": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/PositiveInteger" }
+      },
+      "required": ["name", "metadataSchema"],
+      "additionalProperties": false
+    },
+    "UnfinishedWork": {
+      "type": "object",
+      "description": "Work that keeps the installation from draining: nonterminal runs and exports, uploads not yet published and removals still freeing files.",
+      "properties": {
+        "runs": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "exports": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "uploads": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "removals": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" }
+      },
+      "required": ["runs", "exports", "uploads", "removals"],
+      "additionalProperties": false
+    },
+    "UpgradeBackup": {
+      "type": "object",
+      "description": "The cold backup copies the whole data root. atLeastBytes is the accounted result and input storage; databases add to it.",
+      "properties": {
+        "atLeastBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Count" },
+        "freeBytes": { "$ref": "https://beetle-lab.dev/contracts/api/v2/installation-status#/$defs/StatusQuantity" }
+      },
+      "required": ["atLeastBytes", "freeBytes"],
+      "additionalProperties": false
+    },
+    "UpgradeStatus": {
+      "type": "object",
+      "description": "Read-only. fenced means the host tool has swapped images and set the fence; only activation on the host lifts it. The host-side phase and steps are read with setup upgrade status.",
+      "properties": {
+        "scope": { "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/InstallationScope" },
+        "generatedAt": { "$ref": "https://beetle-lab.dev/contracts/api/v2/run#/$defs/RunTimestamp" },
+        "release": { "$ref": "https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UpgradeRelease" },
+        "path": { "const": "next_release_only" },
+        "phase": { "enum": ["open", "fenced"] },
+        "operationId": {
+          "anyOf": [{ "$ref": "https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid" }, { "type": "null" }]
+        },
+        "unfinished": { "$ref": "https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UnfinishedWork" },
+        "backup": { "$ref": "https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UpgradeBackup" }
+      },
+      "required": ["scope", "generatedAt", "release", "path", "phase", "operationId", "unfinished", "backup"],
+      "additionalProperties": false
+    }
+  }
+}

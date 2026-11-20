@@ -1,0 +1,46 @@
+.upgrade {
+  display: grid;
+  gap: var(--space-4);
+}
+.upgrade-version {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.upgrade-version p,
+.upgrade-phase {
+  margin: 0;
+}
+.upgrade-facts {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+.upgrade-facts dt {
+  font-weight: 600;
+}
+.upgrade-facts dd {
+  margin: 0;
+}
+.upgrade-steps {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.upgrade-steps li {
+  display: grid;
+  gap: var(--space-1);
+}
+.upgrade-steps code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 40rem) {
+  .upgrade-facts {
+    grid-template-columns: 1fr;
+  }
+}

@@ -26,6 +26,7 @@ const errors = {
   protected_dependency: [409, 'Protected dependency', false],
   internal_error: [500, 'Internal error', false],
   rate_limited: [429, 'Too many requests', true],
+  upgrade_pending: [503, 'Paused for upgrade', true],
 } as const satisfies Record<Code, readonly [number, ApiError['message'], boolean]>;
 
 /** Transport owners may select only fixed public codes; raw messages are ignored. */
@@ -43,7 +44,9 @@ export interface ApiErrorOptions {
   /** Optional fixed protection reason; only the closed contract values are emitted. */
   explain?: (error: unknown) => Reason | undefined;
   /** Closed field categories supplied by trusted composition, never raw paths or values. */
-  fieldIssue?: (error: unknown) => 'folder_name_conflict' | 'folder_depth' | 'suite_name_conflict' | undefined;
+  fieldIssue?: (
+    error: unknown,
+  ) => 'folder_name_conflict' | 'folder_depth' | 'suite_name_conflict' | 'organization_slug_conflict' | undefined;
 }
 type Reason = NonNullable<ApiError['reason']>;
 const reasons: readonly Reason[] = ['active', 'pinned', 'pin_limit', 'cleanup_in_progress'];
@@ -138,6 +141,7 @@ function fieldErrors(error: unknown, code: Code, describe: ApiErrorOptions['fiel
     const issue = describe?.(error);
     if (issue === 'suite_name_conflict' && code === 'conflict') return [{ path: '/metadata/name', code: 'conflict' }];
     if (issue === 'folder_name_conflict' && code === 'conflict') return [{ path: '/name', code: 'conflict' }];
+    if (issue === 'organization_slug_conflict' && code === 'conflict') return [{ path: '/slug', code: 'conflict' }];
     if (issue === 'folder_depth' && code === 'invalid_value') return [{ path: '/parentFolderId', code: 'range' }];
   } catch {
     /* A failed diagnostic must not replace or broaden the original failure. */

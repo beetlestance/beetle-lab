@@ -29,42 +29,15 @@ export function sourceFixture() {
   const f = admissionFixture(); const databases = new Set<DatabaseSync>();
   afterEach(() => { for (const db of databases) db.close(); databases.clear(); });
   async function seed(path = f.path(), beforeClaim?: (input: { journal: Journal; offer: Offer; specDigest: string }) => Promise<void>, interrupted = false) {
-    const journal = await f.configured(path); const offer = f.job(); offer.budget.outputBytes = 100_000;
-    const config = configuration(); config.pool.outputBytes = 200_000; config.perRun.outputBytes = 200_000;
-    const observed = observation(); observed.capacity.outputBytes = 200_000;
-    await journal.admission({ kind: 'configure', configuration: config }); await journal.admission({ kind: 'observe', observation: { ...observed, observedAt: now + 1 } });
-    await f.enqueue(journal, offer, now + 1); reserved(await f.admit(journal, offer, now + 1));
+    const { journal, offer } = await admitted(f, path);
     const key = scope(offer); const draft = structuredClone(vectors.vectors[0]!.input) as Mutable<CollectedSource>;
     if (beforeClaim) await beforeClaim({ journal, offer, specDigest: draft.binding.specDigest });
-    const claim = await journal.admission({ kind: 'claimCreate', key, specDigest: draft.binding.specDigest });
-    if (!('token' in claim)) throw new Error('Missing actual claim');
-    const binding = { key, createToken: claim.token, specDigest: draft.binding.specDigest, runtimeId: 'synthetic-source-runtime' };
-    await journal.admission({ kind: 'bindRuntime', ...binding });
-    const started = interrupted ? await journal.admission({ kind: 'claimStart', ...binding, now: now + 1 }) : null;
-    if (started && !('token' in started)) throw Error('Missing synthetic start');
-    const launch = { authority: 'supervisor' as const, ...binding, epoch: interrupted ? 1 as const : 0 as const,
-      startToken: started?.token ?? null, disposition: 'retired' as const,
-      settledAt: now + 2, evidenceId: 'synthetic-source-settlement' };
-    await journal.admission({ kind: 'settleLaunch', settlement: launch });
+    const { binding, launch } = await launched(journal, key, draft.binding.specDigest, interrupted);
     draft.binding = { ...draft.binding, ...key, generation: 1, journalAuthority: await journal.journalAuthority(),
       intentDigest: offer.intentDigest, engine: offer.engine, installedIdentity: offer.installedIdentity };
-    const { seal, ...body } = { ...draft.collection.value, ...key };
-    const sealed = sealEngineResult(interrupted ? {
-      ...body, completeness: 'missing', outcome: 'inconclusive', thresholds: [],
-      requiredAssertions: { required: 2, passed: 0, failed: 0, unknown: 2 },
-      execution: { status: 'error', reason: 'artifact_incomplete', exitCode: null, stoppedAt: seal.sealedAt },
-    } : body, seal.sealedAt, hash); if (!sealed.ok) throw new Error('Synthetic result invalid');
-    draft.collection.value = structuredClone(sealed.value) as Mutable<EngineResult>;
-    const event = { ...key, version: '1.0', seq: 1, phase: 'seal', kind: 'engine.result',
-      observedAt: '2026-01-01T00:00:00Z', payload: sealed.value } as ControlEvent;
-    const raw = JSON.stringify(event) + '\n';
-    const checkpoint = await journal.commitWrapperBatch({ key, expected: null, events: [event], next: {
-      version: 1, dev: draft.collection.custody.root.device, ino: draft.checkpoint.ino,
-      offset: Buffer.byteLength(raw), wrapperSeq: 1, prefixSha256: hash(raw) } });
-    if (interrupted) await journal.appendSupervisor({ sourceOrdinal: 2, event: {
-      version: '1.0', ...key, source: 'agent', phase: 'execute', kind: 'runtime.exited', observedAt: seal.sealedAt,
-      payload: { exitCode: 1, oomKilled: true, observedAt: seal.sealedAt, reason: 'memory_limit' },
-    } });
+    const sealedAt = draft.collection.value.seal.sealedAt;
+    draft.collection.value = sealedResult(draft.collection.value, key, interrupted);
+    const checkpoint = await wrapped(journal, key, draft, interrupted, sealedAt);
     draft.checkpoint = checkpoint; draft.collection.custody.controlBytes = checkpoint.offset;
     draft.collection.verifiedBytes = draft.collection.custody.resultFileBytes + checkpoint.offset
       + draft.collection.value.artifacts.reduce((sum, artifact) => sum + artifact.bytes, 0);
@@ -111,4 +84,59 @@ export async function loseReply(journal: Journal, issue: () => Promise<unknown>)
   try { await pending; throw new Error('Original succeeded after withheld reply'); }
   catch (error) { if (!(error instanceof Error) || !('code' in error) || error.code !== 'unavailable') throw error; }
   return value;
+}
+
+type Admission = ReturnType<typeof admissionFixture>;
+type Key = ReturnType<typeof scope>;
+type Draft = Mutable<CollectedSource>;
+
+/** Configures capacity, then queues and admits one offer with a 100 kB output budget. */
+async function admitted(f: Admission, path: string) {
+  const journal = await f.configured(path); const offer = f.job(); offer.budget.outputBytes = 100_000;
+  const config = configuration(); config.pool.outputBytes = 200_000; config.perRun.outputBytes = 200_000;
+  const observed = observation(); observed.capacity.outputBytes = 200_000;
+  await journal.admission({ kind: 'configure', configuration: config }); await journal.admission({ kind: 'observe', observation: { ...observed, observedAt: now + 1 } });
+  await f.enqueue(journal, offer, now + 1); reserved(await f.admit(journal, offer, now + 1));
+  return { journal, offer };
+}
+
+/** Claims, binds and settles the synthetic runtime; an interrupted launch also records its start. */
+async function launched(journal: Journal, key: Key, specDigest: string, interrupted: boolean) {
+  const claim = await journal.admission({ kind: 'claimCreate', key, specDigest });
+  if (!('token' in claim)) throw new Error('Missing actual claim');
+  const binding = { key, createToken: claim.token, specDigest, runtimeId: 'synthetic-source-runtime' };
+  await journal.admission({ kind: 'bindRuntime', ...binding });
+  const started = interrupted ? await journal.admission({ kind: 'claimStart', ...binding, now: now + 1 }) : null;
+  if (started && !('token' in started)) throw Error('Missing synthetic start');
+  const launch = { authority: 'supervisor' as const, ...binding, epoch: interrupted ? 1 as const : 0 as const,
+    startToken: started?.token ?? null, disposition: 'retired' as const,
+    settledAt: now + 2, evidenceId: 'synthetic-source-settlement' };
+  await journal.admission({ kind: 'settleLaunch', settlement: launch });
+  return { binding, launch };
+}
+
+/** Re-seals the vector result for this attempt; an interrupted one is an incomplete, inconclusive result. */
+function sealedResult(value: Draft['collection']['value'], key: Key, interrupted: boolean): Mutable<EngineResult> {
+  const { seal, ...body } = { ...value, ...key };
+  const sealed = sealEngineResult(interrupted ? {
+    ...body, completeness: 'missing', outcome: 'inconclusive', thresholds: [],
+    requiredAssertions: { required: 2, passed: 0, failed: 0, unknown: 2 },
+    execution: { status: 'error', reason: 'artifact_incomplete', exitCode: null, stoppedAt: seal.sealedAt },
+  } : body, seal.sealedAt, hash); if (!sealed.ok) throw new Error('Synthetic result invalid');
+  return structuredClone(sealed.value) as Mutable<EngineResult>;
+}
+
+/** Commits the seal event as the wrapper's first batch; an interrupted run adds the supervisor's OOM exit. */
+async function wrapped(journal: Journal, key: Key, draft: Draft, interrupted: boolean, sealedAt: string) {
+  const event = { ...key, version: '1.0', seq: 1, phase: 'seal', kind: 'engine.result',
+    observedAt: '2026-01-01T00:00:00Z', payload: draft.collection.value } as ControlEvent;
+  const raw = JSON.stringify(event) + '\n';
+  const checkpoint = await journal.commitWrapperBatch({ key, expected: null, events: [event], next: {
+    version: 1, dev: draft.collection.custody.root.device, ino: draft.checkpoint.ino,
+    offset: Buffer.byteLength(raw), wrapperSeq: 1, prefixSha256: hash(raw) } });
+  if (interrupted) await journal.appendSupervisor({ sourceOrdinal: 2, event: {
+    version: '1.0', ...key, source: 'agent', phase: 'execute', kind: 'runtime.exited', observedAt: sealedAt,
+    payload: { exitCode: 1, oomKilled: true, observedAt: sealedAt, reason: 'memory_limit' },
+  } });
+  return checkpoint;
 }

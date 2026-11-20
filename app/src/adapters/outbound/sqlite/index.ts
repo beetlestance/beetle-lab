@@ -301,6 +301,8 @@ export class Metadata extends MetadataWorker {
   readonly installationStatus: InstallationStatusReader = {
     poolUsage: () => this.call({ kind: 'getPoolUsage' }) as ReturnType<InstallationStatusReader['poolUsage']>,
     runQueue: (key) => this.call({ kind: 'getRunQueue', key }) as ReturnType<InstallationStatusReader['runQueue']>,
+    unfinishedWork: () =>
+      this.call({ kind: 'getUnfinishedWork' }) as ReturnType<InstallationStatusReader['unfinishedWork']>,
   };
 
   readonly dispatch: DispatchStore = {

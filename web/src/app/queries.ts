@@ -51,6 +51,8 @@ export const queryKeys = {
     [...queryKeys.workspace(org, workspace), 'revision', id.toLowerCase()] as const,
   /** Installation-wide; never scoped to a workspace. */
   installationStatus: ['installation', 'status'] as const,
+  upgradeStatus: ['installation', 'upgrade'] as const,
+  engineCatalogue: ['installation', 'engines'] as const,
   settings: ['settings'] as const,
   installationSettings: ['settings', 'installation'] as const,
   organizationSettings: (id: string) => ['settings', 'organization', id.toLowerCase()] as const,

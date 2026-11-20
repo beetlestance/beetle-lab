@@ -1,6 +1,6 @@
 import type { Run } from '@beetle/contracts/api';
 import type { DatabaseSync } from 'node:sqlite';
-import type { PoolUsageFacts, RunQueueFacts } from '../../../../ports/installation-status.js';
+import type { PoolUsageFacts, RunQueueFacts, UnfinishedWorkFacts } from '../../../../ports/installation-status.js';
 import type { RunKey } from '../../../../ports/runs.js';
 import type { Settings } from '../settings.js';
 import type { RunReads } from '../run-reads.js';
@@ -42,6 +42,13 @@ const aheadSql = `SELECT
    WHERE ${runPending} AND r.state='queued' AND r.cancellation_requested=0 AND i.queue_order<?) +
  (SELECT count(*) FROM export_jobs INDEXED BY exports_pending
    WHERE ${exportPending} AND state='queued' AND cancellation_requested=0 AND queue_order<?) AS ahead`;
+
+// Upgrade drain blockers: nonterminal runs and exports, unpublished uploads, removals still freeing files.
+const unfinishedSql = `SELECT
+ (SELECT count(*) FROM runs r INDEXED BY runs_pending WHERE ${runPending}) AS runs,
+ (SELECT count(*) FROM export_jobs INDEXED BY exports_pending WHERE ${exportPending}) AS exports,
+ (SELECT count(*) FROM input_blobs WHERE state IN ('staging','publishing','deleting')) AS uploads,
+ (SELECT count(*) FROM output_deletion_intents WHERE pending_files>0) AS removals`;
 
 function sum(rows: readonly { cpu: number; memory: number }[], key: 'cpu' | 'memory'): number {
   const total = rows.reduce((value, row) => value + row[key], 0);
@@ -98,6 +105,10 @@ class InstallationStatusReads {
       },
     };
   }
+  unfinished(): UnfinishedWorkFacts {
+    const row = this.db.prepare(unfinishedSql).get() as Record<keyof UnfinishedWorkFacts, unknown>;
+    return { runs: count(row.runs), exports: count(row.exports), uploads: count(row.uploads), removals: count(row.removals) };
+  }
   queue(key: RunKey): RunQueueFacts {
     const run = this.runReads.get(key);
     const scope = normalizedScope(key.scope);
@@ -145,7 +156,10 @@ export function readInstallationStatus(
   runReads: RunReads,
   operation: StatusOperation,
   capacityReason?: (run: Run) => Exclude<RunQueueFacts['capacityBlockReason'], undefined>,
-): PoolUsageFacts | RunQueueFacts {
+): PoolUsageFacts | RunQueueFacts | UnfinishedWorkFacts {
   const reads = new InstallationStatusReads(db, settings, runReads, capacityReason);
-  return transaction(db, () => (operation.kind === 'getPoolUsage' ? reads.pool() : reads.queue(operation.key)));
+  return transaction(db, () => {
+    if (operation.kind === 'getPoolUsage') return reads.pool();
+    return operation.kind === 'getUnfinishedWork' ? reads.unfinished() : reads.queue(operation.key);
+  });
 }

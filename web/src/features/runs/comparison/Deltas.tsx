@@ -1,3 +1,4 @@
+import { availabilityText } from './availability.js';
 import type { ReactNode } from 'react';
 import { ComparisonSlos } from './Slos.js';
 import type { RunComparisonItem } from '@beetle/contracts/api';
@@ -238,7 +239,7 @@ function ComparisonReadNotes({
           return (
             <p key={item.run.id}>
               {labels.get(item.run.id.toLowerCase())}: detailed measurements{' '}
-              {read.value.availability.replaceAll('_', ' ')}. Unknown fields stay missing.
+              {availabilityText(read.value.availability)}. Unknown fields stay missing.
             </p>
           );
         return read.value.source?.coverage.complete === false ? (

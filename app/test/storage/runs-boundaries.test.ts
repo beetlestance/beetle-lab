@@ -19,11 +19,12 @@ it('rejects wrong namespace/revision, budgets, profiles and unknown capacity wit
     { body: { ...original, engineProfile: 'isolated' }, code: 'capacity_unavailable' },
   ];
   for (const { body, code } of cases) await expect(metadata.runs.execute(runCommand(revision.id, 70, body))).rejects.toMatchObject({ code });
-  await metadata.updateRuntime(null);
-  await expect(metadata.runs.execute(runCommand(revision.id))).rejects.toMatchObject({ code: 'capacity_unavailable' });
   await fixture.close(metadata); const db = new DatabaseSync(path);
   for (const table of ['runs', 'attempts', 'dispatch_outbox']) expect(db.prepare(`SELECT count(*) AS n FROM ${table}`).get()?.n).toBe(0);
   expect(db.prepare('SELECT * FROM receipts WHERE request_id=?').get(original.requestId)).toBeUndefined(); db.close();
+  // Unknown live capacity is not a refusal: the run queues until dispatch (run-lifecycle.md).
+  const reopened = await fixture.open(path, runOptions()); await reopened.updateRuntime(null);
+  expect((await reopened.runs.execute(runCommand(revision.id))).state).toBe('queued');
 });
 it('rejects unsupported secret references after saved structural revision preflight without resolving them', async () => {
   const path = fixture.path(); const metadata = await fixture.open(path, runOptions()); await seed(metadata);

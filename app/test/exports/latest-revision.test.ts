@@ -72,11 +72,18 @@ it('adds the index to schema 34 without changing exports and rolls back a failed
   const revision = await append(metadata, await createSuite(metadata), 60, body);
   const job = await metadata.exports.create(createCommand(revision.id));
   await f.close(metadata);
+  // Later migrations also rewrite this file, so the step is applied on its own to a schema-34 copy of the export tables.
   const old = new DatabaseSync(path);
   try {
-    old.exec(
-      'ALTER TABLE export_jobs DROP COLUMN last_agent_report_at; DROP INDEX exports_revision_latest; PRAGMA user_version=34;',
-    );
+    const current = Number(old.prepare('PRAGMA user_version').get()?.user_version);
+    const before = old.prepare('SELECT * FROM export_jobs').all();
+    old.exec('DROP INDEX exports_revision_latest; PRAGMA user_version=34;');
+    transaction(old, () => old.exec(migration035));
+    expect(old.prepare('PRAGMA user_version').get()?.user_version).toBe(35);
+    expect(old.prepare('SELECT * FROM export_jobs').all()).toEqual(before);
+    const plan = old.prepare(`EXPLAIN QUERY PLAN ${latestRevisionExportSql}`).all(scope.organizationId, scope.workspaceId, revision.id);
+    expect(plan.map((row) => row.detail).join(' ')).toContain('exports_revision_latest');
+    old.exec(`PRAGMA user_version=${current};`);
   } finally {
     old.close();
   }
@@ -86,7 +93,7 @@ it('adds the index to schema 34 without changing exports and rolls back a failed
   const failed = new DatabaseSync(path);
   try {
     failed.exec(
-      'ALTER TABLE export_jobs DROP COLUMN last_agent_report_at; DROP INDEX exports_revision_latest; PRAGMA user_version=34; CREATE INDEX exports_revision_latest ON organizations(name);',
+      'DROP INDEX exports_revision_latest; PRAGMA user_version=34; CREATE INDEX exports_revision_latest ON organizations(name);',
     );
     expect(() => transaction(failed, () => failed.exec(migration035))).toThrow();
     expect(failed.prepare('PRAGMA user_version').get()?.user_version).toBe(34);

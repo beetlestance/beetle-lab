@@ -75,7 +75,8 @@ function HistoryPage({
   };
 }) {
   const { selected, setSelected, toggle, query, page, refresh } = useHistoryPage(scope, filters);
-  const filtered = filtersActive(filters);
+  // A suite context from the address is not a filter the reader chose, so it never makes the page look filtered.
+  const filtered = filtersActive(controls.suiteId ? withoutSuite(filters) : filters);
   const current = currentHistoryPage(query);
   const empty = query.isSuccess && query.data.items.length === 0 && !page.hasBack && !filtered;
   return (
@@ -274,4 +275,10 @@ function currentHistoryPage(query: {
   data: RunPage | undefined;
 }): Pick<RunPage, 'workspaceName' | 'counts' | 'countsUnavailable'> {
   return query.isError ? {} : (query.data ?? {});
+}
+
+function withoutSuite(filters: HistoryFilter): HistoryFilter {
+  const copy = { ...filters };
+  delete copy.suiteId;
+  return copy;
 }

@@ -13,6 +13,8 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   OrganizationOverview: 'organization-overview',
   WorkspaceOverview: 'workspace-overview',
   InstallationStatus: 'installation-status',
+  UpgradeStatus: 'upgrade-status',
+  EngineCatalogue: 'engine-catalogue',
   RunQueueStatus: 'run-queue',
   ExportJob: 'export-job',
   ExportJobPage: 'export-job-page',
@@ -24,6 +26,9 @@ const files: Partial<Record<keyof ApiTypes, string>> = {
   RunComparisonRequest: 'run-comparison-request',
   RunComparisonSnapshot: 'run-comparison',
   LiveMetricSnapshot: 'live-metric-snapshot',
+  LiveMetricHistory: 'live-metric-history',
+  RunMetricOverview: 'run-metric-overview',
+  RunChartHistory: 'run-chart-history',
   RunMetricSeriesPage: 'run-metric-series-pending',
   RunMetricSamplesPage: 'run-metric-samples',
   RunLatencyAttribution: 'run-latency-attribution',
@@ -134,6 +139,17 @@ function bindRetention(
     }
   }
 }
+/** Attempt reads must name the attempt in the route, so the shared fixtures take the route's run and attempt IDs. */
+function bindRunAttempt(operation: ApiOperation, input: Record<string, unknown>, response: Record<string, unknown>): void {
+  if (!('params' in operation) || operation.params !== 'RunAttemptParams') return;
+  const path = input.params as Record<string, string>;
+  const fixtureAttempt = (response.attemptId ?? (response.scope as Record<string, unknown> | undefined)?.attemptId) as
+    | string
+    | undefined;
+  if (!fixtureAttempt) return;
+  Object.assign(response, JSON.parse(JSON.stringify(response).replaceAll(fixtureAttempt, path.attemptId!)));
+  if (typeof response.id === 'string' && typeof response.attemptId === 'string') response.id = path.runId;
+}
 async function exchange(operation: ApiOperation) {
   const input: Record<string, unknown> = {};
   const parameterFiles = {
@@ -158,6 +174,7 @@ async function exchange(operation: ApiOperation) {
   if (body) input.body = body;
   bindRevision(operation, input, body);
   bindRetention(operation, input, body, response);
+  bindRunAttempt(operation, input, response);
   if (operation.name.includes('InstallationRetention')) {
     body!.scope = { kind: 'installation' };
     response.scope = body!.scope;

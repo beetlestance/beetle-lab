@@ -2,8 +2,11 @@ import { validateApi } from '@beetle/contracts/api';
 import type { RunKey } from '../../../../ports/runs.js';
 import { requireRule } from '../../../../domain/namespaces/index.js';
 
-export type StatusOperation = { kind: 'getPoolUsage' } | { kind: 'getRunQueue'; key: RunKey };
-const kinds = ['getPoolUsage', 'getRunQueue'];
+export type StatusOperation =
+  | { kind: 'getPoolUsage' }
+  | { kind: 'getUnfinishedWork' }
+  | { kind: 'getRunQueue'; key: RunKey };
+const kinds = ['getPoolUsage', 'getUnfinishedWork', 'getRunQueue'];
 
 /** Inspects the data descriptor only; accessors are rejected by the bounded copy owner. */
 export function statusOperation(operation: unknown): operation is StatusOperation {
@@ -19,9 +22,9 @@ export function checkStatusOperation(operation: StatusOperation): void {
     const id = envelope.messageId;
     requireRule(typeof id === 'number' && Number.isSafeInteger(id) && id > 0);
   }
-  const fields = operation.kind === 'getPoolUsage' ? 1 : 2;
+  const fields = operation.kind === 'getRunQueue' ? 2 : 1;
   requireRule(Object.keys(operation).length === fields + (hasMessageId ? 1 : 0));
-  if (operation.kind === 'getPoolUsage') return;
+  if (operation.kind !== 'getRunQueue') return;
   requireRule(Object.hasOwn(operation, 'key') && Object.keys(operation.key).length === 2);
   requireRule(validateApi('WorkspaceScope', operation.key.scope).ok && validateApi('Uuid', operation.key.id).ok);
 }

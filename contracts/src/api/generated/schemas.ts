@@ -12,6 +12,7 @@ import { schema as SupervisorEvents } from '../../generated/supervisor-events.js
 import { schema as TargetRuntimeReport } from '../../generated/target-runtime-report.js';
 import { schema as TargetRuntimeUnits } from '../../generated/target-runtime-units.js';
 import { schema as ApiCommon } from './common.js';
+import { schema as ApiEngineCatalogue } from './engine-catalogue.js';
 import { schema as ApiExportJobs } from './export-jobs.js';
 import { schema as ApiInputColumns } from './input-columns.js';
 import { schema as ApiInputRequests } from './input-requests.js';
@@ -45,8 +46,9 @@ import { schema as ApiSettings } from './settings.js';
 import { schema as ApiSuiteListing } from './suite-listing.js';
 import { schema as ApiSuiteRequests } from './suite-requests.js';
 import { schema as ApiSuite } from './suite.js';
+import { schema as ApiUpgrade } from './upgrade.js';
 /** Complete reference closure; runner result schemas are shared, never copied. */
-export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, TargetRuntimeReport, TargetRuntimeUnits, ApiCommon, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunChartHistory, ApiRunComparison, ApiRunEvents, ApiRunHistoryCounts, ApiRunHistory, ApiRunMetricOverview, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite] as const);
+export const apiSchemas = freezeSchema([Common, EngineResult, StandaloneExportResult, ResultEvidence, ResultExecution, AgentEvent, EventEnvelope, WrapperEvents, SupervisorEvents, TargetRuntimeReport, TargetRuntimeUnits, ApiCommon, ApiEngineCatalogue, ApiExportJobs, ApiInputColumns, ApiInputRequests, ApiInput, ApiInstallationStatus, LiveHistoryPrefix, LiveHistory, LiveMetrics, ApiNamespaceRequests, ApiNamespace, ApiOverview, ApiParameters, ApiRetentionStatus, ApiRetentionTraversal, ApiRetention, ApiRunArtifacts, ApiRunChartHistory, ApiRunComparison, ApiRunEvents, ApiRunHistoryCounts, ApiRunHistory, ApiRunMetricOverview, ApiRunMetrics, ApiRunRequests, ApiRunResult, ApiRun, ApiSession, ApiSettingsOverrides, ApiSettingsValues, ApiSettings, ApiSuiteListing, ApiSuiteRequests, ApiSuite, ApiUpgrade] as const);
 export const apiMessageSchemas = freezeSchema({
   Uuid: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Uuid' },
   Budget: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/Budget' },
@@ -64,6 +66,8 @@ export const apiMessageSchemas = freezeSchema({
   RevisionDependency: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/RevisionDependency' },
   ProtectedDependencies: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/ProtectedDependencies' },
   ApiError: { $ref: 'https://beetle-lab.dev/contracts/api/v2/common#/$defs/ApiError' },
+  EngineCatalogueEntry: { $ref: 'https://beetle-lab.dev/contracts/api/v2/engine-catalogue#/$defs/EngineCatalogueEntry' },
+  EngineCatalogue: { $ref: 'https://beetle-lab.dev/contracts/api/v2/engine-catalogue#/$defs/EngineCatalogue' },
   StandaloneExportOptions: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/StandaloneExportOptions' },
   CreateExportRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/CreateExportRequest' },
   CancelExportRequest: { $ref: 'https://beetle-lab.dev/contracts/api/v2/export-jobs#/$defs/CancelExportRequest' },
@@ -256,4 +260,8 @@ export const apiMessageSchemas = freezeSchema({
   SuiteRevisionPage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteRevisionPage' },
   SuiteDescription: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/SuiteDescription' },
   RevisionMessage: { $ref: 'https://beetle-lab.dev/contracts/api/v2/suite#/$defs/RevisionMessage' },
+  UpgradeRelease: { $ref: 'https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UpgradeRelease' },
+  UnfinishedWork: { $ref: 'https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UnfinishedWork' },
+  UpgradeBackup: { $ref: 'https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UpgradeBackup' },
+  UpgradeStatus: { $ref: 'https://beetle-lab.dev/contracts/api/v2/upgrade#/$defs/UpgradeStatus' },
 } as const);

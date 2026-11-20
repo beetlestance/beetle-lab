@@ -5,6 +5,7 @@ import {
   budgetCopy,
   budgetOrder,
   ceilingCopy,
+  displayUnit,
   fromUnit,
   poolCopy,
   poolOrder,
@@ -48,7 +49,8 @@ function origin(data: SettingsData, source: SettingsScope): { origin: string; se
 function numeric(id: string, copy: NumericCopy, base: number, data: SettingsData, source: SettingsScope): RowFacts {
   const scoped = data.scope.kind !== 'installation';
   const where = origin(data, source);
-  return { id, ...copy, text: toUnit(base, copy.unit), ...where, canInherit: scoped && where.setHere };
+  const unit = displayUnit(base, copy.unit);
+  return { id, ...copy, unit, text: toUnit(base, unit), ...where, canInherit: scoped && where.setHere };
 }
 
 export function budgetRows(data: SettingsData): RowFacts[] {
@@ -76,7 +78,7 @@ const otherRules = (policy: RetentionPolicy) =>
   policy.mode === 'enabled'
     ? [
         policy.completedRunCount ? `keeps at most ${policy.completedRunCount.toLocaleString()} finished runs` : '',
-        policy.storageBytes ? `keeps at most ${toUnit(policy.storageBytes, units.gigabytes)} GB of results` : '',
+        policy.storageBytes ? `keeps at most ${bytesText(policy.storageBytes)} of results` : '',
       ].filter(Boolean)
     : [];
 
@@ -99,18 +101,10 @@ export function retentionRow(data: SettingsData): RowFacts {
 
 export function installationRows(data: Extract<SettingsData, { values: unknown }>) {
   const here = { origin: 'Set here', setHere: true, canInherit: false };
-  const pool = poolOrder.map((key) => ({
-    id: `pool.${key}`,
-    ...poolCopy[key],
-    text: toUnit(data.values.pool[key], poolCopy[key].unit),
-    ...here,
-  }));
-  const ceilings = budgetOrder.map((key) => ({
-    id: `ceiling.${key}`,
-    ...ceilingCopy[key],
-    text: toUnit(data.values.perRunCeilings[key], ceilingCopy[key].unit),
-    ...here,
-  }));
+  const pool = poolOrder.map((key) => fixedRow(`pool.${key}`, poolCopy[key], data.values.pool[key], here));
+  const ceilings = budgetOrder.map((key) =>
+    fixedRow(`ceiling.${key}`, ceilingCopy[key], data.values.perRunCeilings[key], here),
+  );
   const admin: RowFacts = {
     id: 'administratorName',
     label: 'Administrator name',
@@ -119,6 +113,15 @@ export function installationRows(data: Extract<SettingsData, { values: unknown }
     ...(data.values.administratorName ? here : { ...here, origin: 'Not set; shown as Administrator' }),
   };
   return { pool, ceilings, admin };
+}
+
+function fixedRow(id: string, copy: NumericCopy, base: number, here: Pick<RowFacts, 'origin' | 'setHere' | 'canInherit'>) {
+  const unit = displayUnit(base, copy.unit);
+  return { id, ...copy, unit, text: toUnit(base, unit), ...here };
+}
+function bytesText(base: number): string {
+  const unit = displayUnit(base, units.gigabytes);
+  return `${toUnit(base, unit)} ${unit.label}`;
 }
 
 function numericRange(data: SettingsData, id: string): [number, number] {
