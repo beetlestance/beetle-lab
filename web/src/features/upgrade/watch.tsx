@@ -22,14 +22,16 @@ export function UpgradeWatch({ children }: { children: ReactNode }) {
   const api = useApi();
   const [paused, setPaused] = useState(false);
   const watched = useMemo(() => {
-    const watch = (method: (...args: unknown[]) => unknown) => (...args: unknown[]) => {
-      const result = method.apply(api, args);
-      if (!(result instanceof Promise)) return result;
-      return result.then((reply: unknown) => {
-        if (refusedForUpgrade(reply)) setPaused(true);
-        return reply;
-      });
-    };
+    const watch =
+      (method: (...args: unknown[]) => unknown) =>
+      (...args: unknown[]) => {
+        const result = method.apply(api, args);
+        if (!(result instanceof Promise)) return result;
+        return result.then((reply: unknown) => {
+          if (refusedForUpgrade(reply)) setPaused(true);
+          return reply;
+        });
+      };
     // The client is frozen, so a Proxy may not substitute its methods; a copy with wrapped methods may.
     const entries = Object.entries(api).map(([key, value]) => [
       key,

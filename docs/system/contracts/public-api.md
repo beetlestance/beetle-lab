@@ -215,6 +215,6 @@ characters and shows at most 80 matches.
 | `contracts/api/v2/` | `eeb1ae086dfe` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
-| `app/src/adapters/inbound/http/api-errors.ts` | `79f3c8d28131` |
+| `app/src/adapters/inbound/http/api-errors.ts` | `252e84efb36d` |
 | `app/src/adapters/inbound/http/session/` | `4730d8aa11c6` |
-| `app/src/client/cli/` | `c98ff029f179` |
+| `app/src/client/cli/` | `6ad28393ff6c` |
