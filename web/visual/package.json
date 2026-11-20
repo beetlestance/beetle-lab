@@ -1,0 +1,9 @@
+{
+  "name": "@beetle/visual-snapshots",
+  "private": true,
+  "type": "module",
+  "description": "Screenshot tests for every app screen and state. Rendered in the pinned Playwright container; see README.md.",
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}

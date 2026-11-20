@@ -1,0 +1,46 @@
+// Inputs inventory, inline detail, delete refusal, and the Exports tab.
+import { capture, expect, shoot, test } from '../../harness.js';
+import { base, detail, exportsPage, inventory, protectedDependency, usersCsv } from '../../world/inputs.js';
+
+test('inputs: inventory with a stopped upload', async ({ page, api }) => {
+  inventory(api);
+  await shoot(page, `${base}/inputs`, 'inputs', { viewports: ['desktop', 'phone'] });
+});
+
+test('inputs: empty', async ({ page, api }) => {
+  inventory(api, []);
+  await shoot(page, `${base}/inputs`, 'inputs-empty');
+});
+
+async function openDetail(page: Parameters<typeof shoot>[0]) {
+  await page.goto(`${base}/inputs`);
+  await expect(page.getByText('users.csv')).toBeVisible();
+  await page.getByRole('button', { name: 'Read current status for users.csv' }).click();
+  await expect(page.getByRole('region', { name: 'Used by' }).getByText('soak-27m')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+}
+
+test('inputs: detail with usage', async ({ page, api }) => {
+  detail(inventory(api), usersCsv);
+  await openDetail(page);
+  await capture(page, 'inputs-detail-desktop');
+});
+
+test('inputs: delete refused while in use', async ({ page, api }) => {
+  detail(inventory(api), usersCsv).on('deleteInput', protectedDependency());
+  await openDetail(page);
+  await page.getByRole('button', { name: 'Delete input' }).click();
+  await page.getByRole('button', { name: 'Confirm deletion' }).click();
+  await expect(page.getByRole('alertdialog')).toContainText('is used by saved revisions');
+  await capture(page, 'delete-input-in-use-desktop', { viewportOnly: true });
+});
+
+test('exports: mixed states', async ({ page, api }) => {
+  exportsPage(api);
+  await shoot(page, `${base}/exports`, 'exports', { viewports: ['desktop', 'phone'] });
+});
+
+test('exports: empty', async ({ page, api }) => {
+  exportsPage(api, []);
+  await shoot(page, `${base}/exports`, 'exports-empty');
+});
