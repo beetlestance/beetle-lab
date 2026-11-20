@@ -71,7 +71,10 @@ async function capturedActivity(page, evidence) {
   await expect(recorded).toContainText('Admission accepted');
   await expect(recorded).toContainText('Native runtime exited');
   await expect(recorded).not.toContainText('Steady at 4 a second');
-  await captureThemes(page, evidence, 'desktop-result-activity', 3662);
+  await captureThemes(page, evidence, 'desktop-result-activity', 3662, async () => {
+    await expect(recorded).toContainText('Native runtime exited');
+    await expect(page.getByText('Loading latency observations…', { exact: true })).toHaveCount(0);
+  });
 }
 
 /** @param {Page} page @param {string} suite @param {boolean} fail @returns {Promise<SubmittedRun>} */
@@ -107,14 +110,16 @@ async function settledResult(page) {
   await expect(target.locator('figure')).toHaveCount(4);
 }
 
-/** @param {Page} page @param {string} evidence @param {string} view @param {number} height */
-async function captureThemes(page, evidence, view, height) {
+/** @param {Page} page @param {string} evidence @param {string} view @param {number} height
+ * @param {(() => Promise<void>) | undefined} [ready] */
+async function captureThemes(page, evidence, view, height, ready) {
   await page.setViewportSize({ width: 1440, height });
   for (const theme of ['Darkroom', 'Scarab']) {
     await page.getByRole('radio', { name: theme, exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme.toLowerCase());
     await page.evaluate(() => globalThis.scrollTo(0, 0));
     assert(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth));
+    await ready?.();
     await page.screenshot({
       path: join(evidence, `${view}-${theme.toLowerCase()}.png`),
       fullPage: true,
