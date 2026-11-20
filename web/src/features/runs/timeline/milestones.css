@@ -21,6 +21,12 @@
 .result-milestones li span {
   overflow-wrap: anywhere;
 }
+.stage-activity {
+  display: block;
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  margin-top: var(--s-4);
+}
 @media (max-width: 759px) {
   .result-milestones li {
     grid-template-columns: 5rem minmax(0, 1fr);

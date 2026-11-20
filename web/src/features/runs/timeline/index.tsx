@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PlanStage } from '../live/plan.js';
+import type { StageScheduleRow } from './StageSchedule.js';
 import { Milestones } from './Milestones.js';
 import { StageSchedule } from './StageSchedule.js';
 import { Button } from '../../../components/Button.js';
@@ -22,7 +22,7 @@ export function ExecutionActivity({
 }: {
   run: Run;
   terminal: boolean;
-  narrative?: { stages: readonly PlanStage[]; observation: ReactNode };
+  narrative?: { stages: readonly StageScheduleRow[]; observation: ReactNode };
 }) {
   const heading = useId();
   const query = useTimeline(run, terminal);

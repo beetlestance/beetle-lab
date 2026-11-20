@@ -8,8 +8,12 @@ function offsetLabel(milliseconds: number): string {
   return seconds + '.' + String(fraction).padStart(3, '0').replace(/0+$/, '');
 }
 
-/** Relative to the saved scenario plan. The runtime does not attest these transitions. */
-export function StageSchedule({ stages }: { stages: readonly PlanStage[] }) {
+export type StageScheduleRow = PlanStage & {
+  readonly observation?: { readonly fromMs: number; readonly toMs: number };
+};
+
+/** Scheduled offsets and contained observations retain their distinct time references. */
+export function StageSchedule({ stages }: { stages: readonly StageScheduleRow[] }) {
   if (stages.length === 0) return null;
   return (
     <>
@@ -19,7 +23,15 @@ export function StageSchedule({ stages }: { stages: readonly PlanStage[] }) {
         {stages.map((stage, index) => (
           <li key={index}>
             <span className="number">{offsetLabel(stage.startMs)}</span>
-            <span>{stage.label}</span>
+            <span>
+              {stage.label}
+              {stage.observation && (
+                <small className="stage-activity">
+                  HTTP samples in scenario window {offsetLabel(stage.observation.fromMs)}–
+                  {offsetLabel(stage.observation.toMs)}
+                </small>
+              )}
+            </span>
           </li>
         ))}
       </ol>
