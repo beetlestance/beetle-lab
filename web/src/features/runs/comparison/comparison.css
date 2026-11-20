@@ -127,6 +127,10 @@
   font-size: var(--fs-xl);
   line-height: var(--lh-lede);
 }
+.compare-empty-text .compare-empty-note {
+  color: var(--mute);
+  font-size: var(--fs-sm);
+}
 .compare-empty-art {
   width: 100%;
   height: auto;

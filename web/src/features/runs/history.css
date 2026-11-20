@@ -137,7 +137,7 @@
   min-height: 40px;
   font-size: 16px;
 }
-.history-empty-text .history-empty-readonly {
+.history-empty-text .history-empty-note {
   font-size: var(--fs-sm);
   color: var(--mute);
 }

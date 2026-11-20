@@ -194,7 +194,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
-| `web/src/features/runs/comparison/comparison.css` | `79854448ac21` |
+| `web/src/features/runs/comparison/comparison.css` | `d4279e80a418` |
 | `web/src/features/runs/comparison/Deltas.tsx` | `dbc528249b35` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/SourceNotes.tsx` | `0c63fd55d953` |
@@ -217,4 +217,4 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |
 | `app/src/adapters/outbound/sqlite/run-reads.ts` | `b72b1b69b123` |
 | `web/src/features/runs/comparison/Advanced.tsx` | `76c8a8aa6442` |
-| `web/src/features/runs/comparison/index.tsx` | `fedbcb877fad` |
+| `web/src/features/runs/comparison/index.tsx` | `a69c66318fee` |

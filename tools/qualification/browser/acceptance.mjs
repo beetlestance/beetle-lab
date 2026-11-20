@@ -11,6 +11,7 @@ import { automaticClient } from '../native-application/compose/public.ts';
 import { author, revision } from './authoring.mjs';
 import { execute, results } from './results.mjs';
 import { failedResults } from './failed-results.mjs';
+import { historyCompare } from './history-compare.mjs';
 import { inputs, settings, emptyFolder, directoryImport } from './inputs-settings.mjs';
 import { offlineExport } from './exports.mjs';
 import { memoryPressure, memoryTarget } from './memory-pressure.mjs';
@@ -37,6 +38,7 @@ if (
     'functional',
     'run-results',
     'failed-results',
+    'history-compare',
     'live-reconnect',
     'live-controls',
     'live-phases',
@@ -173,6 +175,10 @@ try {
   const authored = await phase('automatic-access-and-authoring', () => author(appPage, origin));
   if (profile === 'failed-results') {
     await phase('failed-result-and-verified-evidence', () => failedResults(appPage, authored, evidence ?? f.root));
+  } else if (profile === 'history-compare') {
+    await phase('retained-history-picker-and-comparison-recovery', () =>
+      historyCompare(appPage, authored, evidence ?? f.root),
+    );
   } else if (profile === 'interaction') {
     await phase('shell-workspace-and-settings-navigation', () => shellNavigation(appPage, authored.workspace));
     await phase('phone-workspace-navigation', () => phoneShellNavigation(appPage, authored.workspace));

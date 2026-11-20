@@ -44,11 +44,11 @@ export function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filt
             </Link>
           )}
         </div>
-        {readOnly && (
-          <p className="history-empty-readonly">
-            Restored history is read-only. New suites and runs cannot be created here.
-          </p>
-        )}
+        <p className="history-empty-note">
+          {readOnly
+            ? 'Restored history is read-only. New suites and runs cannot be created here.'
+            : 'You can also paste a complete configuration as JSON once the suite exists.'}
+        </p>
       </div>
       <img src={runsArt} width="560" height="392" alt="" />
     </section>
