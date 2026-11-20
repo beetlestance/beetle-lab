@@ -54,8 +54,8 @@ async function emptyHistory(page, workspace, evidence) {
     release();
     await pending;
     await page.unroute(matches, hold);
-    if (holdError) throw holdError;
   }
+  if (holdError) throw holdError;
   await expect(page.getByRole('heading', { name: 'No runs yet', exact: true })).toBeVisible();
   await expect(
     page.getByText('You can also paste a complete configuration as JSON once the suite exists.'),
@@ -123,8 +123,13 @@ async function compareFromResult(page, workspace, first, second, evidence) {
   await page.getByRole('radio', { name: 'Scarab', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('heading', { name: /baseline Synthetic k6 suite/ })).toBeVisible();
-  expect(await page.evaluate(() => globalThis.document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+  const width = await page.evaluate(() => globalThis.document.documentElement.scrollWidth);
   await screenshot(page, evidence, 'compare-scarab-phone');
+  expect(width).toBeLessThanOrEqual(391);
+  const figures = page.getByRole('region', { name: 'Whole-run figures', exact: true });
+  await figures.focus();
+  await expect(figures).toBeFocused();
+  expect(await figures.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
 }
 
 /** @param {string} url */
