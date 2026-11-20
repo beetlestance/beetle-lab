@@ -33,8 +33,28 @@
   color: var(--mute);
   font-size: var(--fs-sm);
 }
+.artifact-viewer-dialog .dialog-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 761px) {
+  .dialog.artifact-viewer-dialog {
+    max-width: 760px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    padding: var(--s-28);
+  }
+  .artifact-viewer-dialog > :not(.dialog-title, .dialog-description) {
+    grid-column: 1 / -1;
+  }
+  .artifact-viewer-dialog .dialog-description {
+    align-self: center;
+  }
+  .artifact-viewer-dialog .artifact-viewer-text {
+    max-height: min(420px, 60dvh);
+  }
+}
 .artifact-verified {
-  margin: 0 0 var(--s-12);
+  margin: 0;
   color: var(--green);
   font-size: var(--fs-sm);
 }
