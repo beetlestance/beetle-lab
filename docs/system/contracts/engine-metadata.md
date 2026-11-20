@@ -24,7 +24,7 @@ installed selector, not a persisted record of a historical run's engine version.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/installation-status.schema.json` | `c509b0e450a7` |
+| `contracts/api/v2/installation-status.schema.json` | `d4085231c17c` |
 | `app/src/ports/installation-status.ts` | `e5773cb780a6` |
 | `app/src/adapters/outbound/capacity/status.ts` | `8ca95c5a3607` |
 | `app/src/application/installation-status/` | `1cd7c2b126ab` |

@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { observation, scope, seed, settingsFixture, storageFixture } from './fixture.js';
 import { append, createSuite } from './suites-fixture.js';
 import { runCommand, runOptions, runRequest } from './runs-fixture.js';
-import { claimsFixture } from './dispatch-claim-fixtures.js';
+import { claimsFixture, custody } from './dispatch-claim-fixtures.js';
 const fixture = storageFixture();
 function live() {
   const ceilings = settingsFixture().runtime;
@@ -76,5 +76,23 @@ it('queues after the last observation actually expires, without refreshing or re
   } finally {
     f.db.close();
     vi.useRealTimers();
+  }
+});
+
+
+it.each(['parallel', 'isolated'] as const)('explains isolation without changing custody (%s holder)', holderMode => {
+  const f = claimsFixture(4_000_000);
+  try {
+    const holder = f.add(70, holderMode);
+    const waiting = f.add(72, holderMode === 'isolated' ? 'parallel' : 'isolated');
+    expect(f.claims.claim(holder).kind).toBe('claimed');
+    const run = f.reads.get({ scope, id: waiting.runId });
+    const before = custody(f.db);
+    expect(f.claims.capacityReason(run)).toBe('isolated');
+    expect(custody(f.db)).toEqual(before);
+    f.release(holder);
+    expect(f.claims.capacityReason(run)).toBeNull();
+  } finally {
+    f.db.close();
   }
 });

@@ -7,7 +7,7 @@ partial indexes, and position from immutable queue_order across uncancelled queu
 and exports. Holders are named only within the requested workspace; other workspaces
 are counted. Untracked legacy intents report a null position. Operations are a closed
 envelope (kind, key, optional transport messageId). No migration.
-Optional capacityBlockReason uses the same dispatch individual-fit policy via one
+Optional capacityBlockReason uses the same dispatch individual-fit and active isolation policy via one
 scoped current-attempt point lookup plus bounded charged rows; no pending-list scan.
 It omits fairness/aggregate occupancy: null does not promise eligibility or claim.
 The existing read transaction owns this advisory callback; it cannot reserve work.

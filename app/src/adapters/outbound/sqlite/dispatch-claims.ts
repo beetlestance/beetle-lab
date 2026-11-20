@@ -42,13 +42,14 @@ export class DispatchClaims {
   ) {
     this.config = checkedRunConfiguration(config);
   }
-  /** Advisory individual capacity only; the queue read owns the transaction, never a claim. */
+  /** Advisory individual capacity and active isolation; the queue read owns the transaction. */
   capacityReason(run: Run): Exclude<RunQueueStatus['capacityBlockReason'], undefined> {
     const row = runCapacityFact(this.db, run);
     if (!row || row.foundation_owned !== 1 || row.queue_order === null) return 'ownership_unknown';
     const policy = new DispatchEligibilityOwner(this.db, this.settings, this.config, this.exports);
     const decision = policy.individual(row);
-    return decision.kind === 'blocked' ? decision.reason : null;
+    if (decision.kind === 'blocked') return decision.reason;
+    return policy.isolationConflict(row) ? 'isolated' : null;
   }
   scan(input: DispatchScan): DispatchPage {
     const query = captureScan(input);

@@ -50,7 +50,7 @@ Folder fields: [refusals](namespaces.md#mutation-refusals); input delete adds bo
 
 Creating a run returns 202 with `validationStatus: pending`. Semantic engine validation runs
 under admission before target contact; a rejection becomes a durable run outcome, never a
-later HTTP 422. Missing live capacity waits in the queue. An initial note commits atomically ([authoring](authoring.md#run-notes)).
+later HTTP 422. Missing capacity or active isolation can hold the run in the queue. An initial note commits atomically ([authoring](authoring.md#run-notes)).
 
 ## Authentication and authority
 
@@ -212,7 +212,7 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `ae5c99cb0820` |
+| `contracts/api/v2/` | `374b1933a711` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
 | `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |

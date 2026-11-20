@@ -32,8 +32,8 @@ attempt identity with generation 1. Each method is its own worker transaction.
 | Active execution charges | 64 |
 | Pending rows read per claim | 4096 |
 
-The run-queue capacity advisory reuses individual-fit checks only, without claiming,
-scanning pending work or predicting fairness. A null reason is not admission.
+The run-queue advisory reuses individual-fit and active isolation checks without claiming,
+scanning pending work or predicting fairness. A null reason does not grant admission.
 
 ### Capacity and isolation at claim
 
@@ -154,7 +154,7 @@ journal authority; acknowledged generation 1 and an output allocation are requir
 | --- | --- |
 | `app/src/ports/dispatch.ts` | `2866b93e0774` |
 | `app/src/ports/events.ts` | `6b1e3a6da027` |
-| `app/src/adapters/outbound/sqlite/dispatch-claims.ts` | `26d9c99c569b` |
+| `app/src/adapters/outbound/sqlite/dispatch-claims.ts` | `aa3ee348b9f1` |
 | `app/src/adapters/outbound/runner/delivery/` | `d0bb503ece86` |
 | `agent/src/scheduler/` | `09e94ef48418` |
 | `app/src/bootstrap/runtime-poller.ts` | `d4493d903f21` |

@@ -184,7 +184,7 @@
         "state": { "enum": ["queued", "dispatching", "active", "finalizing", "finished", "cancelled", "errored"] },
         "capacityBlockReason": {
           "anyOf": [
-            { "enum": ["capacity_unknown", "profile_unavailable", "per_run_ceiling", "budget_unavailable", "staging_unavailable", "storage_unavailable", "ownership_unknown"] },
+            { "enum": ["capacity_unknown", "profile_unavailable", "per_run_ceiling", "budget_unavailable", "staging_unavailable", "storage_unavailable", "ownership_unknown", "isolated"] },
             { "type": "null" }
           ]
         },

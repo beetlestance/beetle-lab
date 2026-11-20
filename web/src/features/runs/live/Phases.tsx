@@ -56,6 +56,7 @@ const capacityReasons: Record<NonNullable<RunQueueStatus['capacityBlockReason']>
   staging_unavailable: 'Waiting for enough engine staging space.',
   storage_unavailable: 'Waiting for enough storage capacity.',
   ownership_unknown: 'Dispatch is paused until existing execution ownership is reconciled.',
+  isolated: 'Waiting for isolated execution.',
 };
 
 function waitLabel(queue: RunQueueStatus): string {
@@ -203,10 +204,17 @@ function Steps({ steps, showTimes = true }: { steps: readonly Step[]; showTimes?
   );
 }
 
-export function queueSentence(queue: RunQueueStatus | undefined): string {
+export function queueSentence(queue: RunQueueStatus | undefined, mode: Run['executionPolicy']['mode']): string {
   if (!queue) return 'Reading capacity and queue position…';
   if (queue.waiting === 'not_waiting') return 'No longer queued; refreshing the run state.';
   if (queue.waiting === 'agent_admission') return 'Sent to the agent and waiting for admission.';
+  if (queue.capacityBlockReason === 'isolated') {
+    const reason =
+      mode === 'isolated'
+        ? 'This run is set to run alone and needs an idle pool.'
+        : 'Another job has reserved the pool for isolated execution.';
+    return `${slotsText(queue)} ${reason}`;
+  }
   if (queue.slots.used < (queue.slots.effective ?? queue.slots.configured))
     return `${slotsText(queue)} This run is queued until its execution budget is available.`;
   return `${slotsText(queue).replace(/\.$/, '')}, so this run is queued and starts by itself when one frees up. Nothing has been sent to the target yet.`;
