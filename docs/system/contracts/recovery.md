@@ -131,7 +131,9 @@ mismatches, and never accepts a complete prefix before actual EOF.
   the expected native file is checked before and after the open.
 - A default-deny worker allowlist and a pre-body HTTP mutation gate are independent
   write fences. Only browser sessions write, to a separate session table, with a
-  cookie name per historical identity.
+  cookie name per historical identity. The scoped comparison POST reads retained
+  evidence with the same session and CSRF checks. Other non-session POST routes
+  remain fenced before body parsing.
 - No agent, capacity producer, delivery, input maintenance, retention, deletion or
   history indexer runs. Input and artifact reads share two jobs, one per file, with
   consumer backpressure and ancestor and file rechecks.

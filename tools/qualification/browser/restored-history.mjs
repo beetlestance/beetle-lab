@@ -10,15 +10,21 @@ import { fixture } from '../native-application/compose/fixture.ts';
 const output = process.env.BEETLE_BROWSER_EVIDENCE;
 assert(output && isAbsolute(output), 'An absolute browser evidence directory is required');
 const f = await fixture(process.argv.slice(2));
-await executeCold({ f, output, inspectViewer: (origin, run, artifacts) => inspect(origin, run, artifacts, output) });
+await executeCold({
+  f,
+  output,
+  inspectViewer: (origin, run, artifacts, peer) => inspect(origin, run, artifacts, output, peer),
+});
 
 /**
  * @param {string} origin
  * @param {import('@beetle/contracts/api').Run} run
  * @param {readonly {artifactId: string; kind: string; bytes: number; sha256: string}[]} artifacts
  * @param {string} evidence
+ * @param {import('@beetle/contracts/api').Run | undefined} peer
  */
-async function inspect(origin, run, artifacts, evidence) {
+async function inspect(origin, run, artifacts, evidence, peer) {
+  assert(peer, 'Restored browser fixture requires two retained runs');
   const browser = await openBrowser(chromium, origin, process.env.BEETLE_BROWSER_WS_ENDPOINT);
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
@@ -58,10 +64,37 @@ async function inspect(origin, run, artifacts, evidence) {
     await page.getByRole('radio', { name: 'Darkroom', exact: true }).click();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
     await capture(page, evidence, 'darkroom', 'phone');
-    return { navigation: true, readOnly: true, reportBytes: bytes.length, reportSha256: report.sha256, captures: 4 };
+    await compareRestored(page, origin, history, run.id, peer.id, evidence);
+    return {
+      navigation: true,
+      comparison: true,
+      readOnly: true,
+      reportBytes: bytes.length,
+      reportSha256: report.sha256,
+      captures: 4,
+    };
   } finally {
     await browser.close();
   }
+}
+
+/**
+ * @param {import('@playwright/test').Page} page @param {string} origin
+ * @param {string} history @param {string} baseline @param {string} peer @param {string} evidence
+ */
+async function compareRestored(page, origin, history, baseline, peer, evidence) {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(origin + history);
+  for (const id of [baseline, peer]) {
+    const row = page.getByRole('row').filter({ has: page.locator(`a[href="${history}/${id}"]`) });
+    await row.getByRole('checkbox', { name: /^Compare run / }).check();
+  }
+  await page.getByRole('link', { name: 'Compare 2', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /^2 runs, baseline / })).toBeVisible({ timeout: 35000 });
+  await expect(page.getByRole('heading', { name: 'What was different', exact: true })).toBeVisible();
+  assert.deepEqual(new URL(page.url()).searchParams.get('runs')?.split(','), [baseline, peer]);
+  await expect(page.getByText('Restored · read-only', { exact: true })).toBeVisible();
+  await capture(page, evidence, 'darkroom', 'compare');
 }
 
 /** @param {import('@playwright/test').Page} page @param {string} liveOrigin @param {boolean} desktop */
