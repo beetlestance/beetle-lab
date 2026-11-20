@@ -47,10 +47,18 @@ async function inspect(origin, run, artifacts, evidence) {
     await page.reload();
     await checkResult(page);
     await capture(page, evidence, 'scarab', 'desktop');
+    await page.setViewportSize({ width: 1180, height: 900 });
+    await assertNoOverflow(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await checkResult(page, false);
     await capture(page, evidence, 'scarab', 'phone');
-    return { navigation: true, readOnly: true, reportBytes: bytes.length, reportSha256: report.sha256, captures: 3 };
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await expect(page.getByText('Restored · read-only', { exact: true })).toBeVisible();
+    await assertNoOverflow(page);
+    await page.getByRole('radio', { name: 'Darkroom', exact: true }).click();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await capture(page, evidence, 'darkroom', 'phone');
+    return { navigation: true, readOnly: true, reportBytes: bytes.length, reportSha256: report.sha256, captures: 4 };
   } finally {
     await browser.close();
   }
@@ -75,7 +83,16 @@ async function checkResult(page, desktop = true) {
 /** @param {import('@playwright/test').Page} page @param {string} evidence @param {string} skin @param {string} size */
 async function capture(page, evidence, skin, size) {
   await expect(page.locator('html')).toHaveAttribute('data-theme', skin);
-  assert(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth + 1));
+  await assertNoOverflow(page);
   await page.evaluate(() => globalThis.scrollTo(0, 0));
   await page.screenshot({ path: join(evidence, `restored-history-${skin}-${size}.png`), fullPage: true });
+}
+
+/** @param {import('@playwright/test').Page} page */
+async function assertNoOverflow(page) {
+  const sizes = await page.evaluate(() => ({
+    contentWidth: globalThis.document.documentElement.scrollWidth,
+    viewport: globalThis.innerWidth,
+  }));
+  assert(sizes.contentWidth <= sizes.viewport + 1, `Layout overflows: ${JSON.stringify(sizes)}`);
 }

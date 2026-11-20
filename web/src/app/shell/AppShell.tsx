@@ -36,7 +36,7 @@ export function AppShell({ children, onSearch }: AppShellProps) {
     menuButton.current?.focus();
   };
   return (
-    <div className="shell" data-menu-open={menuOpen || undefined}>
+    <div className="shell" data-menu-open={menuOpen || undefined} data-read-only={readOnly || undefined}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
