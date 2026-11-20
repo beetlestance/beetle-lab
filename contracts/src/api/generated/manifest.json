@@ -34,7 +34,7 @@
     "api/v2/run-events.schema.json": "1e9f5d24aaac78ff7909396ef2d056c3c963891d7874e4cee45052c545b21dbf",
     "api/v2/run-history-counts.schema.json": "a6c3f2fb81c49ba149a1995620576392b73a2d2ec25db49ba372a0091160245f",
     "api/v2/run-history.schema.json": "5f932b253ddf793229c3ea08d3c99887e4d462a680dec4c8bea897a197e54b56",
-    "api/v2/run-metric-overview.schema.json": "2a8ccfe648cb5bb8b6dcdc078755fd64ad3e7c73025544fb4d5d9dcc9bdd2d0e",
+    "api/v2/run-metric-overview.schema.json": "b8a11fbd56883437e201872ff683ef927dcc2daad4d7c3b360e3fb6a68e42eaf",
     "api/v2/run-metrics.schema.json": "e1a2e86a2e404007f50d6bd29591d3e09b03b4197a02921540d635d65e21ae59",
     "api/v2/run-requests.schema.json": "0cca9488189a0dbdf97f34f7ded18302a0090a299f945be9ee3a61b54ad37722",
     "api/v2/run-result.schema.json": "297cc10fe77e5ca7c2e9d11124a7e4abff461eaba85f3472d1e6a0f0f81d0829",

@@ -210,8 +210,8 @@ export class Artifacts {
       throw new AttemptError('artifact');
     return this.custody('beetle-evidence.json', evidence.rawBytes, evidence.sha256);
   }
-  async numeric(value: unknown, allowance = cap, withPreview?: unknown): Promise<Artifact> {
-    return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final', withPreview);
+  async numeric(value: unknown, allowance = cap, advisory?: readonly unknown[]): Promise<Artifact> {
+    return this.encoded(value, allowance, 'numeric-final.json', 'numeric-final', advisory);
   }
   async warnings(value: unknown, allowance: number): Promise<Artifact> {
     return this.encoded(captureK6Warnings(value), allowance, 'k6-warnings.json', 'k6-warnings');
@@ -248,12 +248,12 @@ export class Artifacts {
     allowance: number,
     name: string,
     kind: string,
-    enriched?: unknown,
+    advisory: readonly unknown[] = [],
   ): Promise<Artifact> {
     if (!Number.isSafeInteger(allowance) || allowance < 1 || allowance > cap) throw new AttemptError('output_limit');
     let bytes: Buffer;
     try {
-      const enrichedText = enriched === undefined ? undefined : optionalJson(enriched, allowance - 1);
+      const enrichedText = optionalJson(advisory, allowance - 1);
       bytes = Buffer.from((enrichedText ?? encodeJson(value, allowance - 1)) + '\n');
     } catch {
       throw new AttemptError('output_limit');
@@ -262,11 +262,14 @@ export class Artifacts {
   }
 }
 
-/** Shed an advisory preview before opening the output if it cannot fit the reservation. */
-function optionalJson(value: unknown, allowance: number): string | undefined {
-  try {
-    return encodeJson(value, allowance);
-  } catch {
-    return undefined;
+/** Prefer bounded advisory variants before writing any bytes. */
+function optionalJson(candidates: readonly unknown[], allowance: number): string | undefined {
+  for (const candidate of candidates) {
+    try {
+      return encodeJson(candidate, allowance);
+    } catch {
+      // The next variant omits advisory fields and keeps the same required evidence.
+    }
   }
+  return undefined;
 }

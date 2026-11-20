@@ -26,12 +26,16 @@ declare module 'k6/http' {
 declare module 'k6/execution' {
   const execution: {
     vu: { idInTest: number; iterationInScenario: number; metrics: { tags: Record<string, string> } };
-    scenario: { startTime: number };
+    scenario: { startTime: number; iterationInInstance: number };
     test: { abort(reason: string): never };
   };
   export default execution;
 }
 declare module 'k6/metrics' {
+  export class Gauge {
+    constructor(name: string);
+    add(value: number, tags?: Readonly<Record<string, string>>): void;
+  }
   export class Counter {
     constructor(name: string);
     add(value: number, tags?: Readonly<Record<string, string>>): void;

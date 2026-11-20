@@ -1,5 +1,5 @@
 import type { AccumulatedSeries } from './snapshot.js';
-import { measureStartedMetric, metricSeriesKey } from '../plan/index.js';
+import { measureStartedMetric, metricSeriesKey, scenarioStartedMetric } from '../plan/index.js';
 import { isK6MetricProfile } from './profile.js';
 import type { K6MetricProfile } from './profile.js';
 import { MetricAccumulatorError, seriesSnapshot } from './snapshot.js';
@@ -24,6 +24,7 @@ export class MetricAccumulator {
   private closed = false;
   private poisoned: AccumulatorCode | undefined;
   private markerTime: number | undefined;
+  private scenarioStartedAtMs: number | null | undefined;
   private firstExecuteTime = Infinity;
   private markerDelayDroppedBuckets = 0;
   private readonly allowed: ReadonlySet<string>;
@@ -68,6 +69,10 @@ export class MetricAccumulator {
     // The decoder owns point admission; copy the numeric projection before yielding.
     const input = { ...point, tags: Object.freeze({ ...point.tags }) };
     return this.issue(signal, async () => {
+      if (input.metric === scenarioStartedMetric) {
+        this.scenarioStart(input);
+        return;
+      }
       this.validate(input);
       if (input.metric === measureStartedMetric) {
         this.marker(input);
@@ -132,6 +137,19 @@ export class MetricAccumulator {
       throw new MetricAccumulatorError('measurement');
     this.markerTime = point.timeMs;
   }
+  private scenarioStart(point: MetricPoint): void {
+    if (!this.profile.scenarioOrigin || point.kind !== 'gauge' || Object.keys(point.tags).length !== 0)
+      throw new MetricAccumulatorError('invalid_point');
+    this.validateNumber(point);
+    // A bad optional timestamp must not invalidate independent measurements.
+    const valid =
+      this.scenarioStartedAtMs === undefined &&
+      Number.isSafeInteger(point.value) &&
+      point.value > 0 &&
+      point.value <= point.timeMs &&
+      point.value <= 8640000000000000;
+    this.scenarioStartedAtMs = valid ? point.value : null;
+  }
   private async drain(cutoff: number, signal: AbortSignal): Promise<void> {
     let window: MetricWindow | undefined;
     while ((window = this.windows.takeBefore(cutoff))) {
@@ -151,9 +169,12 @@ export class MetricAccumulator {
       await this.drain(Infinity, signal);
       this.permitted(signal);
       const requestSpan = this.requestSpan.snapshot();
+      const scenarioStartedAtMs = this.scenarioStartedAtMs;
+      const hasScenarioStart = typeof scenarioStartedAtMs === 'number' && scenarioStartedAtMs >= this.markerTime;
       const result: MetricSnapshot = Object.freeze({
         totals: seriesSnapshot(this.totals),
         totalsComplete: true,
+        ...(hasScenarioStart ? { scenarioStartedAtMs } : {}),
         ...(requestSpan ? { requestSpan } : {}),
         measurement: Object.freeze({ complete: true, sourceTimeMs: this.markerTime }),
         windowCoverage: Object.freeze({

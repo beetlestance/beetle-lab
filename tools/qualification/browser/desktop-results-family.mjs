@@ -67,12 +67,17 @@ async function capturedActivity(page, evidence) {
     /00:20.*Ramp down to 1 a second/,
     /00:24.*Drain/,
   ]);
+  const nativeStart = page.getByText(/^k6 recorded the scenario start at/);
+  await expect(nativeStart).toBeVisible();
+  const startedAt = await nativeStart.locator('time').getAttribute('datetime');
+  assert(startedAt && Number.isFinite(Date.parse(startedAt)));
   const recorded = page.getByRole('list', { name: 'Recorded run milestones', exact: true });
   await expect(recorded).toContainText('Admission accepted');
   await expect(recorded).toContainText('Native runtime exited');
   await expect(recorded).not.toContainText('Steady at 4 a second');
   await captureThemes(page, evidence, 'desktop-result-activity', 3662, async () => {
     await expect(recorded).toContainText('Native runtime exited');
+    await expect(nativeStart).toBeVisible();
     await expect(page.getByText('Loading latency observations…', { exact: true })).toHaveCount(0);
   });
 }

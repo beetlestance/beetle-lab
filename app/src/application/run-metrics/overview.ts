@@ -99,6 +99,7 @@ function dropped(totals: readonly SeriesTotal[]): number | null {
 function projectOverview(key: RunKey & { attemptId: string }, p: Publication): RunMetricOverview {
   const history = historyProjection(p);
   const totals = p.archive?.numeric.totals;
+  const scenarioStartedAtMs = p.archive?.numeric.scenarioStartedAtMs;
   const durationMs = p.archive?.numeric.testDurationMs ?? null;
   const base = {
     id: key.id,
@@ -106,6 +107,7 @@ function projectOverview(key: RunKey & { attemptId: string }, p: Publication): R
     attemptId: key.attemptId,
     availability: history.availability,
     source: history.source,
+    ...(scenarioStartedAtMs === undefined ? {} : { scenarioStartedAtMs }),
     testDurationMs: durationMs,
     requestCount: null,
     requestsPerSecond: null,

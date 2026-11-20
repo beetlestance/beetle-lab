@@ -11,6 +11,7 @@ import type { RiseOrigin } from '../live/rise-position.js';
 import { LatencyRise } from '../live/Extras.js';
 import type { PlanRequest, PlanStage } from '../live/plan.js';
 import { ExecutionActivity } from '../timeline/index.js';
+import { RecordedScenarioStart } from '../timeline/StageSchedule.js';
 import { RunWarnings } from '../warnings/index.js';
 
 import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
@@ -103,6 +104,34 @@ type ReportTabsProps = {
   phoneNote?: ReactNode;
 };
 
+function Activity({
+  run,
+  stages,
+  requests,
+  origin,
+}: {
+  run: Run;
+  stages: readonly PlanStage[];
+  requests: readonly PlanRequest[];
+  origin: RiseOrigin | undefined;
+}) {
+  return (
+    <ExecutionActivity
+      run={run}
+      terminal
+      narrative={{
+        stages,
+        observation: (
+          <>
+            <RecordedScenarioStart milliseconds={origin?.scenarioStartedAtMs} />
+            <LatencyRise run={run} requests={requests} origin={origin} explain />
+          </>
+        ),
+      }}
+    />
+  );
+}
+
 export function ReportTabs({
   run,
   view,
@@ -123,11 +152,12 @@ export function ReportTabs({
     activity: {
       label: 'What happened',
       body: (
-        <ExecutionActivity
+        <Activity
           key={`activity:${run.id}/${run.activeAttemptId}`}
           run={run}
-          terminal
-          narrative={{ stages, observation: <LatencyRise run={run} requests={requests} origin={origin} explain /> }}
+          stages={stages}
+          requests={requests}
+          origin={origin}
         />
       ),
     },

@@ -26,3 +26,13 @@ export function StageSchedule({ stages }: { stages: readonly PlanStage[] }) {
     </>
   );
 }
+
+export function RecordedScenarioStart({ milliseconds }: { milliseconds: number | undefined }) {
+  if (milliseconds === undefined) return null;
+  const timestamp = new Date(milliseconds).toISOString();
+  return (
+    <p>
+      k6 recorded the scenario start at <time dateTime={timestamp}>{timestamp}</time>.
+    </p>
+  );
+}

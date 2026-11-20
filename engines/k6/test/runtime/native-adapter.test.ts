@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../../runtime/native-api.d.ts';
 vi.mock('k6', () => ({ sleep: vi.fn(), check: vi.fn() }));
-vi.mock('k6/execution', () => ({ default: { test: { abort: vi.fn() }, vu: { idInTest: 1, iterationInScenario: 0, metrics: { tags: {} } }, scenario: { startTime: 0 } } }));
+vi.mock('k6/execution', () => ({ default: { test: { abort: vi.fn() }, vu: { idInTest: 1, iterationInScenario: 0, metrics: { tags: {} } }, scenario: { startTime: 0, iterationInInstance: 0 } } }));
 vi.mock('k6/http', () => ({ default: { request: vi.fn() } }));
-vi.mock('k6/metrics', () => ({ Counter: class { add = vi.fn(); } }));
+const { gauge } = vi.hoisted(() => ({ gauge: vi.fn() }));
+vi.mock('k6/metrics', () => ({ Counter: class { add = vi.fn(); }, Gauge: class { add = gauge; } }));
 import { check } from 'k6';
 import http from 'k6/http';
 import execution from 'k6/execution';
@@ -76,6 +77,28 @@ describe('native API delegation', () => {
     nativeIteration(runtime, suite, 0, data);
     expect(http.request).not.toHaveBeenCalled(); expect(execution.test.abort).toHaveBeenCalledWith('deadline');
     expect(() => nativeIteration(runtime, suite, 0, undefined)).toThrow('deadline');
+  });
+  it('emits the single managed scenario origin from iteration zero only, without a phase tag', () => {
+    vi.stubGlobal('open', () => 'synthetic');
+    vi.spyOn(Date, 'now').mockReturnValue(1700);
+    const suite = compiled(configFor());
+    execution.scenario.startTime = 1500;
+    const budget = { mode: 'managed' as const, timeoutMs: 5000, deadlineMs: 8000 };
+    const runtime = createNativeRuntime(suite, budget);
+    vi.mocked(http.request).mockReturnValue({ status: 200, error_code: 0, body: 'ready', headers: {} });
+    const data = nativeSetup(runtime, budget);
+    expect(gauge).not.toHaveBeenCalled();
+    try {
+      nativeIteration(runtime, suite, 0, data);
+      execution.scenario.iterationInInstance = 1;
+      nativeIteration(runtime, suite, 0, data);
+      execution.scenario.iterationInInstance = 0;
+      nativeIteration(createNativeRuntime(suite, attempt), suite, 0, data);
+      expect(gauge).toHaveBeenCalledExactlyOnceWith(1500, {});
+      expect(execution.vu.metrics.tags.phase).toBe('execute');
+    } finally {
+      execution.scenario.iterationInInstance = 0;
+    }
   });
   it('rejects an expired managed attempt before native secret file effects', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1000);

@@ -174,9 +174,9 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/HistoryP95Sparkline.tsx` | `3f3dd9a8639b` |
 | `app/src/application/run-metrics/history.ts` | `a91fb64f3a31` |
 | `contracts/api/v2/run-history.schema.json` | `4daeaa42000e` |
-| `app/src/application/run-metrics/overview.ts` | `d32759ade40d` |
-| `contracts/api/v2/run-metric-overview.schema.json` | `dfde37122018` |
-| `contracts/src/api/metric-overview.ts` | `4217eaad4700` |
+| `app/src/application/run-metrics/overview.ts` | `53aa3ffa9589` |
+| `contracts/api/v2/run-metric-overview.schema.json` | `d67ecacda1f6` |
+| `contracts/src/api/metric-overview.ts` | `16fc6eaf67c4` |
 | `web/src/features/runs/result/Overview.tsx` | `26db2d0ef298` |
 | `web/src/features/runs/result/useResultReads.ts` | `a7b812def9d6` |
 | `app/src/application/run-metrics/chart-history.ts` | `a39d0284a0c4` |
@@ -190,7 +190,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `5ff3d54b4aa0` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `b6688cca6e5a` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `4ff20bb51e55` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `19dc348e7d88` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
