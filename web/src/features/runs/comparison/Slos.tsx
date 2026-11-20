@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Th, Td } from '../../../components/Table.js';
 import { Button } from '../../../components/Button.js';
 import { ruleName } from '../live/model.js';
-import { ruleValue, ruleUnit } from '../live/rule-units.js';
+import { observedRuleValue, ruleValue, ruleUnit } from '../live/rule-units.js';
 import { thresholdLimitText } from '../result/threshold-sentence.js';
 import { comparisonRunLabels } from './run-labels.js';
 const pageSize = 32;
@@ -112,7 +112,7 @@ function SloCell({
           <span className="sr-only">
             {reading.metric} {reading.stat}:{' '}
           </span>
-          {ruleValue(ruleUnit(reading), reading.value)}
+          {comparisonReading(reading, rule.limit)}
         </>
       ) : (
         <span>Native reading unavailable.</span>
@@ -122,6 +122,12 @@ function SloCell({
       </span>
     </span>
   );
+}
+
+function comparisonReading(reading: NonNullable<RunComparisonSlo['reading']>, limit: RunComparisonSlo['limit']) {
+  const unit = ruleUnit(reading);
+  if (limit?.metric !== reading.metric || limit.stat !== reading.stat) return ruleValue(unit, reading.value);
+  return observedRuleValue(unit, reading.value, limit.value);
 }
 
 function SloNotes({ items }: { items: readonly RunComparisonItem[] }) {

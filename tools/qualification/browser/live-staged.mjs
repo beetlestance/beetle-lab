@@ -12,7 +12,7 @@ import { targetCounts } from '../native-application/target-runtime/target.ts';
 const endpoints = { checkout: 60, cart: 35, catalog: 20, product: 45, health: 5 };
 
 /** Container program for the owned synthetic target. */
-async function serve(delays = endpoints) {
+async function serve(delays = endpoints, runs = 1) {
   const http = await import('node:http');
   const counts = { ready: 0, work: 0, runtime: 0, unexpected: 0 };
   http
@@ -22,13 +22,13 @@ async function serve(delays = endpoints) {
         return;
       }
       if (request.url === '/ready') {
-        if (++counts.ready !== 1) process.exit(3);
+        if (++counts.ready > runs) process.exit(3);
         response.end('ready');
         return;
       }
       if (request.url === '/runtime') {
         const n = ++counts.runtime;
-        if (n > 40) process.exit(3);
+        if (n > runs * 40) process.exit(3);
         response.setHeader('content-type', 'application/json');
         response.end(
           JSON.stringify({
@@ -44,7 +44,7 @@ async function serve(delays = endpoints) {
       }
       const key = request.url?.slice(1);
       if (key && Object.hasOwn(delays, key)) {
-        if (++counts.work > 180) process.exit(3);
+        if (++counts.work > runs * 180) process.exit(3);
         globalThis.setTimeout(() => response.end('ok'), delays[/** @type {keyof typeof delays} */ (key)]);
         return;
       }
@@ -54,17 +54,17 @@ async function serve(delays = endpoints) {
     .listen(8080, '0.0.0.0');
 }
 
-/** @param {import('../native-application/compose/fixture.ts').Fixture} fixture */
-export async function configureStagedTarget(fixture) {
+/** @param {import('../native-application/compose/fixture.ts').Fixture} fixture @param {1 | 2} runs */
+export async function configureStagedTarget(fixture, runs = 1) {
   const path = join(fixture.root, 'target.json');
   const override = JSON.parse(await readFile(path, 'utf8'));
-  const program = `(${serve.toString()})(${JSON.stringify(endpoints)})`;
+  const program = `(${serve.toString()})(${JSON.stringify(endpoints)},${runs})`;
   assert(Buffer.byteLength(program) <= 8192);
   override.services['synthetic-target'].entrypoint = ['node', '-e', program];
   await writeFile(path, JSON.stringify(override), { mode: 0o600 });
 }
 
-function stagedConfiguration() {
+export function stagedConfiguration() {
   const config = liveSamplerConfiguration();
   config.loadPlan.scenarios = [
     {

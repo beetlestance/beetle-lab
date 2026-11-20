@@ -209,7 +209,7 @@ document navigation. `/reference` remains the standalone generated API viewer.
 
 | Code                                           | Reviewed       |
 | ---------------------------------------------- | -------------- |
-| `web/src/features/runs/HistoryTable.tsx` | `924679ca2e4a` |
+| `web/src/features/runs/HistoryTable.tsx` | `2df690223904` |
 | `web/src/features/runs/result/PinControl.tsx` | `cf04755d6025` |
 | `web/src/features/runs/result/usePin.ts` | `722f5660f124` |
 | `web/src/app/routes.ts` | `61a58672901a` |

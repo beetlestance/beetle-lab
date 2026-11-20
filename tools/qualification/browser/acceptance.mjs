@@ -20,6 +20,7 @@ import { outputPressure } from './output-pressure.mjs';
 import { cancelArchive } from './cancel-archive.mjs';
 import { livePhases } from './live-phases.mjs';
 import { configureStagedTarget, liveStaged } from './live-staged.mjs';
+import { desktopResultsFamily } from './desktop-results-family.mjs';
 import { liveControls, liveTargetReadings } from './live-controls.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
@@ -46,6 +47,7 @@ if (
     'live-controls',
     'live-phases',
     'live-staged',
+    'desktop-results-family',
     'early-cancel',
     'cancel-archive',
     'output-pressure',
@@ -119,6 +121,7 @@ try {
   if (profile === 'target-runtime' || profile === 'cancel-archive') await configureTarget(f, true);
   if (profile === 'live-controls') await configureTarget(f, true, liveTargetReadings);
   if (profile === 'live-staged') await configureStagedTarget(f);
+  if (profile === 'desktop-results-family') await configureStagedTarget(f, 2);
   if (profile === 'live-phases') await configureTarget(f, true, liveTargetReadings, 4);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
   const network = profile === 'network' ? await prepareNetwork(f) : undefined;
@@ -218,6 +221,10 @@ try {
     await phase('cancel-during-readiness', () => earlyCancel(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'live-phases') {
     await phase('queue-to-cancelled-result', () => livePhases(appPage, authored, f, evidence ?? f.root));
+  } else if (profile === 'desktop-results-family') {
+    await phase('desktop-results-runs-and-compare', () =>
+      desktopResultsFamily(appPage, authored, f, evidence ?? f.root),
+    );
   } else if (profile === 'live-staged') {
     await phase('live-staged-layouts-and-sealed-result', () => liveStaged(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'live-controls') {

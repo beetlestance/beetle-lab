@@ -38,6 +38,11 @@ export function ResultHeader({
   refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
 }) {
   const status = displayedStatus(run, readOnly);
+  const sourceActions = [
+    <ResultCompare key="compare" run={run} suiteName={suiteName} />,
+    <ResultDownloads key="download" run={run} ordinal={ordinal} />,
+  ];
+  const again = <RunAgain key="again" run={run} phone={phone} />;
   const refreshButton = refresh && (
     <Button variant="text" size="sm" onClick={refresh.run} disabled={refresh.busy}>
       Refresh run
@@ -67,15 +72,12 @@ export function ResultHeader({
         </div>
         {readOnly ? (
           <div className="result-actions">
-            <ResultCompare run={run} suiteName={suiteName} />
-            <ResultDownloads run={run} ordinal={ordinal} />
+            {sourceActions}
             <p className="result-readonly-note">Read-only history: changes are unavailable.</p>
           </div>
         ) : (
           <div className="result-actions">
-            <ResultCompare run={run} suiteName={suiteName} />
-            <ResultDownloads run={run} ordinal={ordinal} />
-            <RunAgain run={run} phone={phone} />
+            {phone ? [...sourceActions, again] : [again, ...sourceActions]}
             <PinControl run={run} shortLabel={phone} />
             {!phone && deleteButton}
           </div>

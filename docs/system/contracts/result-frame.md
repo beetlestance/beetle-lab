@@ -38,7 +38,8 @@ Phone summary leads with average rate, p95 estimate, failure ratio and total
 requests from one accepted source. Other measurements stay in expandable details;
 partial-coverage warnings remain visible. Legacy/pending history keeps four explicit
 unknown figures, never invented zeros. Desktop summary stays unchanged.
-Phone titles use 34 px tokens and compare/download precede Run again and Pin.
+On desktop, Run again leads the result actions. Phone titles use 34 px tokens,
+and Compare and Download precede Run again and Pin.
 Refresh and permitted deletion remain reachable under More actions. Phone context
 uses a stored finish time when present. The compact whole-run chart shows three
 time labels, preserves source points, gaps and bounds, and displays readings on hover. Sampling and
@@ -95,7 +96,7 @@ their retry controls.
 | --- | --- |
 | `web/src/features/runs/result/headline.ts` | `8e01d1114a29` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
-| `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
+| `web/src/features/runs/result/ResultHeader.tsx` | `a1b3e2cb7046` |
 | `web/src/features/runs/result/RunNote.tsx` | `77d15ea26068` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
 | `web/src/features/runs/result/phone.css` | `ad8d1f8fbea4` |

@@ -18,6 +18,9 @@
   flex-wrap: wrap;
   gap: var(--s-8);
 }
+.result-threshold-top .number {
+  font-family: var(--font-sans);
+}
 .result-threshold-meter {
   display: block;
   height: 6px;
