@@ -61,7 +61,8 @@ recovered observations when available. Threshold readings remain visible without
 run-level pass or fail label.
 For a stopped run, accepted partial threshold measurements use Not judged.
 Missing figures stay unavailable and the recorded test duration is shown only
-when provided by the accepted source.
+when provided by the accepted source. Positive durations below one second
+are shown in milliseconds.
 
 ## Recovered observations
 
@@ -86,7 +87,7 @@ their retry controls.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/result/headline.ts` | `bc75915cb159` |
+| `web/src/features/runs/result/headline.ts` | `7411e5551d8a` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
 | `web/src/features/runs/result/ResultHeader.tsx` | `5c499047e48e` |
 | `web/src/features/runs/result/RunNote.tsx` | `0f0c005de309` |
