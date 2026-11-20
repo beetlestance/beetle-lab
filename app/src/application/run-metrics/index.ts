@@ -1,4 +1,4 @@
-import { HistoryReadWaiter } from './history-waiter.js';
+import { MetricReadWaiter } from './read-waiter.js';
 import { chartHistory } from './chart-history.js';
 import { metricOverview } from './overview.js';
 import type { RunKey } from '../../ports/runs.js';
@@ -75,8 +75,8 @@ function series(q: RunMetricSeriesQuery, p: Publication): RunMetricSeriesPage {
         : null,
   };
 }
-type ReadMode = 'public' | 'original' | 'history';
-/** One physical reader; a single successor may wait for background history. */
+type ReadMode = 'public' | 'result' | 'original' | 'history';
+/** One physical reader and at most one waiting read. */
 export function createRunMetricsService(options: RunMetricServiceOptions): RunMetricsService {
   const lane = new MetricReadLane(options);
   return Object.freeze({
@@ -116,10 +116,15 @@ function createReader(lane: MetricReadLane): RunMetricsReader {
       } catch (error) {
         return Promise.reject(error);
       }
-      return lane.run({ ...key, limit: 1 }, c, async (captured, p, io) => {
-        const value = await chartHistory(captured, p, io);
-        return validateApi('RunChartHistory', value).ok && runChartHistoryMatches(value, captured) ? value : fail();
-      });
+      return lane.run(
+        { ...key, limit: 1 },
+        c,
+        async (captured, p, io) => {
+          const value = await chartHistory(captured, p, io);
+          return validateApi('RunChartHistory', value).ok && runChartHistoryMatches(value, captured) ? value : fail();
+        },
+        'result',
+      );
     },
     getRunMetricOverview(q: RunKey & { attemptId: string }, c: MetricReadContext) {
       let key;
@@ -128,10 +133,17 @@ function createReader(lane: MetricReadLane): RunMetricsReader {
       } catch (error) {
         return Promise.reject(error);
       }
-      return lane.run({ ...key, limit: 1 }, c, async (captured, p) => {
-        const value = metricOverview(captured, p);
-        return validateApi('RunMetricOverview', value).ok && runMetricOverviewMatches(value, captured) ? value : fail();
-      });
+      return lane.run(
+        { ...key, limit: 1 },
+        c,
+        async (captured, p) => {
+          const value = metricOverview(captured, p);
+          return validateApi('RunMetricOverview', value).ok && runMetricOverviewMatches(value, captured)
+            ? value
+            : fail();
+        },
+        'result',
+      );
     },
     listRunMetricSeries(q: RunMetricSeriesQuery, c: MetricReadContext) {
       return lane.run(q, c, async (captured, p) => {
@@ -206,7 +218,7 @@ function captureQuery(input: unknown): RunMetricSeriesQuery {
 
 class MetricReadLane {
   private active: { owner: Operation; original: Promise<unknown>; mode: ReadMode } | undefined;
-  private readonly waiting = new HistoryReadWaiter();
+  private readonly waiting = new MetricReadWaiter();
   private closed = false;
   private closing: Promise<void> | undefined;
   private readonly artifacts: RunMetricServiceOptions['artifacts'];
@@ -227,8 +239,7 @@ class MetricReadLane {
     mode: ReadMode = 'public',
   ): Promise<T> {
     if (this.closed) return Promise.reject(new MetricReadError('closed'));
-    if (this.active && (this.active.mode !== 'history' || mode === 'history' || this.waiting.busy))
-      return Promise.reject(new MetricReadError('busy'));
+    if (this.active && !this.canWait(mode)) return Promise.reject(new MetricReadError('busy'));
     let captured: RunMetricSeriesQuery;
     let owner: Operation;
     try {
@@ -253,7 +264,10 @@ class MetricReadLane {
         this.waiting.start();
       });
     this.active = { owner, original, mode };
-    return mode === 'public' ? owner.race(original) : original;
+    return mode === 'public' || mode === 'result' ? owner.race(original) : original;
+  }
+  private canWait(mode: ReadMode): boolean {
+    return !this.waiting.busy && (mode === 'result' || (mode !== 'history' && this.active?.mode === 'history'));
   }
   close() {
     this.closed = true;

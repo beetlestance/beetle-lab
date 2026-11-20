@@ -11,7 +11,8 @@ interface Options {
 }
 /** JSON routes retain their request lifetime through service and transport work. */
 export function registerRunMetricRoutes(server: FastifyInstance, options: Options): { close(): Promise<void> } {
-  const owners = new RequestLifetimes(1);
+  // Keep the transport alive for one bounded successor while the archive reader drains.
+  const owners = new RequestLifetimes(2);
   server.register(async (routes) => {
     routes.addHook('onRequest', options.authorize);
     owners.register(routes);

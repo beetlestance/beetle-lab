@@ -11,8 +11,8 @@ omitted count. Pooled totals include every admitted request, not just returned r
 It never scans windows or derives a peak from a configured load. Scope, attempt,
 source coverage, ratio/rate semantics and a 128 KiB response cap bind the reply.
 The result UI reads once per entry through shared read admission, never polls,
-and hides cached numeric figures after a read error. It renders pooled tiles and
-a p95-ordered endpoint table with a bounded name filter and explicit omissions.
+and hides cached figures after an error. The HTTP route group holds two request lifetimes.
+The UI renders pooled tiles and a p95-ordered endpoint table with bounded filtering and explicit omissions.
 
 Native threshold values/limits: [reading contract](threshold-readings.md).
 

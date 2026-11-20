@@ -38,25 +38,45 @@ export async function cancelArchive(page, authored, fixture, evidence) {
   await cancel.click();
   const open = page.getByRole('button', { name: 'Open result', exact: true });
   await expect(open).toBeVisible({ timeout: 60000 });
-  const chartResponse = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return (
-      url.origin === submitted.origin &&
-      url.pathname.startsWith('/api/v2' + submitted.path + '/attempts/') &&
-      url.pathname.endsWith('/metrics/chart-history')
-    );
-  });
-  void chartResponse.catch(() => undefined);
+  const chartResponse = metricResponse(page, submitted, 'chart-history');
+  const overviewResponse = metricResponse(page, submitted, 'overview');
   await open.click();
   await assertRunState(page, { state: 'cancelled', outcome: 'inconclusive' }, submitted);
+  const overview = await overviewResponse;
+  const overviewBody = await overview.json();
+  assert.equal(overview.status(), 200, 'Expected the overview to load on the first read');
+  const check = validateApi('RunMetricOverview', overviewBody);
+  assert(check.ok && check.value.id === submitted.id && check.value.availability === 'ready');
+  assert(check.value.endpoints.some((row) => row.request === 'r0' && (row.requestCount ?? 0) > 0));
+  await expect(page.getByRole('row', { name: /GET.*work/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Retry measurements' })).toHaveCount(0);
   const measured = await sealedResult(page, submitted, evidence, await chartResponse);
   const observed = targetCounts(fixture);
   assert(observed.work >= 10 && observed.work < 40 && observed.runtime >= 4 && observed.unexpected === 0);
-  await writeFile(join(evidence, 'cancel-archive-coverage.json'), JSON.stringify({ measured, observed }), {
-    mode: 0o600,
-    flag: 'wx',
-  });
+  await writeFile(
+    join(evidence, 'cancel-archive-coverage.json'),
+    JSON.stringify({ measured, observed, endpoints: check.value.endpoints.length }),
+    { mode: 0o600, flag: 'wx' },
+  );
   await page.screenshot({ path: join(evidence, 'cancel-archive-desktop.png'), fullPage: true });
+}
+
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {Awaited<ReturnType<import('./results.mjs').start>>} submitted
+ * @param {string} metric
+ */
+function metricResponse(page, submitted, metric) {
+  const response = page.waitForResponse((reply) => {
+    const url = new URL(reply.url());
+    return (
+      url.origin === submitted.origin &&
+      url.pathname.startsWith('/api/v2' + submitted.path + '/attempts/') &&
+      url.pathname.endsWith('/metrics/' + metric)
+    );
+  });
+  void response.catch(() => undefined);
+  return response;
 }
 
 /**
