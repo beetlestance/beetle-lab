@@ -269,7 +269,7 @@
   }
 }
 @media (min-width: 1024px) {
-  .result[data-native-summary='true'] .result-split {
+  .result-split {
     grid-template-columns: minmax(0, 13fr) minmax(0, 18fr);
     gap: var(--s-40);
   }

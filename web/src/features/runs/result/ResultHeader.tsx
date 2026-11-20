@@ -65,24 +65,55 @@ export function ResultHeader({
             </MoreActions>
           )}
         </div>
-        {readOnly ? (
-          <div className="result-actions">
-            <ResultCompare run={run} suiteName={suiteName} />
-            <ResultDownloads run={run} ordinal={ordinal} />
-            <p className="result-readonly-note">Read-only history: changes are unavailable.</p>
-          </div>
-        ) : (
-          <div className="result-actions">
-            <ResultCompare run={run} suiteName={suiteName} />
-            <ResultDownloads run={run} ordinal={ordinal} />
-            <RunAgain run={run} phone={phone} />
-            <PinControl run={run} shortLabel={phone} />
-            {!phone && deleteButton}
-          </div>
-        )}
+        <ResultActions
+          run={run}
+          readOnly={readOnly}
+          phone={phone}
+          suiteName={suiteName}
+          ordinal={ordinal}
+          deleteButton={deleteButton}
+        />
       </div>
       {sentence && <p className="result-sentence">{sentence}</p>}
     </header>
+  );
+}
+
+function ResultActions({
+  run,
+  readOnly,
+  phone,
+  suiteName,
+  ordinal,
+  deleteButton,
+}: {
+  run: Run;
+  readOnly: boolean;
+  phone: boolean;
+  suiteName: string | undefined;
+  ordinal: number | undefined;
+  deleteButton: ReactNode;
+}) {
+  const sourceActions = [
+    <ResultCompare key="compare" run={run} suiteName={suiteName} />,
+    <ResultDownloads key="download" run={run} ordinal={ordinal} />,
+  ];
+  const again = <RunAgain key="again" run={run} phone={phone} />;
+  return (
+    <div className="result-actions">
+      {readOnly ? (
+        <>
+          {sourceActions}
+          <p className="result-readonly-note">Read-only history: changes are unavailable.</p>
+        </>
+      ) : (
+        <>
+          {phone ? [...sourceActions, again] : [again, ...sourceActions]}
+          <PinControl run={run} shortLabel={phone} />
+          {!phone && deleteButton}
+        </>
+      )}
+    </div>
   );
 }
 

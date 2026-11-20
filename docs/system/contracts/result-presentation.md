@@ -211,7 +211,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/target-model.ts` | `69929b3e4eda` |
 | `web/src/features/runs/comparison/TargetRuntime.tsx` | `3d842b27be6c` |
 | `contracts/src/api/client/comparison-slos.ts` | `3c600533e0c0` |
-| `web/src/features/runs/comparison/Slos.tsx` | `e66be0ef3b34` |
+| `web/src/features/runs/comparison/Slos.tsx` | `404a35b6e3c7` |
 | `app/src/application/run-comparison/scenario-intent.ts` | `0839eff70b09` |
 | `contracts/src/api/client/comparison-plan.ts` | `622f46677a3a` |
 | `web/src/features/runs/comparison/scenario-intent.ts` | `8911ac4e106b` |

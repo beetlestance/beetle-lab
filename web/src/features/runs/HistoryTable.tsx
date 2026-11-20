@@ -17,7 +17,7 @@ const columns = [
   { key: 'started', label: 'Started' },
   { key: 'length', label: 'Length', numeric: true },
   { key: 'rps', label: 'Requests a second', numeric: true },
-  { key: 'p95', label: 'p95', numeric: true },
+  { key: 'p95', label: 'p95 over the run', numeric: true },
   { key: 'failed', label: 'Failed', numeric: true },
   { key: 'pin', label: 'Pin' },
 ] as const;
