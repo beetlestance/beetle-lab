@@ -1,9 +1,10 @@
 import type { EngineResult } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
+import type { ReactNode } from 'react';
 import { PhoneDisclosure } from './PhoneDisclosure.js';
-import { RunNote } from './RunNote.js';
+import { RunNote, useResultNote } from './RunNote.js';
 
-export function resultLayout({
+export function useResultLayout({
   run,
   engine,
   phone,
@@ -22,6 +23,7 @@ export function resultLayout({
   const nativeLayout = incomplete && !!engine?.nativeOverview;
   const recordedTarget = engine?.artifacts.some((artifact) => artifact.kind === 'target-runtime') === true;
   const showTarget = phaseView || !nativeLayout || samplingIntervalMs !== null || recordedTarget;
+  const state = useResultNote(run);
   const note = (
     <PhoneDisclosure
       id="result-notes"
@@ -30,14 +32,14 @@ export function resultLayout({
       expanded={!phone && !incomplete}
       className="result-note-disclosure"
     >
-      <RunNote run={run} readOnly={readOnly} />
+      <RunNote state={state} readOnly={readOnly} />
     </PhoneDisclosure>
   );
-  return {
-    showTarget,
-    recordedTarget,
-    nativeLayout,
-    beforeNote: incomplete ? null : note,
-    afterNote: incomplete ? note : null,
+  const notes: Record<'beforeNote' | 'afterNote' | 'phoneNote', ReactNode> = {
+    beforeNote: null,
+    afterNote: null,
+    phoneNote: null,
   };
+  notes[phone ? 'phoneNote' : incomplete ? 'afterNote' : 'beforeNote'] = note;
+  return { showTarget, recordedTarget, nativeLayout, ...notes };
 }

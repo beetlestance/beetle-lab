@@ -6,12 +6,17 @@ import { useRunNote } from './useRunNote.js';
 
 type Write = ReturnType<typeof useRunNote>['write'];
 
-/** Run note (031 setRunNote): its own noteVersion; a stale edit is refused and re-read. */
-export function RunNote({ run, readOnly }: { run: Run; readOnly: boolean }) {
-  const id = useId();
+export function useResultNote(run: Run) {
   const [draft, setDraft] = useState<string | null>(null);
   const [base, setBase] = useState<Run | null>(null);
   const editor = useRunNote(run, () => setDraft(null));
+  return { draft, setDraft, base, setBase, editor };
+}
+
+/** Run note (031 setRunNote): its own noteVersion; a stale edit is refused and re-read. */
+export function RunNote({ state, readOnly }: { state: ReturnType<typeof useResultNote>; readOnly: boolean }) {
+  const id = useId();
+  const { draft, setDraft, base, setBase, editor } = state;
   const { current, write, save } = editor;
   const note = current.note ?? null;
   const conflict = write.error?.failure.protocol?.code === 'conflict';

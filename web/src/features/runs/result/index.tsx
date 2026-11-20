@@ -2,7 +2,7 @@ import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
 import { ResultSectionNav } from './SectionNav.js';
 import type { Section } from './SectionNav.js';
 import { measurementOrigin } from '../live/rise-position.js';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { TargetHeader, usePhaseMode } from './TargetHeader.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunMetricOverview } from '@beetle/contracts/api';
@@ -20,7 +20,7 @@ import type { Variant } from './headline.js';
 import { ReportTabs, useReportTab } from './ReportTabs.js';
 import type { ReportTab } from './ReportTabs.js';
 import { ResultHeader } from './ResultHeader.js';
-import { resultLayout } from './result-layout.js';
+import { useResultLayout } from './result-layout.js';
 import { ScriptVersion, Thresholds } from './Sections.js';
 import { ResultEndpoints, readyOverview } from './Overview.js';
 import type { RunPlan } from '../live/plan.js';
@@ -38,7 +38,6 @@ import { ResultReadProblem } from './ResultReadProblem.js';
 import type { ResultReads } from './useResultReads.js';
 import './result.css';
 import './phone.css';
-
 /** RunDetail's run re-read, shown as Refresh run beside the result title. */
 export type RefreshControl = { readonly run: () => void; readonly busy: boolean };
 
@@ -78,7 +77,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const archiveMissing = incompleteArchiveMissing(run, reads, engine);
   const plan = readPlan(reads.revision?.config);
   const charts = useRecordedCharts(reads.chartHistory, plan.totalMs, run.state);
-  const { showTarget, recordedTarget, nativeLayout, beforeNote, afterNote } = resultLayout({
+  const { showTarget, recordedTarget, nativeLayout, beforeNote, afterNote, phoneNote } = useResultLayout({
     run,
     engine,
     phone,
@@ -137,6 +136,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
         archiveMissing={archiveMissing}
         tab={tab}
         showTarget={sections.sealedTarget}
+        phoneNote={phoneNote}
         onSelect={setTab}
       />
       {afterNote}
@@ -144,7 +144,6 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
     </div>
   );
 }
-
 function ResultMeasurements({
   reads,
   run,
@@ -190,7 +189,6 @@ function ResultMeasurements({
     </>
   );
 }
-
 function incompleteArchiveMissing(run: Run, reads: ResultReads, engine: EngineResult | null): boolean {
   if (run.reason !== 'artifact_incomplete') return false;
   if (engine?.nativeOverview) return true;
@@ -201,7 +199,6 @@ function incompleteArchiveMissing(run: Run, reads: ResultReads, engine: EngineRe
     reads.overview.data.availability === 'not_recorded'
   );
 }
-
 function RestoredBanner({ createdAt, liveOrigin }: { createdAt: string; liveOrigin?: string | undefined }) {
   return (
     <Banner
@@ -298,13 +295,11 @@ function TargetRuntime({
     </section>
   );
 }
-
 function recordedLimit(plan: RunPlan): number | null {
   const rules = plan.rules.filter((rule) => rule.metric === 'http_req_duration' && rule.stat === 'p95');
   const first = rules[0];
   return first && rules.every((rule) => rule.value === first.value) ? first.value : null;
 }
-
 function SupplementaryResult({
   target,
   reads,
@@ -313,6 +308,7 @@ function SupplementaryResult({
   archiveMissing,
   tab,
   showTarget,
+  phoneNote,
   onSelect,
 }: {
   target: Parameters<typeof TargetRuntime>[0];
@@ -322,6 +318,7 @@ function SupplementaryResult({
   archiveMissing: boolean;
   tab: ReportTab;
   showTarget: boolean;
+  phoneNote: ReactNode;
   onSelect: (tab: ReportTab) => void;
 }) {
   const { run, charts, plan } = target;
@@ -359,6 +356,7 @@ function SupplementaryResult({
             </PhoneDisclosure>
           )
         }
+        phoneNote={phoneNote}
         phoneExtras={<PhoneExtras target={target} reads={reads} showCharts={showCharts} />}
       />
     </>

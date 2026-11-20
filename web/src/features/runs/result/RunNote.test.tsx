@@ -7,14 +7,17 @@ import type { Run } from '@beetle/contracts/api';
 import { ApiContext } from '../../../app/api.js';
 import { createQueryClient } from '../../../app/queries.js';
 import { apiError, deferred, json, run, testClient } from '../test-fixtures.js';
-import { RunNote } from './RunNote.js';
+import { RunNote, useResultNote } from './RunNote.js';
 afterEach(cleanup);
 const stamp = '2026-11-19T14:10:00.000Z';
 const initial = (): Run => ({ ...run(), note: 'Original', noteVersion: 1, noteUpdatedAt: stamp });
+function NoteCase({ run, readOnly }: { run: Parameters<typeof useResultNote>[0]; readOnly: boolean }) {
+  return <RunNote state={useResultNote(run)} readOnly={readOnly} />;
+}
 function mountNote(client: ReturnType<typeof testClient>['client'], value = initial(), readOnly = false) {
   const queryClient = createQueryClient();
   const view = (value: Run) => <ApiContext.Provider value={client}><QueryClientProvider client={queryClient}>
-    <RunNote run={value} readOnly={readOnly} />
+    <NoteCase run={value} readOnly={readOnly} />
   </QueryClientProvider></ApiContext.Provider>;
   const mounted = render(view(value));
   return { ...mounted, update: (next: Run) => mounted.rerender(view(next)) };
