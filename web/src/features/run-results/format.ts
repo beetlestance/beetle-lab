@@ -9,9 +9,10 @@ export function shortId(id: string): string {
   return id.slice(0, 4).toLowerCase();
 }
 
-/** "05:16" or "1:05:16". Null stays unknown, never zero. */
+/** Display subsecond values in milliseconds and longer durations as a clock. */
 export function formatDuration(ms: number | null | undefined): string | null {
   if (ms === null || ms === undefined || !Number.isFinite(ms) || ms < 0) return null;
+  if (ms > 0 && ms < 1000) return `${Math.max(1, Math.floor(ms))} ms`;
   const total = Math.round(ms / 1000);
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);

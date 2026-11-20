@@ -60,6 +60,7 @@ function Report({ view }: { view: ResultView }) {
 function Diagnostics({ view }: { view: ResultView }) {
   if (view.status !== 'ready') return <Unready status={view.status} what="Diagnostics" />;
   const params = paramsOf(view.run);
+  const { execution } = view.result;
   const warnings = view.result.artifacts.filter((artifact) => artifact.kind === 'k6-warnings');
   return (
     <>
@@ -69,7 +70,11 @@ function Diagnostics({ view }: { view: ResultView }) {
         <p role="alert">Multiple warning artifacts were published; no warning evidence selected.</p>
       )}
       {warnings.length === 1 && (
-        <RunWarnings params={{ ...params, artifactId: warnings[0]!.artifactId }} artifact={warnings[0]!} />
+        <RunWarnings
+          params={{ ...params, artifactId: warnings[0]!.artifactId }}
+          artifact={warnings[0]!}
+          cleanExit={execution.status === 'completed' && execution.exitCode === 0}
+        />
       )}
     </>
   );

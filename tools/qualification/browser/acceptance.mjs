@@ -10,6 +10,7 @@ import { cleanup } from '../native-application/compose/evidence.ts';
 import { automaticClient } from '../native-application/compose/public.ts';
 import { author, revision } from './authoring.mjs';
 import { execute, results } from './results.mjs';
+import { failedResults } from './failed-results.mjs';
 import { inputs, settings, emptyFolder, directoryImport } from './inputs-settings.mjs';
 import { offlineExport } from './exports.mjs';
 import { memoryPressure, memoryTarget } from './memory-pressure.mjs';
@@ -35,6 +36,7 @@ if (
   ![
     'functional',
     'run-results',
+    'failed-results',
     'live-reconnect',
     'live-controls',
     'live-phases',
@@ -169,7 +171,9 @@ try {
       contentStatuses.push(response.status());
     });
   const authored = await phase('automatic-access-and-authoring', () => author(appPage, origin));
-  if (profile === 'interaction') {
+  if (profile === 'failed-results') {
+    await phase('failed-result-and-verified-evidence', () => failedResults(appPage, authored, evidence ?? f.root));
+  } else if (profile === 'interaction') {
     await phase('shell-workspace-and-settings-navigation', () => shellNavigation(appPage, authored.workspace));
     await phase('phone-workspace-navigation', () => phoneShellNavigation(appPage, authored.workspace));
     await phase('shell-route-motion', () => shellMotion(appPage, authored.workspace));
