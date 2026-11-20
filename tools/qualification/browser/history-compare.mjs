@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { expect } from '@playwright/test';
+import { validateApi } from '@beetle/contracts/api';
+import { writeFile } from 'node:fs/promises';
 import { execute } from './results.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
@@ -122,6 +124,7 @@ async function compareFromResult(page, workspace, first, second, evidence) {
     timeout: 35000,
   });
   await expect(page.getByRole('heading', { name: 'What was different', exact: true })).toBeVisible();
+  await compareRecordedLatency(page, [first, second], evidence);
   await screenshot(page, evidence, 'compare-recovered');
   await page.getByRole('radio', { name: 'Scarab', exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -135,6 +138,28 @@ async function compareFromResult(page, workspace, first, second, evidence) {
   expect(await figures.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => figures.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+}
+
+/** @param {Page} page @param {string[]} urls @param {string} evidence */
+async function compareRecordedLatency(page, urls, evidence) {
+  const row = page.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'p95, histogram estimate' }) });
+  const readings = [];
+  for (const [index, address] of urls.entries()) {
+    const url = new URL(address);
+    const endpoint = `${url.origin}/api/v2${url.pathname}`;
+    const run = validateApi('Run', await (await page.request.get(endpoint)).json());
+    assert(run.ok && run.value.id === runId(address));
+    const result = await page.request.get(`${endpoint}/attempts/${run.value.activeAttemptId}/metrics/overview`);
+    const overview = validateApi('RunMetricOverview', await result.json());
+    assert(overview.ok && overview.value.id === run.value.id);
+    const p95 = overview.value.latency?.percentiles.p95.estimate;
+    assert(p95 !== undefined && p95 > 0);
+    const cell = row.getByRole('cell').nth(index);
+    await expect(cell).toContainText(' ms');
+    await expect(cell).not.toHaveText(/^0 ms/);
+    readings.push({ p95, label: await cell.innerText() });
+  }
+  await writeFile(join(evidence, 'comparison-latency.json'), JSON.stringify(readings), { mode: 0o600 });
 }
 
 /** @param {string} url */

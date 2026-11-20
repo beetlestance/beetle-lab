@@ -2,6 +2,7 @@ import type { RunComparisonItem } from '@beetle/contracts/api';
 import { inlineComparisonFailure } from './FailedSlos.js';
 import { comparisonFigures } from './figures.js';
 import { comparisonRunLabels } from './run-labels.js';
+import { relativePercent } from './relative-percent.js';
 import type { Summaries, Overviews } from './useComparison.js';
 
 /** Describes recorded histogram estimates; never infers a cause or a native verdict. */
@@ -34,9 +35,8 @@ export function p95Change(base: number | null, value: number | null): string {
     return 'Recorded p95 comparison unavailable.';
   if (base === value) return 'Recorded p95 estimate unchanged from the baseline.';
   if (base === 0) return 'Recorded p95 percentage unavailable: the baseline is zero.';
-  const change = ((value - base) / base) * 100;
-  if (!Number.isFinite(change)) return 'Recorded p95 percentage unavailable.';
-  const rounded = Math.round(Math.abs(change));
-  const amount = rounded === 0 ? 'less than 1%' : `${rounded}%`;
+  const change = relativePercent(base, value);
+  if (change === null) return 'Recorded p95 percentage unavailable.';
+  const amount = change.replace(/^</, 'less than ').replace(/^>/, 'more than ');
   return `Recorded p95 estimate ${amount} ${value > base ? 'higher' : 'lower'} than the baseline.`;
 }

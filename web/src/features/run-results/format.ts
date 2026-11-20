@@ -40,6 +40,13 @@ export function formatNumber(
   return (digits === 'integer' ? integer : decimal).format(value);
 }
 
+/** Keep a positive latency distinct from a measured zero at display precision. */
+export function formatLatency(ms: number | null | undefined): string | null {
+  if (ms == null || !Number.isFinite(ms) || ms < 0) return null;
+  if (ms > 0 && ms < 0.01) return '<0.01 ms';
+  return `${formatNumber(ms, ms < 1 ? 'decimal' : 'integer')} ms`;
+}
+
 export function formatPercent(ratio: number | null | undefined): string | null {
   if (ratio === null || ratio === undefined || !Number.isFinite(ratio)) return null;
   return `${decimal.format(ratio * 100)}%`;

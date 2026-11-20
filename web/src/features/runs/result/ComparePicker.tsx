@@ -10,7 +10,7 @@ import { Button } from '../../../components/Button.js';
 import { Dialog } from '../../../components/Dialog.js';
 import { Pagination, usePage } from '../../../components/Pagination.js';
 import { SegmentedFilter } from '../../../components/SegmentedFilter.js';
-import { formatDuration, formatNumber, formatTime, runStatus, shortId } from '../../run-results/format.js';
+import { formatLatency, formatDuration, formatTime, runStatus, shortId } from '../../run-results/format.js';
 import { HeaderIcon } from '../live/HeaderIcon.js';
 import { terminal } from '../terminal.js';
 import './compare-picker.css';
@@ -198,7 +198,7 @@ function Candidate({
             {formatTime(run.requestedAt)}
             {item.summary.testDurationMs !== null ? `, ${formatDuration(item.summary.testDurationMs)}` : ''}
           </span>
-          <span>{p95 ? `p95 ≈ ${formatNumber(p95.estimate)} ms` : 'p95 —'}</span>
+          <span>{p95 ? `p95 ≈ ${formatLatency(p95.estimate)}` : 'p95 —'}</span>
         </span>
       </Link>
     </li>

@@ -1,7 +1,7 @@
 import type { RunMetricEndpoint } from '@beetle/contracts/api';
 import { Table, Th, Td } from '../../../components/Table.js';
 import type { TableColumn } from '../../../components/Table.js';
-import { formatNumber, formatPercent } from '../../run-results/format.js';
+import { formatLatency, formatNumber, formatPercent } from '../../run-results/format.js';
 import type { PlanRequest } from '../live/plan.js';
 
 type Metric = 'share' | 'rps' | 'p50' | 'p95' | 'failed';
@@ -58,12 +58,11 @@ export function EndpointTable({
 }
 function endpointValues(row: RunMetricEndpoint, total: number | null): Record<Metric, string> {
   const number = (value: number | null | undefined) => formatNumber(value, 'integer') ?? '–';
-  const ms = (value: number | null | undefined) => (value == null ? '–' : `${number(value)} ms`);
   return {
     share: formatPercent(row.requestCount !== null && total ? row.requestCount / total : null) ?? '–',
     rps: number(row.requestsPerSecond),
-    p50: ms(row.latency?.percentiles.p50.estimate),
-    p95: ms(row.latency?.percentiles.p95.estimate),
+    p50: formatLatency(row.latency?.percentiles.p50.estimate) ?? '–',
+    p95: formatLatency(row.latency?.percentiles.p95.estimate) ?? '–',
     failed: formatPercent(row.failure?.ratio) ?? '–',
   };
 }

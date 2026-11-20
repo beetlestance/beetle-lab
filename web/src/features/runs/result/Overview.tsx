@@ -3,13 +3,12 @@ import { useState } from 'react';
 import type { RunMetricOverview, RunMetricEndpoint, RunChartHistory } from '@beetle/contracts/api';
 import { Button } from '../../../components/Button.js';
 import { EndpointTable, endpointName } from './EndpointTable.js';
-import { formatNumber, formatPercent } from '../../run-results/format.js';
+import { formatLatency, formatNumber, formatPercent } from '../../run-results/format.js';
 import type { PlanRequest } from '../live/plan.js';
 import type { ResultReads } from './useResultReads.js';
 import { sameChartSource } from './chart-model.js';
 import './overview.css';
 const number = (value: number | null | undefined) => formatNumber(value, 'integer');
-const ms = (value: number | null | undefined) => (value == null ? null : `${number(value)} ms`);
 const missing = (value: string | null) => value ?? '–';
 /** A failed refresh retires cached numeric figures immediately. */
 export function readyOverview(query: ResultReads['overview']): RunMetricOverview | null {
@@ -75,8 +74,8 @@ function DesktopMetricSummary({
       label: peak === null ? 'a second on average' : `a second on average, observed peak ${number(peak.value)}`,
     },
     {
-      value: ms(p?.p95.estimate),
-      label: `p95, p50 ${missing(ms(p?.p50.estimate))}, p99 ${missing(ms(p?.p99.estimate))}`,
+      value: formatLatency(p?.p95.estimate),
+      label: `p95, p50 ${missing(formatLatency(p?.p50.estimate))}, p99 ${missing(formatLatency(p?.p99.estimate))}`,
     },
     {
       value: formatPercent(overview.failure?.ratio),

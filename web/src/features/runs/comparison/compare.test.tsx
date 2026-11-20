@@ -101,6 +101,10 @@ it('never invents a delta when either side is unknown', () => {
   expect(delta('relative', null, 5)).toBeNull();
   expect(delta('relative', 0, 5)).toBeNull();
   expect(delta('relative', 4, 4)).toBe('same');
+  expect(delta('relative', 100, 0.1)).toBe('−<100%');
+  expect(delta('relative', 100, 0)).toBe('−100%');
+  expect(delta('relative', 100, 100.2)).toBe('+<1%');
+  expect(delta('points', 0.0004, 0.00041)).toBe('+<0.01 pp');
   expect(delta('points', 0.0004, 0.0006)).toBe('+0.02 pp');
   expect(delta('duration', 60000, 30000)).toBe('−00:30');
 });

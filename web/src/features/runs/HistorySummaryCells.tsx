@@ -1,7 +1,7 @@
 import { HistoryP95Sparkline } from './HistoryP95Sparkline.js';
 import type { RunHistorySummary } from '@beetle/contracts/api';
 import { Td } from '../../components/Table.js';
-import { formatDuration, formatNumber, formatPercent } from '../run-results/format.js';
+import { formatLatency, formatDuration, formatNumber, formatPercent } from '../run-results/format.js';
 
 const unknown = '—';
 /** Why a summary has no numbers; null when it is ready with complete coverage. */
@@ -46,7 +46,7 @@ export function HistorySummaryCells({ value }: { value: RunHistorySummary }) {
       >
         <span className="history-p95">
           {value.httpP95Preview && <HistoryP95Sparkline points={value.httpP95Preview} />}
-          {p95 ? `≈ ${formatNumber(p95.estimate, 'integer')} ms` : <Unknown label="p95 unknown" />}
+          {p95 ? `≈ ${formatLatency(p95.estimate)}` : <Unknown label="p95 unknown" />}
         </span>
       </Td>
       <Td
