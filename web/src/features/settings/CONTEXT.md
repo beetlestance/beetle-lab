@@ -18,6 +18,6 @@ Save sends one request ID; only an unknown outcome offers "Retry identical reque
 editing starts a new save. A 409 opens "Changed elsewhere": refresh keeps the draft
 and the next save uses the new version. Parent saves invalidate descendant settings.
 Names come only from namespace data already cached; no read just for a label.
-Not shown: Beetle version and upgrade check (no API field). Workspace retention
+Installation adds an Upgrade view (`?view=upgrade`, ../upgrade). Workspace retention
 controls are in ../retention; Retire workspace is in ../namespace-deletion.
 Check: vitest run web/src/app/settings*.test.tsx web/src/features/settings.

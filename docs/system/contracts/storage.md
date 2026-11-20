@@ -108,9 +108,10 @@ List and history reads use fixed covering indexes and bounded cursors.
   agent reach, progress or funding ([owner](../../../app/src/bootstrap/CONTEXT.md)).
 - Run pins (≤ 256 per workspace, terminal runs only) exclude a run from selection
   and from manual delete. A run already admitted for removal cannot be pinned
-  (`cleanup_in_progress`). Pins stay with retained rows through workspace
-  retirement; restored history shows them read-only. Pin rows are not charged to
-  workspace storage.
+  (`cleanup_in_progress`). Pins keep protecting after workspace retirement: a pinned
+  Run in a retired workspace is never reclaimed, and its bytes stay charged
+  ([decision 034](../../decisions/034-retired-namespace-reclamation.md)). Restored
+  history shows pins read-only. Pin rows are not charged to workspace storage.
 - Backups and restore follow
   [decision 016](../../decisions/016-historical-restore.md); a copied live
   database file is never treated as a backup.

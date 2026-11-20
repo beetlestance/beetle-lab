@@ -82,7 +82,7 @@ it('keeps missing peer measurements explicit without substituting zero or reques
   });
   mountComparison(fixture.client); await screen.findByLabelText('Baseline metric'); await openComparisonExploration();
   fireEvent.change(screen.getByLabelText('Baseline metric'), {target: {value: '0'}});
-  await screen.findByRole('img'); expect(screen.getByText('Metric: missing (not_observed).')).toBeVisible();
+  await screen.findByRole('img'); expect(screen.getByText('Metric: not recorded (nothing was observed).')).toBeVisible();
   expect(screen.getAllByText(/Whole-run total:/)).toHaveLength(1);
   expect(fixture.records.filter(record => record.path.includes('/samples?'))).toHaveLength(1);
 });

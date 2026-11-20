@@ -11,7 +11,7 @@ import { buttonClass } from '../../components/Button.js';
 import { QueryState } from '../../components/QueryState.js';
 import { LoadingState } from '../../components/States.js';
 import { EngineFacts, PlannedEngines } from './planned.js';
-import { agentUnavailable, unavailableText, useInstallationStatus } from './status.js';
+import { agentUnavailable, unavailableText, useEngineCatalogue, useInstallationStatus } from './status.js';
 import './engines.css';
 
 /**
@@ -22,6 +22,8 @@ import './engines.css';
 export function Engines() {
   const settings = useInstallationSettings();
   const status = useInstallationStatus();
+  const catalogue = useEngineCatalogue();
+  const planned = catalogue.data?.engines.filter((engine) => engine.availability === 'planned').map((e) => e.id) ?? [];
   return (
     <section className="content-section engines-page">
       <header className="engines-header">
@@ -38,7 +40,8 @@ export function Engines() {
           {(data) => <InstalledEngines settings={data} status={status.data} statusFailed={status.isError} />}
         </QueryState>
       </section>
-      <PlannedEngines />
+      <PlannedEngines ids={planned} />
+      {catalogue.isError && <p className="engines-note">Planned engines could not be read.</p>}
     </section>
   );
 }

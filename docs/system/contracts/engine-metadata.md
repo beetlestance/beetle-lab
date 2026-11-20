@@ -3,6 +3,8 @@
 `getInstallationStatus` may return `engines[].engine` with the installed engine's
 `id`, declared `version` and `configVersion`. Missing metadata stays absent.
 This is an informational label, without admission, execution or result authority.
+`listEngines` builds the engine catalogue from the same status read: installed k6 with these
+profiles and a state that follows the agent, then the engines still to come; it adds no I/O.
 
 The capacity source captures these fields and the installed profile identity only
 from an already checked capabilities frame. A fresh ready status sample must name
@@ -25,7 +27,7 @@ installed selector, not a persisted record of a historical run's engine version.
 | Code | Reviewed |
 | --- | --- |
 | `contracts/api/v2/installation-status.schema.json` | `d4085231c17c` |
-| `app/src/ports/installation-status.ts` | `e5773cb780a6` |
+| `app/src/ports/installation-status.ts` | `2bf55cf3b3f1` |
 | `app/src/adapters/outbound/capacity/status.ts` | `8ca95c5a3607` |
-| `app/src/application/installation-status/` | `1cd7c2b126ab` |
+| `app/src/application/installation-status/` | `60e28017de55` |
 | `web/src/features/runs/live/engine-version.ts` | `c9ac4a1517c5` |

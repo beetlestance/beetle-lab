@@ -13,10 +13,14 @@ export async function readResult<T>(result: Promise<ApiClientResult<T>>): Promis
 export function unknownOutcome(failure: ApiClientFailure) {
   const status = failure.status ?? 0;
   // A structured server error can follow a committed write; retryable is not a receipt.
+  // The upgrade pause refuses before the request body is read, so nothing was written.
+  if (failure.protocol?.code === 'upgrade_pending') return false;
   if (failure.kind === 'protocol') return status >= 500 && status < 600;
   return ['transport', 'timeout', 'cancelled', 'response'].includes(failure.kind);
 }
 export function errorMessage(failure: ApiClientFailure): string {
+  if (failure.protocol?.code === 'upgrade_pending')
+    return 'Beetle is paused for an upgrade, so nothing was changed. Try again after the upgrade is activated or rolled back on the host.';
   if (failure.protocol) return failure.protocol.message;
   const messages = {
     request: 'Check the entered values and try again.',

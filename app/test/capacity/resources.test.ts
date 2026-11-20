@@ -14,7 +14,7 @@ describe('backend capacity resource and identity boundaries', () => {
       f.state.frame = capabilities(Date.now() - 100);
       const result = await source.sample();
       expect(result?.ceilings).toEqual({ pool: { cpuMillis: 4000, memoryBytes: 80000, pids: 200,
-        outputBytes: 400000, concurrency: 4, storageBytes: Math.min(1000000, Number((await f.actual()).blocks * (await f.actual()).bsize)),
+        outputBytes: 400000, concurrency: 4, storageBytes: Math.min(1000000, Number((await f.actual()).blocks * (await f.actual()).frsize)),
         freeSpaceReserveBytes: 1000 }, perRun: { cpuMillis: 1000, memoryBytes: 20000, pids: 50,
         timeoutMs: 60000, outputBytes: 100000 }, supportedProfiles: ['browser-alias'] });
       await source.close(); expect(f.gateway.close).not.toHaveBeenCalled();
@@ -22,7 +22,7 @@ describe('backend capacity resource and identity boundaries', () => {
   });
   it('clips allocation to filesystem total, without substituting current available bytes', async () => {
     const f = await fixture(); const actual = await f.actual();
-    f.disk.statfs = async () => ({ ...actual, bsize: 100n, blocks: 5000n, bavail: 20n });
+    f.disk.statfs = async () => ({ ...actual, bsize: 100n, frsize: 100n, blocks: 5000n, bavail: 20n });
     try {
       const result = await (await f.open()).sample();
       expect(result?.ceilings.pool.storageBytes).toBe(500000);
@@ -31,12 +31,12 @@ describe('backend capacity resource and identity boundaries', () => {
   });
   it.each([0n, 10n])('refuses own available space at/below reserve (%s blocks)', async bavail => {
     const f = await fixture(); const actual = await f.actual();
-    f.disk.statfs = async () => ({ ...actual, bsize: 100n, blocks: 5000n, bavail });
+    f.disk.statfs = async () => ({ ...actual, bsize: 100n, frsize: 100n, blocks: 5000n, bavail });
     try { expect(await (await f.open()).sample()).toBeNull(); } finally { await f.cleanup(); }
   });
   it.each([
-    { bsize: 0n }, { bsize: -1n }, { blocks: -1n }, { bavail: -1n },
-    { blocks: BigInt(Number.MAX_SAFE_INTEGER), bsize: 2n }, { bavail: BigInt(Number.MAX_SAFE_INTEGER), bsize: 2n },
+    { bsize: 0n, frsize: 0n }, { bsize: -1n, frsize: 0n }, { blocks: -1n }, { bavail: -1n },
+    { blocks: BigInt(Number.MAX_SAFE_INTEGER), bsize: 2n, frsize: 2n }, { bavail: BigInt(Number.MAX_SAFE_INTEGER), bsize: 2n, frsize: 2n },
     { blocks: 1n, bavail: 2n },
   ])('rejects unsafe/negative statfs facts %s', async changed => {
     const f = await fixture(); const actual = await f.actual();

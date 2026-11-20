@@ -799,6 +799,24 @@
     "implementation": "implemented"
   },
   {
+    "name": "getUpgradeStatus",
+    "method": "GET",
+    "path": "/api/v2/installation/upgrade",
+    "response": "UpgradeStatus",
+    "successStatus": 200,
+    "error": "ApiError",
+    "implementation": "implemented"
+  },
+  {
+    "name": "listEngines",
+    "method": "GET",
+    "path": "/api/v2/engines",
+    "response": "EngineCatalogue",
+    "successStatus": 200,
+    "error": "ApiError",
+    "implementation": "implemented"
+  },
+  {
     "name": "getRunQueue",
     "method": "GET",
     "path": "/api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/queue",

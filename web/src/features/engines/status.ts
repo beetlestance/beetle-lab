@@ -22,6 +22,24 @@ export function useInstallationStatus() {
   return query;
 }
 
+/** Engine catalogue (`listEngines`), one read per mount; unmount cancels and removes it. */
+export function useEngineCatalogue() {
+  const api = useApi();
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: queryKeys.engineCatalogue,
+    queryFn: ({ signal }) => readResult(api.listEngines({ signal })),
+  });
+  useEffect(
+    () => () => {
+      void client.cancelQueries({ queryKey: queryKeys.engineCatalogue, exact: true });
+      client.removeQueries({ queryKey: queryKeys.engineCatalogue, exact: true });
+    },
+    [client],
+  );
+  return query;
+}
+
 export type AgentState = InstallationStatus['agent']['state'];
 
 /** States that make engines unusable now (Penpot "Engines / Unavailable"). */

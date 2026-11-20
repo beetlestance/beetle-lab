@@ -31,15 +31,16 @@ node /beetle/backend/automation.js COMMAND --endpoint URL --origin URL \
 | `export-status` | Reads an export, and optionally waits for it to finish | `--organization`, `--workspace`, `--export`, optional `--wait-ms` |
 | `export-download` | Writes a ready export's script to a new file and checks its size and SHA-256 | `--organization`, `--workspace`, `--export`, `--out` |
 
-A `validate` command does not exist yet. Creating suites and uploading inputs are
-done in the UI or the HTTP API.
+`validate --kind run|cancel|compare|export --request-file <path>` checks a request file offline, with no
+session, and prints `{"valid":true,...}` or exits 2. Suites and inputs are made in the UI or the HTTP API.
 
 ## Flags
 
 | Flag | Value |
 | --- | --- |
 | `--endpoint` | Origin of the API to call, such as `http://backend:4311`: scheme, host and optional port, with no path or trailing `/` |
-| `--origin` | The installation's external origin, such as `http://127.0.0.1:8080`; must be `localhost`, `[::1]` or a `127.x.x.x` address, so private-network installations are not supported yet |
+| `--origin` | The installation's external origin, such as `http://127.0.0.1:8080`; must be `localhost`, `[::1]` or a `127.x.x.x` address unless `--private-network` is given |
+| `--private-network` | No value. Also accepts a private `--origin`: `10.x`, `172.16–31.x`, `192.168.x` or IPv6 `fc00::/7`; never a public address or a name |
 | `--session-file` | Absolute path of the session file |
 | `--token-file` | Absolute path of a file holding the one-time startup token |
 | `--request-file` | Absolute path of a JSON request file |
@@ -49,9 +50,8 @@ done in the UI or the HTTP API.
 | `--wait-ms` | Whole milliseconds to wait, 1 to 3,600,000 |
 | `--json` | Accepted and ignored; output is always JSON |
 
-Every command needs `--endpoint`, `--origin` and `--session-file`. Each flag may
-appear once; unknown flags, flags for another command and relative paths are
-refused. The whole command line is limited to 24 arguments.
+Every command except `validate` needs `--endpoint`, `--origin` and `--session-file`. Each flag may appear
+once; unknown flags, flags for another command and relative paths are refused. At most 24 arguments.
 
 ## Session file
 

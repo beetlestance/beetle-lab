@@ -1,0 +1,10 @@
+{
+  "scope": { "kind": "installation" },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "release": { "name": "2.0.0", "metadataSchema": 42 },
+  "path": "any_release",
+  "phase": "open",
+  "operationId": null,
+  "unfinished": { "runs": 0, "exports": 0, "uploads": 0, "removals": 0 },
+  "backup": { "atLeastBytes": 0, "freeBytes": { "status": "not_measured", "value": null } }
+}

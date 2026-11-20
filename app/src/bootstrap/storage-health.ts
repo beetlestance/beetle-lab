@@ -10,3 +10,20 @@ export function registerStorageHealth(server: FastifyInstance, status: () => Sto
       .send({ status: storage === 'ready' ? 'ok' : 'unavailable', storage });
   });
 }
+
+/**
+ * Public readiness for load balancers and the host upgrade tool: no authentication and no
+ * installation facts beyond whether this backend takes new work. A fenced backend serves
+ * reads but is not ready for new work until the upgrade is activated.
+ */
+export function registerReadiness(server: FastifyInstance, status: () => StorageStatus, fenced: boolean): void {
+  server.get('/health/ready', async (_request, reply) => {
+    const storage = status();
+    const ready = storage === 'ready' && !fenced;
+    const reason = storage !== 'ready' ? storage : fenced ? 'upgrade_pending' : null;
+    return reply
+      .header('Cache-Control', 'no-store')
+      .code(ready ? 200 : 503)
+      .send({ status: ready ? 'ready' : 'not_ready', reason });
+  });
+}

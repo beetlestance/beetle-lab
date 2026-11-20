@@ -142,6 +142,7 @@ function ownDeletions(
               },
             }
           : {}),
+        ...(captured.reclaim ? { reclaim: { ...captured.reclaim, clock: () => Date.now() } } : {}),
         ...(captured.retirement
           ? {
               retirement: {

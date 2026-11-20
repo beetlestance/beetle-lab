@@ -95,7 +95,9 @@ export class Directories {
       fail('invalid_input');
     await this.check();
     const stat = await this.owner.port.statfs(this.roots.stage.path, { bigint: true });
-    if (stat.bavail < 0n || stat.bsize <= 0n || stat.bavail * stat.bsize < BigInt(reserve) + BigInt(bytes))
+    // Block counts are in fragment units; FUSE mounts report a far larger preferred block size.
+    const unit = stat.frsize > 0n ? stat.frsize : stat.bsize;
+    if (stat.bavail < 0n || unit <= 0n || stat.bavail * unit < BigInt(reserve) + BigInt(bytes))
       fail('capacity_unavailable');
     await this.check();
   }

@@ -1,3 +1,4 @@
+import { availabilityWithReason } from './availability.js';
 import { useId, useMemo } from 'react';
 import { validateApi } from '@beetle/contracts/api';
 import type {
@@ -51,8 +52,8 @@ export function MetricSelection({
       </select>
       {page.availability !== 'ready' && (
         <p role="status">
-          Baseline metric catalogue: {page.availability}
-          {page.reason ? ` (${page.reason})` : ''}. Refresh manually to check again.
+          Baseline metric catalogue: {availabilityWithReason(page.availability, page.reason)}. Refresh manually to check
+          again.
         </p>
       )}
       {page.availability === 'ready' && page.items.length === 0 && <p>No recorded series.</p>}
@@ -76,13 +77,9 @@ export function ComparedMetric({ item, admission }: { item: RunComparisonItem; a
     }),
     [item],
   );
+  if (read.availability === 'not_requested') return <p>Choose a recorded series to compare it across runs.</p>;
   if (read.availability !== 'ready' || !series || read.manifestDigest === null)
-    return (
-      <p>
-        Metric: {read.availability}
-        {read.reason ? ` (${read.reason})` : ''}.
-      </p>
-    );
+    return <p>Metric: {availabilityWithReason(read.availability, read.reason)}.</p>;
   return (
     <section>
       <h3>

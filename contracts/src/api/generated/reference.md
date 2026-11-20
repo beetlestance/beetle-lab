@@ -81,6 +81,8 @@ Schema catalogue is complete, including runner common exactly once. Implementati
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/retention-batches/{snapshotId}/preview | implemented | RetentionBatchParams | none | none | 200 | RetentionPreview |
 | GET | /api/v2/organizations/{organizationId}/overview | implemented | OrganizationParams | none | none | 200 | OrganizationOverview |
 | GET | /api/v2/installation/status | implemented | none | none | none | 200 | InstallationStatus |
+| GET | /api/v2/installation/upgrade | implemented | none | none | none | 200 | UpgradeStatus |
+| GET | /api/v2/engines | implemented | none | none | none | 200 | EngineCatalogue |
 | GET | /api/v2/organizations/{organizationId}/workspaces/{workspaceId}/runs/{runId}/queue | implemented | RunParams | none | none | 200 | RunQueueStatus |
 
 All errors use ApiError. UUID path parameters are validated before URL encoding.

@@ -68,6 +68,10 @@ export class Namespaces {
   }
   private organization(command: NamespaceCommand, entity: NamespaceEntity): void {
     requireRule('slug' in entity);
+    const taken = this.db
+      .prepare('SELECT 1 FROM organizations WHERE slug=? AND id<>? LIMIT 1')
+      .get(entity.slug, lower(entity.id));
+    if (taken) throw new StorageError('organization_slug_conflict');
     if (command.kind === 'createOrganization') {
       this.db
         .prepare('INSERT INTO organizations(id,version,name,slug) VALUES (?,?,?,?)')

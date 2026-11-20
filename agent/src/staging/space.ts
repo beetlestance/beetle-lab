@@ -18,8 +18,10 @@ export async function readRootSpace(root: VerifiedRoot, operation: Operation): P
     boundary = new Boundary(operation);
     await checkRoot(identity, boundary);
     const space = await boundary.wait(() => statfs(identity.configuration.stagingRoot, { bigint: true }));
-    if (space.bavail < 0n || space.bsize <= 0n) throw new StagingError('io');
-    const bytes = space.bavail * space.bsize;
+    // Block counts are in fragment units; FUSE mounts report a far larger preferred block size.
+    const unit = space.frsize > 0n ? space.frsize : space.bsize;
+    if (space.bavail < 0n || unit <= 0n) throw new StagingError('io');
+    const bytes = space.bavail * unit;
     if (bytes > BigInt(Number.MAX_SAFE_INTEGER)) throw new StagingError('io');
     await checkRoot(identity, boundary);
     boundary.check();

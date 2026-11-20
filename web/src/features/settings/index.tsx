@@ -14,6 +14,7 @@ import { ManageOrganization } from '../organizations/Manage.js';
 import { ParentRetentionControls } from '../retention/Parent.js';
 import { RetentionControls } from '../retention/index.js';
 import { Capacity } from './Capacity.js';
+import { Upgrade } from '../upgrade/index.js';
 import { settingsRead } from './intents.js';
 import type { SettingsData } from './intents.js';
 import type { DraftValue, RowFacts } from './model.js';
@@ -61,6 +62,8 @@ function SettingsQuery({ scope }: { scope: SettingsScope }) {
 
 const intro =
   'Each setting is inherited from installation to organization to workspace. Set a value to override what comes from above, or inherit again. Each level saves on its own, and a run keeps the values it started with.';
+const upgradeIntro =
+  'Which release this installation runs and how to move it to the next one. Upgrades run on the host, one release at a time.';
 const capacityIntro =
   'Capacity every run on this installation shares. A run that does not fit waits in the queue; nothing running is ever stopped to make room.';
 
@@ -98,28 +101,56 @@ function useSettingsForm(data: SettingsData) {
   return { draft, built, save, rowProps, refresh, discard };
 }
 
+type SettingsView = 'limits' | 'capacity' | 'upgrade';
+/** `?view=upgrade` opens Upgrade directly, as the paused-for-upgrade banner links. */
+function initialView(search: string): SettingsView {
+  const view = new URLSearchParams(search).get('view');
+  return view === 'capacity' || view === 'upgrade' ? view : 'limits';
+}
+
 function SettingsView({ data }: { data: SettingsData }) {
+  const location = useLocation();
   const name = useScopeName(data.scope);
-  const [view, setView] = useState<'limits' | 'capacity'>('limits');
+  const [view, setView] = useState<SettingsView>(() => initialView(location.search));
   const form = useSettingsForm(data);
-  const { save, built } = form;
-  const count = Object.keys(form.draft).length;
   const installation = 'values' in data ? data : undefined;
   const capacity = installation && view === 'capacity';
+  const upgrade = !!installation && view === 'upgrade';
   // A workspace's settings sit under its own heading and tabs; the levels above are links.
   const inWorkspace = data.scope.kind === 'workspace';
   return (
     <section className="content-section settings-page">
       <header className="settings-header">
         {inWorkspace ? <h2>Settings</h2> : <h1>Settings</h1>}
-        <p>{capacity ? capacityIntro : intro}</p>
+        <p>{upgrade ? upgradeIntro : capacity ? capacityIntro : intro}</p>
       </header>
       {data.scope.kind === 'workspace' ? <ParentLevels scope={data.scope} /> : <ScopeTabs scope={data.scope} />}
       {installation && <ViewSwitch view={view} onChange={setView} />}
+      {upgrade ? <Upgrade /> : <SettingsForm data={data} name={name} capacity={!!capacity} form={form} />}
+    </section>
+  );
+}
+
+function SettingsForm({
+  data,
+  name,
+  capacity,
+  form,
+}: {
+  data: SettingsData;
+  name: string;
+  capacity: boolean;
+  form: ReturnType<typeof useSettingsForm>;
+}) {
+  const { save, built } = form;
+  const count = Object.keys(form.draft).length;
+  const installation = 'values' in data ? data : undefined;
+  return (
+    <>
       <p className="settings-editing">
-        Editing <strong>{editingLabel(!!capacity, name)}</strong>.
+        Editing <strong>{editingLabel(capacity, name)}</strong>.
       </p>
-      {capacity ? (
+      {capacity && installation ? (
         <Capacity data={installation} rowProps={form.rowProps} />
       ) : (
         <LimitRows data={data} name={name} rowProps={form.rowProps} />
@@ -142,7 +173,7 @@ function SettingsView({ data }: { data: SettingsData }) {
         />
       )}
       {!capacity && <Retention data={data} />}
-    </section>
+    </>
   );
 }
 
@@ -155,13 +186,7 @@ function isConflict(state: SavePhase): boolean {
   return state.phase === 'failed' && state.failure.protocol?.code === 'conflict';
 }
 
-function ViewSwitch({
-  view,
-  onChange,
-}: {
-  view: 'limits' | 'capacity';
-  onChange: (view: 'limits' | 'capacity') => void;
-}) {
+function ViewSwitch({ view, onChange }: { view: SettingsView; onChange: (view: SettingsView) => void }) {
   return (
     <SegmentedFilter
       label="Installation settings"
@@ -170,6 +195,7 @@ function ViewSwitch({
       options={[
         { value: 'limits', label: 'Run limits' },
         { value: 'capacity', label: 'Shared capacity' },
+        { value: 'upgrade', label: 'Upgrade' },
       ]}
     />
   );

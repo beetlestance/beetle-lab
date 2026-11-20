@@ -39,13 +39,13 @@ it('omits the rev label when the run revision is not on the loaded revision page
 it('fences old-suite replies and keeps the suite context while ordinary filters reset',async()=>{
  const held=deferred<Response>();const api=testClient(()=>held.promise);const view=mount(api);view.change({...suite,id:'00000000-0000-4000-8000-000000000099'});
  await act(async()=>held.resolve(json(historyPage([source]))));await screen.findByRole('alert');expect(screen.queryByRole('link',{name:`Queued run ${source.id}`})).not.toBeInTheDocument();
- cleanup();const scoped=testClient(()=>json(historyPage([])));mount(scoped,false,'/?suiteId='+suite.id);
- const runs=()=>scoped.records.filter(row=>row.path.includes('/runs?'));
- await screen.findByRole('heading',{name:'No runs yet'});fireEvent.click(screen.getByRole('radio',{name:'Passed'}));
+ cleanup();const scoped=testClient(request=>json(historyPage(request.path.includes('outcome=')?[]:[source])));mount(scoped,false,'/?suiteId='+suite.id);
+ const runs=()=>scoped.records.filter(row=>row.path.includes('/runs?'));const row=new RegExp(source.id.slice(0,8));
+ await screen.findByRole('link',{name:row});fireEvent.click(screen.getByRole('radio',{name:'Passed'}));
  await screen.findByRole('heading',{name:'No runs match these filters'});
  expect(new URL(runs()[1]!.path,'http://synthetic.invalid').searchParams.get('outcome')).toBe('passed');
  fireEvent.click(screen.getAllByRole('button',{name:'Reset filters'})[0]!);
- await screen.findByRole('heading',{name:'No runs yet'});expect(runs()).toHaveLength(3);
+ await screen.findByRole('link',{name:row});expect(runs()).toHaveLength(3);
  expect(new URL(runs()[2]!.path,'http://synthetic.invalid').searchParams.get('outcome')).toBeNull();
  expect(runs().every(row=>new URL(row.path,'http://synthetic.invalid').searchParams.get('suiteId')===suite.id)).toBe(true);
 });

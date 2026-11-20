@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import { expect, it } from 'vitest';
 import { apiOperations } from '@beetle/contracts/api';
-import { protectUpgrade, upgradeFenced, upgradeFenceExchanges } from '../../src/bootstrap/upgrade-fence.js';
+import { protectUpgrade, releaseName, upgradeFacts, upgradeFenced, upgradeFenceExchanges } from '../../src/bootstrap/upgrade-fence.js';
 
 const operation = (name: string) => apiOperations.find((item) => item.name === name)!;
 function concrete(path: string): string {
@@ -9,9 +9,11 @@ function concrete(path: string): string {
 }
 
 it('reads the fence only from a valid selector field', () => {
-  expect(upgradeFenced({ phase: 'ready' })).toBe(false);
-  expect(upgradeFenced(null)).toBe(false);
-  expect(upgradeFenced({ upgradeFence: '00000000-0000-4000-8000-000000000001' })).toBe(true);
+  expect(upgradeFenced({ phase: 'ready' })).toBeNull();
+  expect(upgradeFenced(null)).toBeNull();
+  expect(upgradeFenced({ upgradeFence: '00000000-0000-4000-8000-000000000001' })).toBe(
+    '00000000-0000-4000-8000-000000000001',
+  );
   expect(() => upgradeFenced({ upgradeFence: 'not-a-uuid' })).toThrow('Invalid upgrade fence');
   expect(() => upgradeFenced({ upgradeFence: 7 })).toThrow('Invalid upgrade fence');
 });
@@ -36,12 +38,20 @@ it('refuses new work with a retryable 503 while reads, cancellation and previews
     };
     const refused = await call('createRun');
     expect(refused.statusCode).toBe(503);
-    expect(refused.json()).toEqual({ code: 'capacity_unavailable' });
+    expect(refused.json()).toEqual({ code: 'upgrade_pending' });
     for (const name of ['cancelRun', 'listRuns', 'previewRunDeletion', 'pairBrowserSession'])
       expect((await call(name)).statusCode, name).toBe(200);
   } finally {
     await server.close();
   }
+});
+
+it('reports a release name only when it is well formed', () => {
+  expect(releaseName('2.1.0')).toBe('2.1.0');
+  expect(releaseName(undefined)).toBeNull();
+  expect(releaseName('-bad')).toBeNull();
+  expect(upgradeFacts({ upgradeFence: 'f', release: '2.1.0' })).toMatchObject({ release: '2.1.0', fence: 'f' });
+  expect(upgradeFacts({})).toMatchObject({ release: null, fence: null });
 });
 
 it('permits only named exchanges that exist in the contract', () => {

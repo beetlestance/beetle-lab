@@ -33,6 +33,24 @@ async function openCreateOrganization() {
   field('Organization slug', 'new-organization');
 }
 
+describe('organization slug taken', () => {
+  it('explains a taken slug next to the field instead of a generic conflict', async () => {
+    const api = testClient(request => {
+      if (request.method === 'GET') return readNamespace(request);
+      return json({ ...apiError('conflict'), retryable: false, fields: [{ path: '/slug', code: 'conflict' }] }, 409);
+    });
+    mount(api.client, routes.organization(ids.a));
+    await openCreateOrganization();
+    save();
+    const message = await screen.findByText('“new-organization” is taken by another organization. Choose a different slug.');
+    expect(message).toHaveAttribute('role', 'alert');
+    expect(screen.getByLabelText('Organization slug')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('button', { name: 'Refresh latest version' })).not.toBeInTheDocument();
+    field('Organization slug', 'free-slug');
+    expect(screen.queryByText(/is taken by another organization/)).not.toBeInTheDocument();
+  });
+});
+
 describe('mutation identity and draft ownership', () => {
   it.each([
     { status: 500, code: 'internal_error' as const, operation: 'create' },

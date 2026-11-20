@@ -2,8 +2,11 @@ import { expect, it } from 'vitest';
 import {
   AGENT_STALE_AFTER_MS,
   AgentStatusBoard,
+  engineCatalogue,
   getInstallationStatus,
   getRunQueue,
+  getUpgradeStatus,
+  PLANNED_ENGINES,
 } from '../../src/application/installation-status/index.js';
 import type { AgentFacts, InstallationStatusReader, PoolUsageFacts } from '../../src/ports/installation-status.js';
 
@@ -33,6 +36,7 @@ const usage: PoolUsageFacts = {
 };
 const reader: InstallationStatusReader = {
   poolUsage: () => Promise.resolve(usage),
+  unfinishedWork: () => Promise.resolve({ runs: 1, exports: 0, uploads: 2, removals: 0 }),
   runQueue: () =>
     Promise.resolve({
       runId,
@@ -183,4 +187,40 @@ it('detaches retained version and image facts from mutable recorder inputs', asy
   expect(value.engines[0]).toMatchObject({ image: 'verified_at_agent_start', engine: { version: '2.4.0' } });
   expect(value.disk.backendFreeBytes.value).toBe(7000);
   expect(Object.isFrozen(board.snapshot().lastFacts?.engines?.[0])).toBe(true);
+});
+
+it('reports the upgrade fence, unfinished work and backup size against measured free space', async () => {
+  const board = new AgentStatusBoard(pins);
+  const facts0 = { release: null, metadataSchema: 42, fence: null };
+  const open = await getUpgradeStatus({ reader, agent: board.snapshot(), facts: facts0, nowMs: 1000 });
+  expect(open).toMatchObject({ phase: 'open', operationId: null, path: 'next_release_only' });
+  expect(open.release).toEqual({ name: null, metadataSchema: 42 });
+  expect(open.unfinished).toEqual({ runs: 1, exports: 0, uploads: 2, removals: 0 });
+  expect(open.backup).toEqual({ atLeastBytes: 10, freeBytes: { status: 'unknown', value: null } });
+  board.record({ kind: 'ready', checkedAtMs: 1000, facts: facts(1000) });
+  const fence = '00000000-0000-4000-8000-0000000000a1';
+  const fenced = await getUpgradeStatus({
+    reader,
+    agent: board.snapshot(),
+    facts: { release: '2.0.0', metadataSchema: 42, fence },
+    nowMs: 2000,
+  });
+  expect(fenced).toMatchObject({ phase: 'fenced', operationId: fence, release: { name: '2.0.0' } });
+  expect(fenced.backup.freeBytes).toEqual({ status: 'measured', value: 7000 });
+  const stale = await getUpgradeStatus({ reader, agent: board.snapshot(), facts: facts0, nowMs: 1000 + AGENT_STALE_AFTER_MS + 1 });
+  expect(stale.backup.freeBytes.status).toBe('unknown');
+});
+
+it('lists installed k6 with its pinned profiles and the planned engines, following the agent state', async () => {
+  const board = new AgentStatusBoard(pins);
+  const unknown = engineCatalogue(await status(board, 1000));
+  expect(unknown.engines[0]).toMatchObject({ id: 'k6', availability: 'installed', state: 'unknown' });
+  expect(unknown.engines[0]!.profiles.map((profile) => profile.profileId)).toEqual(['standard', 'heavy']);
+  expect(unknown.engines.slice(1).map((engine) => [engine.id, engine.state])).toEqual(
+    PLANNED_ENGINES.map((id) => [id, 'planned']),
+  );
+  board.record({ kind: 'ready', checkedAtMs: 1000, facts: facts(1000) });
+  expect(engineCatalogue(await status(board, 1000)).engines[0]!.state).toBe('ready');
+  expect(engineCatalogue(await status(board, 1000 + AGENT_STALE_AFTER_MS + 1)).engines[0]!.state).toBe('unavailable');
+  expect(engineCatalogue(await status(null, 1000)).engines[0]).toMatchObject({ state: 'disabled', profiles: [] });
 });

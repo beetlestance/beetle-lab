@@ -20,9 +20,29 @@ function useCachedOrganizationName(organizationId: string | undefined) {
     if (!organizationId) return undefined;
     const data: unknown = client.getQueryData(queryKeys.organization(organizationId));
     const name = typeof data === 'object' && data !== null ? (data as { name?: unknown }).name : undefined;
-    return typeof name === 'string' ? name : undefined;
+    if (typeof name === 'string') return name;
+    // Run and compare pages never read the organization; a list already in the cache still names it.
+    return client
+      .getQueriesData({ queryKey: queryKeys.organizations })
+      .flatMap(([, list]) => listedOrganizations(list))
+      .find((item) => item.id.toLowerCase() === organizationId.toLowerCase())?.name;
   };
   return useSyncExternalStore(subscribe, read, read);
+}
+
+/** Organizations in a cached list page or infinite list, whatever shape the reading feature used. */
+function listedOrganizations(data: unknown): { id: string; name: string }[] {
+  if (typeof data !== 'object' || data === null) return [];
+  const pages = 'pages' in data && Array.isArray(data.pages) ? (data.pages as unknown[]) : [data];
+  return pages.flatMap((page) => {
+    const items = typeof page === 'object' && page !== null && 'items' in page ? page.items : undefined;
+    return Array.isArray(items)
+      ? items.filter(
+          (item): item is { id: string; name: string } =>
+            typeof item?.id === 'string' && typeof item?.name === 'string',
+        )
+      : [];
+  });
 }
 
 export function ScopeSwitcher({ scope, path }: { scope: ShellScope; path: string }) {

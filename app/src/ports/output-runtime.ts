@@ -39,6 +39,8 @@ export interface OutputRuntimeOptions {
     readonly store: OutputSettlementMetadata;
     readonly gateway: RunnerSettlementGateway;
   };
+  /** Backend-owned deletion intents for retired workspaces (decision 034); requires settlement. */
+  readonly reclaim?: { readonly metadata: Pick<OutputDeletionMetadata, 'reclaimRetired'> };
   readonly retirement?: {
     readonly metadata: Pick<
       OutputDeletionMetadata,

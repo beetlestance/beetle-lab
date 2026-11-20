@@ -65,6 +65,6 @@ never returned. Unpinned broad searches keep their existing explicit refusal.
 | `web/src/features/runs/history-range.ts` | `9e5d615fbb81` |
 | `web/src/features/runs/HistoryFilters.tsx` | `4b44664b11a1` |
 | `web/src/features/runs/HistoryHeader.tsx` | `34fa1ea25a54` |
-| `web/src/features/runs/RunHistory.tsx` | `a05f3d72e370` |
-| `web/src/app/queries.ts` | `725fc7c07eb0` |
+| `web/src/features/runs/RunHistory.tsx` | `9db9c71c6d42` |
+| `web/src/app/queries.ts` | `0506a02b2a19` |
 | `web/src/components/Pagination.tsx` | `e750e5cd3deb` |

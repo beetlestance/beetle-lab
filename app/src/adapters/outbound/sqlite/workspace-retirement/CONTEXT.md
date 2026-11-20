@@ -9,4 +9,5 @@ Parent/manual/workspace retention previews and unissued Apply cannot mint author
 Historical read-only mode has distinct visibility and still rejects writes.
 Organisation retirement (migration 030) mirrors this: retired flag, private slug key,
 retired_slug for the canonical slug, organisation visibility checks.
+Retired scopes free bytes only through ../retired-reclaim and ordinary settlement (decision 034).
 Contract: docs/system/contracts/namespaces.md. Root owns migrations 028 and 030.

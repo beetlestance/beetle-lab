@@ -56,8 +56,10 @@ export class OutputTree {
   }
   private async space(): Promise<number> {
     const stat = await this.boundary.wait(() => this.files.space(this.authority.identity.configuration.stagingRoot));
-    if (stat.bsize <= 0n || stat.bavail < 0n) throw new ScanFailure('io');
-    const bytes = stat.bavail * stat.bsize;
+    // Block counts are in fragment units; FUSE mounts report a far larger preferred block size.
+    const unit = stat.frsize > 0n ? stat.frsize : stat.bsize;
+    if (unit <= 0n || stat.bavail < 0n) throw new ScanFailure('io');
+    const bytes = stat.bavail * unit;
     if (bytes > BigInt(Number.MAX_SAFE_INTEGER)) throw new ScanFailure('bounds');
     if (bytes <= BigInt(this.authority.minimumFreeBytes)) throw new ScanLimit('disk');
     return Number(bytes);

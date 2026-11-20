@@ -7,7 +7,8 @@ app/src/ports/output-deletion-metadata.ts. Migration 013 owns additive guards.
 Begin participates in the shared receipt-first Store transaction. Other operations
 own one immediate transaction. Capture bounded requests before replay, and bind
 replies at worker and caller seams. Discovery<=32, files<=128, each record<=8 KiB.
-No native IO, remote calls, public route or scheduler lives here.
+No native IO, remote calls, public route or scheduler lives here. reclaimRetiredOutputs
+delegates to ../retired-reclaim, which calls Begin inside the same transaction.
 
 Facts require immutable finalization and released execution/closed events, or
 positive single-attempt unsent-cancellation witnesses. Legacy absence is unknown.

@@ -77,7 +77,7 @@ it('paired session supplies upload/download controls and expiry retires their ve
   expect(createUrl).toHaveBeenCalledTimes(1); expect(data.client.close).not.toHaveBeenCalled();
   expect(factory.create).toHaveBeenCalledWith(expect.objectContaining({ headers: { 'X-Beetle-CSRF': session.csrfToken } }));
   data.expire(); fireEvent.click(screen.getByRole('button', { name: 'Refresh current status' }));
-  await screen.findByLabelText('Startup token');
+  await screen.findByRole('heading', { name: 'Your session ended' });
   await waitFor(() => expect(revokeUrl).toHaveBeenCalledWith('blob:verified-input'));
   expect(screen.queryByRole('link', { name: 'Save file' })).toBeNull();
   expect(data.client.close).toHaveBeenCalledTimes(1);

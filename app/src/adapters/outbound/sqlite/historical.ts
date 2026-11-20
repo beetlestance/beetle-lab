@@ -36,6 +36,7 @@ const reads = new Set<Operation['kind']>([
   'getLatestRevisionExport',
   'listExports',
   'getPoolUsage',
+  'getUnfinishedWork',
   'getRunQueue',
 ]);
 /** Deny by default before any private worker mutation or original/replay lookup. */

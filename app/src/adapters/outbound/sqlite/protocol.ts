@@ -9,7 +9,7 @@ import type { HistoryOperation } from '../../../ports/run-history.js';
 import type { RunHistoryJob } from '../../../ports/run-history.js';
 import type { RunHistorySummary } from '@beetle/contracts/api';
 import type { OverviewQuery } from '../../../ports/overview.js';
-import type { PoolUsageFacts, RunQueueFacts } from '../../../ports/installation-status.js';
+import type { PoolUsageFacts, RunQueueFacts, UnfinishedWorkFacts } from '../../../ports/installation-status.js';
 import type { StatusOperation } from './installation-status/wire.js';
 import type { WorkspaceOverview } from '@beetle/contracts/api';
 import type { ExportOperation, ExportValue } from './export-jobs/protocol.js';
@@ -120,6 +120,7 @@ export const STORAGE_ERROR_CODES = Object.freeze([
   'run_pinned',
   'cleanup_in_progress',
   'folder_name_conflict',
+  'organization_slug_conflict',
   'suite_name_conflict',
   'folder_depth',
 ] as const);
@@ -229,6 +230,7 @@ export type Value =
   | RunEventPage
   | PoolUsageFacts
   | RunQueueFacts
+  | UnfinishedWorkFacts
   | RunArtifactPage
   | LiveMetricHistory
   | InputRecord

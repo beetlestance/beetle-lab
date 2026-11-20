@@ -49,6 +49,7 @@ export function apiError(code: ApiError['code']): ApiError {
     unpaired: 'Pairing required',
     invalid_value: 'Invalid value',
     storage_unavailable: 'Storage unavailable',
+    upgrade_pending: 'Paused for upgrade',
   };
   return { code, message: messages[code] ?? 'Internal error', requestId: ids.request, retryable: false, fields: [] };
 }

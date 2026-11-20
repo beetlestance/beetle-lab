@@ -30,7 +30,7 @@ it('freezes the complete unique schema closure, public references and operation 
   expect(new Set(ids).size).toBe(ids.length);
   expect(ids.filter(id => id.includes('/runner/'))).toEqual(
     ['common', 'engine-result', 'export-result', 'result-evidence', 'result-execution', 'agent-event',
-      'event-envelope', 'wrapper-events', 'supervisor-events', 'target-runtime-report'].map(name => `https://beetle-lab.dev/contracts/runner/v1/${name}`));
+      'event-envelope', 'wrapper-events', 'supervisor-events', 'target-runtime-report', 'target-runtime-units'].map(name => `https://beetle-lab.dev/contracts/runner/v1/${name}`));
   while (pending.length) {
     const value = pending.pop();
     if (value === null || typeof value !== 'object') continue;

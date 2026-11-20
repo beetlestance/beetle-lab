@@ -35,12 +35,20 @@ it.each([false, true])('reports real worker failure even if observer throws: %s'
     expect(healthy.json()).toEqual({ status: 'ok', storage: 'ready' });
     expect(healthy.headers['cache-control']).toBe('no-store');
     expect((await app.server.inject({ url: '/healthz', method: 'HEAD' })).body).toBe('');
+    const ready = await app.server.inject({ url: '/health/ready' });
+    expect([ready.statusCode, ready.json(), ready.headers['cache-control']]).toEqual([
+      200,
+      { status: 'ready', reason: null },
+      'no-store',
+    ]);
     await writeFile(trigger, 'synthetic');
     await vi.waitFor(() => expect(failure).toHaveBeenCalledTimes(1));
     const failed = await app.server.inject({ url: '/healthz' });
     expect(failed.statusCode).toBe(503);
     expect(failed.json()).toEqual({ status: 'unavailable', storage: 'unavailable' });
     expect(failed.body).not.toContain(f.root());
+    const notReady = await app.server.inject({ url: '/health/ready' });
+    expect([notReady.statusCode, notReady.json()]).toEqual([503, { status: 'not_ready', reason: 'unavailable' }]);
   } finally {
     await expect(app.close()).rejects.toMatchObject({ code: 'unavailable' });
   }

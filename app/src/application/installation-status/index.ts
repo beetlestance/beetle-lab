@@ -11,8 +11,8 @@ import type { RunKey } from '../../ports/runs.js';
 import { requireRule } from '../../domain/namespaces/index.js';
 export { AgentStatusBoard } from './board.js';
 
-/** A ready sample older than this (or from the future) is reported stale, never current. */
-export const AGENT_STALE_AFTER_MS = 5000;
+import { AGENT_STALE_AFTER_MS } from './freshness.js';
+export { AGENT_STALE_AFTER_MS } from './freshness.js';
 type Quantity = InstallationStatus['host']['cpuCores'];
 type AgentState = InstallationStatus['agent']['state'];
 const unknown: Quantity = Object.freeze({ status: 'unknown', value: null });
@@ -121,3 +121,6 @@ function engineVersion(
   const checked = validateApi('EngineVersion', { id, version, configVersion });
   return checked.ok ? { engine: checked.value } : {};
 }
+export { getUpgradeStatus } from './upgrade.js';
+export { engineCatalogue, PLANNED_ENGINES } from './engines.js';
+export type { UpgradeFacts } from './upgrade.js';

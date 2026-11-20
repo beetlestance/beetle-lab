@@ -1,0 +1,5 @@
+{
+  "scope": { "kind": "installation" },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "engines": [{ "id": "jmeter", "availability": "installed", "state": "ready", "profiles": [] }]
+}

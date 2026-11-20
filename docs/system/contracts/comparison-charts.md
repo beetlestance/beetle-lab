@@ -59,6 +59,6 @@ values remain null. Hover keeps original observations and does not use the mean.
 | `web/src/features/runs/live/LiveChart.tsx` | `63e4933d8d58` |
 | `web/src/features/runs/comparison/resting-values.ts` | `12e46664550f` |
 | `web/src/features/runs/comparison/recorded-source.ts` | `04e94c1c9f79` |
-| `web/src/features/runs/comparison/RecordedCharts.tsx` | `3bf347e8f56f` |
+| `web/src/features/runs/comparison/RecordedCharts.tsx` | `be843bdff76a` |
 | `web/src/features/runs/comparison/target-model.ts` | `69929b3e4eda` |
 | `web/src/features/runs/comparison/TargetRuntime.tsx` | `3d842b27be6c` |

@@ -14,6 +14,8 @@ export interface EditorField {
   help?: string;
   required?: boolean;
   options?: readonly string[];
+  /** Inline message when the server refuses this field as already used (a `conflict` field issue). */
+  conflict?: (value: string) => string;
 }
 export interface EditorIntent {
   title: string;
@@ -48,6 +50,19 @@ interface Attempt {
 function initialValues(fields: EditorField[]) {
   return Object.fromEntries(fields.map((field) => [field.name, field.value]));
 }
+/** Field-level conflicts the form can explain next to the field; anything else stays a form-level failure. */
+function fieldErrors(
+  fields: EditorField[],
+  failure: ApiClientFailure | null,
+  values: Readonly<Record<string, string>>,
+) {
+  const paths = new Set((failure?.protocol?.fields ?? []).filter((f) => f.code === 'conflict').map((f) => f.path));
+  return Object.fromEntries(
+    fields.flatMap((field) =>
+      field.conflict && paths.has(`/${field.name}`) ? [[field.name, field.conflict(values[field.name] ?? '')]] : [],
+    ),
+  ) as Readonly<Record<string, string>>;
+}
 function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) {
   const location = useLocation();
   const id = useId();
@@ -57,6 +72,7 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
   const unknown = failure && unknownOutcome(failure);
+  const errors = fieldErrors(intent.fields, failure, attempt?.values ?? values);
   async function send(replay: boolean) {
     const next = replay && attempt ? attempt : { requestId: crypto.randomUUID(), values: { ...values } };
     setAttempt(next);
@@ -99,6 +115,7 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
             fields={intent.fields}
             id={id}
             values={values}
+            errors={errors}
             change={(name, value) => {
               setValues({ ...values, [name]: value });
               setFailure(null);
@@ -109,7 +126,7 @@ function Editor({ intent, close }: { intent: EditorIntent; close: () => void }) 
         </fieldset>
       </form>
       {pending && <p role="status">Sending changes…</p>}
-      {failure && (
+      {failure && Object.keys(errors).length === 0 && (
         <EditorFailure failure={failure} unknown={!!unknown} retry={() => void send(true)} refresh={intent.refresh} />
       )}
     </Dialog>
@@ -176,11 +193,13 @@ function EditorFields({
   fields,
   id,
   values,
+  errors,
   change,
 }: {
   fields: EditorField[];
   id: string;
   values: Readonly<Record<string, string>>;
+  errors: Readonly<Record<string, string>>;
   change(name: string, value: string): void;
 }) {
   return (
@@ -214,15 +233,27 @@ function EditorFields({
               required={field.required ?? true}
               maxLength={field.maxLength ?? 128}
               pattern={field.pattern}
-              aria-describedby={field.help ? `${id}-${field.name}-help` : undefined}
+              aria-invalid={errors[field.name] ? true : undefined}
+              aria-describedby={describedBy(id, field, !!errors[field.name])}
               onChange={(event) => {
                 change(field.name, event.target.value);
               }}
             />
+          )}
+          {errors[field.name] && (
+            <p role="alert" id={`${id}-${field.name}-error`} className="field-error">
+              {errors[field.name]}
+            </p>
           )}
           {field.help && <small id={`${id}-${field.name}-help`}>{field.help}</small>}
         </div>
       ))}
     </>
   );
+}
+function describedBy(id: string, field: EditorField, invalid: boolean): string | undefined {
+  const ids = [invalid ? `${id}-${field.name}-error` : '', field.help ? `${id}-${field.name}-help` : ''].filter(
+    Boolean,
+  );
+  return ids.length ? ids.join(' ') : undefined;
 }

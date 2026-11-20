@@ -71,7 +71,7 @@ describe('original agent and composite source leases', () => {
     const f = await fixture(); const actual = await f.actual();
     try {
       const source = await f.open(); expect(await source.sample()).not.toBeNull();
-      f.disk.statfs = async () => ({ ...actual, bsize: 100n, blocks: 5000n, bavail: 4000n });
+      f.disk.statfs = async () => ({ ...actual, bsize: 100n, frsize: 100n, blocks: 5000n, bavail: 4000n });
       expect(await source.sample()).toBeNull();
       f.state.now = 10300; f.state.frame = capabilities(10200);
       expect((await source.sample())?.ceilings.pool.storageBytes).toBe(500000);

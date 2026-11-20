@@ -15,7 +15,7 @@ automation client and agents following the embedded reference.
   `implemented`; `app/test/bootstrap/route-catalogue.test.ts` checks every descriptor
   against the composed routes. All current descriptors are implemented.
 - Byte routes for input chunks and input/artifact/export content use `apiBinaryOperations` outside the JSON catalogue.
-- `/healthz` is private. No SSE endpoint exists; clients poll event and live-metric reads.
+- `/healthz` is private; `/health/ready` (no session, `no-store`) is 200 `ready` or 503 `not_ready` (`storage`, `upgrade_pending`). No SSE; clients poll.
 
 ## Conventions
 
@@ -46,7 +46,7 @@ Folder fields: [refusals](namespaces.md#mutation-refusals); input delete adds bo
 | 413, 416 | `body_limit`; byte-range failure on content routes only (`invalid_value` body) |
 | 422 | `invalid_value`, `search_too_broad` |
 | 429, 500 | `rate_limited` (retryable); `internal_error` |
-| 503 | `capacity_unavailable`, `storage_unavailable`, `search_indexing` (retryable) |
+| 503 | `capacity_unavailable`, `storage_unavailable`, `search_indexing`, `upgrade_pending` (retryable; [upgrade](upgrade.md): refused before the body, nothing written) |
 
 Creating a run returns 202 with `validationStatus: pending`. Semantic engine validation runs
 under admission before target contact; a rejection becomes a durable run outcome, never a
@@ -70,7 +70,7 @@ One administrator per installation; no accounts, roles, invitations or SSO. Orga
 Installation → organisation → workspace → optional nested folders → suites and
 inputs. Folders group; they never grant permissions or create agents.
 
-- Installation routes: organisations, installation settings, auth; the rest sit under `/organizations/{organizationId}`.
+- Installation routes: organisations, settings, auth, status, upgrade, `listEngines`; the rest sit under `/organizations/{organizationId}`.
 - Repository methods require scope; an object UUID alone is insufficient. The
   route resolves scope, never ambient state. Wrong organisation, workspace or
   parent returns scoped 404. Composite foreign keys enforce parent consistency;
@@ -181,9 +181,9 @@ uses only this API: `connect`, `pair`, `run`, `status`, `result`, `cancel`, `com
 - Request files are closed wire schemas ≤ 4 KiB with caller-owned `requestId`; mutations
   are issued once and an unknown outcome prints the `requestId` for explicit replay.
   Session files are exclusive, 0600, owner-only, single-link, ≤ 4 KiB, bound to endpoint and origin.
-- `--wait-ms` 1 to 3,600,000; reads every 2 s, at most 1801; never cancels or extends.
-  `export-download` needs a ready job, writes `--out` new (`O_EXCL|O_NOFOLLOW`, 0600)
-  and removes only its own file on a size, SHA-256 or I/O failure. No `validate` yet.
+- `--wait-ms` 1 to 3,600,000; reads every 2 s, at most 1801; never cancels or extends. `export-download` needs a
+  ready job, writes `--out` new (`O_EXCL|O_NOFOLLOW`, 0600) and removes only its own file on a size, SHA-256 or I/O failure.
+  `validate --kind <k> --request-file` checks offline; `--origin` is loopback unless `--private-network` (RFC 1918, IPv6 ULA).
 
 | Exit | Meaning |
 | --- | --- |
@@ -212,9 +212,9 @@ characters and shows at most 80 matches.
 
 | Code | Reviewed |
 | --- | --- |
-| `contracts/api/v2/` | `b4b81f3ea924` |
+| `contracts/api/v2/` | `eeb1ae086dfe` |
 | `contracts/src/api/client/` | `c16b8c7af732` |
 | `contracts/src/api/run-list.ts` | `1c4b7b193309` |
-| `app/src/adapters/inbound/http/api-errors.ts` | `9a79596d0e11` |
+| `app/src/adapters/inbound/http/api-errors.ts` | `252e84efb36d` |
 | `app/src/adapters/inbound/http/session/` | `4730d8aa11c6` |
-| `app/src/client/cli/` | `c7eb756df145` |
+| `app/src/client/cli/` | `6ad28393ff6c` |

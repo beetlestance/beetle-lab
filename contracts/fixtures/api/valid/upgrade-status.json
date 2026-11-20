@@ -1,0 +1,10 @@
+{
+  "scope": { "kind": "installation" },
+  "generatedAt": "2026-01-01T00:00:05.000Z",
+  "release": { "name": "2.0.0", "metadataSchema": 42 },
+  "path": "next_release_only",
+  "phase": "fenced",
+  "operationId": "00000000-0000-4000-8000-0000000000a1",
+  "unfinished": { "runs": 1, "exports": 0, "uploads": 0, "removals": 2 },
+  "backup": { "atLeastBytes": 1073741824, "freeBytes": { "status": "measured", "value": 50000000000 } }
+}

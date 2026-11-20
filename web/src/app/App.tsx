@@ -13,6 +13,7 @@ import { NotFound } from '../components/NotFound.js';
 import { ToastProvider } from '../components/Toast.js';
 import { PageTransition } from '../components/NavigationMotion.js';
 import { AppShell } from './shell/AppShell.js';
+import { UpgradeWatch } from '../features/upgrade/watch.js';
 import { CommandPalette, useCommandNavigation } from '../features/command-search/index.js';
 import type { WorkspaceView } from '../features/workspaces/index.js';
 
@@ -50,27 +51,29 @@ export function App({
   const location = useLocation();
   return (
     <ApiContext.Provider value={apiClient}>
-      <SessionContext.Provider value={session}>
-        <InputTransferContext.Provider value={inputTransfers ?? null}>
-          <QueryClientProvider client={client}>
-            <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
-              <ToastProvider>
-                {/* Outside the shell: the header's organization menu opens the same editor. */}
-                <EditorProvider>
-                  <AppShell onSearch={commands.show}>
-                    <Suspense fallback={<LoadingState label="Loading view…" />}>
-                      <PageTransition>
-                        <AppRoutes />
-                      </PageTransition>
-                    </Suspense>
-                  </AppShell>
-                </EditorProvider>
-              </ToastProvider>
-            </div>
-            {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
-          </QueryClientProvider>
-        </InputTransferContext.Provider>
-      </SessionContext.Provider>
+      <UpgradeWatch>
+        <SessionContext.Provider value={session}>
+          <InputTransferContext.Provider value={inputTransfers ?? null}>
+            <QueryClientProvider client={client}>
+              <div inert={commands.visible} aria-hidden={commands.visible || undefined}>
+                <ToastProvider>
+                  {/* Outside the shell: the header's organization menu opens the same editor. */}
+                  <EditorProvider>
+                    <AppShell onSearch={commands.show}>
+                      <Suspense fallback={<LoadingState label="Loading view…" />}>
+                        <PageTransition>
+                          <AppRoutes />
+                        </PageTransition>
+                      </Suspense>
+                    </AppShell>
+                  </EditorProvider>
+                </ToastProvider>
+              </div>
+              {commands.visible && <CommandPalette pathname={location.pathname} close={commands.close} />}
+            </QueryClientProvider>
+          </InputTransferContext.Provider>
+        </SessionContext.Provider>
+      </UpgradeWatch>
     </ApiContext.Provider>
   );
 }

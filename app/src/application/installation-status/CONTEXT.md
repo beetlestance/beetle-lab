@@ -13,3 +13,5 @@ Optional installed engine metadata requires fresh ready facts and one exact appr
 profile/engine/config/image match. Invalid/ambiguous metadata stays absent. Board
 facts and their nested fields are copied/frozen; no caller aliases survive.
 Version is not historical-run evidence. See contracts/engine-metadata.md.
+engineCatalogue maps one status read to installed k6 plus PLANNED_ENGINES. getUpgradeStatus
+(upgrade.ts) reports release, schema, fence, unfinished work and backup size (contracts/upgrade.md).
