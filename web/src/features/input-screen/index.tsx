@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import type { Workspace } from '@beetle/contracts/api';
+import { useNavigate } from 'react-router-dom';
+import { routes } from '../../app/routes.js';
 import { useInputTransfers } from '../../app/api.js';
 import { Button } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
 import { InputInventory } from '../inputs/index.js';
+import { InputStatus } from '../inputs/InputStatus.js';
 import type { InventoryContext } from '../inputs/index.js';
 import { UploadInput } from '../input-upload/index.js';
 import { DirectoryInput } from '../input-directory/index.js';
@@ -14,6 +17,7 @@ type Open = 'upload' | 'directory' | 'sample' | null;
 
 /** The inventory's current-status owner alone supplies download authority. */
 export function WorkspaceInputs({ workspace }: { workspace: Workspace }) {
+  const navigate = useNavigate();
   const transfers = useInputTransfers();
   const [open, setOpen] = useState<Open>(null);
   const [context, setContext] = useState<InventoryContext>({ items: [], complete: false });
@@ -23,7 +27,7 @@ export function WorkspaceInputs({ workspace }: { workspace: Workspace }) {
     <>
       <InputInventory
         workspace={workspace}
-        renderActions={(record) => <InputDownload record={record} />}
+        openDetail={(id) => void navigate(routes.inputDetail(workspace.scope.organizationId, workspace.id, id))}
         actions={(current) => (
           <>
             <Button
@@ -78,5 +82,18 @@ export function WorkspaceInputs({ workspace }: { workspace: Workspace }) {
         </Dialog>
       )}
     </>
+  );
+}
+
+export function WorkspaceInput({ workspace, inputId }: { workspace: Workspace; inputId: string }) {
+  const navigate = useNavigate();
+  const organizationId = workspace.scope.organizationId;
+  return (
+    <InputStatus
+      params={{ organizationId, workspaceId: workspace.id, inputId }}
+      workspaceName={workspace.name}
+      close={() => void navigate(routes.inputs(organizationId, workspace.id))}
+      renderActions={(record) => <InputDownload record={record} />}
+    />
   );
 }

@@ -1,14 +1,15 @@
 # Input inventory
 
-Public entrypoint: `InputInventory({ workspace: Workspace, renderActions?, actions? })`.
+Public entrypoint: `InputInventory({ workspace, renderActions?, actions?, openDetail? })`.
 Penpot "Inputs" (+Empty), "Inputs / Detail" and "Overlay / Delete input / In use".
 `actions(context)` renders header and empty-state actions; context carries the
 listed items and whether the page is the whole inventory. Totals ("5 files, 9.0
 MB") and folder filtering appear only for a complete inventory. Rows show the 032
 fields: rows/columns (omitted when `null`), used-by count, added date
 (`publishedAt` else `createdAt`; `null` shows nothing). Folder names come from one
-folder page read only when an input sits outside the root. A used input's detail
-reads `listInputUsage` ten at a time. The delete refusal names the blockers from
+folder page read only when an input sits outside the root. The app opens an input
+on its own workspace-scoped route. Direct links read that record without listing
+the inventory. A used input's detail reads `listInputUsage` ten at a time. The delete refusal names the blockers from
 `ApiError.dependencies` and counts the rest from `total`.
 Optional children render after its heading and before the index, for scoped controls.
 Uses the generated JSON API, shared input query keys and existing Beetle tokens.
@@ -17,7 +18,7 @@ One explicit status panel owns one frozen deletion intent, including scope,
 input ID, request ID and expected version. Unknown/accepted requests retain that
 identity across status/list refreshes; replay is explicit and never automatic.
 202 means acceptance; only the status read can establish deleting/deleted.
-Unresolved requests lock panel departure; workspace/session departure aborts
+Unresolved requests disable the detail close action. Route or session departure aborts
 requests, removes scoped cache and retires local state, ignoring late replies.
 Definitive rejection can be cleared explicitly before preparing a new intent.
 No upload, download, content reads, polling or persisted browser state.

@@ -103,8 +103,8 @@ cursor is backlog to drain at the normal cadence, not a tight loop.
   `failed` record stops byte work with an explanation; the UI never recreates,
   compensates or deletes on its own. Download controls are hidden while the
   record is refreshing or pending deletion.
-- Download waits for the complete verified result before creating a Blob, with a
-  generated `input-<UUID>.bin` name; a Save link needs explicit activation.
+- The input detail route reads only the selected record and bounded usage. Download
+  verifies the bytes before creating a Blob with a generated `input-<UUID>.bin` name; a Save link needs explicit activation.
 - Run artifacts use a same-origin anchor from `runArtifactContentPath` with a fixed
   `artifact-<UUID>` name. The browser owns transfer progress and cancellation; the
   backend verifies length and digest before end of file (see
@@ -212,7 +212,7 @@ document navigation. `/reference` remains the standalone generated API viewer.
 | `web/src/features/runs/HistoryTable.tsx` | `2df690223904` |
 | `web/src/features/runs/result/PinControl.tsx` | `cf04755d6025` |
 | `web/src/features/runs/result/usePin.ts` | `722f5660f124` |
-| `web/src/app/routes.ts` | `3c0ccea99473` |
+| `web/src/app/routes.ts` | `c8ac43cb8424` |
 | `web/src/app/queries.ts` | `0506a02b2a19` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `c683fdfec49a` |

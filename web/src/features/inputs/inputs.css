@@ -47,18 +47,50 @@
   outline: 1px solid var(--line);
 }
 .input-status {
-  margin-top: var(--s-32);
-  padding: var(--s-24);
-  background: var(--panel);
-  border-radius: var(--r-lg);
+  margin-top: var(--s-24);
 }
-.input-status .section-header {
-  margin-bottom: var(--s-20);
+.input-breadcrumb,
+.input-detail-heading > p {
+  color: var(--mute);
+}
+.input-detail-heading {
+  display: grid;
+  gap: var(--s-12);
+  margin: var(--s-16) 0;
+}
+.input-detail-actions {
+  display: flex;
+  align-items: start;
+  flex-wrap: wrap;
+  gap: var(--s-12);
+  margin-bottom: var(--s-24);
+}
+.input-detail-grid {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--s-24);
+}
+.input-detail-file h2,
+.input-detail-grid .input-usage h3 {
+  font-size: var(--fs-lg);
+  margin-bottom: var(--s-12);
+}
+.input-detail-grid .input-usage {
+  margin: 0;
+}
+.input-detail-grid .input-usage ul {
+  padding: var(--s-16);
+  border-radius: var(--r-lg);
+  background: var(--panel);
 }
 .input-metadata {
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(0, 4fr);
   gap: var(--s-12) var(--s-16);
+  padding: var(--s-16);
+  border-radius: var(--r-lg);
+  background: var(--panel);
 }
 .input-metadata dt {
   color: var(--mute);
@@ -112,8 +144,8 @@
   .inputs-header {
     align-items: start;
   }
-  .input-status {
-    padding: var(--s-16);
+  .input-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
   .input-metadata {
     grid-template-columns: minmax(0, 1fr);

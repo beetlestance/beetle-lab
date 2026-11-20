@@ -15,10 +15,12 @@ import { useDeletion } from './useDeletion.js';
 
 export function InputStatus({
   params,
+  workspaceName,
   close,
   ...actions
 }: {
   params: InputParams;
+  workspaceName?: string;
   close: () => void;
   renderActions?: (record: InputRecord) => ReactNode;
 }) {
@@ -56,30 +58,70 @@ export function InputStatus({
     [client, identity],
   );
   const deleted = query.data?.state === 'deleted';
+  const input = query.data;
   return (
     <section className="input-status" aria-label="Current input status">
-      <header className="section-header">
-        <h2>{query.data?.name ?? 'Current input status'}</h2>
-        <div className="actions">
-          <Button size="sm" disabled={query.isFetching} onClick={() => void query.refetch()}>
-            Refresh current status
-          </Button>
-          <Button
-            size="sm"
-            variant="text"
-            disabled={deletion.phase === 'pending' || (deletion.locked && !deleted)}
-            onClick={close}
-          >
-            Close current status
-          </Button>
-        </div>
-      </header>
-      <StatusRead query={query} deletion={deletion} />
-      <CurrentActions query={query} record={actionRecord} pending={deletion.phase === 'pending'} {...actions} />
-      {query.data && !!query.data.usedByCount && <InputUsage params={params} count={query.data.usedByCount} />}
+      <DetailHeading workspaceName={workspaceName} input={input} />
+      <DetailActions query={query} record={actionRecord} deletion={deletion} close={close} {...actions} />
+      <div className="input-detail-grid">
+        <StatusRead query={query} />
+        {input && !!input.usedByCount && <InputUsage params={params} count={input.usedByCount} />}
+      </div>
       <DeletionStatus deletion={deletion} deleted={deleted} />
-      <DeletionDialog deletion={deletion} record={query.data} />
+      <DeletionDialog deletion={deletion} record={input} />
     </section>
+  );
+}
+
+function DetailHeading({
+  workspaceName,
+  input,
+}: {
+  workspaceName: string | undefined;
+  input: InputRecord | undefined;
+}) {
+  const Heading = workspaceName ? 'h1' : 'h2';
+  return (
+    <>
+      {workspaceName && <p className="input-breadcrumb">{workspaceName} / Inputs</p>}
+      <header className="input-detail-heading">
+        <Heading>{input?.name ?? 'Current input status'}</Heading>
+        {input?.state === 'published' && <p>Published input. Saved suites reference its exact fingerprint.</p>}
+      </header>
+    </>
+  );
+}
+
+function DetailActions({
+  query,
+  record,
+  deletion,
+  close,
+  renderActions,
+}: {
+  query: UseQueryResult<InputRecord>;
+  record: InputRecord | null;
+  deletion: ReturnType<typeof useDeletion>;
+  close: () => void;
+  renderActions?: (record: InputRecord) => ReactNode;
+}) {
+  const pending = deletion.phase === 'pending';
+  return (
+    <div className="input-detail-actions">
+      <CurrentActions query={query} record={record} pending={pending} {...(renderActions ? { renderActions } : {})} />
+      <DeleteInputAction query={query} deletion={deletion} />
+      <Button size="sm" variant="text" disabled={query.isFetching} onClick={() => void query.refetch()}>
+        Refresh current status
+      </Button>
+      <Button
+        size="sm"
+        variant="text"
+        disabled={pending || (deletion.locked && query.data?.state !== 'deleted')}
+        onClick={close}
+      >
+        Close current status
+      </Button>
+    </div>
   );
 }
 
@@ -102,31 +144,36 @@ function CurrentActions({
   );
 }
 
-function StatusRead({
+function DeleteInputAction({
   query,
   deletion,
 }: {
   query: UseQueryResult<InputRecord>;
   deletion: ReturnType<typeof useDeletion>;
 }) {
-  if (query.data === undefined) return <QueryState query={query}>{() => null}</QueryState>;
   const input = query.data;
+  if (!input || deletion.phase !== 'idle') return null;
   const blocked = query.isFetching || query.isError || input.state === 'deleted' || input.state === 'deleting';
   return (
-    <>
+    <Button variant="danger" size="sm" disabled={blocked} onClick={() => deletion.prepare(input)}>
+      Delete input
+    </Button>
+  );
+}
+
+function StatusRead({ query }: { query: UseQueryResult<InputRecord> }) {
+  if (query.data === undefined) return <QueryState query={query}>{() => null}</QueryState>;
+  return (
+    <section className="input-detail-file" aria-label="File">
+      <h2>File</h2>
       {query.isError && (
         <p role="alert" className="banner banner-danger">
           {query.error instanceof ApiFailure ? query.error.message : 'Could not refresh current status.'} Showing the
           last read status.
         </p>
       )}
-      <InputMetadata input={input} />
-      {deletion.phase === 'idle' && (
-        <Button variant="danger" size="sm" disabled={blocked} onClick={() => deletion.prepare(input)}>
-          Delete input
-        </Button>
-      )}
-    </>
+      <InputMetadata input={query.data} />
+    </section>
   );
 }
 

@@ -50,6 +50,8 @@ function dialogCopy(deletion: Deletion, name: string) {
 }
 
 function DeletionActions({ deletion }: { deletion: Deletion }) {
+  if (deletion.phase === 'rejected' && deletion.failure?.protocol?.code === 'protected_dependency')
+    return <Button onClick={deletion.discard}>Close</Button>;
   if (deletion.phase === 'rejected')
     return (
       <>

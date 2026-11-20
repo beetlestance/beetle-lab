@@ -24,6 +24,7 @@ export interface InventoryContext {
 interface InventoryProps {
   workspace: Workspace;
   renderActions?: (record: InputRecord) => ReactNode;
+  openDetail?: (id: string) => void;
   /** Header actions (Upload files, Add a sample file); also offered by the empty state. */
   actions?: (context: InventoryContext) => ReactNode;
   children?: ReactNode;
@@ -34,7 +35,7 @@ export function InputInventory(props: InventoryProps) {
   return <InventoryScope key={identity} {...props} />;
 }
 
-function InventoryScope({ workspace, children, actions, renderActions }: InventoryProps) {
+function InventoryScope({ workspace, children, actions, renderActions, openDetail }: InventoryProps) {
   const api = useApi();
   const client = useQueryClient();
   const params = { organizationId: workspace.scope.organizationId, workspaceId: workspace.id };
@@ -90,7 +91,7 @@ function InventoryScope({ workspace, children, actions, renderActions }: Invento
                 workspace={workspace}
                 items={data.items}
                 selected={selected}
-                select={select}
+                select={openDetail ?? select}
                 filterFolders={!data.nextCursor && !page.hasBack}
               />
               <Pagination page={page} next={data.nextCursor} />

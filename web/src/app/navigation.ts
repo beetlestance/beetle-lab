@@ -78,6 +78,7 @@ const badgeRoutes = [
   routes.runPattern,
   routes.comparisonPattern,
   routes.inputsPattern,
+  routes.inputDetailPattern,
   routes.exportsPattern,
   routes.suitesPattern,
   routes.suitePattern,

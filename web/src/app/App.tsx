@@ -86,6 +86,7 @@ function AppRoutes() {
       <Route path={routes.comparisonPattern} element={<ComparisonRoute />} />
       <Route path={routes.runsPattern} element={<RunsRoute />} />
       <Route path={routes.runPattern} element={<RunsRoute />} />
+      <Route path={routes.inputDetailPattern} element={<ScopeRoute view="inputs" />} />
       <Route path={routes.inputsPattern} element={<ScopeRoute view="inputs" />} />
       <Route path={routes.exportsPattern} element={<ScopeRoute view="exports" />} />
       <Route path={routes.suitesPattern} element={<SuitesRoute />} />
@@ -105,10 +106,11 @@ function AppRoutes() {
 }
 
 function ScopeRoute({ view, directory }: { view?: WorkspaceView; directory?: boolean }) {
-  const { organizationId, workspaceId } = useParams();
+  const { organizationId, workspaceId, inputId } = useParams();
   if (
     !validId(organizationId) ||
     (workspaceId !== undefined && !validId(workspaceId)) ||
+    (inputId !== undefined && !validId(inputId)) ||
     (view !== undefined && !validId(workspaceId))
   )
     return <InvalidRoute />;
@@ -117,8 +119,9 @@ function ScopeRoute({ view, directory }: { view?: WorkspaceView; directory?: boo
       key={organizationId}
       organizationId={organizationId}
       directory={directory ?? false}
-      {...(workspaceId ? { workspaceId } : {})}
-      {...(view ? { view } : {})}
+      workspaceId={workspaceId}
+      inputId={inputId}
+      view={view}
     />
   );
 }

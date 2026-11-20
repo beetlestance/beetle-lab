@@ -63,7 +63,8 @@ function model() {
 it('paired session supplies upload/download controls and expiry retires their verified file', async () => {
   const data = model(); factory.create.mockReturnValue(data.client);
   browser(data.http, routes.inputs(ids.a, ids.workspace));
-  fireEvent.click(await screen.findByRole('button', { name: 'Upload files' }));
+  // Session, scope, and the lazy Inputs route each settle on cold navigation.
+  fireEvent.click(await screen.findByRole('button', { name: 'Upload files' }, { timeout: 3000 }));
   fireEvent.change(await screen.findByLabelText('Input file'), { target: { files: [new File(['abc'], 'owned.bin')] } });
   fireEvent.change(screen.getByLabelText('Input name'), { target: { value: 'Connected input' } });
   fireEvent.click(screen.getByRole('button', { name: 'Upload input' }));

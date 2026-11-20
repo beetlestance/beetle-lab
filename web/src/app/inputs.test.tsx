@@ -21,7 +21,8 @@ it('opens the scoped inventory from its workspace link and reads selected curren
   fireEvent.click(await screen.findByRole('link', { name: 'Inputs' }));
   expect(await screen.findByRole('heading', { name: 'Inputs' })).toBeTruthy();
   fireEvent.click(await screen.findByRole('button', { name: `Read current status for ${record.name}` }));
-  expect(await screen.findByRole('heading', { name: 'Current input status' })).toBeTruthy();
+  expect(await screen.findByRole('heading', { level: 1, name: record.name })).toBeTruthy();
+  expect(screen.queryByRole('table', { name: 'Workspace inputs' })).toBeNull();
   expect(await screen.findByRole('button', { name: 'Delete input' })).toBeTruthy();
   expect(api.records.filter(request => request.path === `${base}/${record.id}`)).toHaveLength(1);
 });
@@ -38,6 +39,20 @@ it('supports direct inventory navigation without querying the folder or suite li
 it('rejects malformed input namespace routes before issuing scoped reads', async () => {
   const api = testClient(() => { throw new Error('Unexpected route read'); });
   mount(api.client, routes.inputs('invalid', ids.workspace));
+  expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeTruthy();
+  expect(api.records).toHaveLength(0);
+});
+
+it('deep-links an input without listing unrelated files or reading bytes', async () => {
+  const api = testClient(request => request.path === `${base}/${record.id}` ? json(record) : readNamespace(request));
+  mount(api.client, routes.inputDetail(ids.a, ids.workspace, record.id));
+  expect(await screen.findByRole('heading', { level: 1, name: record.name })).toBeTruthy();
+  expect(api.records.filter(request => request.path.includes(base)).map(request => request.path)).toEqual([`${base}/${record.id}`]);
+});
+
+it('rejects malformed input detail identifiers before any request', async () => {
+  const api = testClient(() => { throw new Error('Unexpected route read'); });
+  mount(api.client, routes.inputDetail(ids.a, ids.workspace, 'bad'));
   expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeTruthy();
   expect(api.records).toHaveLength(0);
 });

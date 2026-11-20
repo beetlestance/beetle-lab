@@ -69,11 +69,11 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 
 ## P5 inputs-exports
 
-- [ ] inputs-detail — Inputs / Detail page from `getInput`, `getInputColumns`, `listInputUsage`
+- [~] inputs-detail — dedicated scoped page with file facts and usage; the board's Rename action needs an API
 - [ ] upload-dialog — Upload input is a plain form; the board is a dialog with a drop zone
 - [~] upload-checking — fingerprint check and confirmed progress are visible in the existing form
 - [~] upload-interrupted — confirmed bytes and explicit refresh-to-resume are visible while the draft is open
-- [ ] delete-input-in-use — buttons read "Clear rejected deletion" / "Replay identical deletion"; match Overlay / Delete input / In use
+- [~] delete-input-in-use — definitive refusal now offers Close and still names the saved revisions; dialog styling remains
 - [ ] export-rows — export rows have no secondary line (Exports)
 - [ ] export-cancelled-invariant — a cancelled export with `cancellationRequested: false` makes the whole Exports list "unreadable response"; check whether the server can produce it. If it can, Backend and contract
 

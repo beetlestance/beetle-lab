@@ -67,7 +67,7 @@ See [sections 1–4](CASES.md) for status and viewport keys.
 
 - [x] inputs — Inputs — D P
 - [x] inputs-empty — Inputs / Empty — D
-- [!] inputs-detail — Inputs / Detail — no detail page; inline status panel, no columns — D
+- [!] inputs-detail — Inputs / Detail — dedicated scoped page with file and usage; Rename still needs an API — D
 - [x] upload-input — Overlay / Upload input — D
 - [x] upload-input-uploading — Overlay / Upload input / Uploading — D
 - [x] upload-input-publishing — Overlay / Upload input / Publishing — D

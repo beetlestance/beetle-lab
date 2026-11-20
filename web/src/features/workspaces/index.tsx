@@ -20,6 +20,10 @@ const WorkspaceInputs = lazy(() =>
   import('../input-screen/index.js').then((module) => ({ default: module.WorkspaceInputs })),
 );
 
+const WorkspaceInput = lazy(() =>
+  import('../input-screen/index.js').then((module) => ({ default: module.WorkspaceInput })),
+);
+
 export type WorkspaceView = 'inputs' | 'exports' | 'settings';
 
 /** A missing scope is not found, never an empty dashboard. */
@@ -52,12 +56,14 @@ export function OrganizationScope({
   organizationId,
   workspaceId,
   view,
+  inputId,
   directory = false,
 }: {
   organizationId: string;
-  workspaceId?: string;
+  workspaceId?: string | undefined;
   directory?: boolean;
   view?: WorkspaceView | undefined;
+  inputId?: string | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -86,6 +92,7 @@ export function OrganizationScope({
             key={workspaceId}
             organizationId={organizationId}
             workspaceId={workspaceId}
+            inputId={inputId}
             {...(view ? { view } : {})}
           />
         ) : (
@@ -115,10 +122,12 @@ function WorkspaceScope({
   organizationId,
   workspaceId,
   view,
+  inputId,
 }: {
   organizationId: string;
   workspaceId: string;
   view?: WorkspaceView | undefined;
+  inputId?: string | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -140,23 +149,31 @@ function WorkspaceScope({
       back={{ to: routes.organizationWorkspaces(organizationId), label: 'Back to workspaces' }}
       loading={<LoadingState variant="page" label="Loading workspace…" />}
     >
-      {(data) => (
-        <div className="workspace-page">
-          {view && <WorkspaceHeading name={data.name} />}
-          <WorkspaceTabs organizationId={organizationId} workspaceId={workspaceId} current={view ?? 'overview'} />
-          {view === 'exports' ? (
-            <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
-          ) : view === 'inputs' ? (
-            <WorkspaceInputs workspace={data} />
-          ) : view === 'settings' ? (
-            <Settings scope={{ kind: 'workspace', organizationId, workspaceId }} />
-          ) : (
-            <>
-              <WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} workspaceName={data.name} />
-            </>
-          )}
-        </div>
-      )}
+      {(data) =>
+        inputId ? (
+          <WorkspaceInput workspace={data} inputId={inputId} key={inputId} />
+        ) : (
+          <div className="workspace-page">
+            {view && <WorkspaceHeading name={data.name} />}
+            <WorkspaceTabs organizationId={organizationId} workspaceId={workspaceId} current={view ?? 'overview'} />
+            {view === 'exports' ? (
+              <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
+            ) : view === 'inputs' ? (
+              <WorkspaceInputs workspace={data} />
+            ) : view === 'settings' ? (
+              <Settings scope={{ kind: 'workspace', organizationId, workspaceId }} />
+            ) : (
+              <>
+                <WorkspaceOverview
+                  organizationId={organizationId}
+                  workspaceId={workspaceId}
+                  workspaceName={data.name}
+                />
+              </>
+            )}
+          </div>
+        )
+      }
     </ScopeState>
   );
 }

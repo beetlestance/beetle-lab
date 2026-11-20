@@ -112,7 +112,9 @@ it.each(['conflict', 'protected_dependency', 'storage_unavailable'] as const)('p
     expect(alert).toHaveTextContent('outcome is unknown');
     expect(screen.queryByRole('button', { name: 'Clear rejected deletion' })).not.toBeInTheDocument();
   } else {
-    fireEvent.click(screen.getByRole('button', { name: 'Clear rejected deletion' }));
+    const label = code === 'protected_dependency' ? 'Close' : 'Clear rejected deletion';
+    if (code === 'protected_dependency') expect(screen.queryByRole('button', { name: 'Replay identical deletion' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label }));
     expect(screen.getByRole('button', { name: 'Delete input' })).toBeEnabled();
   }
   expect(api.records.filter(request => request.method === 'DELETE')).toHaveLength(1);
