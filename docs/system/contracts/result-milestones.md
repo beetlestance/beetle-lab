@@ -1,8 +1,8 @@
 # Recorded result milestones
 
 What happened reuses the same bounded event projection and timeline owner.
-Admission, phases, runtime start/exit, sealed artifacts, provisional engine report,
-cancellation and lost observation appear in source sequence. Heartbeats, per-case
+The expanded activity details show admission, phases, runtime start/exit, sealed artifacts,
+provisional engine report, cancellation and lost observation in source sequence. Heartbeats, per-case
 rows and resource reports stay in the existing technical details. No second event
 read, raw event cache, inferred start/finish or verdict is introduced.
 
@@ -16,8 +16,9 @@ that milestones never occurred. At most 100 projected rows / 64 KiB remain cache
 ## Stage schedule
 
 An available single-scenario saved plan contributes its scheduled stage labels and
-offsets, including drain. The schedule has a separate heading and list from recorded
-observations. A scheduled offset never establishes that a transition occurred or
+offsets, including drain. When a verified scenario origin is available, stage offsets and matching
+native observations share one scenario-relative list. Lifecycle events stay in
+source sequence under the activity disclosure. A scheduled offset never establishes that a transition occurred or
 that an interrupted run reached that stage. Other plans omit the schedule.
 One positive HTTP window from the existing chart read may be attached to a
 stage. It must fit wholly inside that stage relative to the native scenario
@@ -47,8 +48,7 @@ measurement origin from the already-read metric overview, matching generation an
 manifest. When a valid scenario origin precedes the rise, the display uses that
 clock; otherwise the matching setup marker remains the elapsed origin.
 Negative/unsafe differences, absent or legacy origins and mismatched sources show
-the reported source timestamp instead. Event clocks and native offsets
-are never combined or sorted into a shared invented chronology.
+the reported source timestamp instead. Event source clocks remain separate from the scenario timing list.
 
 Endpoint labels come from the matched saved revision's bounded request aliases.
 Missing revision metadata leaves the path out. Native absence, no detected rise and
@@ -64,9 +64,9 @@ These source checks do not qualify a packaged native deployment.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/timeline/index.tsx` | `ed62d2481c81` |
-| `web/src/features/runs/timeline/StageSchedule.tsx` | `b7331e2bb95f` |
+| `web/src/features/runs/timeline/index.tsx` | `e6db7f650bd3` |
+| `web/src/features/runs/timeline/StageSchedule.tsx` | `540920b44ccc` |
 | `web/src/features/runs/timeline/Milestones.tsx` | `ba2b2f78e6f1` |
-| `web/src/features/runs/live/Extras.tsx` | `ad293364de0f` |
-| `web/src/features/runs/live/rise-position.ts` | `3c11b2690525` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `6fb1422279c5` |
+| `web/src/features/runs/live/Extras.tsx` | `9e304d336e54` |
+| `web/src/features/runs/live/rise-position.ts` | `f258dd76cd10` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `835b8f06014a` |

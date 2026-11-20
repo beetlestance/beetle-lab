@@ -1,8 +1,9 @@
 import type { Run } from '@beetle/contracts/api';
+import type { ReactNode } from 'react';
 import { Button } from '../../../components/Button.js';
 import { Banner } from '../../../components/Banner.js';
 import { useSessionAccess } from '../../../app/session.js';
-import { risePosition } from './rise-position.js';
+import { risePosition, scenarioRiseOffset } from './rise-position.js';
 import type { RiseOrigin } from './rise-position.js';
 import { useAttribution } from './data.js';
 import type { PlanRequest } from './plan.js';
@@ -39,28 +40,33 @@ export function LatencyRise({
   requests,
   explain = false,
   origin,
+  render,
 }: {
   run: Run;
   requests: readonly PlanRequest[];
   explain?: boolean;
   origin?: RiseOrigin | undefined;
+  render?: (offset: number | null, content: ReactNode) => ReactNode;
 }) {
   const terminal = ['finished', 'cancelled', 'errored'].includes(run.state);
   const query = useAttribution(run, terminal);
+  const present = render ?? ((_offset, content) => content);
   if (!terminal && explain)
-    return <p className="result-muted">Latency-rise analysis is unavailable for an unfinished run.</p>;
-  const rise = query.data?.reason === null ? query.data.rise : null;
-  if (query.isError || !rise) return <RiseUnavailable query={query} explain={explain} />;
-  return (
-    <RiseLine
-      rise={rise}
-      requests={requests}
-      position={explain ? risePosition(rise.startTimeMs, query.data!, origin) : null}
-    />
-  );
+    return present(null, <p className="result-muted">Latency-rise analysis is unavailable for an unfinished run.</p>);
+  const measured = recordedRise(query);
+  if (!measured) return present(null, <RiseUnavailable query={query} explain={explain} />);
+  const { rise, source } = measured;
+  const offset = render ? scenarioRiseOffset(rise.startTimeMs, source, origin) : null;
+  const position = explain && offset === null ? risePosition(rise.startTimeMs, source, origin) : null;
+  return present(offset, <RiseLine rise={rise} requests={requests} position={position} />);
 }
 type AttributionQuery = ReturnType<typeof useAttribution>;
 type Rise = NonNullable<NonNullable<AttributionQuery['data']>['rise']>;
+function recordedRise(query: AttributionQuery) {
+  const source = query.data;
+  if (query.isError || source?.reason !== null || !source.rise) return null;
+  return { rise: source.rise, source };
+}
 function RiseUnavailable({ query, explain }: { query: AttributionQuery; explain: boolean }) {
   if (!explain) return null;
   if (query.isError)

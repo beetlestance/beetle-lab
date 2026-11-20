@@ -66,13 +66,22 @@ export async function stagedLatencyActivity(page, authored, fixture, evidence) {
 /** @param {Page} page */
 async function inspectActivity(page) {
   const panel = page.getByRole('region', { name: 'What happened', exact: true });
-  const rows = panel.getByRole('list', { name: 'Scheduled stages', exact: true }).getByRole('listitem');
-  await expect(rows).toHaveCount(4);
-  await expect(rows.nth(0)).toContainText(/Ramp to 30 a second.*HTTP samples in scenario window/);
-  await expect(rows.nth(1)).toContainText(/Steady at 30 a second.*HTTP samples in scenario window/);
-  await expect(rows.nth(2)).toContainText(/Ramp down to 1 a second.*HTTP samples in scenario window/);
-  await expect(rows.nth(3)).not.toContainText('HTTP samples');
-  const attribution = panel.getByText(/into the recorded scenario:.*p95 rose for about/);
-  await expect(attribution).toContainText('mostly GET /checkout');
-  return { stages: await rows.allTextContents(), rise: await attribution.textContent() };
+  const rows = panel.getByRole('list', { name: 'Scenario timeline', exact: true }).getByRole('listitem');
+  await expect(rows).toHaveText([
+    /00:00.*Ramp to 30 a second.*HTTP samples in scenario window/,
+    /00:06.*Steady at 30 a second.*HTTP samples in scenario window/,
+    /00:[0-5][0-9].*p95 rose for about.*mostly GET \/checkout/,
+    /00:38.*Ramp down to 1 a second.*HTTP samples in scenario window/,
+    /00:44.*Drain/,
+  ]);
+  await expect(rows.last()).not.toContainText('HTTP samples');
+
+  const details = panel.getByText('Inspect recorded activity and resource observations', { exact: true });
+  const recorded = panel.getByRole('list', { name: 'Recorded run milestones', exact: true });
+  await expect(recorded).toHaveCount(0);
+  await details.click();
+  await expect(recorded).toContainText('Native runtime exited');
+  await details.click();
+  await expect(recorded).toHaveCount(0);
+  return { rows: await rows.allTextContents(), rise: await rows.nth(2).textContent() };
 }

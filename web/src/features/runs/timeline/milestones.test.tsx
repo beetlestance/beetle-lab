@@ -48,3 +48,21 @@ it('keeps saved offsets, including subsecond starts, out of recorded milestones'
   expect(within(planned).getAllByRole('listitem')[1]).toHaveTextContent('00:05Steady at 4 a second');
   expect(screen.getByRole('list', { name: 'Recorded run milestones' })).not.toHaveTextContent('Steady');
 });
+
+it('places latency between scheduled stages using the scenario clock, including delayed scenarios', () => {
+  const stages = [
+    { label: 'Ramp', startMs: 5000, durationMs: 8000, drain: false },
+    { label: 'Hold', startMs: 13000, durationMs: 10000, drain: false },
+    { label: 'Ramp down', startMs: 23000, durationMs: 4000, drain: false },
+  ];
+  render(
+    <StageSchedule stages={stages} scenarioStartedAtMs={10000} riseOffset={12400} latency={<p>Observed p95 rise</p>} />,
+  );
+  const rows = within(screen.getByRole('list', { name: 'Scenario timeline' })).getAllByRole('listitem');
+  expect(rows.map((row) => row.textContent)).toEqual([
+    '00:00Ramp',
+    '00:08Hold',
+    '00:12.4Observed p95 rise',
+    '00:18Ramp down',
+  ]);
+});
