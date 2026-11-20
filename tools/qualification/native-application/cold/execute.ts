@@ -8,7 +8,14 @@ import { cleanupLiveVolumes } from '../live-volumes.js';
 import { seed } from './seed.js';
 import { coldHistory } from './history.js';
 import type { LegacyReader } from './legacy.js';
-export async function executeCold({ f, output, legacy }: { f: Fixture; output: string; legacy?: LegacyReader }) {
+import type { ViewerCheck } from './viewer.js';
+interface ColdOptions {
+  f: Fixture;
+  output: string;
+  legacy?: LegacyReader;
+  inspectViewer?: ViewerCheck;
+}
+export async function executeCold({ f, output, legacy, inspectViewer }: ColdOptions) {
   await mkdir(output, { mode: 0o700 });
   const owner = randomUUID();
   await writeFile(
@@ -39,6 +46,7 @@ export async function executeCold({ f, output, legacy }: { f: Fixture; output: s
       owner,
       seeded,
       legacy,
+      inspectViewer,
       results,
       progress: (next) => {
         phase = next;

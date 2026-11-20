@@ -5,6 +5,7 @@ import { routes } from '../routes.js';
 import { useSessionAccess } from '../session.js';
 import { SettingsScopeContext, useSettingsScope } from '../settings-scope.js';
 import { badgeScope, navItems, shellScope } from '../navigation.js';
+import { Badge, Status } from '../../components/Badge.js';
 import { ThemeSwitch } from '../../components/ThemeSwitch.js';
 import { BeetleMark } from './BeetleMark.js';
 import { ScopeSwitcher } from './ScopeSwitcher.js';
@@ -21,7 +22,7 @@ export type AppShellProps = {
 export function AppShell({ children, onSearch }: AppShellProps) {
   const { pathname } = useLocation();
   const settingsScope = useSettingsScope(pathname);
-  const { signOut } = useSessionAccess();
+  const { readOnly, signOut } = useSessionAccess();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const [lastPath, setLastPath] = useState(pathname);
@@ -35,7 +36,7 @@ export function AppShell({ children, onSearch }: AppShellProps) {
     menuButton.current?.focus();
   };
   return (
-    <div className="shell" data-menu-open={menuOpen || undefined}>
+    <div className="shell" data-menu-open={menuOpen || undefined} data-read-only={readOnly || undefined}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -59,6 +60,11 @@ export function AppShell({ children, onSearch }: AppShellProps) {
         <div className="shell-menu" id="shell-menu">
           <ShellNav pathname={pathname} onNavigate={() => setMenuOpen(false)} />
           <div className="shell-tools">
+            {readOnly && (
+              <Badge tone="history">
+                <Status tone="info">Restored · read-only</Status>
+              </Badge>
+            )}
             <button
               type="button"
               className="btn btn-sm shell-search"

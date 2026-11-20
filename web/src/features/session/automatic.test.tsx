@@ -66,5 +66,5 @@ it('reconciles a pending credential write on explicit retry after a503 without r
 it('identifies authenticated restored history as read-only', async () => {
   browser(record => record.path.endsWith('/auth/session') ? json({...automatic, readOnly: true}) : namespace(record), '/', true);
   await screen.findByRole('table', {name: 'Organizations'});
-  expect(screen.getByText('Read-only restored history. Runs, settings and stored data cannot be changed.')).toBeVisible();
+  expect(screen.getByText('Restored · read-only')).toBeVisible();
 });

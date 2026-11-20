@@ -4,13 +4,14 @@ import { randomUUID } from 'node:crypto';
 import type { Fixture } from '../compose/fixture.js';
 import type { seed } from './seed.js';
 import { maintenance } from './maintenance.js';
-import { historicalViewer } from './viewer.js';
+import { historicalViewer, type ViewerCheck } from './viewer.js';
 import type { LegacyReader } from './legacy.js';
 export async function coldHistory({
   f,
   owner,
   seeded,
   legacy,
+  inspectViewer,
   progress,
   results,
 }: {
@@ -18,6 +19,7 @@ export async function coldHistory({
   owner: string;
   seeded: Awaited<ReturnType<typeof seed>>;
   legacy: LegacyReader | undefined;
+  inspectViewer?: ViewerCheck | undefined;
   progress: (phase: string) => void;
   results: Record<string, unknown>;
 }) {
@@ -49,7 +51,7 @@ export async function coldHistory({
     assert.equal(tool.digest(metadata), before);
   }
   progress('historical-viewer');
-  results.viewer = await historicalViewer(f, owner, history, seeded.run, seeded.artifacts);
+  results.viewer = await historicalViewer(f, owner, history, seeded, inspectViewer);
   if (legacy) {
     progress('legacy-history-reader');
     f.docker.cleanup(owner);
@@ -57,7 +59,7 @@ export async function coldHistory({
     results.legacyViewer = {
       revision: legacy.revision,
       imageIds: legacy.imageIds,
-      ...(await historicalViewer(older, owner, history, seeded.run, seeded.artifacts)),
+      ...(await historicalViewer(older, owner, history, seeded)),
     };
   }
   progress('completed-resume');
