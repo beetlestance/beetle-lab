@@ -71,6 +71,25 @@ it('derives window rates, pooled failure and slowest-endpoint percentiles withou
   expect(readRule(plan.rules[2]!, figures)).toMatchObject({ state: 'unknown', value: null, unit: 'ratio' });
 });
 
+it('pools selected empty endpoints without treating unselected failures as zero', () => {
+  const plan = readPlan(config);
+  const { frame } = liveFrame(liveRun());
+  const failures = (item: { metric: string; tags: { request?: string } }) =>
+    item.metric === 'http_req_failed' && item.tags.request === 'r1';
+  const selectedEmpty = {
+    ...frame,
+    series: frame.series.filter((item) => item.tags.request !== 'r1'),
+  };
+  const figures = liveFigures(selectedEmpty, plan);
+  expect(figures.failedRatio).toBeCloseTo(2 / 900);
+  expect(figures.failedPerSecond).toBe(2);
+  expect(figures.endpoints.find((row) => row.label === 'r1')).toMatchObject({ requests: 0, failed: null });
+  const unselected = { ...selectedEmpty, subset: { ...frame.subset, selected: frame.subset.selected.filter((item) => !failures(item)) } };
+  expect(liveFigures(unselected, plan).failedRatio).toBeNull();
+  const missingWithTraffic = { ...frame, series: frame.series.filter((item) => !failures(item)) };
+  expect(liveFigures(missingWithTraffic, plan).failedRatio).toBeNull();
+});
+
 it('leaves totals unknown when a planned endpoint is outside the live subset', () => {
   const plan = readPlan({
     ...config,
