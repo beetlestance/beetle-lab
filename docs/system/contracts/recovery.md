@@ -195,6 +195,6 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 | `contracts/src/recovery/` | `29c0467d1e7e` |
 | `tools/recovery/src/restore.ts` | `c750dcfc2872` |
 | `tools/recovery/src/backup.ts` | `9162094ddc58` |
-| `tools/recovery/src/viewer/` | `2ab0583c6c56` |
+| `tools/recovery/src/viewer/` | `5299f29e6139` |
 | `tools/install/upgrade/backup.ts` | `c53a3ffdd8bf` |
 | `app/src/adapters/outbound/sqlite/migration020.ts` | `904e1235fc9a` |

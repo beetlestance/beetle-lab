@@ -14,7 +14,7 @@ export type HistoricalInputService = InputService;
 export interface HistoricalOptions {
   readonly historyId: string;
   /** Operator-supplied navigation only. The archive cannot choose the destination. */
-  readonly liveOrigin?: string;
+  readonly liveOrigin?: string | undefined;
   /** Sealed manifest header: archive identity and the backup tool's creation time. */
   readonly backup: { readonly backupId: string; readonly createdAt: string };
   readonly sessions: LocalSessionStore;
