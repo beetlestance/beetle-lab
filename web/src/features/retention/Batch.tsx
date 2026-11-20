@@ -1,6 +1,6 @@
 import { PreviewIntro, SnapshotSummary } from './Preview.js';
 import { Progress } from './Progress.js';
-import { clock, runs, shortId } from './format.js';
+import { bytes, clock, runs, shortId } from './format.js';
 import { Banner } from '../../components/Banner.js';
 import { Button } from '../../components/Button.js';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,10 +10,15 @@ import { queryKeys } from '../../app/queries.js';
 import { QueryState } from '../../components/QueryState.js';
 import { retentionKey, retentionParams } from './queries.js';
 import type { RetentionCommand } from './useCommand.js';
+export interface ManualRun {
+  readonly id: string;
+  readonly version: number;
+}
 interface Props {
   scope: WorkspaceScope;
   id: string;
   command: RetentionCommand;
+  compactRun?: ManualRun | undefined;
   changed(): void;
   selected(id: string): void;
   removed(): void;
@@ -62,7 +67,7 @@ export function RetentionBatch(props: Props) {
   );
 }
 type BatchViewProps = Props & { preview: RetentionPreview; status: RetentionBatchStatus };
-function BatchView({ scope, id, command, changed, selected, removed, preview, status }: BatchViewProps) {
+function BatchView({ scope, id, command, compactRun, changed, selected, removed, preview, status }: BatchViewProps) {
   const api = useApi();
   const client = useQueryClient();
   const params = retentionParams(scope);
@@ -108,17 +113,9 @@ function BatchView({ scope, id, command, changed, selected, removed, preview, st
       () => removed(),
     );
   }
+  const actions = { preview, command, expired, apply, discard };
   if (status.state === 'preview')
-    return (
-      <PreviewActions
-        preview={preview}
-        command={command}
-        expired={expired}
-        apply={apply}
-        next={next}
-        discard={discard}
-      />
-    );
+    return compactRun ? <ManualPreview {...actions} run={compactRun} /> : <PreviewActions {...actions} next={next} />;
   return (
     <>
       <Progress value={status} preview={preview} />
@@ -172,6 +169,60 @@ function PreviewActions({ preview, command, expired, apply, next, discard }: Pre
           onClick={apply}
         >
           {manual ? `Delete run ${shortId(preview.candidates[0]!.id)}` : `Remove ${runs(count)}`}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function ManualPreview({
+  preview,
+  run,
+  command,
+  expired,
+  apply,
+  discard,
+}: Omit<PreviewActionsProps, 'next'> & { run: ManualRun }) {
+  const [candidate] = preview.candidates;
+  const matches =
+    preview.kind === 'manual' &&
+    preview.candidates.length === 1 &&
+    candidate?.id === run.id &&
+    candidate.version === run.version;
+  return (
+    <>
+      {matches ? (
+        <dl className="retention-manual-facts">
+          <div>
+            <dt>Estimated reclaimable space</dt>
+            <dd>{bytes(candidate.estimatedBytes)}</dd>
+          </div>
+          <div>
+            <dt>Checked at</dt>
+            <dd>
+              <time dateTime={preview.capturedAt}>{clock(preview.capturedAt)}</time>, valid until{' '}
+              <time dateTime={preview.expiresAt}>{clock(preview.expiresAt)}</time>
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <Banner tone="warning">
+          The preview no longer identifies this run and version. Check again before deleting.
+        </Banner>
+      )}
+      {expired && <Banner tone="warning">This preview expired. Keep the run and check again.</Banner>}
+      <p className="retention-note">If the run changes after the check, deletion is refused and nothing is removed.</p>
+      <div className="retention-actions">
+        <Button variant="text" disabled={command.blocked} onClick={discard}>
+          Keep run
+        </Button>
+        <Button
+          variant="danger"
+          disabled={command.blocked || expired || !matches}
+          loading={command.pending}
+          onClick={apply}
+        >
+          Delete run
         </Button>
       </div>
     </>

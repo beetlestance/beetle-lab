@@ -11,10 +11,12 @@ export function DeleteNamespace({
   target,
   refresh,
   disabled = false,
+  onOpen,
 }: {
   target: Target;
   refresh: () => Promise<unknown>;
   disabled?: boolean;
+  onOpen?: () => void;
 }) {
   const editor = useEditor();
   const toast = useToast();
@@ -24,7 +26,10 @@ export function DeleteNamespace({
       <button
         disabled={disabled || editor.busy}
         aria-label={`Delete ${target.entity.name}`}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          onOpen?.();
+          setOpen(true);
+        }}
       >
         Delete
       </button>

@@ -42,6 +42,7 @@ export function DeleteRun({ run, onClose }: { run: Run; onClose(): void }) {
         <RetentionControls
           key={`${run.id}/${run.version}`}
           scope={run.scope}
+          onKeep={onClose}
           run={{ id: run.id, version: run.version }}
         />
       )}

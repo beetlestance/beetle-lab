@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { routes } from '../routes.js';
 import { useSessionAccess } from '../session.js';
@@ -25,25 +25,13 @@ export function AppShell({ children, onSearch }: AppShellProps) {
   const { pathname } = useLocation();
   const settingsScope = useSettingsScope(pathname);
   const { readOnly, signOut } = useSessionAccess();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
-  const [lastPath, setLastPath] = useState(pathname);
-  if (lastPath !== pathname) {
-    setLastPath(pathname);
-    setMenuOpen(false);
-  }
-  const onMenuKey = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || !menuOpen) return;
-    setMenuOpen(false);
-    menuButton.current?.focus();
-  };
+  const { menuOpen, menuButton, setMenuOpen } = usePhoneMenu(pathname);
   return (
     <div className="shell" data-menu-open={menuOpen || undefined} data-read-only={readOnly || undefined}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- Menu keys bubble up from the buttons inside. */}
-      <header className="shell-header" onKeyDown={onMenuKey}>
+      <header className="shell-header">
         <Link className="shell-brand" to={routes.organizations} aria-label="Beetle Lab home">
           <BeetleMark />
           <span className="shell-brand-name">Beetle Lab</span>
@@ -89,13 +77,48 @@ export function AppShell({ children, onSearch }: AppShellProps) {
           </div>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="shell-main">
+      <main id="main" tabIndex={-1} className="shell-main" inert={menuOpen}>
         <ConnectionBanner />
         <UpgradeBanner />
         <SettingsScopeContext.Provider value={settingsScope}>{children}</SettingsScopeContext.Provider>
       </main>
     </div>
   );
+}
+
+function usePhoneMenu(pathname: string) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
+    setMenuOpen(false);
+  }
+  useEffect(() => {
+    if (!menuOpen) return;
+    const compact = window.matchMedia?.('(max-width: 1100px)');
+    const onResize = () => {
+      if (!compact?.matches) setMenuOpen(false);
+    };
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      if (
+        document.querySelector(
+          'dialog[open], [role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]',
+        )
+      )
+        return;
+      setMenuOpen(false);
+      menuButton.current?.focus();
+    };
+    compact?.addEventListener('change', onResize);
+    window.addEventListener('keydown', onEscape);
+    return () => {
+      compact?.removeEventListener('change', onResize);
+      window.removeEventListener('keydown', onEscape);
+    };
+  }, [menuOpen]);
+  return { menuOpen, menuButton, setMenuOpen };
 }
 
 function ShellNav({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {

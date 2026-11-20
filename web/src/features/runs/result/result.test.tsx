@@ -10,6 +10,7 @@ import { pendingRunHistorySummary } from '@beetle/contracts/api';
 import type { Run, RunHistorySummary } from '@beetle/contracts/api';
 import { routes } from '../../../app/routes.js';
 import { suite } from '../history-fixtures.js';
+import { settings } from '../../settings/test-fixtures.js';
 import { apiError, deferred, ids, json, mount, resultSnapshot, revision, run, runId, testClient } from '../test-fixtures.js';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -190,10 +191,11 @@ it('offers Unpin before deletion for a pinned run and the retention preview othe
   fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   cleanup();
-  const g = fixture(finished());
+  const current = finished();
+  const g = fixture(current, (request) => request.path.endsWith('/settings') ? json(settings(current.scope)) : undefined);
   mount(g.client, path);
   fireEvent.click(await screen.findByRole('button', { name: 'Delete run…' }));
-  expect(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete this run…' })).toBeVisible();
+  expect(await within(await screen.findByRole('dialog')).findByRole('button', { name: 'Preview this run deletion' })).toBeVisible();
   expect(g.records.filter((record) => record.method !== 'GET')).toHaveLength(0);
 });
 

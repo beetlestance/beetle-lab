@@ -168,6 +168,10 @@ export async function shoot(page: Page, path: string, name: string, options: Sho
     await page.setViewportSize(viewports[viewport]);
     await page.goto(path);
     await settle(page, options.ready);
+    if (viewport === 'phone') {
+      const width = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(width, 'phone document must fit its viewport').toBeLessThanOrEqual(viewports.phone.width);
+    }
     await capture(page, `${name}-${viewport}`, options);
   }
 }

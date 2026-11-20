@@ -4,7 +4,14 @@ import { base, detail, exportsPage, inventory, protectedDependency, usersCsv } f
 
 test('inputs: inventory with a stopped upload', async ({ page, api }) => {
   inventory(api);
-  await shoot(page, `${base}/inputs`, 'inputs', { viewports: ['desktop', 'phone'] });
+  await shoot(page, `${base}/inputs`, 'inputs', {
+    viewports: ['desktop', 'phone'],
+    ready: async (p) => {
+      await expect(p.getByRole('table', { name: 'Workspace inputs' })).toBeVisible();
+      await expect(p.getByText('users.csv')).toBeVisible();
+      await expect(p.getByRole('alert')).toHaveCount(0);
+    },
+  });
 });
 
 test('inputs: empty', async ({ page, api }) => {
@@ -37,7 +44,14 @@ test('inputs: delete refused while in use', async ({ page, api }) => {
 
 test('exports: mixed states', async ({ page, api }) => {
   exportsPage(api);
-  await shoot(page, `${base}/exports`, 'exports', { viewports: ['desktop', 'phone'] });
+  await shoot(page, `${base}/exports`, 'exports', {
+    viewports: ['desktop', 'phone'],
+    ready: async (p) => {
+      await expect(p.getByRole('table', { name: 'Script exports' })).toBeVisible();
+      await expect(p.getByText('Ready', { exact: true }).first()).toBeVisible();
+      await expect(p.getByRole('alert')).toHaveCount(0);
+    },
+  });
 });
 
 test('exports: empty', async ({ page, api }) => {

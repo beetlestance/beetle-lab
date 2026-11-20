@@ -58,7 +58,7 @@ export function InputTable({
           ]}
         />
       )}
-      <Table caption="Workspace inputs" columns={columns} className="inputs-table">
+      <Table caption="Workspace inputs" columns={columns} className="inputs-table" scrollLabel="Input files">
         {visible.map((input) => {
           const status = inputStatus(input);
           const meta = [names.get(input.folderId), shapeText(input)].filter(Boolean).join(' · ');

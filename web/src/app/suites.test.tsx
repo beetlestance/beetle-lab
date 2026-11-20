@@ -80,6 +80,7 @@ it('creates a k6 suite in the actual scoped root through the engine picker and o
 it('opens the JSON authoring entry after creating a named suite', async () => {
   const fixture = testClient((request) => (request.method === 'POST' ? json(suite(), 201) : read(request)));
   mount(fixture.client, routes.newSuite(ids.a, ids.workspace, 'json'));
+  fireEvent.click(await screen.findByRole('button', { name: 'Choose k6 load tests' }));
   const name = await screen.findByRole('textbox', { name: 'Suite name' });
   fireEvent.change(name, { target: { value: 'Checkout' } });
   fireEvent.click(screen.getByRole('button', { name: 'Create suite' }));

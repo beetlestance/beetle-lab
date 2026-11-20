@@ -24,9 +24,7 @@ async function openDelete(page: Page, folder: string) {
   // The row actions appear on hover.
   await page.getByRole('row', { name: new RegExp(`^${folder} `) }).hover();
   await page.getByRole('button', { name: `Actions for ${folder}` }).click();
-  // A mouse click on the menu's Delete does nothing in the browser; the keyboard opens the dialog.
-  await page.getByRole('button', { name: `Delete ${folder}` }).focus();
-  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: `Delete ${folder}` }).click();
   await page.getByLabel(`Type ${folder} to confirm`).fill(folder);
 }
 

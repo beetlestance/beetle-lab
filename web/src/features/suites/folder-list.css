@@ -104,7 +104,8 @@
   pointer-events: none;
 }
 .folder-table .data-table tbody tr:hover .folder-row-actions,
-.folder-table .data-table tbody tr:focus-within .folder-row-actions {
+.folder-table .data-table tbody tr:focus-within .folder-row-actions,
+.folder-table .folder-row-actions:has(.folder-action-list:popover-open) {
   opacity: 1;
   pointer-events: auto;
 }

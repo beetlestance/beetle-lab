@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, it } from 'vitest';
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ids, json, mount, org, readNamespace, testClient } from './test-fixtures.js';
 import { routes } from './routes.js';
 import { orgScope, settings, workspaceScope } from '../features/settings/test-fixtures.js';
@@ -70,13 +70,17 @@ it('keeps workspace settings inside the workspace and the levels above in Settin
   await screen.findByRole('list', { name: 'Settings for Same workspace' });
   expect(screen.getByRole('heading', { level: 1, name: 'Same workspace' })).toBeVisible();
   expect(mainNav().getByRole('link', { name: 'Workspaces' })).toHaveAttribute('aria-current', 'page');
-  expect(screen.queryByRole('navigation', { name: 'Settings level' })).not.toBeInTheDocument();
+  expect(settingsNav().getByRole('link', { name: 'Workspace' })).toHaveAttribute('aria-current', 'page');
   fireEvent.click(mainNav().getByRole('link', { name: 'Settings' }));
-  await screen.findByRole('navigation', { name: 'Settings level' });
-  expect(settingsNav().getByRole('link', { name: 'Organization' })).toHaveAttribute('aria-current', 'page');
+  await waitFor(() =>
+    expect(settingsNav().getByRole('link', { name: 'Organization' })).toHaveAttribute('aria-current', 'page'),
+  );
   fireEvent.click(settingsNav().getByRole('link', { name: 'Installation' }));
   await screen.findByRole('list', { name: 'Settings for installation' });
-  expect(settingsNav().getAllByRole('link')).toHaveLength(2);
+  const workspaceSettings = settingsNav().getByRole('link', { name: 'Workspace' });
+  expect(workspaceSettings).toHaveAttribute('href', routes.workspaceSettings(ids.a, ids.workspace));
+  fireEvent.click(workspaceSettings);
+  await screen.findByRole('list', { name: 'Settings for Same workspace' });
 });
 
 it('lets a user entering settings from installation choose an organization', async () => {

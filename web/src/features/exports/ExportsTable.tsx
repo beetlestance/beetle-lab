@@ -116,7 +116,7 @@ function RowAction({ job }: { job: ExportJob }) {
 function Rows({ scope, jobs }: { scope: Scope; jobs: readonly ExportJob[] }) {
   const label = useLabels(scope, jobs);
   return (
-    <Table caption="Script exports" columns={columns}>
+    <Table caption="Script exports" columns={columns} scrollLabel="Export jobs">
       {jobs.map((job) => (
         <tr key={job.id}>
           <Td>{label(job)}</Td>

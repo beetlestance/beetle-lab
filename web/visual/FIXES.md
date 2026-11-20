@@ -10,24 +10,35 @@ fixed (note says what is left), `[-]` not changed (note says why).
 Each package is one branch (`fix/<package>`) with its own files. Board PNGs are named by
 slug (`Run result / Failed` → `run-result-failed.png`).
 
+## First review pass
+
+- Phone document width now stays within the viewport on populated Overview, Inputs and Exports. Wide
+  inventories scroll inside their own keyboard-focusable region.
+- Settings subsections are in browser history and use the existing route transition. Reduced motion
+  continues to disable the animation.
+- Gallery labels identify shared skin references and viewport fallbacks. The saved Run again board
+  still needs a fresh export.
+- Folder suite counts remain direct by design. The result headline uses the aggregate overview when
+  available. Source and sample data need checking before making changes to either.
+
 ## P1 overview-shell — `web/src/features/workspace-overview`, `organization-overview`, app shell
 
 - [ ] org-overview-tab — Overview at organization level shows the dashboard from `getOrganizationOverview` (live card, Last 24 hours, Recent runs linking to each run's workspace, counts); the workspace table, Create, Rename, Delete and paging stay only on Workspaces
 - [ ] org-overview-states — Empty ("Write your first suite"), Loading and Search for the organization dashboard; Organization / Empty board
-- [ ] overview-blank-space — about 700px of empty page below the overview content (page 1873px tall, content ends near 1204px)
+- [x] overview-blank-space — the accessibility table no longer expands the document
 - [ ] overview-width — ultrawide: hero capped at 820px while the lower row stretches; contain the page so everything aligns (Ultrawide / Overview)
 - [ ] overview-refresh-line — "As of 19:21. Refresh overview" is not on the board
 - [ ] overview-section-tabs — workspace section tabs above the hero are not on the board
 - [ ] overview-copy — headline, summary line, "Local agent" title and status line as on the board
 - [ ] phone-live-card — phone: the live card's progress marker overlaps its label (Phone / Overview)
-- [ ] phone-menu-sign-out — phone: "Sign out" is cut off in the open menu (Phone / Menu open)
+- [x] phone-menu-sign-out — verified at 390 px with keyboard dismissal and focus restoration
 - [ ] phone-org-table — phone: organization table actions run off the screen
 - [ ] connection-lost — losing the connection replaces the page with an error; the board keeps the last data with a banner (State / Connection lost)
 - [ ] nav-highlight — run pages highlight "Workspaces"; match the boards' nav state
 
 ## P2 namespaces — organization, workspace and folder dialogs
 
-- [ ] folder-menu-delete — clicking Delete in a folder's ⋯ menu with the mouse does nothing (keyboard works)
+- [x] folder-menu-delete — the open popover stays interactive as the pointer leaves the row
 - [ ] create-dialogs — New folder, New workspace, New organization: titles, labels, character counter and address derived from the name, as on the boards
 - [ ] workspace-name-taken — name taken is shown inline on the field, as New folder / Name taken does
 - [ ] suite-rename — Rename suite with `patchSuite`, plus Changed elsewhere (Overlay / Rename, Overlay / Rename / Changed elsewhere, Phone / Rename)
@@ -37,8 +48,8 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 
 ## P3 suites — suites list, suite page, editor, script, start run
 
-- [ ] folder-count — a folder's count leaves out suites in its subfolders
-- [ ] new-suite-picker — `?new=form` and `?new=json` open the same name dialog; the board shows the engine picker first (Suites / New suite, Overlay / Engine picker)
+- [-] folder-count — the agreed count includes direct suites; subfolders are separate
+- [x] new-suite-picker — both shortcuts use the picker and retain the requested editor mode
 - [ ] sample-file-folder — Add a sample file has no folder choice
 - [ ] export-file-name — the exported script is always named `suite.js`; name it after the suite
 - [ ] budget-units — GiB in the app, GB on the boards; use one unit consistently with the boards
@@ -50,9 +61,9 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 
 - [ ] runs-paging-text — "Showing 1–8 of 24" cannot be known under the paging contract (no total); show what the contract allows
 - [ ] p95-headline — the run result headline's p95 is the slowest endpoint's, not the run's
-- [ ] delete-run-dialog — Delete run uses the generic retention preview; the board is Keep run / Delete run from `previewRunDeletion`, plus Pinned (Overlay / Delete run, Overlay / Delete run / Pinned)
+- [x] delete-run-dialog — compact check and confirmation use the existing protected preview
 - [ ] incomplete-target — the Incomplete results state still shows a Target runtime section
-- [ ] target-resize-reread — resizing the window re-reads the target report and flashes "Reading verified target observations…"
+- [x] target-resize-reread — the same report stays ready across the phone breakpoint
 - [ ] results-copy — headline and tile copy on Run result states as on the boards
 - [ ] compare-copy — compare headline and rows are more verbose than the board
 
@@ -60,8 +71,8 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 
 - [ ] inputs-detail — Inputs / Detail page from `getInput`, `getInputColumns`, `listInputUsage`
 - [ ] upload-dialog — Upload input is a plain form; the board is a dialog with a drop zone
-- [ ] upload-checking — no Checking step (Overlay / Upload input / Checking)
-- [ ] upload-interrupted — Interrupted offers Refresh / Discard, the board offers Resume; resume if the transfer protocol allows it, else Backend and contract
+- [~] upload-checking — fingerprint check and confirmed progress are visible in the existing form
+- [~] upload-interrupted — confirmed bytes and explicit refresh-to-resume are visible while the draft is open
 - [ ] delete-input-in-use — buttons read "Clear rejected deletion" / "Replay identical deletion"; match Overlay / Delete input / In use
 - [ ] export-rows — export rows have no secondary line (Exports)
 - [ ] export-cancelled-invariant — a cancelled export with `cancellationRequested: false` makes the whole Exports list "unreadable response"; check whether the server can produce it. If it can, Backend and contract
@@ -71,7 +82,7 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 - [ ] session-copy — every session screen's copy as on the boards (Connecting, Signed out, Expired, Pair this browser, Pairing failed, Address not allowed, Can't reach Beetle)
 - [ ] session-address — address box and loopback / remote distinction as on the boards
 - [ ] session-countdown — "Checking again in 12 s" on Can't reach Beetle; expiry countdown where the boards show one
-- [ ] settings-workspace-tab — Settings has only Installation and Organization; add Workspace (`getWorkspaceSettings`, `patchWorkspaceSettings`)
+- [x] settings-workspace-tab — all known levels are reachable from either settings entry point
 - [ ] settings-inherited — inherited value detail and Turn off button (Settings / Field states)
 - [ ] settings-field-errors — one generic "Invalid value" banner; show the error on its field
 - [ ] settings-retention — retention preview and progress as on Settings / Workspace / Retention preview and Retention progress

@@ -11,6 +11,7 @@ export function useArtifactReport<T>(
   selection: Omit<ArtifactRead, 'signal'>,
   reads: ArtifactReader<T>,
   session: object,
+  enabled = true,
 ) {
   const { params, artifact } = selection;
   const { organizationId, workspaceId, runId, attemptId, artifactId } = params;
@@ -42,6 +43,7 @@ export function useArtifactReport<T>(
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<State<T>>({ owner, status: 'loading' });
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     let active = true;
     setState({ owner, status: 'loading' });
@@ -69,7 +71,7 @@ export function useArtifactReport<T>(
       clearTimeout(timer);
       controller.abort();
     };
-  }, [owner, revision]);
+  }, [owner, revision, enabled]);
   return {
     state: state.owner === owner ? state : { owner, status: 'loading' as const },
     retry: () => setRevision((value) => value + 1),

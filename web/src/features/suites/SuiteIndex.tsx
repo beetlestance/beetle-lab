@@ -16,7 +16,6 @@ import { runStatus, StartRun, when } from '../suite-overview/index.js';
 import { folderLink, folderName, summaryOf, useFolders } from './folders.js';
 import { mixText, plural, searchTerm, useDebounced, WorkspaceTabs } from './listing.js';
 import { FolderActions, NewFolderButton } from './FolderActions.js';
-import { MetadataEditor } from './MetadataEditor.js';
 import { NewSuite } from './NewSuite.js';
 import { emptySuiteInventory, SuitesEmpty, SuitesLoading } from './SuiteStates.js';
 import { LatestDuration } from './LatestDuration.js';
@@ -69,31 +68,14 @@ export function SuiteIndex({ workspace }: { workspace: Workspace }) {
         </QueryState>
       )}
       {creating && (
-        <SuiteCreation
+        <NewSuite
           workspace={workspace}
+          folderId={workspace.rootFolderId}
           initialView={initialView}
-          fromLink={search.has('new')}
           close={closeCreation}
         />
       )}
     </section>
-  );
-}
-function SuiteCreation({
-  workspace,
-  initialView,
-  fromLink,
-  close,
-}: {
-  workspace: Workspace;
-  initialView: 'form' | 'json';
-  fromLink: boolean;
-  close: () => void;
-}) {
-  return fromLink ? (
-    <MetadataEditor workspace={workspace} initialView={initialView} close={close} />
-  ) : (
-    <NewSuite workspace={workspace} folderId={workspace.rootFolderId} close={close} />
   );
 }
 function SuiteIndexHeader({

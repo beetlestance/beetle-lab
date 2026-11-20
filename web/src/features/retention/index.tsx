@@ -9,67 +9,83 @@ import { QueryState } from '../../components/QueryState.js';
 import { useRetentionCommand } from './useCommand.js';
 import { retentionKey, retentionParams } from './queries.js';
 import { RetentionBatch } from './Batch.js';
+import type { ManualRun } from './Batch.js';
 import { SavedBatches } from './Batches.js';
 import { policySentence } from './format.js';
 import './retention.css';
-export interface ManualRun {
-  readonly id: string;
-  readonly version: number;
-}
+export type { ManualRun } from './Batch.js';
 export function RetentionControls({
   scope,
   run,
   initialSnapshotId,
+  onKeep,
 }: {
   scope: WorkspaceScope;
   run?: ManualRun;
+  onKeep?: () => void;
   initialSnapshotId?: string;
 }) {
-  const [open, setOpen] = useState(initialSnapshotId !== undefined);
+  const [open, setOpen] = useState(onKeep !== undefined || initialSnapshotId !== undefined);
   return (
     <section className="retention-panel" aria-label="Run retention">
-      <Button variant={open ? 'text' : 'secondary'} onClick={() => setOpen((value) => !value)}>
-        {open ? 'Close retention controls' : run ? 'Delete this run…' : 'Manage run retention'}
-      </Button>
+      {!onKeep && (
+        <Button variant={open ? 'text' : 'secondary'} onClick={() => setOpen((value) => !value)}>
+          {open ? 'Close retention controls' : run ? 'Delete this run…' : 'Manage run retention'}
+        </Button>
+      )}
       {open && (
         <ReadAdmission>
           <RetentionWorkspace
             key={`${scope.organizationId}/${scope.workspaceId}/${run?.id ?? ''}`}
             scope={scope}
-            {...(run ? { run } : {})}
-            {...(initialSnapshotId ? { initialSnapshotId } : {})}
+            onKeep={onKeep}
+            run={run}
+            initialSnapshotId={initialSnapshotId}
           />
         </ReadAdmission>
       )}
     </section>
   );
 }
-type RetentionWorkspaceProps = { scope: WorkspaceScope; run?: ManualRun; initialSnapshotId?: string };
-function RetentionWorkspace({ scope, run, initialSnapshotId }: RetentionWorkspaceProps) {
+type RetentionWorkspaceProps = {
+  scope: WorkspaceScope;
+  run: ManualRun | undefined;
+  initialSnapshotId: string | undefined;
+  onKeep: (() => void) | undefined;
+};
+function RetentionWorkspace({ scope, run, initialSnapshotId, onKeep }: RetentionWorkspaceProps) {
+  const compact = onKeep !== undefined;
   const { command, selected, setSelected, settings, batches, refresh, preview } = useRetentionWorkspace({
     scope,
-    ...(run ? { run } : {}),
-    ...(initialSnapshotId === undefined ? {} : { initialSnapshotId }),
+    compact,
+    run,
+    initialSnapshotId,
   });
   return (
     <>
-      <header className="retention-intro">
-        <h2>{run ? 'Delete run' : 'Run retention'}</h2>
-        <p>Preview first, then explicitly apply the displayed batch. Nothing is removed until you apply.</p>
-      </header>
-      <QueryState query={settings}>
-        {(value) => (
-          <div className="retention-start">
-            <p>
-              {policySentence(value.effective.retention.value)}{' '}
-              <span className="retention-muted">{origin(value.effective.retention.source.kind)}</span>
-            </p>
-            <Button variant="primary" disabled={command.blocked} onClick={preview}>
-              {run ? 'Preview this run deletion' : 'Preview retention'}
-            </Button>
-          </div>
-        )}
-      </QueryState>
+      {!compact && (
+        <header className="retention-intro">
+          <h2>{run ? 'Delete run' : 'Run retention'}</h2>
+          <p>Preview first, then explicitly apply the displayed batch. Nothing is removed until you apply.</p>
+        </header>
+      )}
+      {(!compact || !selected) && (
+        <QueryState query={settings}>
+          {(value) => (
+            <div className="retention-start">
+              {!compact && (
+                <p>
+                  {policySentence(value.effective.retention.value)}{' '}
+                  <span className="retention-muted">{origin(value.effective.retention.source.kind)}</span>
+                </p>
+              )}
+              <Button variant={compact ? 'secondary' : 'primary'} disabled={command.blocked} onClick={preview}>
+                {run ? 'Preview this run deletion' : 'Preview retention'}
+              </Button>
+            </div>
+          )}
+        </QueryState>
+      )}
       {command.message && (
         <Banner
           tone="danger"
@@ -90,30 +106,50 @@ function RetentionWorkspace({ scope, run, initialSnapshotId }: RetentionWorkspac
           scope={scope}
           id={selected}
           command={command}
+          compactRun={compact ? run : undefined}
           selected={setSelected}
           changed={refresh}
           removed={() => {
             setSelected(null);
             refresh();
+            onKeep?.();
           }}
         />
       )}
-      <section className="retention-saved" aria-label="Saved batches">
-        <div className="retention-batch-bar">
-          <h3>Saved batches</h3>
-          <Button variant="text" size="sm" disabled={batches.isFetching} onClick={() => void batches.refetch()}>
-            Refresh batches
-          </Button>
-        </div>
-        <p className="retention-note">
-          At most eight batches are stored. Discard unused previews or acknowledge completed batches to release their
-          metadata reservation.
-        </p>
-        <QueryState query={batches}>
-          {(value) => <SavedBatches list={value} selected={selected} blocked={command.blocked} select={setSelected} />}
-        </QueryState>
-      </section>
+      {!compact && (
+        <SavedRetentionBatches batches={batches} selected={selected} select={setSelected} blocked={command.blocked} />
+      )}
     </>
+  );
+}
+
+function SavedRetentionBatches({
+  batches,
+  selected,
+  select,
+  blocked,
+}: {
+  batches: ReturnType<typeof useRetentionWorkspace>['batches'];
+  selected: string | null;
+  select: (id: string) => void;
+  blocked: boolean;
+}) {
+  return (
+    <section className="retention-saved" aria-label="Saved batches">
+      <div className="retention-batch-bar">
+        <h3>Saved batches</h3>
+        <Button variant="text" size="sm" disabled={batches.isFetching} onClick={() => void batches.refetch()}>
+          Refresh batches
+        </Button>
+      </div>
+      <p className="retention-note">
+        At most eight batches are stored. Discard unused previews or acknowledge completed batches to release their
+        metadata reservation.
+      </p>
+      <QueryState query={batches}>
+        {(value) => <SavedBatches list={value} selected={selected} blocked={blocked} select={select} />}
+      </QueryState>
+    </section>
   );
 }
 
@@ -125,10 +161,12 @@ function useRetentionWorkspace({
   scope,
   run,
   initialSnapshotId,
+  compact = false,
 }: {
   scope: WorkspaceScope;
-  run?: ManualRun;
-  initialSnapshotId?: string;
+  run: ManualRun | undefined;
+  compact: boolean;
+  initialSnapshotId: string | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -143,6 +181,7 @@ function useRetentionWorkspace({
   });
   const batches = useQuery({
     queryKey: [...prefix, 'batches'],
+    enabled: !compact,
     queryFn: ({ signal }) => readResult(api.listWorkspaceRetention({ params, signal })),
   });
   useEffect(

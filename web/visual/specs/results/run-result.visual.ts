@@ -62,3 +62,24 @@ test('run-result-target-by-phase', async ({ page, api }) => {
   await loaded();
   await capture(page, 'run-result-target-by-phase-desktop', { viewportOnly: true });
 });
+
+test('keeps verified target observations through a responsive breakpoint', async ({ page, api }) => {
+  const c = buildCase({ variant: 'passed' });
+  installResult(api, c);
+  const target = c.artifacts.find((artifact) => artifact.kind === 'target-runtime');
+  expect(target).toBeDefined();
+  const targetReads: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith(`/artifacts/${target!.artifactId}/content`)) targetReads.push(request.url());
+  });
+  await page.setViewportSize(viewports.desktop);
+  await page.goto(`${resultPath(c.ids.run)}?target=phases`);
+  const recorded = page.getByText(/recorded observations · \d+ missed/);
+  await expect(recorded).toBeVisible();
+  expect(targetReads).toHaveLength(1);
+  await page.setViewportSize(viewports.phone);
+  await expect(page.locator('#result-target-details')).toBeVisible();
+  await expect(recorded).toBeVisible();
+  await expect(page.getByText('Reading verified target observations…')).toHaveCount(0);
+  expect(targetReads).toHaveLength(1);
+});

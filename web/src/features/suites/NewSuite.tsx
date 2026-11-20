@@ -26,14 +26,24 @@ const engines = [
 export function NewSuite({
   workspace,
   folderId,
+  initialView,
   close,
 }: {
   workspace: Workspace;
   folderId: string;
+  initialView?: 'form' | 'json';
   close: () => void;
 }) {
   const [engine, setEngine] = useState<'k6' | null>(null);
-  if (engine) return <MetadataEditor workspace={workspace} folderId={folderId} close={close} />;
+  if (engine)
+    return (
+      <MetadataEditor
+        workspace={workspace}
+        folderId={folderId}
+        close={close}
+        {...(initialView ? { initialView } : {})}
+      />
+    );
   return <EnginePicker choose={() => setEngine('k6')} close={close} />;
 }
 export function EnginePicker({ choose, close }: { choose: () => void; close: () => void }) {

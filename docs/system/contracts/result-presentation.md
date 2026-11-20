@@ -51,8 +51,8 @@ Unplottable UTC observations are counted and retained in advanced source details
 Native marker time shares workload hover only with safe target chronology;
 otherwise target cards use their own cursor and disclose the available time origin.
 Hover outside coverage or within gaps never substitutes a nearby reading.
-All retained phases are shown. Details mount on demand; Reload preserves expansion
-and reuses the verified report and its existing owner, without polling.
+One scoped target reader retains the report on resize. Unopened phone details defer
+the read. Reload preserves expansion and verifies again without polling.
 
 ## Target phase comparison
 
@@ -81,7 +81,7 @@ The first chart read waits for the overview to settle. Retry remains explicit. P
 Navigation adds no reader of its own; selected feature owners retain their existing admission,
 publication, retry and retirement rules.
 
-See [recorded milestones](result-milestones.md) for What happened; [result frame](result-frame.md) covers headlines and navigation.
+See [recorded milestones](result-milestones.md) and [result frame](result-frame.md).
 
 ## Comparison figures
 
@@ -156,7 +156,6 @@ and rounding preserves the distinction between exact and near-100% changes.
 A single complete peer failure can share its headline; other failures retain their evidence list.
 
 ## Ownership
-
 The backend owns this projection. The browser consumes only the generated DTO; it must
 not pool percentile estimates or treat excluded endpoint rows as the entire run.
 Numeric hash and manifest bind ready source identity; restored history reads it without starting work, mutation or polling.
@@ -186,7 +185,8 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/chart-model.ts` | `7c592a7f4bd7` |
 | `web/src/features/runs/charts/` | `326688f9fb02` |
-| `web/src/features/runs/result/TargetReport.tsx` | `22e1bba2d75c` |
+| `web/src/features/runs/result/TargetReport.tsx` | `e84e0d48d7cc` |
+| `web/src/features/runs/result/TargetRuntime.tsx` | `pending` |
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `5ff3d54b4aa0` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `b6688cca6e5a` |

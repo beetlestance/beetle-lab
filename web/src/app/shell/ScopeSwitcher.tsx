@@ -61,6 +61,7 @@ export function ScopeSwitcher({ scope, path }: { scope: ShellScope; path: string
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || !root.current?.contains(document.activeElement)) return;
+      event.preventDefault();
       setOpen(false);
       trigger.current?.focus();
     };

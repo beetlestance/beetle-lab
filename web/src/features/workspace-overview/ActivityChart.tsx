@@ -43,37 +43,39 @@ export function ActivityChart({ buckets }: { buckets: readonly OverviewBucket[] 
           <span>now</span>
         </div>
       )}
-      <table className="sr-only">
-        <caption>{plural(total, 'run')} submitted in the last 24 hours, by hour</caption>
-        <thead>
-          <tr>
-            <th scope="col">From</th>
-            <th scope="col">To</th>
-            <th scope="col">Submitted</th>
-            <th scope="col">Passed</th>
-            <th scope="col">Failed</th>
-            <th scope="col">In progress</th>
-            <th scope="col">Other</th>
-          </tr>
-        </thead>
-        <tbody>
-          {buckets.map((bucket) => (
-            <tr key={bucket.from}>
-              <td>
-                <time dateTime={bucket.from}>{clockTime(bucket.from)}</time>
-              </td>
-              <td>
-                <time dateTime={bucket.to}>{clockTime(bucket.to)}</time>
-              </td>
-              <td>{bucket.count}</td>
-              <td>{bucket.outcomes.passed}</td>
-              <td>{bucket.outcomes.failed}</td>
-              <td>{bucket.outcomes.inProgress}</td>
-              <td>{bucket.outcomes.other}</td>
+      <div className="sr-only">
+        <table>
+          <caption>{plural(total, 'run')} submitted in the last 24 hours, by hour</caption>
+          <thead>
+            <tr>
+              <th scope="col">From</th>
+              <th scope="col">To</th>
+              <th scope="col">Submitted</th>
+              <th scope="col">Passed</th>
+              <th scope="col">Failed</th>
+              <th scope="col">In progress</th>
+              <th scope="col">Other</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {buckets.map((bucket) => (
+              <tr key={bucket.from}>
+                <td>
+                  <time dateTime={bucket.from}>{clockTime(bucket.from)}</time>
+                </td>
+                <td>
+                  <time dateTime={bucket.to}>{clockTime(bucket.to)}</time>
+                </td>
+                <td>{bucket.count}</td>
+                <td>{bucket.outcomes.passed}</td>
+                <td>{bucket.outcomes.failed}</td>
+                <td>{bucket.outcomes.inProgress}</td>
+                <td>{bucket.outcomes.other}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

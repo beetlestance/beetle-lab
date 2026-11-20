@@ -49,8 +49,10 @@ describe('settings scope reads and values', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Same workspace' })).toBeVisible();
     const sections = screen.getByRole('navigation', { name: 'Workspace sections' });
     expect(within(sections).getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.queryByRole('navigation', { name: 'Settings level' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'organization settings' })).toHaveAttribute('href', routes.organizationSettings(ids.a));
+    const levels = screen.getByRole('navigation', { name: 'Settings level' });
+    expect(within(levels).getByRole('link', { name: 'Organization' }))
+      .toHaveAttribute('href', routes.organizationSettings(ids.a));
+    expect(within(levels).getByRole('link', { name: 'Workspace' })).toHaveAttribute('aria-current', 'page');
   });
   it.each(['/organizations/bad/settings', `/organizations/${ids.a}/workspaces/bad/settings`])('rejects malformed settings IDs at %s before fetch', async path => {
     const api = testClient(() => json(settings())); mount(api.client, path);

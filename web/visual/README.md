@@ -1,7 +1,7 @@
 # Screenshot tests
 
 Full-page screenshots of every screen and state of the web app, in both skins, at the
-Penpot board sizes. The checklist of cases is [CASES.md](CASES.md).
+Penpot board sizes. The checklist covers [session, shell and authoring](CASES.md) and [runs, results, inputs and settings](CASES-runs.md).
 
 ## Run
 

@@ -151,6 +151,7 @@ export class UploadWorkflow {
     const file = intent.file;
     if (!file) throw new Paused('stopped', failed);
     this.recovery = 'prepare';
+    this.update({ message: 'Checking the file fingerprint…' });
     const reply = await this.options.transfers.prepare({ file, signal });
     this.check(signal);
     if (!reply.ok)
@@ -174,6 +175,7 @@ export class UploadWorkflow {
     const intent = this.required();
     if (!intent.body) throw new Paused('stopped', failed);
     this.recovery = 'replay-create';
+    this.update({ message: 'Preparing to send the checked file…' });
     const reply = await this.options.api.createInput({ params: this.params(), body: intent.body, signal });
     this.check(signal);
     if (!reply.ok) {

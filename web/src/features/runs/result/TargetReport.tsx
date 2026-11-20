@@ -13,23 +13,30 @@ import type { TargetCard, RecordedTargetPlot } from './target-model.js';
 import { TargetPhases } from './TargetPhases.js';
 import './target.css';
 
-/** One verified byte read; chart grid and advanced details share its frozen report. */
-export function ResultTargetReport({
-  params,
-  artifact,
-  nativeOrigin,
-  hover,
-  reads,
-  phaseView = false,
-}: {
-  params: RunArtifactParams;
+interface TargetReportProps {
   artifact: Artifact;
   nativeOrigin: number | null;
   hover: ChartHover;
-  reads?: Pick<TargetReportReads, 'read'>;
   phaseView?: boolean;
-}) {
-  const { state, retry } = useTargetReport({ params, artifact }, reads);
+}
+
+/** One verified byte read; chart grid and advanced details share its frozen report. */
+export function ResultTargetReport({
+  params,
+  reads,
+  ...props
+}: TargetReportProps & { params: RunArtifactParams; reads?: Pick<TargetReportReads, 'read'> }) {
+  const report = useTargetReport({ params, artifact: props.artifact }, reads);
+  return <TargetReportContent {...props} report={report} />;
+}
+
+export function TargetReportContent({
+  artifact,
+  nativeOrigin,
+  hover,
+  phaseView = false,
+  report: { state, retry },
+}: TargetReportProps & { report: ReturnType<typeof useTargetReport> }) {
   const [details, setDetails] = useState(false);
   if (state.status === 'error')
     return (

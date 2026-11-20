@@ -19,9 +19,9 @@ test('delete-run', async ({ page, api }) => {
   await page.goto(resultPagePath(unpinned.short));
   await settle(page, ready);
   await page.getByRole('button', { name: 'Delete run…' }).click();
-  await page.getByRole('button', { name: 'Delete this run…' }).click();
   await page.getByRole('button', { name: 'Preview this run deletion' }).click();
-  await expect(page.getByLabel('Selected retention batch')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Keep run' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete run', exact: true })).toBeEnabled();
   await page.waitForLoadState('networkidle');
   await capture(page, 'delete-run-desktop', { viewportOnly: true });
 });

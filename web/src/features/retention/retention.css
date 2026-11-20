@@ -180,3 +180,21 @@
     flex: 1 1 auto;
   }
 }
+
+.retention-manual-facts {
+  display: grid;
+  gap: var(--s-8);
+  margin: 0;
+  padding: var(--s-12);
+  border-radius: var(--r-md);
+  background: var(--panel);
+}
+.retention-manual-facts > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+}
+.retention-manual-facts dd {
+  margin: 0;
+}

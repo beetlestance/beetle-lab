@@ -5,7 +5,8 @@ import type { TargetRead, TargetReportReads } from './read.js';
 export function useTargetReport(
   selection: Omit<TargetRead, 'signal'>,
   reads: Pick<TargetReportReads, 'read'> = targetReportReads,
+  enabled = true,
 ) {
-  const { state, retry } = useArtifactReport(selection, reads, useApi());
+  const { state, retry } = useArtifactReport(selection, reads, useApi(), enabled);
   return { state: state.status === 'ready' ? { ...state, report: state.value } : state, retry };
 }

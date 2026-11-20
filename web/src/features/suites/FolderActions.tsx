@@ -35,20 +35,25 @@ export function FolderActions({ workspace, folder }: { workspace: Workspace; fol
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
-    const dismiss = () => menu.current?.hidePopover();
-    window.addEventListener('resize', dismiss);
-    window.addEventListener('scroll', dismiss, true);
+    const reposition = () => {
+      if (menu.current && trigger.current) positionActions(menu.current, trigger.current);
+    };
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
     return () => {
-      window.removeEventListener('resize', dismiss);
-      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
     };
   }, [open]);
   const client = useQueryClient();
   const { readOnly } = useSessionAccess();
   if (!folder || folder.id.toLowerCase() === workspace.rootFolderId.toLowerCase()) return null;
-  function edit(next: 'rename' | 'move') {
+  function closeMenu() {
     trigger.current?.focus();
     menu.current?.hidePopover();
+  }
+  function edit(next: 'rename' | 'move') {
+    closeMenu();
     setMode(next);
   }
   const refresh = () =>
@@ -69,12 +74,6 @@ export function FolderActions({ workspace, folder }: { workspace: Workspace; fol
             setOpen(visible);
             if (visible && trigger.current) positionActions(event.currentTarget, trigger.current);
           }}
-          onClickCapture={(event) => {
-            if (event.target instanceof Node && event.currentTarget.contains(event.target)) {
-              trigger.current?.focus();
-              menu.current?.hidePopover();
-            }
-          }}
         >
           <Button
             variant="text"
@@ -87,7 +86,12 @@ export function FolderActions({ workspace, folder }: { workspace: Workspace; fol
           <Button variant="text" disabled={readOnly} onClick={() => edit('move')} aria-label={`Move ${folder.name}`}>
             Move
           </Button>
-          <DeleteNamespace target={{ kind: 'folder', entity: folder }} refresh={refresh} disabled={readOnly} />
+          <DeleteNamespace
+            target={{ kind: 'folder', entity: folder }}
+            refresh={refresh}
+            disabled={readOnly}
+            onOpen={closeMenu}
+          />
         </div>
       </div>
       {mode && <FolderDialog mode={mode} folder={folder} workspace={workspace} close={() => setMode(null)} />}

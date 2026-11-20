@@ -26,8 +26,8 @@ Legacy timestamps remain unrecorded; restored views have no note controls.
 Source browser checks do not prove packaged/native delivery or whole-family
 visual acceptance. Phone disclosures now cover What happened, Target runtime,
 Artifacts, Notes and Diagnostics in both display and keyboard order. More run details holds Report, additional charts
-and the saved script, and a direct hash opens both disclosure levels. Readers
-mount readers on first open and retain visited children; the single Notes owner
+and the saved script, and a direct hash opens both disclosure levels. Disclosures
+mount their readers on first open and retain visited children. The verified target report stays ready across desktop and phone. The single Notes owner
 survives collapse and resize, including unresolved identical-replay saves. Hashes
 open the addressed section. Phase comparison keeps its target and Back control
 visible. Phone endpoint columns put p95/failed first and keep them visible while other
@@ -113,5 +113,5 @@ unknowns. These measurements leave whole-run totals and the stop instant unknown
 | `web/src/features/runs/result/PhoneSummary.tsx` | `68d10e26b948` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `90d627561ea9` |
+| `web/src/features/runs/result/index.tsx` | `5c0b319b77a6` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

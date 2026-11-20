@@ -141,9 +141,17 @@ function UploadProgress({
     <div className="upload-progress" aria-live="polite">
       {state.message && <p role="status">{state.message}</p>}
       {state.record && (
-        <p className="number">
-          Last confirmed: {state.record.state}, {state.record.offset} / {state.record.bytes} bytes
-        </p>
+        <div className="upload-confirmed">
+          {state.record.bytes > 0 && (
+            <progress aria-label="Confirmed upload bytes" value={state.record.offset} max={state.record.bytes} />
+          )}
+          <p className="number">
+            Last confirmed: {state.record.state}, {state.record.offset} / {state.record.bytes} bytes
+          </p>
+        </div>
+      )}
+      {!state.busy && state.phase === 'refresh' && (
+        <p>Refresh to confirm how many bytes Beetle kept. You can then resume with the file already selected.</p>
       )}
       {state.retained && (
         <p>A partial backend input can remain after cancellation, departure, or clearing this browser draft.</p>

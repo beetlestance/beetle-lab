@@ -16,10 +16,6 @@
 .settings-page > .segmented {
   margin-top: var(--s-32);
 }
-.settings-parents {
-  margin: var(--s-16) 0 0;
-  color: var(--mute);
-}
 .settings-editing {
   margin: var(--s-16) 0 var(--s-32);
   color: var(--mute);

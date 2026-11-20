@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { ComponentProps } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import type { SettingsScope } from '@beetle/contracts/api';
 import { QueryState } from '../../components/QueryState.js';
 import { LoadingState } from '../../components/States.js';
@@ -23,7 +23,7 @@ import { buildPatch } from './patch.js';
 import { SettingRow } from './Row.js';
 import { ChangedElsewhere, SaveBar, SaveFailure } from './SaveBar.js';
 import { SettingsScopeChooser, useSettingsChoice } from './ScopeChooser.js';
-import { ParentLevels, ScopeTabs, useScopeName } from './ScopeTabs.js';
+import { ScopeTabs, useScopeName } from './ScopeTabs.js';
 import { useDraft, useSave } from './useSave.js';
 import type { SavePhase } from './useSave.js';
 import './settings.css';
@@ -109,14 +109,20 @@ function initialView(search: string): SettingsView {
 }
 
 function SettingsView({ data }: { data: SettingsData }) {
-  const location = useLocation();
+  const [search, updateSearch] = useSearchParams();
   const name = useScopeName(data.scope);
-  const [view, setView] = useState<SettingsView>(() => initialView(location.search));
+  const view = initialView(search.toString());
+  const setView = (next: SettingsView) => {
+    if (next === view) return;
+    const params = new URLSearchParams(search);
+    if (next === 'limits') params.delete('view');
+    else params.set('view', next);
+    updateSearch(params);
+  };
   const form = useSettingsForm(data);
   const installation = 'values' in data ? data : undefined;
   const capacity = installation && view === 'capacity';
   const upgrade = !!installation && view === 'upgrade';
-  // A workspace's settings sit under its own heading and tabs; the levels above are links.
   const inWorkspace = data.scope.kind === 'workspace';
   return (
     <section className="content-section settings-page">
@@ -124,7 +130,7 @@ function SettingsView({ data }: { data: SettingsData }) {
         {inWorkspace ? <h2>Settings</h2> : <h1>Settings</h1>}
         <p>{upgrade ? upgradeIntro : capacity ? capacityIntro : intro}</p>
       </header>
-      {data.scope.kind === 'workspace' ? <ParentLevels scope={data.scope} /> : <ScopeTabs scope={data.scope} />}
+      <ScopeTabs scope={data.scope} />
       {installation && <ViewSwitch view={view} onChange={setView} />}
       {upgrade ? <Upgrade /> : <SettingsForm data={data} name={name} capacity={!!capacity} form={form} />}
     </section>

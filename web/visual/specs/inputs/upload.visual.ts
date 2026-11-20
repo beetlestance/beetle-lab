@@ -52,10 +52,21 @@ test('upload input: file chosen, ready to send', async ({ page, api }) => {
   await capture(page, 'upload-input-chosen-desktop', { viewportOnly: true });
 });
 
-test('upload input: checking (create request in flight)', async ({ page, api }) => {
+test('upload input: computes the fingerprint before making a server request', async ({ page, api }) => {
+  await page.addInitScript(() => {
+    const digest = SubtleCrypto.prototype.digest;
+    SubtleCrypto.prototype.digest = async function (algorithm, data) {
+      await new Promise<void>((resolve) =>
+        window.addEventListener('test-fingerprint-release', () => resolve(), { once: true }),
+      );
+      return digest.call(this, algorithm, data);
+    };
+  });
   await run(page, api, { holdCreate: true }, 200 * kb);
-  await expect(page.getByRole('status').filter({ hasText: 'Working…' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Checking the file fingerprint…' })).toBeVisible();
+  expect(api.calls.some((call) => call.operation === 'createInput')).toBe(false);
   await capture(page, 'upload-input-checking-desktop', { viewportOnly: true });
+  await page.evaluate(() => window.dispatchEvent(new Event('test-fingerprint-release')));
 });
 
 test('upload input: uploading', async ({ page, api }) => {
@@ -78,6 +89,7 @@ test('upload input: interrupted by Cancel upload', async ({ page, api }) => {
   await expect(page.getByText(midText)).toBeVisible();
   await page.getByRole('button', { name: 'Cancel upload' }).click();
   await expect(page.getByRole('button', { name: 'Refresh upload status' })).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Confirmed upload bytes' })).toBeVisible();
   await capture(page, 'upload-input-interrupted-desktop', { viewportOnly: true });
 });
 

@@ -1,6 +1,6 @@
 // Builds dist/gallery/index.html: every baseline next to the Penpot board it should match.
 // Usage: node web/visual/gallery.mjs [<directory of board PNG exports named by slug>]
-// Board slugs come from the Board column of CASES.md ("Run result / Failed" → run-result-failed).
+// Board slugs come from the Board column of the case lists ("Run result / Failed" → run-result-failed).
 import { copyFile, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
@@ -28,7 +28,8 @@ async function walk(dir) {
 async function cases() {
   const map = new Map();
   let section = '';
-  for (const line of (await readFile(join(here, 'CASES.md'), 'utf8')).split('\n')) {
+  const sources = await Promise.all(['CASES.md', 'CASES-runs.md'].map((file) => readFile(join(here, file), 'utf8')));
+  for (const line of sources.join('\n').split('\n')) {
     if (line.startsWith('## ')) section = line.slice(3).replace(/ — .*/, '');
     const match = /^- \[(.)\] (\S+) — (.*?) — (.*)$/.exec(line);
     if (match) map.set(match[2], { section, status: match[1], board: match[3].trim(), note: match[4] });
@@ -49,13 +50,16 @@ function findCase(map, name) {
  * Phone, tablet and ultrawide shots prefer their device board ("Phone / Overview") when one exists.
  */
 function boardFor(info, viewport) {
-  if (!boards || info.board === '—') return '';
+  if (!boards || info.board === '—') return undefined;
   const board = info.board.split(' + ')[0];
   const base = board.includes('…')
     ? [`${slug(board.replace('…', ''))}-${info.id.split('-').slice(-1)[0]}`, slug(board.replace('…', ''))]
     : [slug(board)];
   const device = viewport === 'desktop' ? [] : base.map((c) => `${viewport}-${c}`);
-  return [...device, ...base].map((c) => join(boards, `${c}.png`)).find((f) => existsSync(f)) ?? '';
+  const deviceFile = device.map((name) => join(boards, `${name}.png`)).find((file) => existsSync(file));
+  if (deviceFile) return { file: deviceFile, fallback: false };
+  const file = base.map((name) => join(boards, `${name}.png`)).find((candidate) => existsSync(candidate));
+  return file ? { file, fallback: viewport !== 'desktop' } : undefined;
 }
 
 const escape = (text) => text.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -73,12 +77,17 @@ async function main() {
     const target = `img/${skin}-${name}.png`;
     await copyFile(file, join(out, target));
     let board = '';
-    const boardFile = boardFor(info, /-(phone|tablet|ultrawide)$/.exec(name)?.[1] ?? 'desktop');
-    if (boardFile) {
-      board = `img/board-${basename(boardFile)}`;
-      await copyFile(boardFile, join(out, board));
+    const reference = boardFor(info, /-(phone|tablet|ultrawide)$/.exec(name)?.[1] ?? 'desktop');
+    if (reference) {
+      board = `img/board-${basename(reference.file)}`;
+      await copyFile(reference.file, join(out, board));
     }
-    rows.push({ ...info, skin, name, target, boardImage: board });
+    const labels = [
+      'Penpot',
+      ...(skin === 'scarab' ? ['shared reference'] : []),
+      ...(reference?.fallback ? ['viewport fallback'] : []),
+    ];
+    rows.push({ ...info, skin, name, target, boardImage: board, referenceLabel: labels.join(' · ') });
   }
   await writeFile(join(out, 'index.html'), page(rows));
   process.stdout.write(`${rows.length} screenshots → ${join(out, 'index.html')}\n`);
@@ -95,7 +104,7 @@ function page(rows) {
             r,
           ) => `<article data-skin="${r.skin}"><h3>${escape(r.name)} <small>${r.skin} · [${escape(r.status)}] · ${escape(r.board)}</small></h3>
 <p>${escape(r.note)}</p><div class="pair"><figure><figcaption>App</figcaption><a href="${r.target}"><img loading="lazy" src="${r.target}"></a></figure>
-${r.boardImage ? `<figure><figcaption>Penpot</figcaption><a href="${r.boardImage}"><img loading="lazy" src="${r.boardImage}"></a></figure>` : ''}</div></article>`,
+${r.boardImage ? `<figure><figcaption>${escape(r.referenceLabel)}</figcaption><a href="${r.boardImage}"><img loading="lazy" src="${r.boardImage}"></a></figure>` : r.board === '—' ? '' : '<p>Board export unavailable.</p>'}</div></article>`,
         )
         .join('\n');
       return `<section><h2>${escape(section)}</h2>${items}</section>`;

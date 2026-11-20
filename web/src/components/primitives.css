@@ -619,6 +619,7 @@ ul.tabs {
 
 /* Table */
 .data-table-scroll {
+  position: relative;
   overflow-x: auto;
   border-radius: var(--r-lg);
 }

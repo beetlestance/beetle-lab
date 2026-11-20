@@ -55,7 +55,7 @@ for (const view of ['form', 'json'] as const) {
     suitesWorld(api);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${suites}?new=${view}`);
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'What should this suite run?' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'capacity', exact: true })).toBeVisible();
     await capture(page, view === 'form' ? 'suites-new-suite-desktop' : 'suites-new-suite-json-desktop', {
       viewportOnly: true,

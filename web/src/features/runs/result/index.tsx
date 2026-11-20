@@ -3,7 +3,7 @@ import { PhoneDisclosure, useResultPhone } from './PhoneDisclosure.js';
 import { ResultSectionNav, type Section } from './SectionNav.js';
 import { measurementOrigin } from '../live/rise-position.js';
 import { useMemo, useState, type ReactNode } from 'react';
-import { TargetHeader, usePhaseMode } from './TargetHeader.js';
+import { usePhaseMode } from './TargetHeader.js';
 import type { EngineResult } from '@beetle/contracts';
 import type { Run, RunMetricOverview } from '@beetle/contracts/api';
 import { Banner } from '../../../components/Banner.js';
@@ -13,7 +13,7 @@ import { formatTime } from '../../run-results/format.js';
 import { RecordedWhole, RecordedMetrics, AdvancedMetrics, useRecordedCharts } from './RecordedCharts.js';
 import { RunReads } from '../RunReads.js';
 import type { RunSnapshotProps } from '../RunSnapshot.js';
-import { ResultTargetReport } from './TargetReport.js';
+import { TargetRuntime, WithTargetReport } from './TargetRuntime.js';
 import { DeleteRun } from './DeleteRun.js';
 import { headline, variantOf } from './headline.js';
 import type { Variant } from './headline.js';
@@ -243,58 +243,6 @@ function ThresholdSection({
   );
 }
 
-/** Exactly one published target-runtime report is shown; none or several are said plainly. */
-function TargetRuntime({
-  run,
-  engine,
-  status,
-  charts,
-  plan,
-  phaseView,
-  togglePhases,
-}: {
-  run: Run;
-  engine: EngineResult | null;
-  status: ResultReads['result']['view']['status'];
-  charts: ReturnType<typeof useRecordedCharts>;
-  plan: RunPlan;
-  phaseView: boolean;
-  togglePhases: () => void;
-}) {
-  const targets = engine ? engine.artifacts.filter((artifact) => artifact.kind === 'target-runtime') : [];
-  return (
-    <section id="result-target" className="result-section" aria-labelledby="result-target-title">
-      <TargetHeader plan={plan} phaseView={phaseView} togglePhases={togglePhases} canCompare={targets.length === 1} />
-      {targets.length === 0 && (
-        <p className="result-muted">
-          {engine
-            ? 'No target-runtime report was published for this run.'
-            : status === 'loading'
-              ? 'Reading the recorded result…'
-              : 'Target-runtime report is unavailable.'}
-        </p>
-      )}
-      {targets.length > 1 && (
-        <p role="alert">Multiple target observation reports were published; this view requires one report.</p>
-      )}
-      {targets.length === 1 && (
-        <ResultTargetReport
-          params={{
-            organizationId: run.scope.organizationId,
-            workspaceId: run.scope.workspaceId,
-            runId: run.id,
-            attemptId: run.activeAttemptId,
-            artifactId: targets[0]!.artifactId,
-          }}
-          artifact={targets[0]!}
-          phaseView={phaseView}
-          nativeOrigin={charts.data?.source?.measurementSourceTimeMs ?? null}
-          hover={charts.hover}
-        />
-      )}
-    </section>
-  );
-}
 function recordedLimit(plan: RunPlan): number | null {
   const rules = plan.rules.filter((rule) => rule.metric === 'http_req_duration' && rule.stat === 'p95');
   const first = rules[0];
@@ -324,7 +272,7 @@ function SupplementaryResult({
   const { run, charts, plan } = target;
   const showCharts = !archiveMissing && !recoveredHistoryState(reads) && !stoppedMeasurementsAbsent(reads);
   return (
-    <>
+    <WithTargetReport run={run} engine={showTarget ? target.engine : null}>
       {!phone && (
         <>
           {showCharts && (
@@ -360,7 +308,7 @@ function SupplementaryResult({
         phoneNote={phoneNote}
         phoneExtras={<PhoneExtras target={target} reads={reads} showCharts={showCharts} />}
       />
-    </>
+    </WithTargetReport>
   );
 }
 function PhoneExtras({
