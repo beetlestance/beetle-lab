@@ -120,7 +120,7 @@ function CompareButton() {
         className="live-icon-action"
         aria-label="Compare"
         aria-disabled="true"
-        aria-describedby={tip}
+        aria-describedby={`${tip} ${tip}-reason`}
         onFocus={() => setDismissed(false)}
         onMouseEnter={() => setDismissed(false)}
         onKeyDown={(event) => {
@@ -131,7 +131,10 @@ function CompareButton() {
         <HeaderIcon kind="compare" />
       </Button>
       <span role="tooltip" id={tip} className="live-tip">
-        Compare with another run once this one has finished: comparisons read sealed results.
+        Compare with another run
+      </span>
+      <span id={`${tip}-reason`} className="sr-only">
+        Available after this run has finished and its results are sealed.
       </span>
     </span>
   );
