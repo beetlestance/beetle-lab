@@ -7,6 +7,7 @@ import type { Run, RunArtifactPage } from '@beetle/contracts/api';
 import { readResult, useApi } from '../../../app/api.js';
 import { queryKeys } from '../../../app/queries.js';
 import { routes } from '../../../app/routes.js';
+import { useSessionAccess } from '../../../app/session.js';
 import { Button } from '../../../components/Button.js';
 import { HeaderIcon } from '../live/HeaderIcon.js';
 import './downloads.css';
@@ -94,6 +95,7 @@ const files = [
 ] as const;
 
 function DownloadChoices({ run, ordinal, close }: { run: Run; ordinal: number | undefined; close(): void }) {
+  const { readOnly } = useSessionAccess();
   const query = useDownloadInventory(run);
   const page = query.isError ? undefined : query.data;
   const { organizationId, workspaceId } = run.scope;
@@ -110,11 +112,17 @@ function DownloadChoices({ run, ordinal, close }: { run: Run; ordinal: number | 
       )}
       {page && files.map((file) => <DownloadChoice key={file.kind} run={run} page={page} file={file} close={close} />)}
       <Link
-        to={routes.suiteScriptFromRun(organizationId, workspaceId, run.suiteId, run.revisionId, run.id)}
+        to={(readOnly ? routes.suiteScriptFromRun : routes.suiteScriptZipFromRun)(
+          organizationId,
+          workspaceId,
+          run.suiteId,
+          run.revisionId,
+          run.id,
+        )}
         onClick={close}
       >
         <span>{ordinal === undefined ? 'Saved script' : `Script for revision ${ordinal}`}</span>
-        <small>View the saved script and available export options</small>
+        <small>{readOnly ? 'View the saved script' : '.zip with script.js, runs with plain k6'}</small>
       </Link>
       <p className="result-download-note">Your browser handles download progress and cancellation.</p>
     </div>

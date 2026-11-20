@@ -70,7 +70,10 @@ it('shows the running board: headline, threshold sentence, stage progress, figur
   fireEvent.click(screen.getByRole('button', { name: 'Download' }));
   expect(screen.getByRole('button', { name: /Report so far/ })).toBeEnabled();
   expect(screen.getByRole('button', { name: /Metrics so far/ })).toBeEnabled();
-  expect(screen.queryByRole('link', { name: /download/i })).not.toBeInTheDocument();
+  const zip = screen.getByRole('link', { name: /Download revision 4 ZIP/ });
+  expect(zip).toHaveAttribute('href', expect.stringContaining('/script?run='));
+  expect(zip).toHaveAttribute('href', expect.stringContaining('&export=zip'));
+  expect(zip).not.toHaveAttribute('download');
 });
 
 it('pauses and resumes the stream on request', async () => {

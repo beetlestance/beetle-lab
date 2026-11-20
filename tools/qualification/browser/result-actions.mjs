@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import { runArtifactContentPath, validateApi } from '@beetle/contracts/api';
 import { execute } from './results.mjs';
+import { runScriptZip } from './exports.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {Awaited<ReturnType<import('./authoring.mjs').author>>} Authored */
@@ -32,6 +33,8 @@ export async function resultActions(page, authored, evidence) {
   await expect(row).toContainText(note);
   await expect(page.getByRole('heading', { name: 'No runs match these filters' })).toHaveCount(0);
   await capture(page, evidence, 'results-note-history');
+  await page.goto(address);
+  await runScriptZip(page, run, evidence);
 }
 
 /** @param {Page} page @param {string} address */

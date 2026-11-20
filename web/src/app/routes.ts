@@ -40,6 +40,8 @@ export const routes = {
     `/organizations/${encodeURIComponent(org)}/workspaces/${encodeURIComponent(workspace)}/suites/${encodeURIComponent(suite)}/revisions/${encodeURIComponent(revision)}/script`,
   suiteScriptFromRun: (org: string, workspace: string, suite: string, revision: string, run: string) =>
     `${routes.suiteScript(org, workspace, suite, revision)}?run=${encodeURIComponent(run)}`,
+  suiteScriptZipFromRun: (org: string, workspace: string, suite: string, revision: string, run: string) =>
+    `${routes.suiteScriptFromRun(org, workspace, suite, revision, run)}&export=zip`,
   organizations: '/',
   workspaces: '/workspaces',
   organizationWorkspacesPattern: '/organizations/:organizationId/workspaces',

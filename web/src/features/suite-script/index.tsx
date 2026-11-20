@@ -3,6 +3,7 @@ import { ScriptBreadcrumbs } from './ScriptBreadcrumbs.js';
 import { useSessionAccess } from '../../app/session.js';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { Suite, SuiteRevision, SuiteRevisionSummary, Workspace } from '@beetle/contracts/api';
 import { ApiFailure, readResult, useApi } from '../../app/api.js';
@@ -150,6 +151,16 @@ function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: Su
   const { organizationId, workspaceId } = revision.scope;
   const [tab, setTab] = useState<Tab>('script');
   const [exporting, setExporting] = useState(false);
+  const [search, setSearch] = useSearchParams();
+  const zip = search.get('export') === 'zip';
+  function closeExport() {
+    setExporting(false);
+    if (zip) {
+      const next = new URLSearchParams(search);
+      next.delete('export');
+      setSearch(next, { replace: true });
+    }
+  }
   const [layout, setLayout] = useState<Layout>('split');
   const { flow, script, current, retry } = useCurrentScript(revision);
   const comparison = useComparison(suite, revision, current, retry);
@@ -190,12 +201,13 @@ function ScriptPage({ suite, revision, workspace }: { suite: Suite; revision: Su
           />
         )}
       </TabPanel>
-      {exporting && (
+      {(exporting || zip) && (
         <ExportDialog
           revision={revision}
           suiteName={suite.name}
           flow={flow}
-          close={() => setExporting(false)}
+          close={closeExport}
+          zip={zip}
           editHref={suiteHref}
         />
       )}
