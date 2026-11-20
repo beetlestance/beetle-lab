@@ -72,8 +72,9 @@
   overflow-wrap: anywhere;
 }
 
-/* Preserve readable row labels; wide comparisons scroll within their own region. */
+/* Keep wide cells and positioned accessibility labels inside the scroll region. */
 .compare .data-table-scroll {
+  position: relative;
   min-width: 0;
   max-width: 100%;
 }

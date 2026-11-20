@@ -133,6 +133,8 @@ async function compareFromResult(page, workspace, first, second, evidence) {
   await figures.focus();
   await expect(figures).toBeFocused();
   expect(await figures.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => figures.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
 }
 
 /** @param {string} url */
