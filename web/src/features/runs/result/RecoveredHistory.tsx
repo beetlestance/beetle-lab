@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import type { LiveMetricHistory } from '@beetle/contracts/api';
+import type { LiveMetricHistory, RunMetricOverview } from '@beetle/contracts/api';
 import { SegmentedFilter } from '../../../components/SegmentedFilter.js';
 import { Button } from '../../../components/Button.js';
 import { MetricWindows } from '../charts/MetricWindows.js';
+import { Endpoints } from '../live/Tables.js';
+import { liveFigures } from '../live/model.js';
 import { chartDomain, TargetRuntime } from '../live/Charts.js';
 import { mergeHistory, recordedCount } from '../live/backfill.js';
 import { LiveChart } from '../live/LiveChart.js';
@@ -13,6 +15,7 @@ import type { LivePoint } from '../live/history.js';
 import { emptyHistory } from '../live/history.js';
 import type { RunPlan } from '../live/plan.js';
 import type { ResultReads } from './useResultReads.js';
+import { ResultEndpoints } from './Overview.js';
 
 export function recoveredHistoryState(reads: ResultReads) {
   if (!reads.chartHistory.isSuccess || reads.chartHistory.data.reason !== 'not_recorded') return;
@@ -96,10 +99,7 @@ function RecoveredCharts({
   return (
     <>
       <h2 className="result-section-title">Recovered before the stop</h2>
-      <p className="result-muted">
-        {recordedCount(history)} of {data.prefix.windows} recorded windows shown. Time starts at the first retained
-        window. The verified archive is unavailable, so these charts cover only the retained observations.
-      </p>
+      <RecoveredCoverage shown={recordedCount(history)} data={data} />
       <RecoveredOverview points={history.points} domain={domain} ticks={ticks} hover={hover} phone={phone} />
       <MetricWindows points={history.points} domain={domain} hover={hover} ticks={ticks} strictHoverRange />
       {showTarget && history.target.length > 0 && (
@@ -116,6 +116,62 @@ function RecoveredCharts({
       )}
     </>
   );
+}
+
+const utcClock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'UTC',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
+function RecoveredCoverage({ shown, data }: { shown: number; data: LiveMetricHistory }) {
+  const end = new Date(data.prefix.endTimeMs);
+  const through = end.toISOString();
+  return (
+    <div className="recovered-coverage">
+      <p>
+        Retained through{' '}
+        <time dateTime={through} title={through}>
+          {utcClock.format(end)} UTC
+        </time>
+        {' · '}
+        {shown} of {data.prefix.windows} recorded windows shown
+      </p>
+      <p className="result-muted">Chart time starts at the first retained window.</p>
+    </div>
+  );
+}
+
+export function ResultEndpointEvidence({
+  overview,
+  plan,
+  phone,
+  archiveMissing,
+  recovered,
+}: {
+  overview: RunMetricOverview | null;
+  plan: RunPlan;
+  phone: boolean;
+  archiveMissing: boolean;
+  recovered: ReturnType<typeof recoveredHistoryState>;
+}) {
+  const data = !overview && recovered?.isSuccess ? recovered.data : undefined;
+  const figures = data ? liveFigures({ ...data.samples.at(-1)!, subset: data.subset }, plan) : null;
+  if (figures?.endpoints.some((row) => row.p95 !== null || (row.requests ?? 0) > 0))
+    return (
+      <div id="result-endpoints" className="result-section">
+        <Endpoints figures={figures} recovered />
+      </div>
+    );
+  if (archiveMissing)
+    return (
+      <p className="result-muted">
+        {recovered ? 'Endpoint detail requires' : 'Charts and endpoint detail require'} a verified metrics archive.
+        Diagnostics and published artifacts remain available below.
+      </p>
+    );
+  return <ResultEndpoints overview={overview} requests={plan.requests} phone={phone} />;
 }
 
 function RecoveredOverview({

@@ -8,6 +8,7 @@ import { configuration } from '../native-application/target-runtime/config.ts';
 import { revision } from './authoring.mjs';
 import { start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
+import { capturePressureView, verifyCheckpointView } from './pressure-result-view.mjs';
 
 const memoryBytes = 512 * 1024 * 1024;
 
@@ -97,7 +98,7 @@ export async function memoryPressure(page, authored, fixture, installation, evid
     JSON.stringify({ observed, measurements: evidenceState, reason: run.value.reason, physical }),
     { mode: 0o600, flag: 'wx' },
   );
-  await page.screenshot({ path: join(evidence, 'memory-pressure-result.png'), fullPage: true });
+  await capturePressureView(page, evidence, 'memory-pressure');
 }
 
 /**
@@ -115,7 +116,7 @@ async function memoryEvidence(page, base, attempt) {
   if (retained.ok()) {
     const history = validateApi('LiveMetricHistory', await retained.json());
     assert(history.ok && history.value.scope.attemptId === attempt && history.value.samples.length > 0);
-    await expect(page.getByRole('heading', { name: 'Recovered before the stop' })).toBeVisible();
+    await verifyCheckpointView(page, history.value);
     const report = source?.artifacts.find((artifact) => artifact.kind === 'performance-report');
     if (!source || !report) return { source: 'checkpoint', windows: history.value.samples.length };
     assert(source.completeness !== 'complete');

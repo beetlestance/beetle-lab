@@ -11,6 +11,7 @@ import { counts, runningRuntime, runtime } from '../resources/lifecycle/observat
 import { revision } from './authoring.mjs';
 import { start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
+import { capturePressureView, verifyCheckpointView } from './pressure-result-view.mjs';
 
 /**
  * @param {import('@playwright/test').Page} page
@@ -75,8 +76,7 @@ export async function outputPressure(page, authored, fixture, installation, evid
       }),
       { mode: 0o600, flag: 'wx' },
     );
-    await page.evaluate(() => globalThis.scrollTo(0, 0));
-    await page.screenshot({ path: join(evidence, 'output-pressure-result.png'), fullPage: true });
+    await capturePressureView(page, evidence, 'output-pressure');
   } finally {
     await capture.close();
   }
@@ -100,7 +100,7 @@ async function retainedHistory(page, submitted, run) {
   assert.equal(response.status(), 200);
   const history = validateApi('LiveMetricHistory', await response.json());
   assert(history.ok && history.value.scope.attemptId === run.activeAttemptId);
-  await expect(recovered).toBeVisible();
+  await verifyCheckpointView(page, history.value);
   return history.value.samples.length;
 }
 
