@@ -6,7 +6,7 @@ import { liveSamplerConfiguration } from './live-controls.mjs';
 import { revision } from './authoring.mjs';
 import { start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
-import { phoneResult } from './phone-result.mjs';
+import { observeMeasurements, phoneResult } from './phone-result.mjs';
 import { targetCounts } from '../native-application/target-runtime/target.ts';
 
 const endpoints = { checkout: 60, cart: 35, catalog: 20, product: 45, health: 5 };
@@ -144,6 +144,7 @@ export async function liveStaged(page, authored, fixture, evidence) {
     captures.push({ viewport: view.key, progress: await progress.textContent() });
     await page.screenshot({ path: join(evidence, `staged-${view.key}.png`), fullPage: true, animations: 'disabled' });
   }
+  const finishObserving = observeMeasurements(page, run.path);
   const result = page.locator('.result-head').getByText('Passed', { exact: true });
   const open = page.getByRole('button', { name: 'Open result', exact: true });
   await expect(open.or(result)).toBeVisible({ timeout: 60000 });
@@ -151,6 +152,7 @@ export async function liveStaged(page, authored, fixture, evidence) {
   await expect(result).toBeVisible();
   await assertRunState(page, { state: 'finished', outcome: 'passed' }, run);
   await phoneResult(page, evidence);
+  await finishObserving(evidence);
   const observed = targetCounts(fixture);
   assert(observed.ready === 1 && observed.work >= 90 && observed.work <= 180 && observed.runtime >= 12);
   assert.equal(observed.unexpected, 0);

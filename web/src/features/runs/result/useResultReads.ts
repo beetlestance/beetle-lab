@@ -44,6 +44,8 @@ export function useResultReads(run: Run) {
   });
   const chartHistory = useQuery({
     queryKey: [...key, 'chart-history', attempt],
+    // Let the overview settle before using the same bounded native read lane.
+    enabled: !overview.isPending,
     refetchOnReconnect: false,
     queryFn: ({ signal }) =>
       readResult(

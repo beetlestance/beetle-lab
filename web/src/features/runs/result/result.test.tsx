@@ -206,6 +206,25 @@ it('consumes the scoped metric overview without issuing any write or per-endpoin
  expect(f.records.filter(record=>record.method!=='GET')).toHaveLength(0);
 });
 
+it.each([false, true])('sequences the first chart read behind its overview (overview fails: %s)', async (fail) => {
+  const current = finished();
+  const response = deferred<Response>();
+  const fields = { id: current.id, scope: current.scope, attemptId: current.activeAttemptId };
+  const f = fixture(current, (request) => {
+    if (request.path.endsWith('/metrics/overview')) return response.promise;
+    if (request.path.endsWith('/metrics/chart-history')) return json({ ...chartData, ...fields });
+    return undefined;
+  });
+  mount(f.client, path);
+  await screen.findByText('Reading whole-run measurements…');
+  const chartReads = () => f.records.filter((read) => read.path.endsWith('/metrics/chart-history'));
+  expect(chartReads()).toHaveLength(0);
+  response.resolve(fail ? json(apiError('capacity_unavailable'), 503) : json({ ...metricOverview, ...fields }));
+  await screen.findByRole('img', { name: /Recorded p95 latency/ });
+  expect(chartReads()).toHaveLength(1);
+  if (fail) expect(screen.getByRole('button', { name: 'Retry measurements' })).toBeVisible();
+});
+
 it('lets an operator recheck pending measurements without automatically polling or starting work',async()=>{
  const current=finished();let ready=false;
  const complete={...metricOverview,id:current.id,scope:current.scope,attemptId:current.activeAttemptId};

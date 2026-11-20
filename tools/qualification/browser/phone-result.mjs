@@ -14,6 +14,37 @@ const panels = /** @type {const} */ ([
   'result-diagnostics',
 ]);
 
+/** @param {Page} page @param {string} runPath */
+export function observeMeasurements(page, runPath) {
+  const prefix = '/api/v2' + runPath + '/attempts/';
+  /** @type {string[]} */
+  const events = [];
+  /** @param {string} url @param {string | number} stage */
+  function capture(url, stage) {
+    const path = new URL(url).pathname;
+    if (!path.startsWith(prefix) || events.length >= 12) return;
+    const name = /^[a-f0-9-]+\/metrics\/(overview|chart-history)$/.exec(path.slice(prefix.length))?.[1];
+    if (name) events.push(`${name}:${stage}`);
+  }
+  /** @param {import('@playwright/test').Request} request */
+  const start = (request) => capture(request.url(), 'start');
+  /** @param {import('@playwright/test').Response} response */
+  const settle = (response) => capture(response.url(), response.status());
+  page.on('request', start);
+  page.on('response', settle);
+  return async (/** @type {string} */ evidence) => {
+    page.off('request', start);
+    page.off('response', settle);
+    await writeFile(join(evidence, 'result-measurement-requests.json'), JSON.stringify(events), {
+      mode: 0o600,
+      flag: 'wx',
+    });
+    assert.equal(events[0], 'overview:start');
+    assert.match(events[1] ?? '', /^overview:\d{3}$/);
+    assert.equal(events[2], 'chart-history:start');
+  };
+}
+
 /** @param {Page} page @param {string} evidence */
 export async function phoneResult(page, evidence) {
   await page.setViewportSize({ width: 390, height: 844 });
