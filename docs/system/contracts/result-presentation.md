@@ -153,8 +153,7 @@ Expansion survives reads and resets with the scoped selection; toggling adds no 
 The headline uses the table's recorded p95 estimates. Missing, zero-baseline and
 overflowing percentages stay explicit. Small differences stay distinct from equality,
 and rounding preserves the distinction between exact and near-100% changes.
-A peer's single complete native threshold failure can share its headline line.
-Baseline, partial and multiple failures retain their separate evidence list.
+A single complete peer failure can share its headline; other failures retain their evidence list.
 
 ## Ownership
 
