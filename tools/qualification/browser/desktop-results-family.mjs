@@ -16,7 +16,7 @@ import { targetCounts } from '../native-application/target-runtime/target.ts';
 export async function desktopResultsFamily(page, authored, fixture, evidence) {
   const passed = await measuredRun(page, authored.suite, false);
   await settledResult(page);
-  await expect(page.locator('.result-actions').getByRole('button').first()).toHaveText('Run again');
+  await expect(page.locator('.result-actions').getByRole('button').first()).toHaveAccessibleName('Run again');
   const [thresholdWidth, scriptWidth] = await page
     .locator('.result-split')
     .evaluate((split) => [...split.children].map((section) => section.getBoundingClientRect().width));
