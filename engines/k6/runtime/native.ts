@@ -76,11 +76,15 @@ export function createNativeRuntime(suite: DeepReadonly<CompiledSuite>, attempt:
   const runtime = createRuntime({ suite, adapters, resolveSecret: stagedSecrets(suite) });
   if (attempt.mode !== 'managed' || suite.loadPlan.execution.scenarios.length !== 1) return runtime;
   const scenarioStarted = new Gauge(scenarioStartedMetric);
+  let firstIteration = true;
   return {
     ...runtime,
     observeScenarioStart() {
-      const { iterationInInstance, startTime } = execution.scenario;
-      if (iterationInInstance === 0 && Number.isSafeInteger(startTime) && startTime > 0) {
+      if (!firstIteration) return;
+      firstIteration = false;
+      if (execution.scenario.iterationInInstance !== 0) return;
+      const startTime = execution.scenario.startTime;
+      if (Number.isSafeInteger(startTime) && startTime > 0) {
         nativeControlMetric(scenarioStarted, startTime);
       }
     },

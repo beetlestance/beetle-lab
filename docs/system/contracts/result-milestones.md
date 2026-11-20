@@ -23,6 +23,7 @@ that an interrupted run reached that stage. Other plans omit the schedule.
 ## Recorded scenario origin
 
 A single managed k6 scenario records its native start timestamp on iteration zero.
+Each VU reads the iteration index on its first iteration only.
 The private gauge emits at most one untagged point and stays outside queryable
 metric series, windows and thresholds. The collector withholds duplicate or
 inconsistent timing and keeps independent measurements. A valid timestamp is

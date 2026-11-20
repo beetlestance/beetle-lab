@@ -90,8 +90,9 @@ describe('native API delegation', () => {
     expect(gauge).not.toHaveBeenCalled();
     try {
       nativeIteration(runtime, suite, 0, data);
-      execution.scenario.iterationInInstance = 1;
       nativeIteration(runtime, suite, 0, data);
+      execution.scenario.iterationInInstance = 1;
+      nativeIteration(createNativeRuntime(suite, budget), suite, 0, data);
       execution.scenario.iterationInInstance = 0;
       nativeIteration(createNativeRuntime(suite, attempt), suite, 0, data);
       expect(gauge).toHaveBeenCalledExactlyOnceWith(1500, {});
