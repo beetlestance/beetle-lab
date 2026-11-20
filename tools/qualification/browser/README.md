@@ -96,8 +96,8 @@ requests, no recovered checkpoint, and a cancelled result after the UI hand-off.
 
 The `live-reconnect` profile authors a bounded run, pauses and resumes the feed,
 and checks that a scoped read failure retains figures until Retry now succeeds.
-`live-controls` checks provisional downloads and the pinned script on desktop and phone.
-`live-phases` observes startup, queue isolation, cancellation and result sealing.
+`live-controls` checks downloads and the pinned script. `live-phases` checks startup, queue isolation, cancellation and sealing.
+`live-staged` captures a bounded five-endpoint run with staged load and live thresholds at desktop, ultrawide and phone widths.
 
 The optional `BEETLE_BROWSER_PROFILE=reference` requires its own evidence directory
 and checks visible filtering/operation/schema navigation, all four browser downloads

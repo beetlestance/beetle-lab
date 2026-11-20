@@ -16,7 +16,7 @@ tables pin p95 and Failed. Engine labels use one scoped status read and exact ma
 plan reads pinned stages/requests/rules/target units; rN is request index N.
 target-charts normalizes fully declared groups to MB/%/ms/count; otherwise the
 group stays raw with source labels. Shared target formatting preserves tiny values.
-model derives one window and uses the slowest endpoint when pooled latency is absent. Unknown dimensions/values and missing/future/unparseable starts stay
+model pools selected failure counts (empty endpoints contribute zero samples) and uses the slowest endpoint when pooled latency is absent. Unknown values and missing/future/unparseable starts stay
 explicit; they never become zero elapsed time or invalid geometry.
 
 Feed validates Run and UUIDs case-insensitively. stream owns leases/pause/retry;

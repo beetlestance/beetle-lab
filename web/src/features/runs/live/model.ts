@@ -52,7 +52,7 @@ export interface LiveFigures {
   readonly complete: boolean;
 }
 
-const executeRequest = (series: Series, metric: string, label: string) =>
+const executeRequest = (series: Pick<Series, 'metric' | 'scope' | 'tags'>, metric: string, label: string) =>
   series.metric === metric &&
   series.scope === 'execute' &&
   series.tags.phase === 'execute' &&
@@ -95,10 +95,20 @@ function trendOf(frame: MetricWindowView, label: string): Trend | null {
   return total?.kind === 'trend' ? (total as Trend) : null;
 }
 
-function failuresOf(frame: MetricWindowView, label: string): { ratio: number | null; counts: Failures | null } {
+function failuresOf(
+  frame: MetricWindowView,
+  label: string,
+  requests: number | null,
+): { ratio: number | null; counts: Failures | null } {
   const total = frame.series.find((s) => executeRequest(s, 'http_req_failed', label))?.total;
-  if (total?.kind !== 'rate') return { ratio: null, counts: null };
-  return { ratio: total.ratio, counts: { numerator: total.numerator, samples: total.sampleCount } };
+  if (total?.kind === 'rate')
+    return { ratio: total.ratio, counts: { numerator: total.numerator, samples: total.sampleCount } };
+  // The projection omits empty selected series. Require an independently known
+  // empty duration series before treating the missing rate as zero samples.
+  const empty =
+    requests === 0 &&
+    frame.subset.selected.some((s) => s.kind === 'rate' && executeRequest(s, 'http_req_failed', label));
+  return { ratio: null, counts: empty ? { numerator: 0, samples: 0 } : null };
 }
 
 /** A selected series without a value had no samples in this window: zero requests. */
@@ -115,11 +125,11 @@ function percentilesOf(trend: Trend | null): Pick<EndpointRow, 'p50' | 'p95' | '
 
 function endpointRow(frame: MetricWindowView, plan: RunPlan, label: string, seconds: number): RawRow {
   const trend = trendOf(frame, label);
-  const failure = failuresOf(frame, label);
   const live = frame.subset.selected.some(
     (s) => s.metric === 'http_req_duration' && s.tags.request === label && !s.tags.assertion,
   );
   const requests = requestCount(trend, live);
+  const failure = failuresOf(frame, label, requests);
   return {
     label,
     request: plan.requests.find((r) => r.label === label) ?? null,
