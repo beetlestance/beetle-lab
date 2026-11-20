@@ -24,7 +24,14 @@ export interface SettlementProgress {
   readonly gateway: RunnerSettlementGateway;
   readonly digest: (value: string) => string;
 }
+export interface ReclaimProgress {
+  readonly metadata: Pick<OutputDeletionMetadata, 'reclaimRetired'>;
+  /** Wall clock in epoch milliseconds; stamps requestedAt and paces idle passes. */
+  readonly clock: () => number;
+}
 export interface OutputDeletionRuntimeOptions {
+  /** Retired-workspace intent creation; requires settlement so begun work can finish. */
+  readonly reclaim?: ReclaimProgress;
   readonly settlement?: SettlementProgress;
   /** Explicit isolated embedding; production composition supplies retirement instead. */
   readonly fileOnly?: true;

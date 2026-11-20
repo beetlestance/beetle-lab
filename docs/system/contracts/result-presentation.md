@@ -195,7 +195,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
 | `web/src/features/runs/comparison/comparison.css` | `a3242b9d264d` |
-| `web/src/features/runs/comparison/Deltas.tsx` | `2ad806a2a782` |
+| `web/src/features/runs/comparison/Deltas.tsx` | `fd833e327f16` |
 | `web/src/features/runs/comparison/run-labels.ts` | `d1fb5aa96bdd` |
 | `web/src/features/runs/comparison/SourceNotes.tsx` | `0c63fd55d953` |
 | `web/src/features/runs/comparison/RecordedCharts.tsx` | `be843bdff76a` |

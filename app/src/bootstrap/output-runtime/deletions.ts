@@ -2,11 +2,12 @@ import type { OutputRuntimeOptions } from '../../ports/output-runtime.js';
 /** Capture private metadata capabilities before native namespace acquisition. */
 export function captureDeletions(
   options: OutputRuntimeOptions,
-): Pick<OutputRuntimeOptions, 'deletions' | 'retirement' | 'settlement' | 'fileOnlyDeletion'> {
+): Pick<OutputRuntimeOptions, 'deletions' | 'retirement' | 'settlement' | 'fileOnlyDeletion' | 'reclaim'> {
   const m = options.deletions;
   const r = options.retirement;
   if (!m) {
-    if (r || options.settlement || options.fileOnlyDeletion) throw Error('Missing deletion metadata');
+    if (r || options.settlement || options.fileOnlyDeletion || options.reclaim)
+      throw Error('Missing deletion metadata');
     return {};
   }
   if (options.settlement && !r) throw Error('Settlement requires retirement');
@@ -18,11 +19,12 @@ export function captureDeletions(
     recordPlan: m.recordPlan.bind(m),
     recordAbsence: m.recordAbsence.bind(m),
   });
-  if (!r) return { deletions, fileOnlyDeletion: true };
+  if (!r) return { deletions, fileOnlyDeletion: true, ...captureReclaim(options) };
   const rm = r.metadata;
   return {
     deletions,
     ...captureSettlements(options),
+    ...captureReclaim(options),
     retirement: Object.freeze({
       gateway: Object.freeze({ retireOutput: r.gateway.retireOutput.bind(r.gateway) }),
       metadata: Object.freeze({
@@ -51,4 +53,11 @@ function captureSettlements(options: OutputRuntimeOptions): Pick<OutputRuntimeOp
       }),
     }),
   };
+}
+
+function captureReclaim(options: OutputRuntimeOptions): Pick<OutputRuntimeOptions, 'reclaim'> {
+  const m = options.reclaim?.metadata;
+  if (!m) return {};
+  if (!options.settlement) throw Error('Reclamation requires settlement');
+  return { reclaim: Object.freeze({ metadata: Object.freeze({ reclaimRetired: m.reclaimRetired.bind(m) }) }) };
 }

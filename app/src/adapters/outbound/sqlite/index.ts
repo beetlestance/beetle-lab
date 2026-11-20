@@ -36,8 +36,7 @@ import type { InstallationStatusReader } from '../../../ports/installation-statu
 import type { InputStore } from '../../../ports/inputs.js';
 import type { SuiteStore, SuiteReader } from '../../../ports/suites.js';
 import type { SettingsScope } from '@beetle/contracts/api';
-import type { NamespaceStore } from '../../../ports/namespaces.js';
-import type { NamespaceEntity } from '../../../ports/namespaces.js';
+import type { NamespaceStore, NamespaceEntity } from '../../../ports/namespaces.js';
 import type { SettingsStore } from '../../../ports/settings.js';
 import type { SettingsIdentity } from '../../../ports/settings-reader.js';
 import { StorageError } from './protocol.js';
@@ -196,6 +195,10 @@ export class Metadata extends MetadataWorker {
       >,
     scan: (query) =>
       this.deletionCall({ kind: 'scanOutputDeletions', query }) as ReturnType<OutputDeletionMetadata['scan']>,
+    reclaimRetired: (query) =>
+      this.deletionCall({ kind: 'reclaimRetiredOutputs', query }) as ReturnType<
+        OutputDeletionMetadata['reclaimRetired']
+      >,
   };
 
   /** Failed replies do not settle the actual metadata carrier. */

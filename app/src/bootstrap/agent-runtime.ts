@@ -112,6 +112,7 @@ export async function openAgentRuntime(options: AgentRuntimeOptions, metadata: M
         deletions: metadata.outputDeletions,
         settlement: { metadata: metadata.outputDeletions, store: metadata.outputSettlements, gateway },
         retirement: { metadata: metadata.outputDeletions, gateway },
+        reclaim: { metadata: metadata.outputDeletions },
       });
       if (typeof outputs.publishedBytes?.read !== 'function') {
         await outputs.close();

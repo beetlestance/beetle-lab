@@ -9,7 +9,9 @@ DELETE on a workspace that holds saved suites, published inputs or terminal hist
 retires it rather than refusing or cascading. The workspace disappears from lists,
 aggregates and public workspace-scoped access, but its canonical name, root,
 settings, revisions, history, receipts, pins, replay floors and paid storage remain.
-Retirement frees no bytes. A new workspace may reuse the visible name under a new
+Retirement itself frees no bytes. Decision 034 later reclaims the eligible terminal
+Runs through output deletion: settlement purges their history rows and leaves a
+per-Run tombstone, while receipts, pins and the namespace marker stay. A new workspace may reuse the visible name under a new
 UUID; the retired identity never revives. Organisation and folder deletion stay
 empty-only.
 
@@ -38,11 +40,15 @@ records it needs.
 Migration 028 adds an irreversible retired flag; a permanent 2048-byte marker
 (migration 026) is charged and never refunded. Every workspace-scoped route and
 fresh mutation command checks visibility; SQL rejects new user work under retired
-scope. Physical reclamation is left to output retention and settlement.
+scope. Physical reclamation reuses the output deletion pipeline: since
+[decision 034](034-retired-namespace-reclamation.md), the backend begins the ordinary
+deletion intent for eligible terminal Runs of retired workspaces. Settlement then
+refunds them only after cleanup is proven. Pinned Runs stay protected.
 
 ## Review triggers
 
 Organisation retirement was added on 2026-11-17 (migration 030; see
 [namespaces](../system/contracts/namespaces.md)): an organisation whose workspaces are
-all retired is retired the same way. Revisit if retained retired
-workspaces become a material share of installation storage.
+all retired is retired the same way. Byte reclamation was added on 2026-11-20 (decision
+034). Revisit if Runs that stay unreclaimed in retired workspaces (pinned, noted,
+retried, export-linked or legacy) become a material share of installation storage.

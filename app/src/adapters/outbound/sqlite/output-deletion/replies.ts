@@ -20,6 +20,7 @@ import { decodeArtifact } from '../output-custody/index.js';
 import { boundedCopy } from '../input-values.js';
 import { closed, hash, natural, scope, uuid } from './values.js';
 import { position } from './cursor.js';
+import { reclaimPosition } from '../retired-reclaim/cursor.js';
 function summary(input: unknown): OutputDeletionSummary {
   closed(input, [
     'id',
@@ -114,7 +115,9 @@ export function deletionReplyLimit(operation: OutputDeletionOperation): number {
   if (operation.kind === 'getOutputRetirementRequest') return OUTPUT_RETIREMENT_REQUEST_BYTES;
   if (
     operation.kind === 'scanOutputDeletions' ||
-    (['scanOutputRetirements', 'scanOutputSettlements'] as readonly string[]).includes(operation.kind)
+    (['scanOutputRetirements', 'scanOutputSettlements', 'reclaimRetiredOutputs'] as readonly string[]).includes(
+      operation.kind,
+    )
   )
     return 65536;
   return ['beginOutputDeletion', 'getOutputDeletion', 'reserveOutputCleanupControl'].includes(operation.kind)
@@ -128,6 +131,7 @@ export function captureDeletionReply(operation: OutputDeletionOperation, input: 
   if (operation.kind === 'getOutputRetirementRequest') return retirementReply(operation.key, copy);
   if (finalScan(operation)) return retirementPageReply(operation, copy);
   if (operation.kind === 'scanOutputDeletions') return pageReply(operation, copy);
+  if (operation.kind === 'reclaimRetiredOutputs') return reclaimReply(operation, copy);
   if (
     operation.kind === 'beginOutputDeletion' ||
     operation.kind === 'getOutputDeletion' ||
@@ -271,5 +275,23 @@ function retirementPageReply(
     requireRule(after.after > (before?.after ?? 0));
     if (before) requireRule(after.upper === before.upper && after.installationId === before.installationId);
   }
+  return { items, nextCursor };
+}
+
+/** Items are intents begun by this call: fresh version 1, scoped, unique, never more than examined rows. */
+function reclaimReply(
+  operation: Extract<OutputDeletionOperation, { kind: 'reclaimRetiredOutputs' }>,
+  input: unknown,
+): OutputDeletionPage {
+  closed(input, ['items', 'nextCursor']);
+  requireRule(Array.isArray(input.items) && input.items.length <= operation.query.limit);
+  const items = (input.items as unknown[]).map((item) => summary(item));
+  requireRule(
+    items.every((item) => item.version === 1 && item.requestedAt === operation.query.requestedAt) &&
+      new Set(items.map((item) => item.id)).size === items.length,
+  );
+  requireRule(input.nextCursor === null || typeof input.nextCursor === 'string');
+  const nextCursor = input.nextCursor as string | null;
+  if (nextCursor !== null) reclaimPosition(nextCursor);
   return { items, nextCursor };
 }

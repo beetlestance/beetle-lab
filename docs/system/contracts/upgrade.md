@@ -69,6 +69,6 @@ Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgra
 | --- | --- |
 | `tools/install/upgrade/` | `38551fa22bcd` |
 | `tools/install/src/selection.ts` | `9567b14e41c3` |
-| `app/src/bootstrap/upgrade-fence.ts` | `8088db82568c` |
+| `app/src/bootstrap/upgrade-fence.ts` | `1c42b48f2278` |
 | `agent/src/journal/cold-inspection/` | `5a89d6d464a1` |
 | `app/src/adapters/outbound/sqlite/cold-inspection/` | `9cb07aa057fd` |
