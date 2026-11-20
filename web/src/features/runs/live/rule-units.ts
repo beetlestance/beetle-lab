@@ -1,5 +1,6 @@
 import { metricDefinitions } from '@beetle/contracts/k6-metrics';
 import type { PlanRule } from './plan.js';
+import { ms } from './format.js';
 export type RuleUnit = 'ms' | 'ratio' | 'count' | 'bytes' | 'count/s' | 'bytes/s' | null;
 const kinds = new Map(metricDefinitions.map((metric) => [metric.name, metric.kind]));
 const trendStats = new Set(['avg', 'min', 'max', 'med', 'p50', 'p90', 'p95', 'p99']);
@@ -32,8 +33,17 @@ export function ruleValue(unit: RuleUnit, value: number): string {
   return `${scalar(value)} ${unit}`;
 }
 
-/** Keep a compact observed ratio without rounding it across the configured threshold. */
-export function observedRuleValue(unit: RuleUnit, value: number, limit: number): string {
+function observedLatency(value: number, limit: number, upperBound: boolean): string {
+  const scale = value >= 100 ? 1 : value >= 10 ? 10 : 100;
+  const display = (upperBound ? Math.ceil(value * scale) : Math.round(value * scale)) / scale;
+  if (Math.sign(display - limit) !== Math.sign(value - limit) || (display === 0 && value > 0))
+    return ruleValue('ms', value);
+  return ms(display);
+}
+
+/** Compact observations preserve the configured comparison, small positive values, and upper bounds. */
+export function observedRuleValue(unit: RuleUnit, value: number, limit: number, upperBound = false): string {
+  if (unit === 'ms') return observedLatency(value, limit, upperBound);
   if (unit !== 'ratio') return ruleValue(unit, value);
   const display = Number((value * 100).toFixed(2));
   if (display === 0 && value > 0 && limit >= 0.0001) return '<0.01%';

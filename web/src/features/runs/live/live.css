@@ -309,6 +309,7 @@
 }
 
 .live-threshold-head .number {
+  font-family: var(--font-sans);
   max-width: 100%;
   overflow-wrap: anywhere;
 }

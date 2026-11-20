@@ -1,4 +1,5 @@
 import './progress.css';
+import type { CSSProperties } from 'react';
 import type { PlanStage, RunPlan } from './plan.js';
 import type { LiveFigures } from './model.js';
 import { clock, ms, percent, wallTime, whole } from './format.js';
@@ -38,7 +39,11 @@ function Stage({ stage, elapsedMs }: { stage: PlanStage; elapsedMs: number | nul
 function Stages({ plan, elapsedMs }: { plan: RunPlan; elapsedMs: number | null }) {
   if (plan.stages.length === 0 || plan.totalMs === null) return null;
   return (
-    <ol className="live-stages" aria-label="Load stages">
+    <ol
+      className="live-stages"
+      aria-label="Load stages"
+      style={{ '--live-stage-count': plan.stages.length } as CSSProperties}
+    >
       {plan.stages.map((stage) => (
         <Stage key={stage.startMs} stage={stage} elapsedMs={elapsedMs} />
       ))}

@@ -21,3 +21,11 @@ it('keeps observed failure and checks rates short without rounding through the l
   expect(observedRuleValue('ratio', 1/100000, 1/50000)).toBe('0.001%');
   expect(observedRuleValue('ratio', 0, .01)).toBe('0%');
 });
+
+it('formats observed latency without crossing the limit or understating an upper bound', () => {
+  expect(observedRuleValue('ms', 61.067208, 250)).toBe('61.1 ms');
+  expect(observedRuleValue('ms', 61.12, 250, true)).toBe('61.2 ms');
+  expect(observedRuleValue('ms', 249.97, 250, true)).toBe('249.97 ms');
+  expect(observedRuleValue('ms', 250.01, 250)).toBe('250.01 ms');
+  expect(observedRuleValue('ms', 0.001, 250)).toBe('0.001 ms');
+});
