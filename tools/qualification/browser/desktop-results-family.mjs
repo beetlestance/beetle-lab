@@ -22,6 +22,7 @@ export async function desktopResultsFamily(page, authored, fixture, evidence) {
     .evaluate((split) => [...split.children].map((section) => section.getBoundingClientRect().width));
   assert(thresholdWidth && scriptWidth && thresholdWidth < scriptWidth);
   await captureThemes(page, evidence, 'desktop-result', 4115);
+  await capturedActivity(page, evidence);
 
   const failed = await measuredRun(page, authored.suite, true);
   await page.setViewportSize({ width: 1440, height: 1018 });
@@ -54,6 +55,26 @@ export async function desktopResultsFamily(page, authored, fixture, evidence) {
     JSON.stringify({ runs: [passed.id, failed.id], baseline: passed.id, target: observed }),
     { mode: 0o600, flag: 'wx' },
   );
+}
+
+/** @param {Page} page @param {string} evidence */
+async function capturedActivity(page, evidence) {
+  await page.getByRole('tab', { name: 'What happened', exact: true }).click();
+  const schedule = page.getByRole('list', { name: 'Scheduled stages', exact: true }).getByRole('listitem');
+  await expect(schedule).toHaveText([
+    /00:00.*Ramp to 4 a second/,
+    /00:05.*Steady at 4 a second/,
+    /00:20.*Ramp down to 1 a second/,
+    /00:24.*Drain/,
+  ]);
+  const recorded = page.getByRole('list', { name: 'Recorded run milestones', exact: true });
+  await expect(recorded).toContainText('Admission accepted');
+  await expect(recorded).toContainText('Native runtime exited');
+  await expect(recorded).not.toContainText('Steady at 4 a second');
+  await captureThemes(page, evidence, 'desktop-result-activity', 3662, async () => {
+    await expect(recorded).toContainText('Native runtime exited');
+    await expect(page.getByText('Loading latency observations…', { exact: true })).toHaveCount(0);
+  });
 }
 
 /** @param {Page} page @param {string} suite @param {boolean} fail @returns {Promise<SubmittedRun>} */
@@ -89,14 +110,16 @@ async function settledResult(page) {
   await expect(target.locator('figure')).toHaveCount(4);
 }
 
-/** @param {Page} page @param {string} evidence @param {string} view @param {number} height */
-async function captureThemes(page, evidence, view, height) {
+/** @param {Page} page @param {string} evidence @param {string} view @param {number} height
+ * @param {(() => Promise<void>) | undefined} [ready] */
+async function captureThemes(page, evidence, view, height, ready) {
   await page.setViewportSize({ width: 1440, height });
   for (const theme of ['Darkroom', 'Scarab']) {
     await page.getByRole('radio', { name: theme, exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme.toLowerCase());
     await page.evaluate(() => globalThis.scrollTo(0, 0));
     assert(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth));
+    await ready?.();
     await page.screenshot({
       path: join(evidence, `${view}-${theme.toLowerCase()}.png`),
       fullPage: true,

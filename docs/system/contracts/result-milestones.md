@@ -13,6 +13,13 @@ blocked delivery and explicit retry preserve the existing owner semantics.
 A retained heartbeat-only tail says no milestones are present; it never implies
 that milestones never occurred. At most 100 projected rows / 64 KiB remain cached.
 
+## Stage schedule
+
+An available single-scenario saved plan contributes its scheduled stage labels and
+offsets, including drain. The schedule has a separate heading and list from recorded
+observations. A scheduled offset never establishes that a transition occurred or
+that an interrupted run reached that stage. Other plans omit the schedule.
+
 ## Native latency observation
 
 The selected desktop activity panel (or opened phone disclosure) reads the existing
@@ -37,8 +44,9 @@ These source checks do not qualify a packaged native deployment.
 
 | Code | Reviewed |
 | --- | --- |
-| `web/src/features/runs/timeline/index.tsx` | `23f6cfccb7f9` |
+| `web/src/features/runs/timeline/index.tsx` | `30e06040ddfd` |
+| `web/src/features/runs/timeline/StageSchedule.tsx` | `72b6839b74b8` |
 | `web/src/features/runs/timeline/Milestones.tsx` | `ba2b2f78e6f1` |
 | `web/src/features/runs/live/Extras.tsx` | `ad293364de0f` |
 | `web/src/features/runs/live/rise-position.ts` | `136a516589c3` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `f8c87c408ae2` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `4ff20bb51e55` |

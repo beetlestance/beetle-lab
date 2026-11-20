@@ -9,7 +9,7 @@ import { PublishedDiagnostics } from '../diagnostics/index.js';
 import { RunPerformanceReport } from '../performance-report/index.js';
 import type { RiseOrigin } from '../live/rise-position.js';
 import { LatencyRise } from '../live/Extras.js';
-import type { PlanRequest } from '../live/plan.js';
+import type { PlanRequest, PlanStage } from '../live/plan.js';
 import { ExecutionActivity } from '../timeline/index.js';
 import { RunWarnings } from '../warnings/index.js';
 
@@ -96,6 +96,7 @@ type ReportTabsProps = {
   tab: ReportTab;
   onSelect: (tab: ReportTab) => void;
   requests?: readonly PlanRequest[];
+  stages?: readonly PlanStage[];
   origin?: RiseOrigin | undefined;
   phoneTarget?: ReactNode;
   phoneExtras?: ReactNode;
@@ -108,6 +109,7 @@ export function ReportTabs({
   tab,
   onSelect,
   requests = [],
+  stages = [],
   origin,
   phoneTarget,
   phoneExtras,
@@ -121,10 +123,12 @@ export function ReportTabs({
     activity: {
       label: 'What happened',
       body: (
-        <>
-          <LatencyRise run={run} requests={requests} origin={origin} explain />
-          <ExecutionActivity key={`activity:${run.id}/${run.activeAttemptId}`} run={run} terminal narrative />
-        </>
+        <ExecutionActivity
+          key={`activity:${run.id}/${run.activeAttemptId}`}
+          run={run}
+          terminal
+          narrative={{ stages, observation: <LatencyRise run={run} requests={requests} origin={origin} explain /> }}
+        />
       ),
     },
     artifacts: { label: 'Artifacts', body: <RunArtifacts run={run} terminal heading="Artifacts" /> },

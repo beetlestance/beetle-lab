@@ -342,6 +342,7 @@ function SupplementaryResult({
         tab={tab}
         onSelect={onSelect}
         requests={plan.requests}
+        stages={plan.stages}
         origin={measurementOrigin(overview)}
         phoneTarget={
           showTarget && (
