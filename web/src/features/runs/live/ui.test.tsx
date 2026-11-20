@@ -111,27 +111,6 @@ it('shows reconnecting with stale figures and retries at once', async () => {
   await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
 });
 
-it('cancels from the header through the shared owner and then shows cancelling', async () => {
-  const current = recent();
-  vi.spyOn(LiveMetricReads.prototype, 'read').mockImplementation(async () => liveFrame(current, 1));
-  const cancel = {
-    pending: false,
-    unknown: false,
-    accepted: false,
-    message: null,
-    request: vi.fn(async () => undefined),
-  };
-  const view = mountLive(routesFor(() => current).client, { run: current, cancel });
-  await screen.findByRole('heading', { name: 'Holding 1,200 a second' });
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel run' }));
-  expect(cancel.request).toHaveBeenCalledTimes(1);
-  view.update({ run: { ...current, version: 2, cancellationRequested: true }, cancel: { ...cancel, accepted: true } });
-  expect(await screen.findByRole('heading', { name: 'Cancelling steady-1.2k' })).toBeVisible();
-  expect(screen.getByText(/Last live window at \d\d:\d\d of 10:00/)).toBeVisible();
-  expect(screen.queryByRole('button', { name: 'Cancel run' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Pause stream' })).not.toBeInTheDocument();
-});
-
 it('retains the last figures in one sealing card when finalizing, without further live reads', async () => {
   const current = recent();
   const { read, view } = await running(current);

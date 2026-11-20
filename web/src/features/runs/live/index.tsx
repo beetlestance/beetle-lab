@@ -10,7 +10,7 @@ import type { RunSnapshotProps } from '../RunSnapshot.js';
 import { RunReads } from '../RunReads.js';
 import { EndedBanner } from './Banners.js';
 import { WholeRun, MetricsGrid, TargetRuntime, chartDomain } from './Charts.js';
-import { headlineOf, sentenceOf, statusOf, isEarlyPhase } from './copy.js';
+import { headlineOf, sentenceOf, statusOf, isEarlyPhase, isStoppingPhase } from './copy.js';
 import type { Phase } from './copy.js';
 import { useSessionAccess } from '../../../app/session.js';
 import { useRevision, useSuite, usePhaseReads } from './data.js';
@@ -136,8 +136,14 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
       )}
       {isEarlyPhase(stream.phase) && <EarlyArt />}
       <EndedBanner run={run} requests={plan.requests} showResult={showResult} />
-      {stream.phase === 'finalizing' && (
-        <Finalizing run={run} plan={plan} figures={stream.figures} lastT={at.stoppedAtMs} />
+      {isStoppingPhase(stream.phase) && (
+        <Finalizing
+          run={run}
+          plan={plan}
+          figures={stream.figures}
+          lastT={at.stoppedAtMs}
+          visible={stream.phase === 'finalizing'}
+        />
       )}
       <PhaseBody phase={stream.phase} run={run} revision={revision.data} cancel={cancel} reads={phaseReads} />
       {isEarlyPhase(stream.phase) && <EarlyMetricsSkeleton />}
@@ -189,7 +195,7 @@ function headerText(props: Parameters<typeof RunHeader>[0], suiteName: string | 
 }
 
 function reconnectHeader(stream: LiveStream, at: Positions) {
-  if (!stream.stalled || !stream.latest) return null;
+  if (stream.phase !== 'running' || !stream.stalled || !stream.latest) return null;
   const seconds = Math.max(0, Math.round((stream.now - stream.latest.receivedWall) / 1000));
   const lastUpdate = at.stoppedAtMs === null ? 'the last received window' : clock(at.stoppedAtMs);
   return {

@@ -13,17 +13,17 @@ export function Finalizing({
   plan,
   figures,
   lastT,
+  visible = true,
 }: {
   run: Run;
   plan: RunPlan;
   figures: LiveFigures | null;
   lastT: number | null;
+  visible?: boolean;
 }) {
   const timeline = useTimeline(run, false);
-  const rows = timeline.data?.rows ?? [];
-  const retained = timeline.isError && timeline.data !== undefined;
-  const incomplete = timeline.data?.coverage !== 'contiguous' || timeline.data.omitted || timeline.data.backlog;
-  const sealed = rows.filter((row) => row.kind === 'artifact.sealed').length;
+  if (!visible) return null;
+  const { rows, retained, incomplete, sealed } = sealingEvidence(timeline);
   const limit = (metric: string, stat: string) =>
     plan.rules.find((rule) => rule.metric === metric && rule.stat === stat)?.value ?? null;
   return (
@@ -55,6 +55,14 @@ export function Finalizing({
       />
     </section>
   );
+}
+
+function sealingEvidence(timeline: ReturnType<typeof useTimeline>) {
+  const rows = timeline.data?.rows ?? [];
+  const retained = timeline.isError && timeline.data !== undefined;
+  const incomplete = timeline.data?.coverage !== 'contiguous' || timeline.data.omitted || timeline.data.backlog;
+  const sealed = rows.filter((row) => row.kind === 'artifact.sealed').length;
+  return { rows, retained, incomplete, sealed };
 }
 
 function SealingTime({ lastT, totalMs, files }: { lastT: number | null; totalMs: number | null; files: string }) {

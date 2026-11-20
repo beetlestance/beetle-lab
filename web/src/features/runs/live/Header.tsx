@@ -145,10 +145,18 @@ export function LiveCancelButton({
   early,
 }: Pick<HeaderProps, 'run' | 'cancel' | 'readOnly' | 'early'>) {
   const terminal = ['finished', 'cancelled', 'errored'].includes(run.state);
-  if (!cancel || terminal || readOnly || cancelRequested(run, cancel)) return null;
+  if (terminal || readOnly || run.state === 'finalizing') return null;
+  const variant = early ? 'secondary' : 'inverse';
+  if (cancelRequested(run, cancel))
+    return (
+      <Button variant={variant} disabled>
+        Cancelling…
+      </Button>
+    );
+  if (!cancel) return null;
   return (
     <Button
-      variant={early ? 'secondary' : 'inverse'}
+      variant={variant}
       loading={cancel.pending}
       loadingLabel="Sending"
       disabled={cancel.unknown}
