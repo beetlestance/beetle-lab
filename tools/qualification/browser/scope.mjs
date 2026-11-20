@@ -5,7 +5,7 @@ import { saveEditor } from './authoring.mjs';
 export async function crossScope(page, authored) {
   const first = new URL(authored.suite);
   const originalOrganization = first.pathname.split('/')[2];
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Organizations' }).click();
+  await page.getByRole('link', { name: 'Beetle Lab home' }).click();
   await page.getByRole('button', { name: 'Create organization', exact: true }).click();
   await page.getByLabel('Organization name', { exact: true }).fill('Other browser scope');
   await page.getByLabel('Organization slug', { exact: true }).fill('other-browser-scope');
@@ -19,7 +19,7 @@ export async function crossScope(page, authored) {
   await page.getByRole('link', { name: 'Other workspace', exact: true }).click();
   const secondWorkspace = page.url();
   await page.getByRole('link', { name: 'Suites', exact: true }).click();
-  await expect(page.getByText('No suites yet.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No suites here yet', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Synthetic k6 suite', exact: true })).toHaveCount(0);
   const foreign = new URL(authored.suite);
   foreign.pathname = foreign.pathname.replace(
@@ -40,5 +40,5 @@ export async function crossScope(page, authored) {
   await expect(page.getByRole('heading', { name: 'Synthetic k6 suite', exact: true })).toBeVisible();
   await page.goto(secondWorkspace);
   await page.getByRole('link', { name: 'Suites', exact: true }).click();
-  await expect(page.getByText('No suites yet.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'No suites here yet', exact: true })).toBeVisible();
 }
