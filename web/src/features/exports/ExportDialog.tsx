@@ -12,7 +12,14 @@ import type { useRevisionExport } from './useRevisionExport.js';
 import './exports.css';
 
 export type RevisionExport = ReturnType<typeof useRevisionExport>;
-type Props = { revision: SuiteRevision; suiteName: string; flow: RevisionExport; close: () => void; editHref: string };
+type Props = {
+  revision: SuiteRevision;
+  suiteName: string;
+  flow: RevisionExport;
+  close: () => void;
+  editHref: string;
+  zip?: boolean;
+};
 
 function useNow(active: boolean) {
   const [now, setNow] = useState(() => Date.now());
@@ -115,15 +122,15 @@ function CancelFailure({ flow }: { flow: RevisionExport }) {
   );
 }
 
-function ReadyActions({ job }: { job: ExportJob }) {
+function ReadyActions({ job, zip }: { job: ExportJob; zip: boolean }) {
   const [copied, setCopied] = useState<'idle' | 'done' | 'failed'>('idle');
-  const artifact = job.artifact!;
+  const digest = job.artifact!.sha256;
   return (
     <>
       <Button
         variant="secondary"
         onClick={() =>
-          navigator.clipboard?.writeText(artifact.sha256).then(
+          navigator.clipboard?.writeText(digest).then(
             () => setCopied('done'),
             () => setCopied('failed'),
           ) ?? setCopied('failed')
@@ -131,13 +138,17 @@ function ReadyActions({ job }: { job: ExportJob }) {
       >
         {copied === 'done' ? 'Copied' : copied === 'failed' ? 'Copy not available' : 'Copy SHA-256'}
       </Button>
-      <VerifiedExportDownload job={job} />
+      <VerifiedExportDownload
+        job={job}
+        format={zip ? 'zip' : 'script'}
+        label={zip ? 'Download ZIP' : 'Download script'}
+      />
     </>
   );
 }
 
 /** "Overlay / Export script": Preparing, Ready, Uses secrets and Unknown, plus the start and failed states. */
-export function ExportDialog({ revision, suiteName, flow, close, editHref }: Props) {
+export function ExportDialog({ revision, suiteName, flow, close, editHref, zip = false }: Props) {
   const job = flow.job;
   const secrets = secretNames(revision);
   const name = `${suiteName}, revision ${revision.ordinal}`;
@@ -168,12 +179,20 @@ export function ExportDialog({ revision, suiteName, flow, close, editHref }: Pro
         <p>Save a revision without secret references and export that one.</p>
       </Dialog>
     );
-  return <ExportState job={job} name={name} revision={revision} flow={flow} close={close} closeButton={closeButton} />;
+  return (
+    <ExportState
+      job={job}
+      name={name}
+      revision={revision}
+      flow={flow}
+      close={close}
+      closeButton={closeButton}
+      zip={zip}
+    />
+  );
 }
-
 type StateProps = { job: ExportJob; flow: RevisionExport; close: () => void; closeButton: ReactNode };
-
-function ReadyDialog({ job, name, close, closeButton, flow }: StateProps & { name: string }) {
+function ReadyDialog({ job, name, close, closeButton, flow, zip }: StateProps & { name: string; zip: boolean }) {
   const { readOnly } = useSessionAccess();
   const artifact = job.artifact!;
   return (
@@ -191,7 +210,7 @@ function ReadyDialog({ job, name, close, closeButton, flow }: StateProps & { nam
           >
             {flow.preparing ? 'Preparing new script…' : 'Prepare again'}
           </Button>
-          <ReadyActions job={job} />
+          <ReadyActions job={job} zip={zip} />
         </>
       }
     >
@@ -212,7 +231,11 @@ function ReadyDialog({ job, name, close, closeButton, flow }: StateProps & { nam
           ['Made', <ExportTime key="made" value={job.madeAt} />],
         ]}
       />
-      <p>Run it with k6 wherever you like. The download is checked against this SHA-256.</p>
+      <p>
+        {zip
+          ? 'Extract script.js and run it with k6. The script is checked against this SHA-256 before packaging.'
+          : 'Run it with k6 wherever you like. The download is checked against this SHA-256.'}
+      </p>
       <p>The script stops at its declared time limit, including readiness and load.</p>
       <StartNotes job={undefined} flow={flow} />
     </Dialog>
@@ -287,9 +310,11 @@ function ExportState({
   flow,
   close,
   closeButton,
+  zip,
 }: {
   job: ExportJob | undefined;
   name: string;
+  zip: boolean;
   revision: SuiteRevision;
   flow: RevisionExport;
   close: () => void;
@@ -298,7 +323,7 @@ function ExportState({
   const shared = { flow, close, closeButton };
   switch (stageOf(job, flow.preparing)) {
     case 'ready':
-      return <ReadyDialog job={job!} name={name} close={close} closeButton={closeButton} flow={flow} />;
+      return <ReadyDialog job={job!} name={name} zip={zip} {...shared} />;
     case 'unknown':
       return <UnknownDialog job={job!} {...shared} />;
     case 'preparing':
@@ -307,7 +332,6 @@ function ExportState({
       return <StartState job={job} revision={revision} {...shared} />;
   }
 }
-
 function StartNotes({ job, flow }: { job: ExportJob | undefined; flow: RevisionExport }) {
   const { readOnly } = useSessionAccess();
   const errors = [flow.inputsFailed ? 'Could not read the workspace settings.' : '', flow.problem].filter(Boolean);
@@ -331,7 +355,6 @@ function StartNotes({ job, flow }: { job: ExportJob | undefined; flow: RevisionE
     </>
   );
 }
-
 const endedTitle = { failed: 'The last export failed', cancelled: 'The last export was cancelled' } as Record<
   string,
   string

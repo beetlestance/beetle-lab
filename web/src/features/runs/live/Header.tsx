@@ -182,6 +182,12 @@ function CancelAlert({ run, cancel }: Pick<HeaderProps, 'run' | 'cancel'>) {
 }
 
 /** Title block of the Live run boards: context line, headline, sentence and actions. */
+function scriptZipHref(run: Run, readOnly: boolean): string | undefined {
+  if (readOnly) return undefined;
+  const { organizationId, workspaceId } = run.scope;
+  return routes.suiteScriptZipFromRun(organizationId, workspaceId, run.suiteId, run.revisionId, run.id);
+}
+
 export function LiveHeader(props: HeaderProps) {
   const { status, stream } = props;
   return (
@@ -204,7 +210,12 @@ export function LiveHeader(props: HeaderProps) {
             </p>
             <div className="live-actions">
               <CompareButton />
-              <LiveDownloads ordinal={props.revisionOrdinal} snapshot={props.snapshot} onScript={props.onScript} />
+              <LiveDownloads
+                ordinal={props.revisionOrdinal}
+                snapshot={props.snapshot}
+                onScript={props.onScript}
+                zipHref={scriptZipHref(props.run, props.readOnly)}
+              />
               {props.retryStream ? (
                 <Button onClick={props.retryStream}>Retry now</Button>
               ) : (

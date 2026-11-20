@@ -4,6 +4,13 @@ import { useApi } from '../../app/api.js';
 import { Button, buttonClass } from '../../components/Button.js';
 import type { ButtonSize, ButtonVariant } from '../../components/Button.js';
 import { readVerifiedDownload } from './script-bytes.js';
+import { scriptZip } from './script-zip.js';
+
+const downloadFormats = {
+  script: { filename: 'suite.js', saveLabel: 'Save checked script' },
+  zip: { filename: 'script.zip', saveLabel: 'Save checked ZIP' },
+} as const;
+type DownloadFormat = keyof typeof downloadFormats;
 interface Owner {
   active: boolean;
   controller: AbortController | null;
@@ -22,30 +29,42 @@ export function VerifiedExportDownload({
   label = 'Download script',
   variant = 'primary',
   size = 'md',
+  format = 'script',
 }: {
   job: ExportJob;
   label?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  format?: DownloadFormat;
 }) {
   if (job.state !== 'ready' || !job.artifact) return null;
-  return <DownloadControl job={job} label={label} variant={variant} size={size} />;
+  return <DownloadControl job={job} label={label} variant={variant} size={size} format={format} />;
 }
 function DownloadControl({
   job,
   label,
   variant,
   size,
+  format,
 }: {
   job: ExportJob;
   label: string;
   variant: ButtonVariant;
   size: ButtonSize;
+  format: DownloadFormat;
 }) {
   const api = useApi();
-  const identity = JSON.stringify([job.scope.organizationId, job.scope.workspaceId, job.id, job.state, job.artifact]);
+  const identity = JSON.stringify([
+    job.scope.organizationId,
+    job.scope.workspaceId,
+    job.id,
+    job.state,
+    job.artifact,
+    format,
+  ]);
   const owner = useMemo<Owner>(() => ({ active: true, controller: null, url: null }), [api, identity]);
-  const download = useDownload(job, owner);
+  const download = useDownload(job, owner, format);
+  const { filename, saveLabel } = downloadFormats[format];
   const pending = download.phase === 'reading' || download.phase === 'cancelling';
   return (
     <span className="export-verified-download">
@@ -58,8 +77,8 @@ function DownloadControl({
         </Button>
       )}
       {download.phase === 'ready' && owner.url && (
-        <a className={buttonClass('text', size)} href={owner.url} download="suite.js">
-          Save checked script
+        <a className={buttonClass('text', size)} href={owner.url} download={filename}>
+          {saveLabel}
         </a>
       )}
       <DownloadMessage phase={download.phase} error={download.error} />
@@ -90,22 +109,22 @@ function retain(owner: Owner, url: string, clear: () => void) {
 function live(owner: Owner, controller: AbortController) {
   return owner.active && !controller.signal.aborted;
 }
-function offerSave(url: string): boolean {
+function offerSave(url: string, { filename, saveLabel }: (typeof downloadFormats)[DownloadFormat]): string | null {
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'suite.js';
+  anchor.download = filename;
   anchor.hidden = true;
   document.body.append(anchor);
   try {
     anchor.click();
-    return true;
+    return null;
   } catch {
-    return false;
+    return `Your browser did not start saving. Use ${saveLabel}.`;
   } finally {
     anchor.remove();
   }
 }
-function useDownload(job: ExportJob, owner: Owner) {
+function useDownload(job: ExportJob, owner: Owner, format: DownloadFormat) {
   const [saved, setSaved] = useState<View>({ owner, phase: 'idle', error: null });
   useLayoutEffect(() => {
     owner.active = true;
@@ -125,11 +144,11 @@ function useDownload(job: ExportJob, owner: Owner) {
     try {
       const bytes = await readVerifiedDownload(job, controller.signal);
       if (!live(owner, controller)) return;
-      const url = URL.createObjectURL(new Blob([bytes], { type: 'text/javascript;charset=utf-8' }));
+      const blob = format === 'zip' ? scriptZip(bytes) : new Blob([bytes], { type: 'text/javascript;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
       retain(owner, url, () => update('idle'));
-      const requested = offerSave(url);
-      if (live(owner, controller))
-        update('ready', requested ? null : 'Your browser did not start saving. Use Save checked script.');
+      const message = offerSave(url, downloadFormats[format]);
+      if (live(owner, controller)) update('ready', message);
     } catch (error) {
       if (live(owner, controller)) update('error', downloadFailure(error));
     } finally {

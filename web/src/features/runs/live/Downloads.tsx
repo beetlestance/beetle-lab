@@ -1,5 +1,6 @@
 import { useEffect, useRef, useId, useState } from 'react';
-import { Button } from '../../../components/Button.js';
+import { Link } from 'react-router-dom';
+import { Button, buttonClass } from '../../../components/Button.js';
 import { HeaderIcon } from './HeaderIcon.js';
 
 import { provisionalDownload } from './provisional-download.js';
@@ -9,10 +10,12 @@ export function LiveDownloads({
   ordinal,
   snapshot,
   onScript,
+  zipHref,
 }: {
   ordinal: number | null;
   snapshot: ProvisionalSnapshot | null;
   onScript(): void;
+  zipHref?: string | undefined;
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
   const { save, saving, message } = useProvisionalSave(snapshot);
@@ -53,6 +56,18 @@ export function LiveDownloads({
           <small>{snapshot ? 'Provisional chart windows (.csv)' : 'Waiting for live observations'}</small>
         </Button>
         {message && <p role="alert">{message}</p>}
+        {zipHref && (
+          <Link
+            to={zipHref}
+            className={buttonClass('text', 'md')}
+            onClick={() => {
+              if (ref.current) ref.current.open = false;
+            }}
+          >
+            <span>{ordinal === null ? 'Download saved script ZIP' : `Download revision ${ordinal} ZIP`}</span>
+            <small>.zip with script.js, runs with plain k6</small>
+          </Link>
+        )}
 
         <Button
           variant="text"

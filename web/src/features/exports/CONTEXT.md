@@ -30,8 +30,8 @@ Checks: web/src/features/exports/*.test.tsx.
   Limits over 48 hours are refused rather than clamped; unknown replays keep their intent.
 - `script-bytes.ts` captures published size/hash/path; inline scriptText stays at 1 MiB,
   downloads at 64 MiB. One original, no queue; 30 s abort retains cleanup/hash work.
-- VerifiedDownload saves original checked bytes with one global URL; retirement
-  aborts and revokes. Browser handoff is not OS save success. No automatic reads.
+- VerifiedDownload saves checked bytes as plain JS or a ZIP containing only script.js.
+  One global URL; retirement aborts and revokes. Nothing is read until requested.
 - `ExportsTable.tsx` (`WorkspaceExports`) is the Exports workspace tab, mounted at
   `routes.exports` through the workspace scope route. Suite names come from one page of 100
   suites; revision ordinals from at most 32 reads.

@@ -30,9 +30,9 @@ it('saves only checked original bytes and keeps a verified fallback link without
  expect(new Uint8Array(original)).toEqual(bytes);
  expect(screen.getByRole('status')).toHaveTextContent('save requested');view.unmount();expect(revoked).toHaveBeenCalledWith('blob:checked-1');
 });
-it('never offers a save or creates a URL for mismatched bytes',async()=>{
+it.each(['script', 'zip'] as const)('never offers a %s save or creates a URL for mismatched bytes',async(format)=>{
  vi.stubGlobal('fetch',vi.fn(async()=>response()));const wrong=job();wrong.artifact!.sha256='f'.repeat(64);
- mount(<VerifiedExportDownload job={wrong}/>);fireEvent.click(screen.getByRole('button',{name:'Download script'}));
+ mount(<VerifiedExportDownload job={wrong} format={format}/>);fireEvent.click(screen.getByRole('button',{name:'Download script'}));
  expect(await screen.findByRole('alert')).toHaveTextContent('SHA-256');expect(created).not.toHaveBeenCalled();expect(saves).toHaveLength(0);
 });
 it('retires old publication URLs on identity changes and keeps at most one URL across controls',async()=>{

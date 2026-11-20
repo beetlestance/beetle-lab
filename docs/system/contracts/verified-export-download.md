@@ -29,14 +29,19 @@ is retained until the issued fetch, body cleanup and hash work actually settle;
 an ignored abort cannot admit another download early. Every continuation checks
 its abort signal before returning bytes.
 
-A control binds its API/session, organisation, workspace, job and publication.
+A control binds its API/session, organisation, workspace, job, publication and format.
 Retirement aborts it and hides previous state immediately. A retired result cannot
 create a Blob URL or request a save. At most one checked save URL is retained
 across export rows/dialogs; starting another releases the previous URL and its
 control's fallback. Closing or retiring its owner revokes the URL.
 
-The control requests a browser save only after verification, using the original
-bytes and fixed `suite.js` filename. A checked fallback link remains if automatic
+The control requests a browser save only after verification. Direct exports save
+the original bytes as `suite.js`. The Live and Results ZIP actions open the export
+dialog for the run's pinned revision. Preparing an export requires an explicit
+action. The browser puts the SHA-256-verified script in `script.zip` as its sole,
+uncompressed `script.js` entry. The displayed hash describes the script inside.
+
+A checked fallback link remains if automatic
 saving does not start. A refused handoff shows that fallback and an explicit
 message. The UI says size/SHA are checked and saving was requested, never that a
 file was saved successfully. The browser owns the final filesystem operation.
@@ -54,8 +59,8 @@ These proofs do not qualify a newly built frontend image or a native publication
 | --- | --- |
 | `web/src/features/exports/script-bytes.ts` | `b5f1a8ab6f19` |
 | `web/src/features/exports/scriptText.ts` | `d5e7ac244ac6` |
-| `web/src/features/exports/VerifiedDownload.tsx` | `7e5d1fdbf5d3` |
+| `web/src/features/exports/VerifiedDownload.tsx` | `c86f2076e683` |
 | `web/src/lib/response-body.ts` | `253992da68f6` |
-| `web/src/features/exports/ExportDialog.tsx` | `83fa0323e3e3` |
+| `web/src/features/exports/ExportDialog.tsx` | `60b97e77a311` |
 | `web/src/features/exports/ExportsTable.tsx` | `0d1892c56502` |
 | `web/src/features/exports/Job.tsx` | `97a3808af9c3` |
