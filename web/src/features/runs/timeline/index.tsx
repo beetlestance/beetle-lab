@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react';
+import type { PlanStage } from '../live/plan.js';
 import { Milestones } from './Milestones.js';
+import { StageSchedule } from './StageSchedule.js';
 import { Button } from '../../../components/Button.js';
 import { useId } from 'react';
 import type { Run } from '@beetle/contracts/api';
@@ -15,11 +18,11 @@ function coverage(data: Timeline) {
 export function ExecutionActivity({
   run,
   terminal,
-  narrative = false,
+  narrative,
 }: {
   run: Run;
   terminal: boolean;
-  narrative?: boolean;
+  narrative?: { stages: readonly PlanStage[]; observation: ReactNode };
 }) {
   const heading = useId();
   const query = useTimeline(run, terminal);
@@ -40,6 +43,13 @@ export function ExecutionActivity({
           Refresh activity
         </Button>
       </header>
+      {narrative && (
+        <>
+          <StageSchedule stages={narrative.stages} />
+          <h3 className="result-milestone-heading">Recorded observations</h3>
+          {narrative.observation}
+        </>
+      )}
       {query.isPending && <p role="status">Loading execution activity…</p>}
       {query.isError && (
         <p role="alert">

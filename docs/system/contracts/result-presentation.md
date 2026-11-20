@@ -190,7 +190,7 @@ output allowance, v4 carries the scalar p95. The list adds no metric reads.
 | `web/src/features/runs/result/target-model.ts` | `a9726ba3526f` |
 | `web/src/features/runs/result/phase-model.ts` | `5ff3d54b4aa0` |
 | `web/src/features/runs/result/TargetPhases.tsx` | `b6688cca6e5a` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `f8c87c408ae2` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `4ff20bb51e55` |
 | `web/src/features/runs/comparison/useComparison.ts` | `af8b670d2b12` |
 | `web/src/features/runs/comparison/figures.ts` | `8277b45c90aa` |
 | `web/src/features/runs/comparison/SettingsTable.tsx` | `pending` |
