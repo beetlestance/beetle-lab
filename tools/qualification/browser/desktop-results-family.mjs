@@ -17,6 +17,10 @@ export async function desktopResultsFamily(page, authored, fixture, evidence) {
   const passed = await measuredRun(page, authored.suite, false);
   await settledResult(page);
   await expect(page.locator('.result-actions').getByRole('button').first()).toHaveText('Run again');
+  const [thresholdWidth, scriptWidth] = await page
+    .locator('.result-split')
+    .evaluate((split) => [...split.children].map((section) => section.getBoundingClientRect().width));
+  assert(thresholdWidth && scriptWidth && thresholdWidth < scriptWidth);
   await captureThemes(page, evidence, 'desktop-result', 4115);
 
   const failed = await measuredRun(page, authored.suite, true);

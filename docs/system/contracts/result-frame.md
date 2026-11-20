@@ -96,7 +96,7 @@ their retry controls.
 | --- | --- |
 | `web/src/features/runs/result/headline.ts` | `8e01d1114a29` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
-| `web/src/features/runs/result/ResultHeader.tsx` | `a1b3e2cb7046` |
+| `web/src/features/runs/result/ResultHeader.tsx` | `5422dec9bd48` |
 | `web/src/features/runs/result/RunNote.tsx` | `77d15ea26068` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
 | `web/src/features/runs/result/phone.css` | `ad8d1f8fbea4` |
