@@ -274,3 +274,16 @@
     gap: var(--s-40);
   }
 }
+
+.recovered-coverage {
+  padding: var(--s-12) var(--s-16);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+}
+.recovered-coverage p {
+  margin: 0;
+}
+.recovered-coverage p + p {
+  margin-top: var(--s-4);
+}

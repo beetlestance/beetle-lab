@@ -38,7 +38,9 @@ function SummaryContent({ reads, charts, ready, phone, archiveMissing }: Paramet
   if (stoppedMeasurementsAbsent(reads) && reads.summary?.availability === 'not_recorded')
     return <p className="result-muted">No whole-run figures were recorded.</p>;
   if (onlyRecoveredMeasurements(reads))
-    return <p className="result-muted">Only sampled charts were recovered. Whole-run figures are unavailable.</p>;
+    return (
+      <p className="result-muted">Only checkpoint measurements were recovered. Whole-run figures are unavailable.</p>
+    );
   return (
     <>
       <OverviewStatus query={reads.overview} />

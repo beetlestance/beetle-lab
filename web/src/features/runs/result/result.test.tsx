@@ -432,7 +432,10 @@ it.each([false, true])('displays recovered charts and prefers a published target
     restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
   });
   expect(await screen.findByRole('heading', { name: 'Recovered before the stop' })).toBeVisible();
-  expect(screen.getByText(/1 of 1 recorded windows shown/)).toBeVisible();
+  const retained = screen.getByText(/1 of 1 recorded windows shown/);
+  expect(retained).toBeVisible();
+  expect(retained.querySelector('time')).toHaveAttribute('datetime', '1970-01-01T00:00:01.000Z');
+  expect(screen.queryByRole('table', { name: 'Endpoints in the last retained window' })).toBeNull();
   expect(screen.getByRole('img', { name: /Recovered p95 latency/ })).toBeVisible();
   fireEvent.click(within(screen.getByRole('region', { name: 'Recovered charts' })).getByRole('radio', { name: 'Requests' }));
   expect(screen.getByRole('img', { name: /Recovered requests a second/ })).toBeVisible();
