@@ -8,6 +8,7 @@ import { liveSamplerConfiguration } from './live-controls.mjs';
 import { revision } from './authoring.mjs';
 import { start } from './results.mjs';
 import { assertRunState } from './run-state.mjs';
+import { holdTerminalRead, watchSealingReads } from './live-finalizing-read.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {import('./run-state.mjs').SubmittedRun} SubmittedRun */
@@ -97,24 +98,29 @@ async function captureStop(page, first, evidence) {
   const cancelling = page.getByRole('heading', { name: /^Cancelling / });
   const finalizing = page.getByRole('region', { name: 'Sealing results', exact: true });
   const terminal = page.getByRole('button', { name: 'Open result', exact: true });
-  await page.getByRole('button', { name: 'Cancel run', exact: true }).click();
-  await expect(cancelling.or(finalizing).or(terminal)).toBeVisible({ timeout: 15000 });
-  const cancellationVisible = await cancelling.isVisible();
-  if (cancellationVisible) {
-    await expect(page.getByRole('button', { name: 'Cancelling…', exact: true })).toBeDisabled();
-    await page.mouse.move(4, 4);
-    await page.screenshot({ path: join(evidence, 'live-cancelling.png'), fullPage: true });
-  }
-  await expect(finalizing.or(terminal)).toBeVisible({ timeout: 60000 });
-  const finalizingVisible = await finalizing.isVisible();
+  const gate = await holdTerminalRead(page, first);
+  const finishTrace = watchSealingReads(page, first);
+  let timelineReads;
+  let cancellationVisible;
+  let finalizingVisible;
   let samplerClosureVisible = false;
-  if (finalizingVisible) {
-    const progress = finalizing.getByRole('progressbar', { name: 'Sealing results', exact: true });
-    assert.equal(await progress.getAttribute('aria-valuenow'), null);
-    const closed = finalizing.getByText('Target sampler closed', { exact: true });
-    await expect(closed.or(terminal)).toBeVisible({ timeout: 15000 });
-    samplerClosureVisible = await closed.isVisible();
-    if (samplerClosureVisible) await page.screenshot({ path: join(evidence, 'live-finalizing.png'), fullPage: true });
+  try {
+    await page.getByRole('button', { name: 'Cancel run', exact: true }).click();
+    await expect(cancelling.or(finalizing).or(terminal)).toBeVisible({ timeout: 15000 });
+    cancellationVisible = await cancelling.isVisible();
+    if (cancellationVisible) {
+      await expect(page.getByRole('button', { name: 'Cancelling…', exact: true })).toBeDisabled();
+      await page.mouse.move(4, 4);
+      await page.screenshot({ path: join(evidence, 'live-cancelling.png'), fullPage: true });
+    }
+    await expect(finalizing.or(terminal)).toBeVisible({ timeout: 60000 });
+    finalizingVisible = await finalizing.isVisible();
+    if (finalizingVisible) {
+      samplerClosureVisible = await captureClosingSampler(finalizing, terminal, evidence);
+    }
+  } finally {
+    await gate.release();
+    timelineReads = await finishTrace();
   }
   await expect(terminal).toBeVisible({ timeout: 60000 });
   await terminal.click();
@@ -128,5 +134,28 @@ async function captureStop(page, first, evidence) {
     (event) => event.kind === 'phase.started' && event.phase === 'collect',
   );
   if (samplerClosureVisible) assert(collectionRecorded);
-  return { cancellationVisible, finalizingVisible, samplerClosureVisible, collectionRecorded, resultOpened: true };
+  return {
+    cancellationVisible,
+    finalizingVisible,
+    samplerClosureVisible,
+    collectionRecorded,
+    terminalReadHeld: gate.held(),
+    timelineReads,
+    resultOpened: true,
+  };
+}
+
+/**
+ * @param {import('@playwright/test').Locator} finalizing
+ * @param {import('@playwright/test').Locator} terminal
+ * @param {string} evidence
+ */
+async function captureClosingSampler(finalizing, terminal, evidence) {
+  const progress = finalizing.getByRole('progressbar', { name: 'Sealing results', exact: true });
+  assert.equal(await progress.getAttribute('aria-valuenow'), null);
+  const closed = finalizing.getByText('Target sampler closed', { exact: true });
+  await expect(closed.or(terminal)).toBeVisible({ timeout: 15000 });
+  if (!(await closed.isVisible())) return false;
+  await finalizing.screenshot({ path: join(evidence, 'live-finalizing.png'), animations: 'disabled' });
+  return true;
 }
