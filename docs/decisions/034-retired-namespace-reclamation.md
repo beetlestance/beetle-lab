@@ -14,8 +14,8 @@ settlement.
 - The output deletion runtime gains a fourth lane, used only when settlement is
   configured. It starts at most 32 intents per turn, and an empty pass waits 30 s.
 - The walk is a keyset over `workspaces_page`, then `runs_page` inside a retired
-  workspace. Each candidate is checked with indexed probes, and a cursor is only a
-  position hint.
+  workspace. Each candidate is checked with indexed probes. A cursor is only a
+  position hint: Run headers are read only while their workspace is retired.
 - Intent and request IDs are derived from the Run ID. A lost reply or a replayed pass
   begins the same intent, and `run_id` stays unique.
 - A Run is offered only if settlement can later purge it. It must be terminal, with
@@ -58,8 +58,17 @@ not reclaimed, because settlement cannot purge them today. Legacy Runs without a
 cleanup control ledger row are not reclaimed either. These bytes stay charged until
 settlement learns to purge them.
 
+A Run that passes every check but then makes Begin fail with an unexpected error
+fails the whole output runtime, as every other lane does. The cursor is held in
+memory, so after a restart the sweep reaches that Run again. No such path is known.
+The checks match the guards in migrations 013, 021, 024 and 033. A failure is
+reported rather than skipped silently, so the cause can be fixed. An idle reclaim
+turn hands its slot to file removal, so the other lanes lose no share while nothing
+is being reclaimed.
+
 ## Review triggers
 
 Revisit if stranded pinned, noted or legacy Runs in retired workspaces become a
 material share of installation storage, or if settlement gains a purge path for
-notes, exports or retries.
+notes, exports or retries, or if a reclaim failure is ever seen stopping the
+output runtime.

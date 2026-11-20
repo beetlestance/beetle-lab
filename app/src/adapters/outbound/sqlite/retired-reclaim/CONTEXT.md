@@ -11,5 +11,5 @@ funded cleanup control. Eligible Runs get an ordinary Begin with deterministic d
 and request IDs derived from the Run ID, so a replay begins nothing new.
 
 Never deletes rows or files and never charges or refunds. Live workspaces are skipped.
-Pins keep protecting after retirement. The cursor is a validated position hint only.
+Pins keep protecting after retirement. The cursor is a validated position hint only; Run reads re-check `retired=1`.
 Tests: app/test/retired-reclaim/*.test.ts, app/test/output-deletion-runtime/reclaim.test.ts.

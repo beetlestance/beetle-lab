@@ -25,14 +25,19 @@ export interface WorkspaceRow {
   readonly workspaceId: string;
   readonly retired: boolean;
 }
+export const nextWorkspaceSql = `SELECT organization_id,id,retired FROM workspaces INDEXED BY workspaces_page
+ WHERE (organization_id,id)>(?,?) ORDER BY organization_id,id LIMIT 1`;
+/**
+ * Run headers are read only while their workspace is retired, so a forged or stale cursor
+ * that claims to be inside a live workspace yields nothing rather than an intent.
+ */
+export const retiredRunsSql = `SELECT r.id,r.version,(${reclaimableSql}) open FROM runs r INDEXED BY runs_page
+ WHERE r.organization_id=? AND r.workspace_id=? AND r.id>?
+ AND EXISTS(SELECT 1 FROM workspaces w WHERE w.organization_id=r.organization_id AND w.id=r.workspace_id AND w.retired=1)
+ ORDER BY r.id LIMIT ?`;
 /** One indexed keyset step; live workspaces are read and skipped, never inspected further. */
 export function nextWorkspace(db: DatabaseSync, after: ReclaimPosition): WorkspaceRow | null {
-  const row = db
-    .prepare(
-      `SELECT organization_id,id,retired FROM workspaces INDEXED BY workspaces_page
-   WHERE (organization_id,id)>(?,?) ORDER BY organization_id,id LIMIT 1`,
-    )
-    .get(after.organizationId, after.workspaceId);
+  const row = db.prepare(nextWorkspaceSql).get(after.organizationId, after.workspaceId);
   if (!row) return null;
   if (typeof row.organization_id !== 'string' || typeof row.id !== 'string' || ![0, 1].includes(Number(row.retired)))
     throw new StorageError('unavailable');
@@ -40,12 +45,7 @@ export function nextWorkspace(db: DatabaseSync, after: ReclaimPosition): Workspa
 }
 /** At most `limit` Run headers of one retired workspace after the cursor Run. */
 export function retiredRuns(db: DatabaseSync, at: ReclaimPosition, limit: number): readonly ReclaimRow[] {
-  const rows = db
-    .prepare(
-      `SELECT r.id,r.version,(${reclaimableSql}) open FROM runs r INDEXED BY runs_page
-   WHERE r.organization_id=? AND r.workspace_id=? AND r.id>? ORDER BY r.id LIMIT ?`,
-    )
-    .all(at.organizationId, at.workspaceId, at.runId, limit);
+  const rows = db.prepare(retiredRunsSql).all(at.organizationId, at.workspaceId, at.runId, limit);
   return rows.map((row) => {
     if (typeof row.id !== 'string' || !Number.isSafeInteger(row.version) || ![0, 1].includes(Number(row.open)))
       throw new StorageError('unavailable');

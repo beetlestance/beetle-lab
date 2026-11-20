@@ -63,4 +63,4 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 | `app/src/adapters/outbound/sqlite/namespace-deletion/` | `61ec0e63ba1e` |
 | `app/src/adapters/outbound/sqlite/workspace-retirement/` | `bf734e210895` |
 | `app/src/adapters/inbound/http/workspace-visibility.ts` | `89d870a75696` |
-| `app/src/adapters/outbound/sqlite/retired-reclaim/` | `69408bf0b59b` |
+| `app/src/adapters/outbound/sqlite/retired-reclaim/` | `4b228eace1b2` |

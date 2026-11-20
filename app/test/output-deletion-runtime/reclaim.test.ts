@@ -75,8 +75,14 @@ it('creates intents for a retired workspace and lets the settlement lane free th
     expect(settleOutput).not.toHaveBeenCalled();
     expect(f.onFailure).not.toHaveBeenCalled();
     const calls = vi.mocked(p.metadata.reclaimRetired).mock.calls.length;
+    // The pass that began two intents is followed by a fresh pass before the lane idles.
+    expect(calls).toBeGreaterThanOrEqual(2);
+    expect(vi.mocked(p.metadata.reclaimRetired).mock.calls[1]![0].cursor).toBeUndefined();
+    const scans = f.metadata.scan.mock.calls.length;
     await vi.advanceTimersByTimeAsync(RECLAIM_IDLE_MS / 2);
     expect(vi.mocked(p.metadata.reclaimRetired).mock.calls.length).toBe(calls);
+    // Idle reclaim turns go to file removal: about one scan per 250 ms tick, not three in four.
+    expect(f.metadata.scan.mock.calls.length - scans).toBeGreaterThan((RECLAIM_IDLE_MS / 2 / 250) * 0.9);
     for (const [query] of vi.mocked(p.metadata.reclaimRetired).mock.calls) expect(query.limit).toBe(32);
     await runtime.close();
   } finally {
@@ -98,6 +104,34 @@ it('refuses reclamation without the settlement lane', () => {
       }),
     ).toThrow('Reclamation requires settlement');
   } finally {
+    source.db.close();
+  }
+});
+it('ends an idle wait early when the wall clock steps backwards', async () => {
+  const f = retirementFixture();
+  const source = claimsFixture();
+  try {
+    const p = ports(source.store);
+    f.metadata.scan.mockResolvedValue({ items: [], nextCursor: null });
+    let now = Date.parse('2026-11-20T12:00:00.000Z');
+    vi.useFakeTimers();
+    const runtime = startOutputDeletionRuntime({
+      ...f.options,
+      metadata: f.metadata,
+      retirement: { metadata: p.metadata, gateway: f.gateway, digest: hash },
+      settlement: { metadata: p.metadata, store: p.settlements, gateway: { settleOutput: vi.fn(async (): Promise<never> => { throw Error("unused"); }) }, digest: hash },
+      reclaim: { metadata: p.metadata, clock: () => now },
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+    const calls = vi.mocked(p.metadata.reclaimRetired).mock.calls.length;
+    expect(calls).toBe(1);
+    now -= 3_600_000;
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(vi.mocked(p.metadata.reclaimRetired).mock.calls.length).toBeGreaterThan(calls);
+    expect(f.onFailure).not.toHaveBeenCalled();
+    await runtime.close();
+  } finally {
+    vi.useRealTimers();
     source.db.close();
   }
 });

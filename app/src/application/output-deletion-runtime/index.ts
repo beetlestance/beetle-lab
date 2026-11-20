@@ -60,19 +60,14 @@ class Deletions implements OutputDeletionRuntime {
       Math.max(0, context.deadline - performance.now()),
     );
     this.turnNumber = (this.turnNumber + 1) % (this.reclaims ? 4 : this.settlements ? 3 : 2);
-    if (this.turnNumber === 3 && this.reclaims) {
-      await this.reclaims.step(context);
-      return;
-    }
-    if (this.turnNumber === 2 && this.settlements) {
-      await this.settlements.step(context);
-      return;
-    }
-    if (this.turnNumber === 1 && this.retirements) {
-      await this.retirements.step(context);
-      return;
-    }
-    await this.fileStep(context);
+    await this.lane()(context);
+  }
+  /** One lane per turn; an idle reclaim turn goes to file removal, so other lanes keep their share. */
+  private lane(): (context: Parameters<typeof check>[0]) => Promise<void> {
+    if (this.turnNumber === 3 && this.reclaims && !this.reclaims.idle()) return (c) => this.reclaims!.step(c);
+    if (this.turnNumber === 2 && this.settlements) return (c) => this.settlements!.step(c);
+    if (this.turnNumber === 1 && this.retirements) return (c) => this.retirements!.step(c);
+    return (c) => this.fileStep(c);
   }
   private async fileStep(context: Parameters<typeof check>[0]): Promise<void> {
     if (!this.current) {

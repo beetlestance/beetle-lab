@@ -17,9 +17,15 @@ export class Reclaims {
   private begunInPass = 0;
   private idleUntil = 0;
   constructor(private readonly options: ReclaimProgress) {}
+  /** False while idle, so the runtime can give the turn to file removal instead. */
+  idle(): boolean {
+    const now = this.options.clock();
+    // A wall clock stepped backwards would otherwise extend the wait by the step size.
+    if (now < this.idleUntil - RECLAIM_IDLE_MS) this.idleUntil = 0;
+    return now < this.idleUntil;
+  }
   async step(context: OutputFileContext): Promise<void> {
     const now = this.options.clock();
-    if (now < this.idleUntil) return;
     check(context);
     const query = {
       limit: RECLAIM_LIMIT,

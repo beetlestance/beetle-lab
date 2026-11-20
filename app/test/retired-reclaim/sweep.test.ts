@@ -1,3 +1,4 @@
+import type { DatabaseSync } from 'node:sqlite';
 import { expect, it } from 'vitest';
 import type { BackendSettlementResult } from '../../src/ports/output-settlement-metadata.js';
 import { claimsFixture } from '../storage/dispatch-claim-fixtures.js';
@@ -5,11 +6,23 @@ import { cancelCommand } from '../storage/run-cancellation-fixtures.js';
 import { requestId, uuid } from '../storage/fixture.js';
 import {
   nextWorkspace,
-  reclaimableSql,
+  nextWorkspaceSql,
   retiredRuns,
+  retiredRunsSql,
 } from '../../src/adapters/outbound/sqlite/retired-reclaim/candidates.js';
+import { reclaimCursor } from '../../src/adapters/outbound/sqlite/retired-reclaim/cursor.js';
 import { count, pass, reclaim, retireOrganization, retireWorkspace, usage } from './fixture.js';
 const other = { kind: 'workspace' as const, organizationId: uuid(21), workspaceId: uuid(22) };
+/** Simulates historical rows the current triggers would refuse, then restores every trigger. */
+function legacy(db: DatabaseSync, table: string, edit: () => void): void {
+  const triggers = db.prepare("SELECT name,sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?").all(table);
+  for (const trigger of triggers) db.exec(`DROP TRIGGER "${String(trigger.name)}"`);
+  try {
+    edit();
+  } finally {
+    for (const trigger of triggers) db.exec(String(trigger.sql));
+  }
+}
 function cancelled(f: ReturnType<typeof claimsFixture>, ids: number[]): string[] {
   return ids.map((id) => {
     const key = f.add(id);
@@ -51,7 +64,7 @@ it('begins only retired Runs, transitively through a retired organisation, and l
     f.db.close();
   }
 });
-it('keeps every page bounded, replays idempotently and never offers pinned, noted or active Runs', () => {
+it('keeps every page bounded, replays idempotently and never offers pinned or noted Runs', () => {
   const f = claimsFixture();
   try {
     const runs = cancelled(f, [70, 71, 73, 74, 75, 76]);
@@ -111,12 +124,7 @@ it('uses only indexed probes for workspace, Run and eligibility reads', () => {
       retired: false,
     });
     expect(retiredRuns(f.db, at, 2)).toEqual([]);
-    const plans = [
-      `SELECT organization_id,id,retired FROM workspaces INDEXED BY workspaces_page
-       WHERE (organization_id,id)>(?,?) ORDER BY organization_id,id LIMIT 1`,
-      `SELECT r.id,r.version,(${reclaimableSql}) open FROM runs r INDEXED BY runs_page
-       WHERE r.organization_id=? AND r.workspace_id=? AND r.id>? ORDER BY r.id LIMIT ?`,
-    ].map((sql) =>
+    const plans = [nextWorkspaceSql, retiredRunsSql].map((sql) =>
       f.db
         .prepare(`EXPLAIN QUERY PLAN ${sql}`)
         .all()
@@ -124,6 +132,41 @@ it('uses only indexed probes for workspace, Run and eligibility reads', () => {
     );
     // The only scan allowed is the two-row LIMIT subquery that counts attempts.
     for (const detail of plans.flat()) expect(detail).not.toMatch(/^SCAN (?!\(subquery-\d+\))|USE TEMP B-TREE/);
+  } finally {
+    f.db.close();
+  }
+});
+it('never offers multi-attempt Runs or legacy Runs without a funded cleanup control', () => {
+  const f = claimsFixture();
+  try {
+    const [unfunded, retried, plain] = cancelled(f, [70, 71, 73]);
+    legacy(f.db, 'backend_cleanup_controls', () =>
+      f.db.prepare('DELETE FROM backend_cleanup_controls WHERE run_id=?').run(unfunded!),
+    );
+    const second = uuid(9099);
+    legacy(f.db, 'attempts', () =>
+      f.db
+        .prepare(
+          `INSERT INTO attempts(id,run_id,organization_id,workspace_id,ordinal,intent_digest,offer_json,registry_json,generation,state)
+       SELECT ?,run_id,organization_id,workspace_id,2,intent_digest,json_set(offer_json,'$.attemptId',?),registry_json,NULL,'lost'
+       FROM attempts WHERE run_id=?`,
+        )
+        .run(second, second, retried!),
+    );
+    retireWorkspace(f.store, uuid(1), uuid(2));
+    expect(pass(f.store).begun).toEqual([plain]);
+    expect(pass(f.store).begun).toEqual([]);
+  } finally {
+    f.db.close();
+  }
+});
+it('re-checks retirement on resume, so a cursor claiming a live workspace begins nothing', () => {
+  const f = claimsFixture();
+  try {
+    const [live] = cancelled(f, [70]);
+    const cursor = reclaimCursor({ organizationId: uuid(1), workspaceId: uuid(2), runId: '', inside: true });
+    expect(reclaim(f.store, { cursor }).items).toEqual([]);
+    expect(count(f.db, 'SELECT count(*) n FROM output_deletion_intents WHERE run_id=?', live!)).toBe(0);
   } finally {
     f.db.close();
   }

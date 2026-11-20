@@ -9,7 +9,9 @@ DELETE on a workspace that holds saved suites, published inputs or terminal hist
 retires it rather than refusing or cascading. The workspace disappears from lists,
 aggregates and public workspace-scoped access, but its canonical name, root,
 settings, revisions, history, receipts, pins, replay floors and paid storage remain.
-Retirement itself frees no bytes; see decision 034. A new workspace may reuse the visible name under a new
+Retirement itself frees no bytes. Decision 034 later reclaims the eligible terminal
+Runs through output deletion: settlement purges their history rows and leaves a
+per-Run tombstone, while receipts, pins and the namespace marker stay. A new workspace may reuse the visible name under a new
 UUID; the retired identity never revives. Organisation and folder deletion stay
 empty-only.
 
