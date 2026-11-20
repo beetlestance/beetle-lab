@@ -235,8 +235,8 @@
   display: grid;
   gap: var(--s-40);
 }
-.live-board.is-stale .live-kpi dd,
-.live-board.is-stale .live-chart svg {
+.live-board.is-stale:not([data-paused]) .live-kpi dd,
+.live-board.is-stale:not([data-paused], [data-reconnecting]) .live-chart svg {
   opacity: 0.6;
 }
 
