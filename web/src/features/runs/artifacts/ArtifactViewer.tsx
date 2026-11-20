@@ -51,13 +51,16 @@ export function ArtifactViewer({
   const readable = artifact.bytes > 0 && artifact.bytes <= viewerLimit;
   return (
     <Dialog
+      className="artifact-viewer-dialog"
       title={artifact.relativePath}
-      description={`${formatBytes(artifact.bytes)} · ${artifact.kind}`}
+      description={formatBytes(artifact.bytes)}
       onClose={onClose}
       actions={
         <>
-          <Button onClick={onClose}>Close</Button>
-          <a className={buttonClass('primary')} href={href} download={download}>
+          <Button variant="text" onClick={onClose}>
+            Close
+          </Button>
+          <a className={buttonClass('inverse')} href={href} download={download}>
             Download
           </a>
         </>

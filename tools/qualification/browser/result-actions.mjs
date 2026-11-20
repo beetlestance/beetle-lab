@@ -6,6 +6,7 @@ import { expect } from '@playwright/test';
 import { runArtifactContentPath, validateApi } from '@beetle/contracts/api';
 import { execute } from './results.mjs';
 import { runScriptZip } from './exports.mjs';
+import { jsonArtifactViewer } from './json-artifact-viewer.mjs';
 
 /** @typedef {import('@playwright/test').Page} Page */
 /** @typedef {Awaited<ReturnType<import('./authoring.mjs').author>>} Authored */
@@ -23,6 +24,7 @@ export async function resultActions(page, authored, evidence) {
   const run = await readRun(page, address);
   await expect(page.getByText('Reading recorded chart history…', { exact: true })).toHaveCount(0);
   await downloadResults(page, run, evidence);
+  await jsonArtifactViewer(page, evidence, await readFile(join(evidence, 'numeric-final'), 'utf8'));
   await pinToast(page, run.id, evidence);
   const note = await keepLatestNote(page, address, evidence);
   await page.goto(authored.workspace + '/runs');
