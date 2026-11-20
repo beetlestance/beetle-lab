@@ -13,6 +13,8 @@ export type HistoricalInputService = InputService;
 /** Trusted historical composition only; no configuration file can inject these ports. */
 export interface HistoricalOptions {
   readonly historyId: string;
+  /** Operator-supplied navigation only. The archive cannot choose the destination. */
+  readonly liveOrigin?: string | undefined;
   /** Sealed manifest header: archive identity and the backup tool's creation time. */
   readonly backup: { readonly backupId: string; readonly createdAt: string };
   readonly sessions: LocalSessionStore;
@@ -91,6 +93,7 @@ export function applicationMode(options: HistoricalApplication) {
               readOnly: true,
               cookieName: 'beetle_history_' + history.historyId.replaceAll('-', ''),
               restoredBackup: restoredBackup(history.backup),
+              ...(history.liveOrigin !== undefined ? { liveOrigin: history.liveOrigin } : {}),
             }
           : undefined,
         history ? 'local' : options.access,

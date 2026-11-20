@@ -20,6 +20,7 @@ export type RecoveryRequest = Common &
         readonly command: 'serve';
         readonly root: string;
         readonly externalOrigin: string;
+        readonly liveOrigin?: string;
         readonly host: '127.0.0.1' | '0.0.0.0' | '::1';
         readonly port: number;
       }
@@ -54,19 +55,22 @@ function commandFields(value: Record<string, unknown>): string[] {
     path(value.destination);
     return ['command', 'archive', 'destination', 'operationId', 'resume'];
   }
-  if (value.command === 'serve') {
-    path(value.root);
-    if (
-      !['127.0.0.1', '0.0.0.0', '::1'].includes(String(value.host)) ||
-      !Number.isSafeInteger(value.port) ||
-      Number(value.port) < 1 ||
-      Number(value.port) > 65535 ||
-      typeof value.externalOrigin !== 'string'
-    )
-      throw new RecoveryError('invalid_input');
-    return ['command', 'root', 'externalOrigin', 'host', 'port'];
-  }
+  if (value.command === 'serve') return serveFields(value);
   throw new RecoveryError('invalid_input');
+}
+
+function serveFields(value: Record<string, unknown>): string[] {
+  path(value.root);
+  if (
+    !['127.0.0.1', '0.0.0.0', '::1'].includes(String(value.host)) ||
+    !Number.isSafeInteger(value.port) ||
+    Number(value.port) < 1 ||
+    Number(value.port) > 65535 ||
+    typeof value.externalOrigin !== 'string' ||
+    (value.liveOrigin !== undefined && typeof value.liveOrigin !== 'string')
+  )
+    throw new RecoveryError('invalid_input');
+  return ['command', 'root', 'externalOrigin', 'liveOrigin', 'host', 'port'];
 }
 
 function common(value: Record<string, unknown>): void {

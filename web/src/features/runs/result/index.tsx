@@ -71,7 +71,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
   const { phaseView, className, togglePhases } = usePhaseMode();
   const { tab, setTab, selectSection } = useSectionTab();
   const [deleting, setDeleting] = useState(false);
-  const { readOnly, restoredBackup: restored } = useSessionAccess();
+  const { readOnly, restoredBackup: restored, liveOrigin } = useSessionAccess();
   const view = reads.result.view;
   const ready = readyOverview(reads.overview);
   const engine = view.status === 'ready' ? view.result : null;
@@ -93,7 +93,7 @@ function ResultBody({ run, refresh }: { run: Run; refresh: RefreshControl | unde
     <div className={className} data-native-summary={nativeLayout}>
       {restored && (
         <div className="result-restored">
-          <RestoredBanner createdAt={restored.createdAt} />
+          <RestoredBanner createdAt={restored.createdAt} liveOrigin={liveOrigin} />
         </div>
       )}
       <ResultHeader
@@ -202,9 +202,20 @@ function incompleteArchiveMissing(run: Run, reads: ResultReads, engine: EngineRe
   );
 }
 
-function RestoredBanner({ createdAt }: { createdAt: string }) {
+function RestoredBanner({ createdAt, liveOrigin }: { createdAt: string; liveOrigin?: string | undefined }) {
   return (
-    <Banner tone="history" title={`You are looking at a restored backup from ${formatTime(createdAt)}`} live={false}>
+    <Banner
+      tone="history"
+      title={`You are looking at a restored backup from ${formatTime(createdAt)}`}
+      live={false}
+      actions={
+        liveOrigin && (
+          <a className="btn btn-secondary btn-sm" href={liveOrigin} referrerPolicy="no-referrer" rel="noreferrer">
+            Back to live
+          </a>
+        )
+      }
+    >
       Read-only. Nothing here can be started, changed, pinned or deleted.
     </Banner>
   );

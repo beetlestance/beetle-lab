@@ -142,6 +142,9 @@ mismatches, and never accepts a complete prefix before actual EOF.
   or open time. `createdAt` is the backup host's wall clock when the manifest header
   was written, after copying, normalised to UTC milliseconds; an unparsable value
   refuses the viewer. Serving sessions refuse the field.
+- The operator can set a separate canonical live origin for the Results link.
+  Only the historical session exposes it. The archive cannot set it, and the
+  link suppresses the viewer referrer.
 
 ## Failure handling
 
@@ -192,6 +195,6 @@ Test: `app/test/storage/clock-reason/migration.test.ts`.
 | `contracts/src/recovery/` | `29c0467d1e7e` |
 | `tools/recovery/src/restore.ts` | `c750dcfc2872` |
 | `tools/recovery/src/backup.ts` | `9162094ddc58` |
-| `tools/recovery/src/viewer/` | `d51c59cc6bf0` |
+| `tools/recovery/src/viewer/` | `5299f29e6139` |
 | `tools/install/upgrade/backup.ts` | `c53a3ffdd8bf` |
 | `app/src/adapters/outbound/sqlite/migration020.ts` | `904e1235fc9a` |

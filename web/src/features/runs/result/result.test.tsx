@@ -115,13 +115,21 @@ it.each([
   else expect(button).toBeDisabled();
 });
 
-it('hides writes in restored history and retains read-only downloads', async () => {
+it.each([undefined, 'https://beetle.example.test'])('keeps restored Results read-only with live destination %s', async (liveOrigin) => {
   const f = fixture(finished());
   mount(f.client, path, {
     readOnly: true,
     restoredBackup: { backupId: ids.request, createdAt: '2026-11-12T02:00:00.000Z' },
+    liveOrigin,
   });
   expect(await screen.findByText(/You are looking at a restored backup from/)).toBeVisible();
+  const live = screen.queryByRole('link', { name: 'Back to live' });
+  if (liveOrigin) {
+    expect(live).toHaveAttribute('href', liveOrigin);
+    expect(live).toHaveAttribute('referrerpolicy', 'no-referrer');
+  } else {
+    expect(live).not.toBeInTheDocument();
+  }
   expect(screen.getByText('Read-only history: changes are unavailable.')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Download' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument();
