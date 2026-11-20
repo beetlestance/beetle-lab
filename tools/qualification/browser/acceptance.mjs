@@ -22,6 +22,7 @@ import { livePhases } from './live-phases.mjs';
 import { configureStagedTarget, liveStaged } from './live-staged.mjs';
 import { desktopResultsFamily } from './desktop-results-family.mjs';
 import { stagedStreamStates } from './staged-stream-states.mjs';
+import { liveMotion } from './live-motion.mjs';
 import { liveControls, liveTargetReadings } from './live-controls.mjs';
 import { earlyCancel } from './early-cancel.mjs';
 import { historyComparison, cancelReconnect, deleteRun } from './lifecycle.mjs';
@@ -49,6 +50,7 @@ if (
     'live-phases',
     'live-staged',
     'staged-stream-states',
+    'live-motion',
     'desktop-results-family',
     'early-cancel',
     'cancel-archive',
@@ -122,7 +124,7 @@ try {
   await writeFile(target, JSON.stringify(override), { mode: 0o600 });
   if (profile === 'target-runtime' || profile === 'cancel-archive') await configureTarget(f, true);
   if (profile === 'live-controls') await configureTarget(f, true, liveTargetReadings);
-  if (profile === 'live-staged' || profile === 'staged-stream-states') await configureStagedTarget(f);
+  if (['live-staged', 'staged-stream-states', 'live-motion'].includes(profile)) await configureStagedTarget(f);
   if (profile === 'desktop-results-family') await configureStagedTarget(f, 2);
   if (profile === 'live-phases') await configureTarget(f, true, liveTargetReadings, 4);
   if (profile === 'target-comparison') await configureComparisonTarget(f);
@@ -227,6 +229,8 @@ try {
     await phase('desktop-results-runs-and-compare', () =>
       desktopResultsFamily(appPage, authored, f, evidence ?? f.root),
     );
+  } else if (profile === 'live-motion') {
+    await phase('live-motion-sequence-and-reduced-motion', () => liveMotion(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'staged-stream-states') {
     await phase('populated-pause-and-reconnect', () => stagedStreamStates(appPage, authored, f, evidence ?? f.root));
   } else if (profile === 'live-staged') {
