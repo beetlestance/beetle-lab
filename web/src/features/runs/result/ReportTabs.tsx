@@ -90,6 +90,18 @@ function Unready({ status, what }: { status: 'loading' | 'unavailable' | 'error'
  * Report tabs of the Run result board: Report, What happened, Artifacts, Diagnostics.
  * Under 760px (Phone / Run result) the panels become lazy native disclosures; visited panels keep their state.
  */
+type ReportTabsProps = {
+  run: Run;
+  view: ResultView;
+  tab: ReportTab;
+  onSelect: (tab: ReportTab) => void;
+  requests?: readonly PlanRequest[];
+  origin?: RiseOrigin | undefined;
+  phoneTarget?: ReactNode;
+  phoneExtras?: ReactNode;
+  phoneNote?: ReactNode;
+};
+
 export function ReportTabs({
   run,
   view,
@@ -100,17 +112,7 @@ export function ReportTabs({
   phoneTarget,
   phoneExtras,
   phoneNote,
-}: {
-  run: Run;
-  view: ResultView;
-  tab: ReportTab;
-  onSelect: (tab: ReportTab) => void;
-  requests?: readonly PlanRequest[];
-  origin?: RiseOrigin | undefined;
-  phoneTarget?: ReactNode;
-  phoneExtras?: ReactNode;
-  phoneNote?: ReactNode;
-}) {
+}: ReportTabsProps) {
   const idBase = useId();
   const phone = useResultPhone();
   const count = view.status === 'ready' ? view.result.artifacts.length : undefined;

@@ -41,4 +41,4 @@ These source checks do not qualify a packaged native deployment.
 | `web/src/features/runs/timeline/Milestones.tsx` | `ba2b2f78e6f1` |
 | `web/src/features/runs/live/Extras.tsx` | `ad293364de0f` |
 | `web/src/features/runs/live/rise-position.ts` | `136a516589c3` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `e81edc2aba0e` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `f8c87c408ae2` |

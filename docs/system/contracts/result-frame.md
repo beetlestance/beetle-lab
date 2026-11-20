@@ -99,7 +99,7 @@ their retry controls.
 | `web/src/features/runs/result/RunNote.tsx` | `77d15ea26068` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
 | `web/src/features/runs/result/phone.css` | `ad8d1f8fbea4` |
-| `web/src/features/runs/result/ReportTabs.tsx` | `e81edc2aba0e` |
+| `web/src/features/runs/result/ReportTabs.tsx` | `f8c87c408ae2` |
 | `web/src/features/runs/result/EndpointTable.tsx` | `992cc7cfab59` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |
 | `web/src/features/runs/result/PhoneSummary.tsx` | `68d10e26b948` |

@@ -1,5 +1,6 @@
 import type { EngineResult } from '@beetle/contracts';
 import type { Run } from '@beetle/contracts/api';
+import type { ReactNode } from 'react';
 import { PhoneDisclosure } from './PhoneDisclosure.js';
 import { RunNote, useResultNote } from './RunNote.js';
 
@@ -34,12 +35,11 @@ export function useResultLayout({
       <RunNote state={state} readOnly={readOnly} />
     </PhoneDisclosure>
   );
-  return {
-    showTarget,
-    recordedTarget,
-    nativeLayout,
-    beforeNote: !phone && !incomplete ? note : null,
-    afterNote: !phone && incomplete ? note : null,
-    phoneNote: phone ? note : null,
+  const notes: Record<'beforeNote' | 'afterNote' | 'phoneNote', ReactNode> = {
+    beforeNote: null,
+    afterNote: null,
+    phoneNote: null,
   };
+  notes[phone ? 'phoneNote' : incomplete ? 'afterNote' : 'beforeNote'] = note;
+  return { showTarget, recordedTarget, nativeLayout, ...notes };
 }

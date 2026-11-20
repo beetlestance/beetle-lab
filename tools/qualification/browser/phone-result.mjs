@@ -24,6 +24,14 @@ export async function phoneResult(page, evidence) {
   await whole.getByRole('radio', { name: 'p95', exact: true }).click();
 
   const endpointTable = page.getByRole('region', { name: 'Endpoint measurements, scroll for more columns' });
+  const overviewRetry = page.getByRole('button', { name: /^(Retry|Check) measurements$/ });
+  await expect(endpointTable.or(overviewRetry)).toBeVisible();
+  const overviewNeededRetry = await overviewRetry.isVisible();
+  if (overviewNeededRetry) {
+    const reply = page.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/metrics/overview'));
+    await overviewRetry.click();
+    assert.equal((await reply).status(), 200);
+  }
   await expect(endpointTable.locator('tbody tr')).toHaveCount(5);
   await expect(page.locator('.result-threshold-card')).toHaveCount(3);
   await verifyStickyMeasurements(endpointTable);
@@ -40,6 +48,7 @@ export async function phoneResult(page, evidence) {
     join(evidence, 'phone-result-coverage.json'),
     JSON.stringify({
       endpoints: 5,
+      overviewNeededRetry,
       thresholds: 3,
       chartSwitch: true,
       pinnedColumns: ['p95', 'Failed'],
