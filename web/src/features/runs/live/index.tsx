@@ -10,7 +10,7 @@ import type { RunSnapshotProps } from '../RunSnapshot.js';
 import { RunReads } from '../RunReads.js';
 import { EndedBanner } from './Banners.js';
 import { WholeRun, MetricsGrid, TargetRuntime, chartDomain } from './Charts.js';
-import { headlineOf, sentenceOf, statusOf, isEarlyPhase } from './copy.js';
+import { headlineOf, sentenceOf, statusOf, isEarlyPhase, isStoppingPhase } from './copy.js';
 import type { Phase } from './copy.js';
 import { useSessionAccess } from '../../../app/session.js';
 import { useRevision, useSuite, usePhaseReads } from './data.js';
@@ -136,7 +136,7 @@ function LiveRun({ run, scope, runId, showResult, cancel }: LiveRunViewProps) {
       )}
       {isEarlyPhase(stream.phase) && <EarlyArt />}
       <EndedBanner run={run} requests={plan.requests} showResult={showResult} />
-      {(stream.phase === 'cancelling' || stream.phase === 'finalizing') && (
+      {isStoppingPhase(stream.phase) && (
         <Finalizing
           run={run}
           plan={plan}

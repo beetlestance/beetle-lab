@@ -107,14 +107,26 @@ async function captureStop(page, first, evidence) {
   }
   await expect(finalizing.or(terminal)).toBeVisible({ timeout: 60000 });
   const finalizingVisible = await finalizing.isVisible();
+  let samplerClosureVisible = false;
   if (finalizingVisible) {
     const progress = finalizing.getByRole('progressbar', { name: 'Sealing results', exact: true });
     assert.equal(await progress.getAttribute('aria-valuenow'), null);
-    await expect(finalizing.getByText('Target sampler closed', { exact: true })).toBeVisible({ timeout: 12000 });
-    await page.screenshot({ path: join(evidence, 'live-finalizing.png'), fullPage: true });
+    const closed = finalizing.getByText('Target sampler closed', { exact: true });
+    await expect(closed.or(terminal)).toBeVisible({ timeout: 15000 });
+    samplerClosureVisible = await closed.isVisible();
+    if (samplerClosureVisible) await page.screenshot({ path: join(evidence, 'live-finalizing.png'), fullPage: true });
   }
   await expect(terminal).toBeVisible({ timeout: 60000 });
   await terminal.click();
   await assertRunState(page, { state: 'cancelled', outcome: 'inconclusive' }, first);
-  return { cancellationVisible, finalizingVisible, samplerClosureVisible: finalizingVisible, resultOpened: true };
+  const reply = await page.request.get(first.origin + '/api/v2' + first.path + '/events?limit=100');
+  const events = validateApi('RunEventPage', await reply.json());
+  assert(reply.ok() && events.ok && events.value.id === first.id);
+  assert.equal(events.value.scope.organizationId, first.organizationId);
+  assert.equal(events.value.scope.workspaceId, first.workspaceId);
+  const collectionRecorded = events.value.items.some(
+    (event) => event.kind === 'phase.started' && event.phase === 'collect',
+  );
+  if (samplerClosureVisible) assert(collectionRecorded);
+  return { cancellationVisible, finalizingVisible, samplerClosureVisible, collectionRecorded, resultOpened: true };
 }

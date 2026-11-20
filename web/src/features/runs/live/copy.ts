@@ -16,6 +16,7 @@ export function phaseOf(run: Run, cancelAccepted: boolean, hasFrame: boolean): P
 }
 
 export const isEarlyPhase = (phase: Phase) => phase === 'waiting' || phase === 'starting';
+export const isStoppingPhase = (phase: Phase) => phase === 'cancelling' || phase === 'finalizing';
 
 const endedLabel = { finished: 'Finished', cancelled: 'Cancelled', errored: 'Errored' } as const;
 
