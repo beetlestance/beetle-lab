@@ -55,7 +55,8 @@
 .overview-snapshot {
   display: block;
   margin: 0;
-  color: var(--dim);
+  /* Readable text: --dim is below 4.5:1 at this size. */
+  color: var(--mute);
   font-size: var(--fs-sm);
 }
 .overview-refresh {

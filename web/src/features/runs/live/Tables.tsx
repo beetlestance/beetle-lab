@@ -72,15 +72,20 @@ const columns = [
   { key: 'failed', label: 'Failed', numeric: true },
 ];
 
-export function Endpoints({ figures }: { figures: LiveFigures }) {
+export function Endpoints({ figures, recovered = false }: { figures: LiveFigures; recovered?: boolean }) {
   const rows = figures.endpoints;
   if (!rows.length) return null;
   return (
     <section className="live-endpoints" aria-labelledby="live-endpoints">
       <h2 id="live-endpoints">
-        Where the requests go <span className="live-count">{rows.length} endpoints</span>
+        {recovered ? 'Endpoints in the last retained window' : 'Where the requests go'}{' '}
+        <span className="live-count">{rows.length} endpoints</span>
       </h2>
-      <Table caption="Endpoints in the latest live window" columns={columns} scrollLabel="Live endpoint metrics">
+      <Table
+        caption={recovered ? 'Endpoints in the last retained window' : 'Endpoints in the latest live window'}
+        columns={columns}
+        scrollLabel={recovered ? 'Retained endpoint metrics' : 'Live endpoint metrics'}
+      >
         {rows.map((row) => (
           <tr key={row.label}>
             <Th scope="row">
@@ -91,7 +96,9 @@ export function Endpoints({ figures }: { figures: LiveFigures }) {
               ) : (
                 row.label
               )}
-              {!row.live && <span className="live-muted"> · not in live view</span>}
+              {!row.live && (
+                <span className="live-muted"> · {recovered ? 'outside the retained series' : 'not in live view'}</span>
+              )}
             </Th>
             <Td numeric>{row.share === null ? '–' : percent(row.share)}</Td>
             <Td numeric>{row.rps === null ? '–' : whole(row.rps)}</Td>
@@ -106,7 +113,9 @@ export function Endpoints({ figures }: { figures: LiveFigures }) {
       </p>
       {figures.excludedSeries > 0 && (
         <p className="live-note">
-          The live view omits {figures.excludedSeries} series. Open the metrics archive in Results when it is available.
+          {recovered
+            ? `The retained window omits ${figures.excludedSeries} series.`
+            : `The live view omits ${figures.excludedSeries} series. Open the metrics archive in Results when it is available.`}
         </p>
       )}
     </section>

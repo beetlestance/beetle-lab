@@ -21,7 +21,7 @@ import { buildPatch } from './patch.js';
 import { SettingRow } from './Row.js';
 import { ChangedElsewhere, SaveBar, SaveFailure } from './SaveBar.js';
 import { SettingsScopeChooser, useSettingsChoice } from './ScopeChooser.js';
-import { ScopeTabs, useScopeName } from './ScopeTabs.js';
+import { ParentLevels, ScopeTabs, useScopeName } from './ScopeTabs.js';
 import { useDraft, useSave } from './useSave.js';
 import type { SavePhase } from './useSave.js';
 import './settings.css';
@@ -33,8 +33,7 @@ function settingsKey(scope: SettingsScope): readonly string[] {
 }
 
 export function Settings({ scope }: { scope: SettingsScope }) {
-  const choice = useSettingsChoice(scope);
-  if (choice) return <SettingsScopeChooser {...choice} />;
+  if (useSettingsChoice(scope)) return <SettingsScopeChooser />;
   return <SettingsQuery scope={scope} />;
 }
 
@@ -106,13 +105,15 @@ function SettingsView({ data }: { data: SettingsData }) {
   const count = Object.keys(form.draft).length;
   const installation = 'values' in data ? data : undefined;
   const capacity = installation && view === 'capacity';
+  // A workspace's settings sit under its own heading and tabs; the levels above are links.
+  const inWorkspace = data.scope.kind === 'workspace';
   return (
     <section className="content-section settings-page">
       <header className="settings-header">
-        <h1>Settings</h1>
+        {inWorkspace ? <h2>Settings</h2> : <h1>Settings</h1>}
         <p>{capacity ? capacityIntro : intro}</p>
       </header>
-      <ScopeTabs scope={data.scope} />
+      {data.scope.kind === 'workspace' ? <ParentLevels scope={data.scope} /> : <ScopeTabs scope={data.scope} />}
       {installation && <ViewSwitch view={view} onChange={setView} />}
       <p className="settings-editing">
         Editing <strong>{editingLabel(!!capacity, name)}</strong>.

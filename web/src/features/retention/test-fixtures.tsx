@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type { RetentionPreview, RetentionBatchStatus, RetentionApplyReceipt } from '@beetle/contracts/api';
 import { ApiContext } from '../../app/api.js';
 import { createQueryClient } from '../../app/queries.js';
-import { json, testClient, ids } from '../../app/test-fixtures.js';
+import { json, testClient, ids, readNamespace } from '../../app/test-fixtures.js';
 import type { RequestRecord } from '../../app/test-fixtures.js';
 import { settings, workspaceScope as scope } from '../settings/test-fixtures.js';
 import { RetentionControls } from './index.js';
@@ -107,6 +107,8 @@ export function fixture(intercept?: (request: RequestRecord) => Response | Promi
     if (path.endsWith('/preview')) return json(model.snapshot);
     if (model.snapshot && path.endsWith('/' + model.snapshot.snapshotId))
       return json(status(model.snapshot, model.state));
+    // Workspace settings render inside the workspace, which reads its organization and workspace.
+    if (/\/(organizations|workspaces)\/[^/?]+$/.test(path)) return readNamespace(request);
     throw Error('Unexpected synthetic retention route');
   });
   return {

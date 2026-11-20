@@ -90,6 +90,13 @@ When a stopped attempt has neither an archive nor retained observations, Results
 explains the missing measurements directly. Pending reads and errors retain
 their retry controls.
 
+## Results after a resource stop
+
+When only a checkpoint survives, Results states its retained-window endpoint in
+UTC and the number of shown windows. The chart begins at the first retained
+window. Endpoint observations use the final retained window and preserve
+unknowns. These measurements leave whole-run totals and the stop instant unknown.
+
 ## Anchors
 
 | Code | Reviewed |
@@ -106,5 +113,5 @@ their retry controls.
 | `web/src/features/runs/result/PhoneSummary.tsx` | `68d10e26b948` |
 | `web/src/features/runs/result/RecordedCharts.tsx` | `5b673f28a315` |
 | `web/src/features/runs/result/charts.css` | `16f39f9e223b` |
-| `web/src/features/runs/result/index.tsx` | `3b1ed714809a` |
+| `web/src/features/runs/result/index.tsx` | `90d627561ea9` |
 | `web/src/features/runs/result/ResultReadProblem.tsx` | `acab58611569` |

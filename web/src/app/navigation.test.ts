@@ -20,7 +20,7 @@ it('scopes navigation targets to the organisation and workspace in the path', ()
     ['Overview', routes.workspace(org, ws)],
     ['Workspaces', routes.organizationWorkspaces(org)],
     ['Engines', routes.engines],
-    ['Settings', routes.workspaceSettings(org, ws)],
+    ['Settings', routes.organizationSettings(org)],
     ['Docs', routes.docs],
   ]);
 });
@@ -33,7 +33,8 @@ it('marks exactly one current item per destination', () => {
   expect(current(routes.workspace(org, ws))).toEqual(['overview']);
   expect(current(routes.run(org, ws, run))).toEqual(['workspaces']);
   expect(current(routes.inputs(org, ws))).toEqual(['workspaces']);
-  expect(current(routes.workspaceSettings(org, ws))).toEqual(['settings']);
+  expect(current(routes.workspaceSettings(org, ws))).toEqual(['workspaces']);
+  expect(current(routes.organizationSettings(org))).toEqual(['settings']);
   expect(current(routes.settings)).toEqual(['settings']);
   expect(current(routes.engines)).toEqual(['engines']);
   expect(current(routes.reference)).toEqual(['docs']);

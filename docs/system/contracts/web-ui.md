@@ -195,8 +195,8 @@ Accepted writes refresh history; uncertain writes permit identical replay; reten
 Row and checkbox labels expand colliding source UUIDs, never inventing an ordinal.
 
 Workspaces opens an organization chooser or the scoped workspace directory. Settings
-keeps Installation, Organization and Workspace available from each level. Page and
-tab entry honor reduced motion. Docs opens the bundled `/docs/` site as a full
+offers Installation and Organization; a workspace's settings are its own Settings section,
+under the workspace heading and tabs, linking to both levels. Page and tab entry honor reduced motion. Docs opens the bundled `/docs/` site as a full
 document navigation. `/reference` remains the standalone generated API viewer.
 
 ## Related
@@ -212,7 +212,7 @@ document navigation. `/reference` remains the standalone generated API viewer.
 | `web/src/features/runs/HistoryTable.tsx` | `2df690223904` |
 | `web/src/features/runs/result/PinControl.tsx` | `cf04755d6025` |
 | `web/src/features/runs/result/usePin.ts` | `722f5660f124` |
-| `web/src/app/routes.ts` | `61a58672901a` |
+| `web/src/app/routes.ts` | `9e3c99c563f2` |
 | `web/src/app/queries.ts` | `725fc7c07eb0` |
 | `web/src/features/runs/timeline/read.ts` | `cbd57b66d9b4` |
 | `web/src/features/runs/timeline/projection.ts` | `c683fdfec49a` |

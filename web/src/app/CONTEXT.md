@@ -16,8 +16,8 @@ Unknown results allow identical replay; editing begins a new request ID.
 Workspaces opens the organization chooser or the current organization's workspace list.
 The header switcher reads up to 20 organizations on demand and links to the full list.
 Direct Compare resolves one scoped organization label independently of its comparison reads.
-Settings routes lazy-load one feature and always expose all three levels. The shell
-remembers the current organization and workspace for Settings within the session.
+Settings (installation, organization) lazy-loads one feature with two level tabs; a
+workspace's settings are its Settings section. The shell remembers the organization.
 Settings query keys include full scope. Page and tab entry honor reduced motion.
 Parent saves invalidate descendant effective settings; null removes scoped overrides.
 The Darkroom or Scarab skin is the only persisted browser preference; no credentials.

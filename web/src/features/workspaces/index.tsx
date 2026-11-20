@@ -11,12 +11,16 @@ import { NotFound } from '../../components/NotFound.js';
 import type { NotFoundKind } from '../../components/NotFound.js';
 import { QueryState } from '../../components/QueryState.js';
 import { LoadingState } from '../../components/States.js';
+import { WorkspaceHeading } from '../../app/shell/WorkspaceHeading.js';
 import { WorkspaceTabs } from '../../app/shell/WorkspaceTabs.js';
 import { WorkspaceExports } from '../exports/ExportsTable.js';
 import { WorkspaceList } from './WorkspaceList.js';
+const Settings = lazy(() => import('../settings/index.js').then((module) => ({ default: module.Settings })));
 const WorkspaceInputs = lazy(() =>
   import('../input-screen/index.js').then((module) => ({ default: module.WorkspaceInputs })),
 );
+
+export type WorkspaceView = 'inputs' | 'exports' | 'settings';
 
 /** A missing scope is not found, never an empty dashboard. */
 export function isNotFound(error: unknown): boolean {
@@ -53,7 +57,7 @@ export function OrganizationScope({
   organizationId: string;
   workspaceId?: string;
   directory?: boolean;
-  view?: 'inputs' | 'exports' | undefined;
+  view?: WorkspaceView | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -114,7 +118,7 @@ function WorkspaceScope({
 }: {
   organizationId: string;
   workspaceId: string;
-  view?: 'inputs' | 'exports' | undefined;
+  view?: WorkspaceView | undefined;
 }) {
   const api = useApi();
   const client = useQueryClient();
@@ -138,11 +142,14 @@ function WorkspaceScope({
     >
       {(data) => (
         <div className="workspace-page">
+          {view && <WorkspaceHeading name={data.name} />}
           <WorkspaceTabs organizationId={organizationId} workspaceId={workspaceId} current={view ?? 'overview'} />
           {view === 'exports' ? (
             <WorkspaceExports organizationId={organizationId} workspaceId={workspaceId} />
           ) : view === 'inputs' ? (
             <WorkspaceInputs workspace={data} />
+          ) : view === 'settings' ? (
+            <Settings scope={{ kind: 'workspace', organizationId, workspaceId }} />
           ) : (
             <>
               <WorkspaceOverview organizationId={organizationId} workspaceId={workspaceId} workspaceName={data.name} />

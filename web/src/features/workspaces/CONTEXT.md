@@ -8,6 +8,8 @@ WorkspaceList is the Penpot "Organization" table (+ Empty, Loading).
 Lists use one explicit page of <=100 items; inactive prior pages are removed.
 No placeholder previous data. Parent folders use a scoped named picker; the API
 still accepts the documented UUID representations.
+Inputs, Exports and Settings sections show shell/WorkspaceHeading (eyebrow and the
+workspace name as h1) above WorkspaceTabs, as Suites and Runs do in their own headers.
 Workspace Overview contains its dashboard only. Folder create/rename/move/delete
 live in Suites (FolderDialog, FolderActions and the bounded FolderPicker).
 The global Workspaces link opens Suites when a workspace is selected; otherwise

@@ -22,13 +22,14 @@ import type { ReportTab } from './ReportTabs.js';
 import { ResultHeader } from './ResultHeader.js';
 import { useResultLayout } from './result-layout.js';
 import { ScriptVersion, Thresholds } from './Sections.js';
-import { ResultEndpoints, readyOverview } from './Overview.js';
+import { readyOverview } from './Overview.js';
 import type { RunPlan } from '../live/plan.js';
 import { readPlan } from '../live/plan.js';
 import { useResultReads } from './useResultReads.js';
 import { ResultSummary } from './Summary.js';
 import {
   RecoveredHistory,
+  ResultEndpointEvidence,
   recoveredHistoryState,
   resultSections,
   stoppedMeasurementsAbsent,
@@ -178,14 +179,13 @@ function ResultMeasurements({
           <ScriptVersion run={run} suite={reads.suite} revision={reads.revision} failed={reads.revisionQuery.isError} />
         )}
       </div>
-      {archiveMissing ? (
-        <p className="result-muted">
-          {recovered ? 'Endpoint detail requires' : 'Charts and endpoint detail require'} a verified metrics archive.
-          Diagnostics and published artifacts remain available below.
-        </p>
-      ) : (
-        <ResultEndpoints overview={overview} requests={plan.requests} phone={phone} />
-      )}
+      <ResultEndpointEvidence
+        overview={overview}
+        plan={plan}
+        phone={phone}
+        archiveMissing={archiveMissing}
+        recovered={recovered}
+      />
     </>
   );
 }

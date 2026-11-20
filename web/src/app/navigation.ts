@@ -40,8 +40,7 @@ function workspacesTarget({ organizationId }: ShellScope) {
   return organizationId ? routes.organizationWorkspaces(organizationId) : routes.workspaces;
 }
 
-function settingsTarget({ organizationId, workspaceId }: ShellScope) {
-  if (organizationId && workspaceId) return routes.workspaceSettings(organizationId, workspaceId);
+function settingsTarget({ organizationId }: ShellScope) {
   if (organizationId) return routes.organizationSettings(organizationId);
   return routes.settings;
 }
@@ -49,15 +48,17 @@ function settingsTarget({ organizationId, workspaceId }: ShellScope) {
 /**
  * Header navigation, scoped to the current organisation and workspace. Overview is
  * the current scope's overview; Workspaces is current on any workspace sub-page
- * (suites, runs, inputs, compare); Settings follows the scope.
+ * (suites, runs, inputs, exports, settings, compare); Settings is the installation or
+ * organization level.
  */
 export function navItems(pathname: string): NavItem[] {
   const path = trimmed(pathname);
   const scope = shellScope(path);
   const overview = overviewTarget(scope);
   const workspaces = workspacesTarget(scope);
-  const settings = path.endsWith('/settings') || path === routes.settings;
-  const workspaceChild = /^\/organizations\/[^/]+\/workspaces\/[^/]+\/.+/.test(path) && !settings;
+  // A workspace's settings are one of its sections, so they belong to Workspaces.
+  const workspaceChild = /^\/organizations\/[^/]+\/workspaces\/[^/]+\/.+/.test(path);
+  const settings = !workspaceChild && (path.endsWith('/settings') || path === routes.settings);
   return [
     { key: 'overview', label: 'Overview', to: overview, current: path === overview },
     { key: 'workspaces', label: 'Workspaces', to: workspaces, current: path === workspaces || workspaceChild },
