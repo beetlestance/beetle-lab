@@ -16,8 +16,7 @@ slug (`Run result / Failed` → `run-result-failed.png`).
   inventories scroll inside their own keyboard-focusable region.
 - Settings subsections are in browser history and use the existing route transition. Reduced motion
   continues to disable the animation.
-- Gallery labels identify shared skin references and viewport fallbacks. The saved Run again board
-  still needs a fresh export.
+- Gallery labels identify shared skin references and viewport fallbacks.
 - Folder suite counts remain direct by design. The result headline uses the aggregate overview when
   available. Source and sample data need checking before making changes to either.
 
@@ -25,8 +24,11 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 
 Codex re-exported all 150 Penpot boards and checked the seven prototype flows in Chromium
 against `806200f9`. Its findings are folded into the packages below (P1, P4, P5, P6) and the
-new P7 motion package. Live Reconnecting and Cancelling correctly wait for real replies
-instead of the prototype's 1 s demo advance, and restored history stays read-only; keep both.
+new P7 motion package. The gallery pairs 145 boards with app screenshots. The blocked organization
+deletion still needs a matching capture.
+
+Live Reconnecting waits for fresh metrics, Cancelling waits for settlement, and restored history
+remains read-only.
 
 ## P1 overview-shell — `web/src/features/workspace-overview`, `organization-overview`, app shell
 
@@ -73,7 +75,9 @@ instead of the prototype's 1 s demo advance, and restored history stays read-onl
 - [x] target-resize-reread — the same report stays ready across the phone breakpoint
 - [ ] results-copy — headline and tile copy on Run result states as on the boards
 - [ ] compare-copy — compare headline and rows are more verbose than the board
-- [ ] failed-result-header — Run result / Failed / Run again: the board shows idle Run again beside Export script and Pin; the app adds Refresh run and lays out actions and result differently
+- [ ] failed-result-header — Run result / Failed / Run again: the fresh export shows idle Run again
+  beside Export script and Pin. The app adds Refresh run and arranges the actions differently. The
+  committed screenshot covers Starting…. Add a separate idle capture when fixing the header.
 - [ ] live-download-menu — Live run / Download open: the board's menu is compact and in place; the app's is wider and shows selection details below the action bar
 
 ## P5 inputs-exports
