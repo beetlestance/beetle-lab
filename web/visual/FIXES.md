@@ -76,8 +76,8 @@ remains read-only.
 - [ ] results-copy — headline and tile copy on Run result states as on the boards
 - [ ] compare-copy — compare headline and rows are more verbose than the board
 - [ ] failed-result-header — Run result / Failed / Run again: the fresh export shows idle Run again
-  beside Export script and Pin. The app adds Refresh run and arranges the actions differently. The
-  committed screenshot covers Starting…. Add a separate idle capture when fixing the header.
+      beside Export script and Pin. The app adds Refresh run and arranges the actions differently. The
+      committed screenshot covers Starting…. Add a separate idle capture when fixing the header.
 - [ ] live-download-menu — Live run / Download open: the board's menu is compact and in place; the app's is wider and shows selection details below the action bar
 
 ## P5 inputs-exports
