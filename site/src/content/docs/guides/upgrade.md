@@ -61,9 +61,9 @@ From the checkout, with the same `BEETLE_HOME` and other variables you always us
 ```sh
 docker compose down
 git pull                                  # or check out the release you want
-docker compose build
+docker compose build                      # the only build until activate
 docker compose run --rm setup upgrade     # prepare
-docker compose up -d                      # start the new version, fenced
+docker compose up -d                      # start the new version, fenced; no --build
 # check the new version in the browser
 docker compose down
 docker compose run --rm setup upgrade activate
@@ -119,8 +119,9 @@ When you are satisfied, stop the services and activate.
 `docker compose run --rm setup upgrade activate` checks that the selected
 configuration matches the images on the host, removes the fence and records
 `activated`. Start the services again and new work is accepted. Running it again
-changes nothing. If the images moved again since prepare, it refuses with
-`recovery_required`; roll back instead.
+changes nothing. Do not rebuild between prepare and activate: every build gives
+the images new IDs, even with no source change, and activate then refuses with
+`recovery_required`. Roll back, then prepare again with the images you have.
 
 ## Roll back
 
