@@ -27,5 +27,7 @@ it('publishes and reopens separate Run/export custody in one native namespace wi
  await finish(f.store.read({record:exported,start:0,endExclusive:bytes.length,sink:{write:async part=>{received.push(Buffer.from(part));}}},context()));
  expect(Buffer.concat(received)).toEqual(bytes);
  const wrong={...run,artifact:{...run.artifact,identity:exported.artifact.identity}};
- await expect(finish(f.store.read({record:wrong,start:0,endExclusive:bytes.length,sink:{write:async()=>{}}},context()))).rejects.toMatchObject({code:'integrity'});
+ await expect(finish(f.store.prepare(wrong,context()))).rejects.toMatchObject({code:'integrity'});
+ const own:Buffer[]=[];await finish(f.store.read({record:wrong,start:0,endExclusive:bytes.length,sink:{write:async part=>{own.push(Buffer.from(part));}}},context()));
+ expect(Buffer.concat(own)).toEqual(bytes);expect(await readFile(f.path(original,true))).toEqual(bytes);
 });

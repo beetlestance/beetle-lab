@@ -3,7 +3,8 @@ import { OUTPUT_CHUNK_BYTES } from '../../../../ports/output-bytes.js';
 import type { OutputFileRecord } from '../../../../ports/output-bytes.js';
 import type { Roots } from '../custody/index.js';
 import type { FileJob } from './job.js';
-import { match, published } from './files.js';
+import { published } from './files.js';
+import { matchPublishedRead } from './durable.js';
 import { fail } from './errors.js';
 
 export interface ReadRange {
@@ -24,15 +25,15 @@ export async function read(
     request.endExclusive > record.artifact.bytes
   )
     fail('invalid_input');
-  const file = await published(job, roots, record);
+  const file = await published(job, roots, record, true);
   let offset = request.start;
   while (offset < request.endExclusive) {
     const bytes = await file.read(offset, Math.min(OUTPUT_CHUNK_BYTES, request.endExclusive - offset));
     await request.write(bytes);
     job.policy.check();
-    await match(file, roots, record, true);
+    await matchPublishedRead(file, roots, record);
     offset += bytes.length;
   }
-  await match(file, roots, record, true);
+  await matchPublishedRead(file, roots, record);
   await job.confirm(file);
 }

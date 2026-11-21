@@ -7,6 +7,7 @@ import type { PhysicalPublication, Roots } from '../custody/index.js';
 import type { FileJob } from './job.js';
 import { identity } from './identity.js';
 import { fail } from './errors.js';
+import { matchPublishedRead } from './durable.js';
 
 export async function locations(
   job: FileJob<unknown>,
@@ -81,6 +82,7 @@ export async function published(
   job: FileJob<unknown>,
   roots: Roots,
   record: OutputFileRecord<OutputBinding>,
+  durable = false,
 ): Promise<PhysicalFile> {
   if (record.artifact.phase !== 'published' || record.artifact.writer !== null || record.artifact.identity === null)
     fail('invalid_input');
@@ -89,6 +91,7 @@ export async function published(
   const file = await PhysicalFile.open(job.tree, places.destination, false);
   if (!file) fail('custody_missing');
   file.requireLinks(1n);
-  await match(file, roots, record, true);
+  if (durable) await matchPublishedRead(file, roots, record);
+  else await match(file, roots, record, true);
   return file;
 }

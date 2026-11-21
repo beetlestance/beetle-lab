@@ -76,6 +76,7 @@ it.each(['link', 'unlink'] as const)('recovers lost native publication %s replie
   expect((await lstat(files.path(value, true), { bigint: true })).ino).toBe(original.ino);
   value = advance(value, receipt, 'published'); await writeFile(files.path(value, true), Buffer.from('abc'));
   await expect(finish(files.store.prepare(value, context()))).rejects.toMatchObject({ code: 'integrity' });
+  await writeFile(files.path(value, true), Buffer.from('abd'));
   let calls = 0; await expect(finish(files.store.read({ record: value, start: 0, endExclusive: 3, sink: { write: async () => { calls++; } } }, context()))).rejects.toMatchObject({ code: 'integrity' });
   expect(calls).toBe(0);
 });

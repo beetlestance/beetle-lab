@@ -149,8 +149,8 @@ and an interrupted first initialisation fails startup unless it proves no output
   allocates a file for a lost reply. `append` takes 1–65536 bytes at exactly the durable offset,
   compares any overlap and writes the suffix. Per-operation deadline ≤ 300000 ms.
 - Publication is a no-overwrite hard link, verified two-alias custody, then staging unlink: one inode
-  charged once. Receipts need full length and SHA-256, file and parent flushes, successful closes and
-  post-close named checks. A changed published file is never rehashed into a new receipt.
+  charged once. Receipts need full length, SHA-256, flushes and post-close checks; a changed file is never
+  rehashed into one. Reads accept a moved inode once size, owner, 0600, one link and SHA-256 hold ([029](../../decisions/029-durable-staging-identity.md)).
 
 | Writer transition | Precondition | Effect |
 | --- | --- | --- |

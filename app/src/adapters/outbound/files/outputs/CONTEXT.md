@@ -10,6 +10,9 @@ The shared custody owner supplies original IO, physical verification and SHA che
 shared promotion supplies no-overwrite alias recovery and all publication flushes.
 Domain-separated identities bind immutable metadata, root pair and original inode;
 published identities additionally retain the complete final file signature.
+Reads (`durable.ts`) accept a published file whose inode moved (VirtioFS restart, restored
+copy) only after size, owner, 0600 mode, one link and the sealed SHA-256 hold; that live
+identity is pinned for the start, and the recorded identity is never rewritten.
 Prepare never reconstructs known custody. Only fresh null-identity transferring
 state can create checked empty staging; interrupted tails are compared, not truncated.
 A transferring reconciliation receipt cannot authorize metadata phase regression.
