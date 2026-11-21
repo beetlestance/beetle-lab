@@ -27,6 +27,17 @@ it('reads bounded metadata and explicit authoritative status without content or 
   expect(api.records.every(request => request.method === 'GET')).toBe(true);
 });
 
+it('shows upload progress only while bytes are still missing from a file that exists', async () => {
+  const current = input({ state: 'deleted', offset: 0, version: 3 });
+  const api = testClient(request => request.path.includes('?') ? page() : json(current));
+  mount(api.client);
+  fireEvent.click(await screen.findByRole('button', { name: 'Read current status for Synthetic dataset' }));
+  const status = await screen.findByRole('region', { name: 'Current input status' });
+  expect(await within(status).findByText('Deleted. The backend has confirmed absence.')).toBeVisible();
+  expect(within(status).queryByRole('progressbar')).not.toBeInTheDocument();
+  expect(within(status).queryByText('Committed progress')).not.toBeInTheDocument();
+});
+
 it('presents list failure without retry loops and explicitly retries into an empty page', async () => {
   let reads = 0;
   const api = testClient(() => ++reads === 1 ? json(apiError('storage_unavailable'), 503) : page([]));

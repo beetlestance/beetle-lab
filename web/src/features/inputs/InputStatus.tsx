@@ -218,14 +218,7 @@ function InputMetadata({ input }: { input: InputRecord }) {
           <dd>{published}</dd>
         </>
       )}
-      <dt>Committed progress</dt>
-      <dd>
-        <progress aria-label="Committed input bytes" max={input.bytes || 1} value={input.offset} />
-        <span className="number">
-          {' '}
-          {input.offset} / {input.bytes} bytes
-        </span>
-      </dd>
+      <UploadProgress input={input} />
       <dt>Version</dt>
       <dd className="number">{input.version}</dd>
       <dt>SHA256</dt>
@@ -249,6 +242,23 @@ function InputMetadata({ input }: { input: InputRecord }) {
         </>
       )}
     </dl>
+  );
+}
+
+/** Upload progress only describes a file that still exists and has not received every byte. */
+function UploadProgress({ input }: { input: InputRecord }) {
+  if ((input.state !== 'staging' && input.state !== 'failed') || input.offset >= input.bytes) return null;
+  return (
+    <>
+      <dt>Committed progress</dt>
+      <dd>
+        <progress aria-label="Committed input bytes" max={input.bytes || 1} value={input.offset} />
+        <span className="number">
+          {' '}
+          {input.offset} / {input.bytes} bytes
+        </span>
+      </dd>
+    </>
   );
 }
 
