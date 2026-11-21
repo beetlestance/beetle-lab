@@ -21,19 +21,26 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 - Folder suite counts remain direct by design. The result headline uses the aggregate overview when
   available. Source and sample data need checking before making changes to either.
 
+## Fresh review pass
+
+Codex re-exported all 150 Penpot boards and checked the seven prototype flows in Chromium
+against `806200f9`. Its findings are folded into the packages below (P1, P4, P5, P6) and the
+new P7 motion package. Live Reconnecting and Cancelling correctly wait for real replies
+instead of the prototype's 1 s demo advance, and restored history stays read-only; keep both.
+
 ## P1 overview-shell — `web/src/features/workspace-overview`, `organization-overview`, app shell
 
-- [ ] org-overview-tab — Overview at organization level shows the dashboard from `getOrganizationOverview` (live card, Last 24 hours, Recent runs linking to each run's workspace, counts); the workspace table, Create, Rename, Delete and paging stay only on Workspaces
-- [ ] org-overview-states — Empty ("Write your first suite"), Loading and Search for the organization dashboard; Organization / Empty board
+- [ ] org-overview-tab — (revised by the fresh review; replaces the dashboard item) the Organization board is a workspace table: add Suites, Runs and 24-hour activity per workspace (needs an authoritative source; if the API has none, Backend and contract) and put Organization settings below the table, as on the board
+- [ ] org-overview-states — Organization / Empty shows its own no-runs content and illustration; Loading and Search as on the boards
 - [x] overview-blank-space — the accessibility table no longer expands the document
 - [ ] overview-width — ultrawide: hero capped at 820px while the lower row stretches; contain the page so everything aligns (Ultrawide / Overview)
 - [ ] overview-refresh-line — "As of 19:21. Refresh overview" is not on the board
 - [ ] overview-section-tabs — workspace section tabs above the hero are not on the board
 - [ ] overview-copy — headline, summary line, "Local agent" title and status line as on the board
-- [ ] phone-live-card — phone: the live card's progress marker overlaps its label (Phone / Overview)
+- [ ] phone-live-card — phone: the live card's progress marker overlaps its label (Phone / Overview); the board's label sits partly outside the card, so use a legible, contained layout
 - [x] phone-menu-sign-out — verified at 390 px with keyboard dismissal and focus restoration
 - [ ] phone-org-table — phone: organization table actions run off the screen
-- [ ] connection-lost — losing the connection replaces the page with an error; the board keeps the last data with a banner (State / Connection lost)
+- [ ] connection-lost — losing the connection replaces the page with an error; the board keeps the last data with a banner (State / Connection lost). Reproduced on Runs: a failed Refresh removes loaded rows and Try now restores them. Keep verified rows with their age and pause affected actions; a first load with nothing cached still shows the error, and a permission refusal still hides the data
 - [ ] nav-highlight — run pages highlight "Workspaces"; match the boards' nav state
 
 ## P2 namespaces — organization, workspace and folder dialogs
@@ -66,10 +73,12 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 - [x] target-resize-reread — the same report stays ready across the phone breakpoint
 - [ ] results-copy — headline and tile copy on Run result states as on the boards
 - [ ] compare-copy — compare headline and rows are more verbose than the board
+- [ ] failed-result-header — Run result / Failed / Run again: the board shows idle Run again beside Export script and Pin; the app adds Refresh run and lays out actions and result differently
+- [ ] live-download-menu — Live run / Download open: the board's menu is compact and in place; the app's is wider and shows selection details below the action bar
 
 ## P5 inputs-exports
 
-- [~] inputs-detail — dedicated scoped page with file facts and usage; the board's Rename action needs an API
+- [~] inputs-detail — dedicated scoped page with file facts and usage; still missing: revisions grouped by suite, the file's folder, and Rename (needs an API)
 - [ ] upload-dialog — Upload input is a plain form; the board is a dialog with a drop zone
 - [~] upload-checking — fingerprint check and confirmed progress are visible in the existing form
 - [~] upload-interrupted — confirmed bytes and explicit refresh-to-resume are visible while the draft is open
@@ -85,8 +94,19 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 - [x] settings-workspace-tab — all known levels are reachable from either settings entry point
 - [ ] settings-inherited — inherited value detail and Turn off button (Settings / Field states)
 - [ ] settings-field-errors — one generic "Invalid value" banner; show the error on its field
-- [ ] settings-retention — retention preview and progress as on Settings / Workspace / Retention preview and Retention progress
+- [ ] settings-retention — retention preview and progress get their own surfaces as on Settings / Workspace / Retention preview and Retention progress (today embedded in the settings form); keep the live expiry and the stale-apply refusal
 - [ ] settings-copy — remaining copy as on the boards
+
+## P7 motion — `web/src/styles/tokens.css`, overlays and menus
+
+The prototype uses a 220 ms dissolve for pages and panels and a 120 ms dissolve for small
+menus and tooltips. Reduced motion already works and must keep working.
+
+- [ ] motion-page-duration — page, Settings and report-tab transitions run at 180 ms (`--motion-base`); the prototype says 220 ms; check outgoing and incoming surfaces
+- [ ] motion-search — Search opens and closes with no visible fade; the prototype opens it with the 220 ms dissolve
+- [ ] motion-download — the Download menu (Results and Live) opens with no fade; the prototype uses 120 ms
+- [ ] motion-compare-picker — the Compare picker fades and rises in 180 ms; the prototype uses the 220 ms dissolve
+- [ ] motion-artifact-close — the Artifact viewer closes instantly; the prototype animates Close with the 220 ms dissolve
 
 ## Backend and contract — after the packages, one owner
 
