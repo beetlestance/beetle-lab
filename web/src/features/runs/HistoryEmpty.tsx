@@ -6,7 +6,17 @@ import { EmptyState } from '../../components/States.js';
 import runsArt from '../../assets/illustrations/runs.svg';
 import type { RunScope } from './types.js';
 
-export function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filtered: boolean; reset(): void }) {
+export function HistoryEmpty({
+  scope,
+  filtered,
+  reset,
+  disabled,
+}: {
+  scope: RunScope;
+  filtered: boolean;
+  reset(): void;
+  disabled: boolean;
+}) {
   const { readOnly } = useSessionAccess();
   if (filtered)
     return (
@@ -14,7 +24,7 @@ export function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filt
         compact
         title="No runs match these filters"
         actions={
-          <Button size="sm" onClick={reset}>
+          <Button size="sm" disabled={disabled} onClick={reset}>
             Reset filters
           </Button>
         }
@@ -31,7 +41,7 @@ export function HistoryEmpty({ scope, filtered, reset }: { scope: RunScope; filt
           four finished runs to compare them side by side.
         </p>
         <div>
-          {readOnly ? (
+          {readOnly || disabled ? (
             <Link className={buttonClass('secondary')} to={routes.suites(scope.organizationId, scope.workspaceId)}>
               Open suites
             </Link>

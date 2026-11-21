@@ -32,6 +32,18 @@ test('overview: populated, one run active', async ({ page, api }) => {
     viewports: ['desktop', 'phone', 'tablet', 'ultrawide'],
     ready: async (p) => {
       await overviewReady(p);
+      if (p.viewportSize()?.width === viewports.phone.width) {
+        const phase = p.locator('.overview-live .live-stage.is-now');
+        const clear = await phase.evaluate((element) => {
+          const label = element.querySelector('.live-stage-label')!.getBoundingClientRect();
+          const track = element.querySelector<HTMLElement>('.live-stage-track > span')!;
+          const marker = getComputedStyle(track, '::after');
+          const outerRadius = Number.parseFloat(marker.height) / 2 + 2;
+          const trackBounds = track.getBoundingClientRect();
+          return trackBounds.top + trackBounds.height / 2 - outerRadius >= label.bottom;
+        });
+        expect(clear).toBe(true);
+      }
       await settle(p, async () => {});
     },
   });

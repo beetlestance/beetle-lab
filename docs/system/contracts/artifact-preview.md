@@ -6,6 +6,8 @@ metric windows/index and target runtime. Relative paths remain escaped text.
 Publication metadata, never run state, grants the scoped UUID content path.
 Other kinds and files above 32 MiB remain download-only, with the limit explained.
 Attachment filenames/media policy are unchanged; unknown formats stay binary.
+The viewer closes with a 220 ms fade and restores focus to the artifact action.
+Reduced motion skips the fade.
 
 ## Verification and resources
 
@@ -47,6 +49,6 @@ does not claim that a later download or OS save has been verified.
 | --- | --- |
 | `web/src/lib/verified-artifact.ts` | `f67c4aa25dbe` |
 | `web/src/lib/response-body.ts` | `253992da68f6` |
-| `web/src/features/runs/artifacts/ArtifactViewer.tsx` | `0357fdba1d26` |
+| `web/src/features/runs/artifacts/ArtifactViewer.tsx` | `c5f9acee5aac` |
 | `web/src/features/runs/artifacts/preview.ts` | `ed499f014a55` |
 | `web/src/features/runs/artifacts/index.tsx` | `e84419dbf44d` |

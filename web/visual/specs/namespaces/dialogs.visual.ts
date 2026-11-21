@@ -1,8 +1,10 @@
 // Section 3: dialogs for organizations and workspaces. Each is captured with the page it was opened from behind it.
 import type { Page } from '@playwright/test';
 import { capture, expect, settle, test, viewports } from '../../harness.js';
-import type { Api } from '../../harness.js';
+import type { Api, Json } from '../../harness.js';
 import { acmeWorld, checkout, nsIds, refusal, searchWs, settingsWorld } from '../../world/namespaces.js';
+
+import { fixture } from '../../world/index.js';
 
 const org = nsIds.organization;
 const list = `/organizations/${org}/workspaces`;
@@ -87,13 +89,20 @@ test.describe('retire dialogs', () => {
     settingsApi(api);
     api.on('deleteOrganization', refusal('conflict', { reason: 'active' }));
     api.on('listWorkspaces', { scope: checkout.scope, items: [checkout, searchWs], nextCursor: null });
+    const overview = fixture<Record<string, Json>>('workspace-overview');
+    const counts = overview.counts as Record<string, Json>;
+    api.on('getWorkspaceOverview', ({ params }) => ({
+      ...overview,
+      scope: { kind: 'workspace', organizationId: org, workspaceId: params.workspaceId! },
+      counts: { ...counts, suites: params.workspaceId === checkout.id ? 4 : 2 },
+    }));
     await open(page, organizationSettings);
     await confirmRetire(page, 'Retire organization…', 'acme');
     await page.getByRole('button', { name: 'Retire organization', exact: true }).click();
     const dialog = page.getByRole('alertdialog', { name: 'acme still has active workspaces' });
     await expect(dialog.getByRole('list', { name: 'Active workspaces' }).getByRole('listitem')).toHaveText([
-      checkout.name,
-      searchWs.name,
+      `${checkout.name}4 suites, ${String(counts.runs)} runs`,
+      `${searchWs.name}2 suites, ${String(counts.runs)} runs`,
     ]);
     await expect(dialog.getByRole('button', { name: /retire organization|retry/i })).toHaveCount(0);
     await shot(page, 'retire-organization-refused');

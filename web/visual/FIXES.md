@@ -38,10 +38,10 @@ remains read-only.
 - [ ] overview-refresh-line — "As of 19:21. Refresh overview" is not on the board
 - [ ] overview-section-tabs — workspace section tabs above the hero are not on the board
 - [ ] overview-copy — headline, summary line, "Local agent" title and status line as on the board
-- [ ] phone-live-card — phone: the live card's progress marker overlaps its label (Phone / Overview); the board's label sits partly outside the card, so use a legible, contained layout
+- [x] phone-live-card — Phone Overview keeps the active phase label above the progress marker at 390 px.
 - [x] phone-menu-sign-out — verified at 390 px with keyboard dismissal and focus restoration
 - [ ] phone-org-table — phone: organization table actions run off the screen
-- [ ] connection-lost — losing the connection replaces the page with an error; the board keeps the last data with a banner (State / Connection lost). Reproduced on Runs: a failed Refresh removes loaded rows and Try now restores them. Keep verified rows with their age and pause affected actions; a first load with nothing cached still shows the error, and a permission refusal still hides the data
+- [x] connection-lost — Runs keeps the last verified page and its timestamp during a failed refresh. Filters, paging, comparison and pinning pause until a successful refresh. First-load failures and permission refusals hide rows.
 - [ ] nav-highlight — run pages highlight "Workspaces"; match the boards' nav state
 
 ## P2 namespaces — organization, workspace and folder dialogs
@@ -50,7 +50,7 @@ remains read-only.
 - [ ] create-dialogs — New folder, New workspace, New organization: titles, labels, character counter and address derived from the name, as on the boards
 - [ ] workspace-name-taken — name taken is shown inline on the field, as New folder / Name taken does
 - [ ] suite-rename — Rename suite with `patchSuite`, plus Changed elsewhere (Overlay / Rename, Overlay / Rename / Changed elsewhere, Phone / Rename)
-- [~] delete-organization-blocked — Retirement refusal shows active workspace names from the scoped API and links to Workspaces. Captured in both skins. Per-workspace suite and run counts from the board remain open.
+- [x] delete-organization-blocked — The retirement refusal lists active workspace names with verified suite and run totals and links to Workspaces. Unavailable counts are identified.
 - [ ] refusal-blockers — refusal dialogs show only "Version or intent conflict"; show what blocks the action as the boards do (Delete workspace / Blocked, Delete folder / Not empty, Retire … / Refused). If the API reply has no blocker detail, list it under Backend and contract
 - [ ] namespace-copy — remaining copy on these dialogs as on the boards
 
@@ -95,7 +95,7 @@ remains read-only.
 - [x] settings-workspace-tab — all known levels are reachable from either settings entry point
 - [ ] settings-inherited — inherited value detail and Turn off button (Settings / Field states)
 - [ ] settings-field-errors — one generic "Invalid value" banner; show the error on its field
-- [ ] settings-retention — retention preview and progress get their own surfaces as on Settings / Workspace / Retention preview and Retention progress (today embedded in the settings form); keep the live expiry and the stale-apply refusal
+- [x] settings-retention — Workspace retention preview and progress open on the batch screen. Expiry disables Apply and a stale apply removes nothing.
 - [ ] settings-copy — remaining copy as on the boards
 
 ## P7 motion — `web/src/styles/tokens.css`, overlays and menus
@@ -103,11 +103,11 @@ remains read-only.
 The prototype uses a 220 ms dissolve for pages and panels and a 120 ms dissolve for small
 menus and tooltips. Reduced motion already works and must keep working.
 
-- [ ] motion-page-duration — page, Settings and report-tab transitions run at 180 ms (`--motion-base`); the prototype says 220 ms; check outgoing and incoming surfaces
-- [ ] motion-search — Search opens and closes with no visible fade; the prototype opens it with the 220 ms dissolve
-- [ ] motion-download — the Download menu (Results and Live) opens with no fade; the prototype uses 120 ms
-- [ ] motion-compare-picker — the Compare picker fades and rises in 180 ms; the prototype uses the 220 ms dissolve
-- [ ] motion-artifact-close — the Artifact viewer closes instantly; the prototype animates Close with the 220 ms dissolve
+- [~] motion-page-duration — Page, Settings and Results report panels fade in at 220 ms. The outgoing page is removed immediately, so this is an entrance fade rather than the two-surface prototype dissolve.
+- [x] motion-search — Search opens with a 220 ms fade and Escape still closes it immediately.
+- [x] motion-download — Results and Live Download menus fade in at 120 ms.
+- [x] motion-compare-picker — The Results Compare picker fades in at 220 ms.
+- [x] motion-artifact-close — Artifact viewer closes with a 220 ms fade and restores focus. Reduced motion closes it immediately.
 
 ## Backend and contract — after the packages, one owner
 

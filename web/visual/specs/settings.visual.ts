@@ -86,6 +86,8 @@ test('settings-workspace-retention-preview', async ({ page, api }) => {
   await shoot(page, `${paths.workspace}?retentionBatch=${snapshotId}`, 'settings-workspace-retention-preview', {
     ready: async (p) => {
       await expect(p.getByRole('heading', { name: 'Preview: 38 runs would be removed' })).toBeVisible();
+      await expect(p.getByRole('list', { name: /^Settings for/ })).toHaveCount(0);
+      await expect(p.getByRole('button', { name: 'Back to workspace settings' })).toBeVisible();
       await expect(p.getByRole('heading', { name: 'Never removed by this preview' })).toBeVisible();
     },
   });
@@ -96,7 +98,20 @@ test('settings-workspace-retention-progress', async ({ page, api }) => {
   await shoot(page, `${paths.workspace}?retentionBatch=${snapshotId}`, 'settings-workspace-retention-progress', {
     ready: async (p) => {
       await expect(p.getByRole('heading', { name: 'Removing 38 runs' })).toBeVisible();
+      await expect(p.getByRole('list', { name: /^Settings for/ })).toHaveCount(0);
       await expect(p.getByText('Run 44e7 is blocked')).toBeVisible();
     },
   });
+});
+
+test('workspace retention preview opens as a dedicated screen from Settings', async ({ page, api }) => {
+  retentionApi(settingsApi(api), 'preview');
+  await open(page, paths.workspace);
+  await page.getByRole('button', { name: 'Manage run retention' }).click();
+  await page.getByRole('button', { name: 'Preview retention' }).click();
+  await expect(page).toHaveURL(new RegExp(`retentionBatch=${snapshotId}`));
+  await expect(page.getByRole('heading', { name: 'Preview: 38 runs would be removed' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to workspace settings' }).click();
+  await expect(page).toHaveURL(paths.workspace);
+  await expect(page.getByRole('list', { name: /^Settings for/ })).toBeVisible();
 });

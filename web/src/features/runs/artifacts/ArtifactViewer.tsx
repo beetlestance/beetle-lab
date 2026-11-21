@@ -52,19 +52,20 @@ export function ArtifactViewer({
   return (
     <Dialog
       className="artifact-viewer-dialog"
+      dissolve
       title={artifact.relativePath}
       description={formatBytes(artifact.bytes)}
       onClose={onClose}
-      actions={
+      actions={(close) => (
         <>
-          <Button variant="text" onClick={onClose}>
+          <Button variant="text" onClick={close}>
             Close
           </Button>
           <a className={buttonClass('inverse')} href={href} download={download}>
             Download
           </a>
         </>
-      }
+      )}
     >
       {readable ? (
         <VerifiedText params={full} artifact={artifact} reads={reads} />

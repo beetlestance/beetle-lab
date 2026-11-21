@@ -8,6 +8,7 @@
   justify-content: center;
   padding: 96px var(--s-16) var(--s-16);
   background: var(--scrim);
+  animation: fade-in var(--motion-dissolve) var(--ease-out);
 }
 .command-dialog {
   display: grid;

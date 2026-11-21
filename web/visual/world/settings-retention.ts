@@ -181,6 +181,15 @@ export function batchList(state: 'preview' | 'applied'): Json {
 /** Answers the reads the retention controls make for one batch in the given state. */
 export function retentionApi(api: Api, state: 'preview' | 'applied'): Api {
   return api
+    .on('previewWorkspaceRetention', (call) => ({
+      status: 200,
+      body: {
+        ...(preview() as Record<string, Json>),
+        requestId: (call.body as Record<string, Json>).requestId!,
+        settingsId: (call.body as Record<string, Json>).settingsId!,
+        settingsVersion: (call.body as Record<string, Json>).expectedVersion!,
+      },
+    }))
     .on('getWorkspaceRetentionPreview', preview())
     .on('getWorkspaceRetentionStatus', status(state))
     .on('listWorkspaceRetention', batchList(state));

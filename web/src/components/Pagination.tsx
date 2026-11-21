@@ -48,6 +48,7 @@ export function Pagination({
   label = 'Pages',
   limit = 100,
   summary,
+  disabled = false,
 }: {
   page: ReturnType<typeof usePage>;
   next: string | null;
@@ -56,17 +57,18 @@ export function Pagination({
   limit?: number | undefined;
   /** Caller-supplied exact snapshot range; omitted for lists without count authority. */
   summary?: string | undefined;
+  disabled?: boolean;
 }) {
   const [back, forward] = !order ? ['Back', 'Next'] : order === 'newest' ? ['Newer', 'Older'] : ['Older', 'Newer'];
   return (
     <nav className="pagination" aria-label={label}>
-      <Button size="sm" disabled={!page.hasBack} onClick={page.back}>
+      <Button size="sm" disabled={disabled || !page.hasBack} onClick={page.back}>
         {back}
       </Button>
       <span aria-live="polite">{summary ?? `Page ${page.position} · up to ${limit} items per page`}</span>
       <Button
         size="sm"
-        disabled={!next}
+        disabled={disabled || !next}
         onClick={() => {
           if (next) page.next(next);
         }}

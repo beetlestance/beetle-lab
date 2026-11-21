@@ -52,6 +52,7 @@ export function HistoryFilters({
   counts,
   suiteLocked,
   compare,
+  disabled,
 }: {
   applied: HistoryFilter;
   apply: (value: HistoryFilter) => void;
@@ -59,6 +60,7 @@ export function HistoryFilters({
   counts?: RunHistoryCounts | undefined;
   suiteLocked: boolean;
   compare: ReactNode;
+  disabled: boolean;
 }) {
   const [text, setText] = useState(applied.name ?? applied.runIdPrefix ?? '');
   const [error, setError] = useState('');
@@ -96,7 +98,7 @@ export function HistoryFilters({
     apply({ order: 'newest', ...(suiteLocked && applied.suiteId ? { suiteId: applied.suiteId } : {}) });
   }
   return (
-    <div className="history-filters">
+    <fieldset className="history-filters" disabled={disabled} aria-label="Run filters">
       <SegmentedFilter
         label="Run state"
         options={chips.map(({ value, label }) => ({ value, label, count: counts?.[value]?.toLocaleString('en-US') }))}
@@ -120,7 +122,7 @@ export function HistoryFilters({
           Reset filters
         </Button>
       )}
-    </div>
+    </fieldset>
   );
 }
 

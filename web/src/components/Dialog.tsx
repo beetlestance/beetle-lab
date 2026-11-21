@@ -1,3 +1,4 @@
+import { animationTiming } from './motion.js';
 import { useEffect, useId, useRef } from 'react';
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
@@ -52,7 +53,8 @@ export type DialogProps = {
   description?: ReactNode | undefined;
   children?: ReactNode | undefined;
   /** Buttons row; put the safe action first. */
-  actions?: ReactNode | undefined;
+  actions?: ReactNode | ((close: () => void) => ReactNode) | undefined;
+  dissolve?: boolean | undefined;
   /** Element to focus on open; defaults to the first focusable element. */
   initialFocus?: RefObject<HTMLElement | null> | undefined;
   /** Alert dialogs (destructive confirmations) use role alertdialog. */
@@ -72,6 +74,7 @@ export function Dialog({
   description,
   children,
   actions,
+  dissolve = false,
   initialFocus,
   role = 'dialog',
   dismissible = true,
@@ -79,6 +82,8 @@ export function Dialog({
   const titleId = useId();
   const descriptionId = useId();
   const ref = useRef<HTMLDivElement>(null);
+  const backdrop = useRef<HTMLDivElement>(null);
+  const close = useDialogDismiss(backdrop, onClose, dissolve);
   const hostRef = useRef<HTMLDivElement | null>(null);
   if (hostRef.current === null && typeof document !== 'undefined') hostRef.current = document.createElement('div');
   useEffect(() => {
@@ -98,15 +103,16 @@ export function Dialog({
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape' && dismissible) {
       event.stopPropagation();
-      onClose();
+      close();
     } else if (event.key === 'Tab' && ref.current) trapTab(event, ref.current);
   };
   return createPortal(
     // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- Backdrop click dismisses; keyboard uses Escape.
     <div
-      className="dialog-backdrop"
+      ref={backdrop}
+      className={dissolve ? 'dialog-backdrop dialog-dissolve' : 'dialog-backdrop'}
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && dismissible) onClose();
+        if (event.target === event.currentTarget && dismissible) close();
       }}
     >
       {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- The dialog (role from props) traps Tab and handles Escape for its contents. */}
@@ -130,9 +136,34 @@ export function Dialog({
           </div>
         )}
         {children}
-        {actions && <div className="dialog-actions">{actions}</div>}
+        <DialogFooter actions={actions} close={close} />
       </div>
     </div>,
     hostRef.current!,
   );
+}
+
+function DialogFooter({ actions, close }: { actions: DialogProps['actions']; close: () => void }) {
+  if (!actions) return null;
+  return <div className="dialog-actions">{typeof actions === 'function' ? actions(close) : actions}</div>;
+}
+
+function useDialogDismiss(ref: RefObject<HTMLDivElement | null>, onClose: () => void, dissolve: boolean): () => void {
+  const exit = useRef<Animation | null>(null);
+  useEffect(() => () => exit.current?.cancel(), []);
+  return () => {
+    if (exit.current) return;
+    const element = ref.current;
+    const timing = dissolve ? animationTiming(element) : null;
+    if (!element || !timing) {
+      onClose();
+      return;
+    }
+    const animation = element.animate([{ opacity: getComputedStyle(element).opacity }, { opacity: 0 }], {
+      ...timing,
+      fill: 'forwards',
+    });
+    exit.current = animation;
+    void animation.finished.then(onClose, () => {});
+  };
 }

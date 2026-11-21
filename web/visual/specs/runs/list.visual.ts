@@ -3,6 +3,8 @@ import { capture, expect, settle, shoot, test, viewports } from '../../harness.j
 import { fixture, ids, signedIn } from '../../world/index.js';
 import { runPage, specs, suitePage } from '../../world/runs/list.js';
 
+import { switchableConnection } from '../../world/session.js';
+
 const path = `/organizations/${ids.organization}/workspaces/${ids.workspace}/runs`;
 const rowsReady = async (page: Page) => {
   await expect(page.getByRole('table')).toBeVisible();
@@ -28,6 +30,29 @@ test('runs', async ({ page, api }) => {
     }
     await capture(page, `runs-${viewport}`);
   }
+});
+
+test('runs-connection-lost keeps cached rows and disables actions until recovery', async ({ page, api }) => {
+  api.on('listRuns', runPage());
+  const connection = await switchableConnection(page);
+  await page.setViewportSize(viewports.desktop);
+  await page.goto(path);
+  await rowsReady(page);
+  const cached = page.getByRole('checkbox', { name: /Compare run b089/ });
+  const refresh = page.getByRole('button', { name: 'Refresh', exact: true });
+  await expect(cached).toBeEnabled();
+  connection.down = true;
+  await refresh.click();
+  await expect(page.getByText(/Run actions are paused/)).toBeVisible();
+  await expect(cached).toBeVisible();
+  await expect(cached).toBeDisabled();
+  await expect(page.getByRole('radio', { name: /^Passed/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Unpin run b089/ })).toBeDisabled();
+  await capture(page, 'runs-connection-lost-desktop');
+  connection.down = false;
+  await page.getByRole('button', { name: 'Try now' }).click();
+  await expect(cached).toBeEnabled();
+  await expect(page.getByText(/Run actions are paused/)).toHaveCount(0);
 });
 
 test('runs-pinned', async ({ page, api }) => {

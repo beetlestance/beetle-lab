@@ -3,6 +3,7 @@ import { Progress } from './Progress.js';
 import { bytes, clock, runs, shortId } from './format.js';
 import { Banner } from '../../components/Banner.js';
 import { Button } from '../../components/Button.js';
+import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RetentionPreview, RetentionBatchStatus, WorkspaceScope } from '@beetle/contracts/api';
 import { useApi, readResult } from '../../app/api.js';
@@ -71,7 +72,7 @@ function BatchView({ scope, id, command, compactRun, changed, selected, removed,
   const api = useApi();
   const client = useQueryClient();
   const params = retentionParams(scope);
-  const expired = Date.parse(preview.expiresAt) <= Date.now();
+  const expired = usePreviewExpired(preview.expiresAt, status.state === 'preview');
   function apply() {
     const body = {
       scope,
@@ -131,6 +132,18 @@ function BatchView({ scope, id, command, compactRun, changed, selected, removed,
       )}
     </>
   );
+}
+
+function usePreviewExpired(expiresAt: string, preview: boolean): boolean {
+  const deadline = Date.parse(expiresAt);
+  const [elapsed, setElapsed] = useState<number>();
+  useEffect(() => {
+    const remaining = deadline - Date.now();
+    if (!preview || remaining <= 0) return;
+    const timer = window.setTimeout(() => setElapsed(deadline), remaining);
+    return () => window.clearTimeout(timer);
+  }, [deadline, preview]);
+  return elapsed === deadline || Date.now() >= deadline;
 }
 
 interface PreviewActionsProps {

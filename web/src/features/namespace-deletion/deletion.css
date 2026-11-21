@@ -33,9 +33,18 @@
   background: var(--panel);
 }
 .retirement-blockers li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--s-4) var(--s-16);
   padding-block: var(--s-8);
   overflow-wrap: anywhere;
 }
 .retirement-blockers li + li {
   border-block-start: var(--border-width) solid var(--line);
+}
+
+.retirement-blocker-counts {
+  color: var(--mute);
+  font-size: var(--fs-sm);
 }

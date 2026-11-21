@@ -105,6 +105,7 @@
   display: none;
 }
 .live-download-menu {
+  animation: fade-in var(--motion-fast) var(--ease-out);
   position: absolute;
   top: calc(100% + 6px);
   right: 0;

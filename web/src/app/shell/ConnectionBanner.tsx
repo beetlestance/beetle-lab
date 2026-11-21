@@ -3,14 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { Banner } from '../../components/Banner.js';
 import { Button } from '../../components/Button.js';
-import { ApiFailure } from '../errors.js';
+import { isConnectionFailure } from '../errors.js';
 
 const clock = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
-/** Only a reply that never arrived means the connection is gone; a server refusal is a normal error. */
-function connectionLost(error: unknown): boolean {
-  return error instanceof ApiFailure && (error.failure.kind === 'transport' || error.failure.kind === 'timeout');
-}
 /** Time of the newest data on screen, or null when nothing has loaded yet. */
 function newestData(client: QueryClient): number | null {
   const times = client
@@ -32,7 +28,7 @@ export function useConnection() {
     () =>
       client.getQueryCache().subscribe((event) => {
         if (event.type !== 'updated') return;
-        if (event.action.type === 'error' && connectionLost(event.action.error))
+        if (event.action.type === 'error' && isConnectionFailure(event.action.error))
           setSince((current) => (current === undefined ? newestData(client) : current));
         if (event.action.type === 'success') setSince(undefined);
       }),

@@ -3,7 +3,7 @@ import type { RunPage } from '@beetle/contracts/api';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation } from 'react-router-dom';
-import { readResult, useApi } from '../../app/api.js';
+import { isConnectionFailure, readResult, useApi } from '../../app/api.js';
 import { queryKeys } from '../../app/queries.js';
 import { WorkspaceTabs } from '../../app/shell/WorkspaceTabs.js';
 import { routes } from '../../app/routes.js';
@@ -59,12 +59,7 @@ function HistoryContext({ scope, suiteId, pinned }: { scope: RunScope; suiteId?:
   );
 }
 
-function HistoryPage({
-  scope,
-  filters,
-  reset,
-  controls,
-}: {
+type HistoryPageProps = {
   scope: RunScope;
   filters: HistoryFilter;
   reset(): void;
@@ -73,64 +68,126 @@ function HistoryPage({
     suiteId: string | undefined;
     apply(value: HistoryFilter): void;
   };
-}) {
+};
+
+function HistoryPage({ scope, filters, reset, controls }: HistoryPageProps) {
   const { selected, setSelected, toggle, query, page, refresh } = useHistoryPage(scope, filters);
-  // A suite context from the address is not a filter the reader chose, so it never makes the page look filtered.
-  const filtered = filtersActive(controls.suiteId ? withoutSuite(filters) : filters);
-  const current = currentHistoryPage(query);
-  const empty = query.isSuccess && query.data.items.length === 0 && !page.hasBack && !filtered;
+  const { filtered, stale, current, empty } = historyView(query, filters, controls.suiteId, page.hasBack);
   return (
     <div className="history">
-      <div className="history-intro">
-        <HistoryHeader
-          scope={scope}
-          workspaceName={current.workspaceName}
-          pending={query.isPending}
-          counts={current.counts}
-          countsUnavailable={current.countsUnavailable}
-          suiteId={controls.suiteId}
-          suiteName={controls.suiteId ? controls.suites.name(controls.suiteId) : undefined}
-        />
-        <WorkspaceTabs organizationId={scope.organizationId} workspaceId={scope.workspaceId} current="runs" />
-      </div>
+      <HistoryIntro scope={scope} controls={controls} current={current} pending={query.isPending} />
+      {stale && (
+        <p className="history-stale" role="status">
+          Showing runs from {formatHistoryTime(query.dataUpdatedAt)}. Run actions are paused until refresh succeeds.
+        </p>
+      )}
       {!empty && (
         <HistoryFilters
+          disabled={stale}
           applied={filters}
-          counts={current.counts}
+          counts={current?.counts}
           apply={controls.apply}
           suites={controls.suites.suites}
           suiteLocked={controls.suiteId !== undefined}
-          compare={<HistoryCompare scope={scope} selected={selected} />}
+          compare={<HistoryCompare scope={scope} selected={selected} disabled={stale} />}
         />
       )}
-      <QueryState query={query} loading={<HistoryLoading />}>
-        {(data: RunPage) =>
-          data.items.length === 0 && !page.hasBack ? (
-            <HistoryEmpty scope={scope} filtered={filtered} reset={reset} />
-          ) : (
-            <HistoryRows
-              scope={scope}
-              data={data}
-              selected={selected}
-              toggle={toggle}
-              name={controls.suites.name}
-              filtered={filtered}
-              page={page}
-              order={filters.order ?? 'newest'}
-            />
-          )
-        }
-      </QueryState>
-      {!empty && (
+      <HistoryResults
+        scope={scope}
+        state={{ query, page, selected, toggle }}
+        controls={{ reset, name: controls.suites.name, filtered, stale, order: filters.order ?? 'newest' }}
+      />
+      {(!empty || stale) && (
         <HistoryToolbar
           selected={selected}
           clear={() => setSelected([])}
           refresh={refresh}
           fetching={query.isFetching}
-          counted={current.counts !== undefined}
+          counted={current?.counts !== undefined}
         />
       )}
     </div>
+  );
+}
+
+function historyView(
+  query: ReturnType<typeof useHistoryPage>['query'],
+  filters: HistoryFilter,
+  suiteId: string | undefined,
+  hasBack: boolean,
+) {
+  // A suite context from the address is not a filter the reader chose, so it never makes the page look filtered.
+  const filtered = filtersActive(suiteId ? withoutSuite(filters) : filters);
+  const stale = query.isRefetchError && isConnectionFailure(query.error);
+  const current = stale || query.isSuccess ? query.data : undefined;
+  const empty = current?.items.length === 0 && !hasBack && !filtered;
+  return { filtered, stale, current, empty };
+}
+
+function HistoryIntro({
+  scope,
+  controls,
+  current,
+  pending,
+}: {
+  scope: RunScope;
+  controls: HistoryPageProps['controls'];
+  current: RunPage | undefined;
+  pending: boolean;
+}) {
+  return (
+    <div className="history-intro">
+      <HistoryHeader
+        scope={scope}
+        workspaceName={current?.workspaceName}
+        pending={pending}
+        counts={current?.counts}
+        countsUnavailable={current?.countsUnavailable}
+        suiteId={controls.suiteId}
+        suiteName={controls.suiteId ? controls.suites.name(controls.suiteId) : undefined}
+      />
+      <WorkspaceTabs organizationId={scope.organizationId} workspaceId={scope.workspaceId} current="runs" />
+    </div>
+  );
+}
+
+function HistoryResults({
+  scope,
+  state,
+  controls,
+}: {
+  scope: RunScope;
+  state: Pick<ReturnType<typeof useHistoryPage>, 'query' | 'page' | 'selected' | 'toggle'>;
+  controls: {
+    reset(): void;
+    name(suiteId: string): string | undefined;
+    filtered: boolean;
+    stale: boolean;
+    order: 'newest' | 'oldest';
+  };
+}) {
+  const { query, page, selected, toggle } = state;
+  const { reset, name, filtered, stale, order } = controls;
+  return (
+    <QueryState query={query} loading={<HistoryLoading />} retainOnDisconnect>
+      {(data: RunPage) =>
+        data.items.length === 0 && !page.hasBack ? (
+          <HistoryEmpty scope={scope} filtered={filtered} reset={reset} disabled={stale} />
+        ) : (
+          <HistoryRows
+            scope={scope}
+            data={data}
+            selected={selected}
+            toggle={toggle}
+            name={name}
+            filtered={filtered}
+            stale={stale}
+            page={page}
+            order={order}
+          />
+        )
+      }
+    </QueryState>
   );
 }
 
@@ -155,6 +212,7 @@ function HistoryRows({
   toggle,
   name,
   filtered,
+  stale,
   page,
   order,
 }: {
@@ -164,6 +222,7 @@ function HistoryRows({
   toggle(id: string): void;
   name(id: string): string | undefined;
   filtered: boolean;
+  stale: boolean;
   page: ReturnType<typeof usePage>;
   order: 'newest' | 'oldest';
 }) {
@@ -175,18 +234,34 @@ function HistoryRows({
         selected={selected}
         toggle={toggle}
         name={name}
+        stale={stale}
         caption={filtered ? 'Matching runs' : 'Workspace runs'}
       />
       {data.items.length === 0 && <p className="history-cell-note">No more runs.</p>}
       {(page.hasBack || data.nextCursor || data.counts) && (
-        <Pagination page={page} next={data.nextCursor} order={order} label="Run pages" summary={historyRange(data)} />
+        <Pagination
+          disabled={stale}
+          page={page}
+          next={data.nextCursor}
+          order={order}
+          label="Run pages"
+          summary={historyRange(data)}
+        />
       )}
     </>
   );
 }
 
-function HistoryCompare({ scope, selected }: { scope: RunScope; selected: readonly string[] }) {
-  if (selected.length < 2)
+function HistoryCompare({
+  scope,
+  selected,
+  disabled,
+}: {
+  scope: RunScope;
+  selected: readonly string[];
+  disabled: boolean;
+}) {
+  if (disabled || selected.length < 2)
     return (
       <Button variant="primary" disabled>
         Compare
@@ -264,17 +339,16 @@ function useHistoryPage(scope: RunScope, filters: HistoryFilter) {
     queryFn: ({ signal }) => readResult(api.listRuns({ params: scope, query: applied, signal })),
   });
   function refresh() {
-    if (page.cursor) page.reset();
+    if (page.cursor && !query.isRefetchError) page.reset();
     else void query.refetch();
   }
   return { selected, setSelected, toggle, query, page, refresh };
 }
 
-function currentHistoryPage(query: {
-  isError: boolean;
-  data: RunPage | undefined;
-}): Pick<RunPage, 'workspaceName' | 'counts' | 'countsUnavailable'> {
-  return query.isError ? {} : (query.data ?? {});
+const historyClock = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+function formatHistoryTime(updatedAt: number): string {
+  return historyClock.format(updatedAt);
 }
 
 function withoutSuite(filters: HistoryFilter): HistoryFilter {

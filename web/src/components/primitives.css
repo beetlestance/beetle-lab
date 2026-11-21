@@ -514,6 +514,12 @@ ul.tabs {
     var(--shadow-popover);
   animation: rise-in var(--motion-base) var(--ease-out);
 }
+.dialog-dissolve {
+  animation-duration: var(--motion-dissolve);
+}
+.dialog-dissolve > .dialog {
+  animation: none;
+}
 .dialog .field {
   gap: var(--s-6);
 }

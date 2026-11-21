@@ -20,7 +20,7 @@ missing the state or renders it wrongly (note says what; this is a finding, not 
 - [x] session-expired — Session / Expired — session expired while signed in — D
 - [x] session-address-not-allowed — Session / Address not allowed — forbidden origin — D
 - [x] session-cant-reach — Session / Can’t reach Beetle — session read transport failure — D P
-- [x] connection-lost — State / Connection lost — signed in, then API stops answering — D P
+- [x] connection-lost — — Organization from cache when the API stops answering — D P
 - [x] connection-lost-never-loaded — — — nothing loaded yet variant — D
 - [x] upgrade-paused — Upgrade / States — a request refused `upgrade_pending` → paused banner — D
 - [x] upgrade-settings-open — Upgrade / States — `/settings?view=upgrade`, phase open — D

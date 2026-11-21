@@ -142,6 +142,15 @@
   pointer-events: none;
 }
 
+@media (max-width: 760px) {
+  .overview-live .live-stage.is-now .live-stage-track > span::after {
+    width: 16px;
+    height: 16px;
+    transform: none;
+    box-shadow: 0 0 0 2px var(--amber);
+  }
+}
+
 .overview-live .number {
   font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;

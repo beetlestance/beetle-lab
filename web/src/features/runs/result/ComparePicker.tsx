@@ -33,6 +33,7 @@ function ComparePicker({ run, suiteName, onClose }: { run: Run; suiteName: strin
   return (
     <Dialog
       className="result-compare-dialog"
+      dissolve
       title={`Compare run ${shortId(run.id)} with`}
       description={`The run you pick becomes the baseline; ${shortId(run.id)} shows how far it moved.`}
       onClose={onClose}

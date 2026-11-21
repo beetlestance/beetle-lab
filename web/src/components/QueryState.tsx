@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { ApiFailure } from '../app/api.js';
+import { ApiFailure, isConnectionFailure } from '../app/api.js';
 import { Button } from './Button.js';
 import { LoadingState } from './States.js';
 import './primitives.css';
@@ -13,12 +13,15 @@ export function QueryState<T>({
   query,
   children,
   loading,
+  retainOnDisconnect = false,
 }: {
   query: UseQueryResult<T>;
   children: (data: T) => ReactNode;
   loading?: ReactNode | undefined;
+  retainOnDisconnect?: boolean;
 }) {
   if (query.isPending) return loading ?? <LoadingState />;
+  if (retainOnDisconnect && query.isRefetchError && isConnectionFailure(query.error)) return children(query.data);
   if (query.isError)
     return (
       <div role="alert" className="banner banner-danger">

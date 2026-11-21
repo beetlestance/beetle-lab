@@ -1,24 +1,73 @@
-.result-downloads { position: relative; }
-.result-downloads > summary { list-style: none; width: 40px; padding: 0; justify-content: center; }
-.result-downloads > summary::-webkit-details-marker { display: none; }
+.result-downloads {
+  position: relative;
+}
+.result-downloads > summary {
+  list-style: none;
+  width: 40px;
+  padding: 0;
+  justify-content: center;
+}
+.result-downloads > summary::-webkit-details-marker {
+  display: none;
+}
 .result-download-menu {
-  position: absolute; top: calc(100% + 6px); right: 0; z-index: 6;
-  width: 290px; max-width: calc(100vw - 32px); padding: 6px;
-  border-radius: var(--r-lg); background: var(--panel);
-  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-popover);
+  animation: fade-in var(--motion-fast) var(--ease-out);
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 6;
+  width: 290px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    var(--shadow-popover);
 }
-.result-download-menu > a, .result-download-unavailable {
-  display: grid; gap: 4px; padding: 8px 12px; border-radius: var(--r-md);
-  font-size: 14px; line-height: 20px; color: var(--ink); text-decoration: none;
+.result-download-menu > a,
+.result-download-unavailable {
+  display: grid;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+  text-decoration: none;
 }
-.result-download-menu > a:hover, .result-download-menu > a:focus-visible { background: var(--control-hover); }
-.result-download-menu small { font-size: 13px; line-height: 16px; color: var(--mute); }
-.result-download-unavailable, .result-download-note { color: var(--mute); }
-.result-download-menu p { margin: 8px 12px; }
-.result-download-note { font-size: var(--fs-xs); }
+.result-download-menu > a:hover,
+.result-download-menu > a:focus-visible {
+  background: var(--control-hover);
+}
+.result-download-menu small {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--mute);
+}
+.result-download-unavailable,
+.result-download-note {
+  color: var(--mute);
+}
+.result-download-menu p {
+  margin: 8px 12px;
+}
+.result-download-note {
+  font-size: var(--fs-xs);
+}
 @media (max-width: 759px) {
-  .result-head-side { width: 100%; }
-  .result-actions { position: relative; }
-  .result-downloads { position: static; }
-  .result-download-menu { left: 0; right: auto; max-width: 100%; }
+  .result-head-side {
+    width: 100%;
+  }
+  .result-actions {
+    position: relative;
+  }
+  .result-downloads {
+    position: static;
+  }
+  .result-download-menu {
+    left: 0;
+    right: auto;
+    max-width: 100%;
+  }
 }

@@ -54,6 +54,10 @@ context exceeds its search budget, the page still succeeds without `counts`, wit
 is required for totals. Other failures are not suppressed; partial counts are
 never returned. Unpinned broad searches keep their existing explicit refusal.
 
+Runs keeps its last verified rows and counts when a refresh fails at the transport.
+Filters, paging, comparison and pinning resume after a verified refresh. Permission
+refusals hide cached rows.
+
 ## Anchors
 
 | Code | Reviewed |
@@ -63,8 +67,8 @@ never returned. Unpinned broad searches keep their existing explicit refusal.
 | `contracts/src/api/run-list-page.ts` | `dd72ba836665` |
 | `contracts/src/api/client/input.ts` | `c762f1c76820` |
 | `web/src/features/runs/history-range.ts` | `9e5d615fbb81` |
-| `web/src/features/runs/HistoryFilters.tsx` | `4b44664b11a1` |
+| `web/src/features/runs/HistoryFilters.tsx` | `fc6db2179033` |
 | `web/src/features/runs/HistoryHeader.tsx` | `34fa1ea25a54` |
-| `web/src/features/runs/RunHistory.tsx` | `9db9c71c6d42` |
+| `web/src/features/runs/RunHistory.tsx` | `30906a945ba8` |
 | `web/src/app/queries.ts` | `0506a02b2a19` |
-| `web/src/components/Pagination.tsx` | `e750e5cd3deb` |
+| `web/src/components/Pagination.tsx` | `816e526fb3d7` |

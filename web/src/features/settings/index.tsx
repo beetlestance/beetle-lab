@@ -1,8 +1,8 @@
 import { useCallback, useEffect } from 'react';
 import type { ComponentProps } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation, useSearchParams } from 'react-router-dom';
-import type { SettingsScope } from '@beetle/contracts/api';
+import { useSearchParams } from 'react-router-dom';
+import type { SettingsScope, WorkspaceScope } from '@beetle/contracts/api';
 import { QueryState } from '../../components/QueryState.js';
 import { LoadingState } from '../../components/States.js';
 import { SegmentedFilter } from '../../components/SegmentedFilter.js';
@@ -108,9 +108,8 @@ function initialView(search: string): SettingsView {
   return view === 'capacity' || view === 'upgrade' ? view : 'limits';
 }
 
-function SettingsView({ data }: { data: SettingsData }) {
+function useSettingsNavigation(scope: SettingsScope) {
   const [search, updateSearch] = useSearchParams();
-  const name = useScopeName(data.scope);
   const view = initialView(search.toString());
   const setView = (next: SettingsView) => {
     if (next === view) return;
@@ -119,22 +118,46 @@ function SettingsView({ data }: { data: SettingsData }) {
     else params.set('view', next);
     updateSearch(params);
   };
+  const workspace = scope.kind === 'workspace' ? scope : undefined;
+  const requested = search.get('retentionBatch');
+  const batch = workspace && validId(requested ?? undefined) ? requested : null;
+  const selectBatch = (id: string | null) => {
+    const next = new URLSearchParams(search);
+    if (id) next.set('retentionBatch', id);
+    else next.delete('retentionBatch');
+    updateSearch(next, { replace: batch !== null });
+  };
+  return { view, setView, workspace, batch, selectBatch };
+}
+
+function SettingsView({ data }: { data: SettingsData }) {
+  const name = useScopeName(data.scope);
+  const { view, setView, workspace, batch, selectBatch } = useSettingsNavigation(data.scope);
   const form = useSettingsForm(data);
   const installation = 'values' in data ? data : undefined;
-  const capacity = installation && view === 'capacity';
-  const upgrade = !!installation && view === 'upgrade';
-  const inWorkspace = data.scope.kind === 'workspace';
+  const { capacity, upgrade, description } = settingsPresentation(!!installation, view);
   return (
     <section className="content-section settings-page">
-      <header className="settings-header">
-        {inWorkspace ? <h2>Settings</h2> : <h1>Settings</h1>}
-        <p>{upgrade ? upgradeIntro : capacity ? capacityIntro : intro}</p>
-      </header>
-      <ScopeTabs scope={data.scope} />
-      {installation && <ViewSwitch view={view} onChange={setView} />}
-      {upgrade ? <Upgrade /> : <SettingsForm data={data} name={name} capacity={!!capacity} form={form} />}
+      {!batch && (
+        <>
+          <header className="settings-header">
+            {workspace ? <h2>Settings</h2> : <h1>Settings</h1>}
+            <p>{description}</p>
+          </header>
+          <ScopeTabs scope={data.scope} />
+          {installation && <ViewSwitch view={view} onChange={setView} />}
+          {upgrade ? <Upgrade /> : <SettingsForm data={data} name={name} capacity={!!capacity} form={form} />}
+        </>
+      )}
+      {workspace && <WorkspaceRetention scope={workspace} batch={batch} selectBatch={selectBatch} />}
     </section>
   );
+}
+
+function settingsPresentation(installation: boolean, view: SettingsView) {
+  const capacity = installation && view === 'capacity';
+  const upgrade = installation && view === 'upgrade';
+  return { capacity, upgrade, description: upgrade ? upgradeIntro : capacity ? capacityIntro : intro };
 }
 
 function SettingsForm({
@@ -228,22 +251,26 @@ function LimitRows({
   );
 }
 
+function WorkspaceRetention({
+  scope,
+  batch,
+  selectBatch,
+}: {
+  scope: WorkspaceScope;
+  batch: string | null;
+  selectBatch(id: string | null): void;
+}) {
+  return (
+    <>
+      <RetentionControls scope={scope} standalone={{ batch, select: selectBatch }} />
+      {!batch && <RetireWorkspace organizationId={scope.organizationId} workspaceId={scope.workspaceId} />}
+    </>
+  );
+}
+
 function Retention({ data }: { data: SettingsData }) {
-  const location = useLocation();
   const scope = data.scope;
-  const requestedBatch = new URLSearchParams(location.search).get('retentionBatch');
-  const batch = requestedBatch && validId(requestedBatch) ? requestedBatch : undefined;
-  if (scope.kind === 'workspace')
-    return (
-      <>
-        <RetentionControls
-          key={`${scope.organizationId}/${scope.workspaceId}/${batch ?? ''}`}
-          scope={scope}
-          {...(batch ? { initialSnapshotId: batch } : {})}
-        />
-        <RetireWorkspace organizationId={scope.organizationId} workspaceId={scope.workspaceId} />
-      </>
-    );
+  if (scope.kind === 'workspace') return null;
   return (
     <>
       <ParentRetentionControls key={JSON.stringify(scope)} scope={scope} settingsId={data.id} version={data.version} />

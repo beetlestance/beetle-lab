@@ -1,6 +1,7 @@
 import type { Organization } from '@beetle/contracts/api';
 import { useQuery } from '@tanstack/react-query';
 import { readResult, useApi } from '../../app/api.js';
+import { useWorkspaceSnapshot } from '../../app/overview.js';
 import { queryKeys } from '../../app/queries.js';
 import { QueryState } from '../../components/QueryState.js';
 
@@ -20,7 +21,10 @@ export function ActiveWorkspaces({ organization }: { organization: Organization 
             <>
               <ul className="retirement-blockers" aria-label="Active workspaces">
                 {items.map((workspace) => (
-                  <li key={workspace.id}>{workspace.name}</li>
+                  <li key={workspace.id}>
+                    <span>{workspace.name}</span>
+                    <WorkspaceCounts organizationId={organizationId} workspaceId={workspace.id} />
+                  </li>
                 ))}
               </ul>
               {nextCursor && <p>More active workspaces are listed in Workspaces.</p>}
@@ -31,6 +35,20 @@ export function ActiveWorkspaces({ organization }: { organization: Organization 
         }
       </QueryState>
     </div>
+  );
+}
+
+function WorkspaceCounts({ organizationId, workspaceId }: { organizationId: string; workspaceId: string }) {
+  const query = useWorkspaceSnapshot(organizationId, workspaceId);
+  const counts = query.isSuccess ? query.data.counts : undefined;
+  return (
+    <span className="retirement-blocker-counts">
+      {counts
+        ? `${counts.suites.toLocaleString()} ${counts.suites === 1 ? 'suite' : 'suites'}, ${counts.runs.toLocaleString()} ${counts.runs === 1 ? 'run' : 'runs'}`
+        : query.isError
+          ? 'Counts unavailable'
+          : 'Reading counts…'}
+    </span>
   );
 }
 

@@ -182,6 +182,7 @@
   /* Motion; zeroed under prefers-reduced-motion */
   --motion-fast: 120ms;
   --motion-base: 180ms;
+  --motion-dissolve: 220ms;
   --motion-slow: 280ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 
@@ -237,6 +238,7 @@
   :root {
     --motion-fast: 0ms;
     --motion-base: 0ms;
+    --motion-dissolve: 0ms;
     --motion-slow: 0ms;
   }
 }

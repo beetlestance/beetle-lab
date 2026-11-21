@@ -196,7 +196,7 @@ Row and checkbox labels expand colliding source UUIDs, never inventing an ordina
 
 `/` and Workspaces open the remembered or first organization; the header switcher is the only organization list and ends with Create organization. Settings
 offers Installation (Run limits, Shared capacity, Upgrade at `?view=upgrade`) and Organization; a workspace's settings are its own Settings section,
-under the workspace heading and tabs, linking to both levels. Page and tab entry honor reduced motion. A transport/timeout read failure raises one Connection lost banner (cleared by the next success); an `upgrade_pending` refusal raises one Paused for upgrade banner. Docs opens the bundled `/docs/` site as a full
+under the workspace heading and tabs, linking to both levels. A selected workspace retention batch uses its own view at `?retentionBatch=<id>`. Page and tab entry fade in at 220 ms and honor reduced motion. The Connection lost banner identifies transport and timeout failures. Runs retains its last verified page on a failed transport refresh and pauses affected actions until recovery. An `upgrade_pending` refusal raises one Paused for upgrade banner. Docs opens the bundled `/docs/` site as a full
 document navigation. `/reference` remains the standalone generated API viewer.
 
 ## Related
@@ -209,7 +209,7 @@ document navigation. `/reference` remains the standalone generated API viewer.
 
 | Code                                           | Reviewed       |
 | ---------------------------------------------- | -------------- |
-| `web/src/features/runs/HistoryTable.tsx` | `2df690223904` |
+| `web/src/features/runs/HistoryTable.tsx` | `207ab5f796ef` |
 | `web/src/features/runs/result/PinControl.tsx` | `cf04755d6025` |
 | `web/src/features/runs/result/usePin.ts` | `722f5660f124` |
 | `web/src/app/routes.ts` | `c8ac43cb8424` |

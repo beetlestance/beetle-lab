@@ -5,6 +5,10 @@ export class ApiFailure extends Error {
     super(errorMessage(failure));
   }
 }
+export function isConnectionFailure(error: unknown): boolean {
+  return error instanceof ApiFailure && (error.failure.kind === 'transport' || error.failure.kind === 'timeout');
+}
+
 export async function readResult<T>(result: Promise<ApiClientResult<T>>): Promise<T> {
   const reply = await result;
   if (!reply.ok) throw new ApiFailure(reply.error);

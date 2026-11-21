@@ -29,6 +29,7 @@ export function HistoryTable({
   toggle,
   name,
   caption,
+  stale,
 }: {
   scope: RunScope;
   page: RunPage;
@@ -36,6 +37,7 @@ export function HistoryTable({
   toggle(id: string): void;
   name(suiteId: string): string | undefined;
   caption: string;
+  stale: boolean;
 }) {
   const labels = comparisonRunLabels(page.items.map((run) => run.id));
   return (
@@ -52,7 +54,7 @@ export function HistoryTable({
                 className="history-check"
                 aria-label={`Compare run ${labels.get(run.id.toLowerCase())}`}
                 checked={position >= 0}
-                disabled={!terminal(run) || (position < 0 && selected.length >= 4)}
+                disabled={stale || !terminal(run) || (position < 0 && selected.length >= 4)}
                 onChange={() => toggle(run.id)}
               />
             </Td>
@@ -74,7 +76,9 @@ export function HistoryTable({
             </Td>
             <HistorySummaryCells value={page.summaries[index]!} />
             <Td>
-              <PinControl key={run.id} run={run} compact label={labels.get(run.id.toLowerCase())!} />
+              <fieldset className="history-pin-actions" disabled={stale} aria-label="Run pin">
+                <PinControl key={run.id} run={run} compact label={labels.get(run.id.toLowerCase())!} />
+              </fieldset>
             </Td>
           </tr>
         );

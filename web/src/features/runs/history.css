@@ -26,6 +26,17 @@
   align-items: center;
   gap: var(--s-10);
 }
+.history-filters,
+.history-pin-actions {
+  border: 0;
+  margin: 0;
+  min-inline-size: 0;
+  padding: 0;
+}
+.history-stale {
+  margin: 0 0 calc(-1 * var(--s-24));
+  color: var(--mute);
+}
 .history-search {
   flex: 1 1 210px;
   min-width: 0;

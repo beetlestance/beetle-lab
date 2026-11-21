@@ -92,6 +92,7 @@ See [sections 1–4](CASES.md) for status and viewport keys.
 - [x] settings-organization — — — `/organizations/:id/settings` — D
 - [x] settings-organization-manage — Settings / Organization / Manage — newer board — D
 - [x] settings-workspace — Settings / Workspace — D
+- [x] runs-connection-lost — State / Connection lost — Failed refresh preserves cached runs and pauses actions — D
 - [x] settings-workspace-retention-preview — Settings / Workspace / Retention preview — D
 - [x] settings-workspace-retention-progress — Settings / Workspace / Retention progress — D
 - [x] settings-field-states — Settings / Field states — invalid/override/inherited fields — D
