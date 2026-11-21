@@ -31,7 +31,9 @@ deliberate steps: back up, migrate, check, then activate or roll back.
 
 ## Before you start
 
-Let every run, export and upload finish, or cancel them, then stop the services.
+Let every run and export finish, or cancel them, then stop the services. An
+upload that has not finished does not need to: the upgrade keeps it, and you can
+resume it, or delete it, once the new version is running.
 The upgrade checks offline, before it writes anything, that nothing is in
 progress. If something is, it refuses and names each kind of blocker:
 
@@ -43,7 +45,6 @@ upgrade_blocked engine_containers,runs
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `runs`, `executions`, `dispatch_outbox`              | A run has not ended. Start the services, wait for it or cancel it                                         |
 | `exports`                                            | An export has not ended. Wait for it or cancel it                                                         |
-| `input_uploads`                                      | An input upload or input deletion has not finished. Finish or delete the upload, or wait for the deletion |
 | `output_deletions`, `output_sources`, `output_slots` | Run output is still being collected or deleted. Start the services and let it settle                      |
 | `attempt_ownership`, names starting `journal_`       | The agent still holds work. Start the services and let it settle                                          |
 | `engine_containers`, `agent_container`               | A container is still running. Stop the services and wait for engine containers to exit                    |

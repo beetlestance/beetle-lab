@@ -18,6 +18,12 @@ const named = [
   ['output_slots', "SELECT 1 FROM execution_output_slots s WHERE json_extract(s.slot_json,'$.p')!='published' LIMIT 1"],
   ['attempt_ownership', 'SELECT 1 FROM attempts WHERE foundation_owned!=1 AND generation IS NOT NULL LIMIT 1'],
 ] as const;
+/**
+ * Unfinished work that no process owns while the services are stopped. An upgrade carries
+ * it across: the sealed backup copies its rows and bytes, and the backend's startup recovery
+ * resumes or finishes it exactly as after a restart. Cold quiescence still refuses it.
+ */
+const CARRIED_ACROSS_UPGRADE: ReadonlySet<string> = new Set(['input_uploads']);
 /** Oldest metadata schema an offline upgrade accepts (the declared predecessor release). */
 export const METADATA_UPGRADE_SOURCE_VERSION = 29;
 export { METADATA_SCHEMA_VERSION };
@@ -43,13 +49,16 @@ export function inspectColdMetadata(db: DatabaseSync, installationId: string) {
 }
 /**
  * Upgrade preflight: accepts the predecessor or current schema and names every
- * unfinished category instead of stopping at the first. Read-only; never migrates.
+ * unfinished category a process still owns instead of stopping at the first.
+ * Read-only; never migrates.
  */
 export function inspectColdMetadataForUpgrade(db: DatabaseSync, installationId: string) {
   const schema = installationSchema(db, installationId);
   if (!Number.isSafeInteger(schema) || schema < METADATA_UPGRADE_SOURCE_VERSION || schema > METADATA_SCHEMA_VERSION)
     throw new StorageError('unavailable');
-  const blockers = named.filter(([, sql]) => db.prepare(sql).get() !== undefined).map(([name]) => name);
+  const blockers = named
+    .filter(([name, sql]) => !CARRIED_ACROSS_UPGRADE.has(name) && db.prepare(sql).get() !== undefined)
+    .map(([name]) => name);
   return Object.freeze({ schema, installationId, blockers: Object.freeze(blockers) });
 }
 

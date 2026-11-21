@@ -94,7 +94,7 @@ with `docker compose logs setup`.
 
 | Item | What to do |
 | --- | --- |
-| `runs`, `exports`, `input_uploads` and other work names | Something is still in progress; see [the blocker table](/guides/upgrade/#before-you-start) |
+| `runs`, `exports` and other work names | Something is still in progress; see [the blocker table](/guides/upgrade/#before-you-start) |
 | `engine_containers`, `agent_container` | Stop the services and wait for engine containers to exit |
 | `not_awaiting_activation` | `activate` needs a finished prepare; run prepare first |
 | `no_pending_upgrade` | There is no upgrade to roll back |

@@ -15,9 +15,12 @@ host command; normal startup never re-pins. Default action is `prepare`.
 - Preconditions, checked offline before anything is written: both startup leases (a serving
   owner is `conflict`); the configured daemon; no live engine container or agent container
   (created-but-not-started is allowed); metadata schema 29 to current and Journal schema 26 to
-  current, with no nonterminal runs, exports, executions, dispatch outbox rows, input uploads,
+  current, with no nonterminal runs, exports, executions, dispatch outbox rows, output
   deletions, output sources or slots, attempt ownership, Journal reservations, admission
-  queue, attempts, delivery or staging. Each blocker is named:
+  queue, attempts, delivery or staging. Unfinished input uploads, publications and deletions
+  are not blockers: no process owns them while the services are stopped, so the sealed copy
+  carries their rows and bytes, and the backend's startup recovery resumes or finishes them
+  as after a restart. A migration that changes `input_blobs` converts such rows. Each blocker is named:
   `upgrade_blocked engine_containers,runs`. A pending [origin change](origin-change.md) is
   `upgrade_blocked origin_change`; the selector's `origin` field is carried unchanged. The request keeps the installation's baseline settings
   and policy ([decision 031](../../decisions/031-installed-defaults.md)). Nothing else may differ from it except the
@@ -56,7 +59,7 @@ host command; normal startup never re-pins. Default action is `prepare`.
 
 Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgrade-fence.test.ts`,
 `app/test/application/installation-status.test.ts`,
-`app/test/storage/upgrade-schema029.test.ts`.
+`app/test/storage/upgrade-schema029.test.ts`, `app/test/storage/upgrade-carried-inputs.test.ts`.
 
 ## Related
 
@@ -67,8 +70,8 @@ Tests: `tools/install/test/upgrade-operation.test.ts`, `app/test/bootstrap/upgra
 
 | Code | Reviewed |
 | --- | --- |
-| `tools/install/upgrade/` | `38551fa22bcd` |
+| `tools/install/upgrade/` | `3841500b3847` |
 | `tools/install/src/selection.ts` | `9567b14e41c3` |
 | `app/src/bootstrap/upgrade-fence.ts` | `1c42b48f2278` |
 | `agent/src/journal/cold-inspection/` | `5a89d6d464a1` |
-| `app/src/adapters/outbound/sqlite/cold-inspection/` | `9cb07aa057fd` |
+| `app/src/adapters/outbound/sqlite/cold-inspection/` | `a17c6c4b650a` |

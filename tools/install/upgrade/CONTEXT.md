@@ -5,7 +5,8 @@ One operation per process; services must be stopped. Normal replay never re-pins
 `src/selection.ts` reports `upgrade_required` when only image identities moved.
 
 `apply.ts` prepares: both startup leases (`quiescence.ts`), named offline blockers
-(Docker containers, metadata and Journal cold inspection for predecessor schemas; a pending
+(Docker containers, metadata and Journal cold inspection for predecessor schemas, where
+unfinished input uploads are carried across rather than blocking; a pending
 origin change, `origin_change`, read from `originDirectory`),
 receipt `backing_up`, sealed copy (`backup.ts`), then recorded steps in `steps.ts`:
 one atomic selector commit of new pins plus `upgradeFence`, Journal profile
@@ -21,4 +22,4 @@ only) restores the sealed copy beside the root and swaps it in with two renames.
 The backend reads the fence through `app/src/bootstrap/upgrade-fence.ts`.
 Contract: docs/system/contracts/upgrade.md.
 Focused checks: `tools/install/test/upgrade-operation.test.ts`,
-`app/test/bootstrap/upgrade-fence.test.ts`, `app/test/storage/upgrade-schema029.test.ts`.
+`app/test/bootstrap/upgrade-fence.test.ts`, `app/test/storage/upgrade-schema029.test.ts`, `app/test/storage/upgrade-carried-inputs.test.ts`.
