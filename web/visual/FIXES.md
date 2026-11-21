@@ -24,8 +24,7 @@ slug (`Run result / Failed` → `run-result-failed.png`).
 
 Codex re-exported all 150 Penpot boards and checked the seven prototype flows in Chromium
 against `806200f9`. Its findings are folded into the packages below (P1, P4, P5, P6) and the
-new P7 motion package. The gallery pairs 145 boards with app screenshots. The blocked organization
-deletion still needs a matching capture.
+new P7 motion package. The fresh gallery paired 145 boards with app screenshots.
 
 Live Reconnecting waits for fresh metrics, Cancelling waits for settlement, and restored history
 remains read-only.
@@ -51,7 +50,7 @@ remains read-only.
 - [ ] create-dialogs — New folder, New workspace, New organization: titles, labels, character counter and address derived from the name, as on the boards
 - [ ] workspace-name-taken — name taken is shown inline on the field, as New folder / Name taken does
 - [ ] suite-rename — Rename suite with `patchSuite`, plus Changed elsewhere (Overlay / Rename, Overlay / Rename / Changed elsewhere, Phone / Rename)
-- [ ] delete-organization-blocked — Delete organization can be opened and shows its Blocked state (Overlay / Delete organization / Blocked)
+- [~] delete-organization-blocked — Retirement refusal shows active workspace names from the scoped API and links to Workspaces. Captured in both skins. Per-workspace suite and run counts from the board remain open.
 - [ ] refusal-blockers — refusal dialogs show only "Version or intent conflict"; show what blocks the action as the boards do (Delete workspace / Blocked, Delete folder / Not empty, Retire … / Refused). If the API reply has no blocker detail, list it under Backend and contract
 - [ ] namespace-copy — remaining copy on these dialogs as on the boards
 
@@ -75,9 +74,7 @@ remains read-only.
 - [x] target-resize-reread — the same report stays ready across the phone breakpoint
 - [ ] results-copy — headline and tile copy on Run result states as on the boards
 - [ ] compare-copy — compare headline and rows are more verbose than the board
-- [ ] failed-result-header — Run result / Failed / Run again: the fresh export shows idle Run again
-      beside Export script and Pin. The app adds Refresh run and arranges the actions differently. The
-      committed screenshot covers Starting…. Add a separate idle capture when fixing the header.
+- [x] failed-result-header — Failed desktop results group the status, Run again, Export script and Pin. Compare, Download, Refresh and Delete are in More actions. Idle and Starting… are captured in both skins.
 - [ ] live-download-menu — Live run / Download open: the board's menu is compact and in place; the app's is wider and shows selection details below the action bar
 
 ## P5 inputs-exports

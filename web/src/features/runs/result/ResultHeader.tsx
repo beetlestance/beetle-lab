@@ -39,6 +39,8 @@ export function ResultHeader({
   refresh?: { readonly run: () => void; readonly busy: boolean } | undefined;
 }) {
   const status = displayedStatus(run, readOnly);
+  const badge = <Status tone={status.tone}>{status.label}</Status>;
+  const compactFailed = !phone && !readOnly && run.state === 'finished' && run.outcome === 'failed';
   const refreshButton = refresh && (
     <Button variant="text" size="sm" onClick={refresh.run} disabled={refresh.busy}>
       Refresh run
@@ -56,16 +58,9 @@ export function ResultHeader({
         <h1 className="result-title">{title}</h1>
       </div>
       <div className="result-head-side">
-        <div className="result-row">
-          <Status tone={status.tone}>{status.label}</Status>
-          {!phone && refreshButton}
-          {phone && (refreshButton || deleteButton) && (
-            <MoreActions>
-              {refreshButton}
-              {deleteButton}
-            </MoreActions>
-          )}
-        </div>
+        {!compactFailed && (
+          <ResultStatusRow badge={badge} phone={phone} refreshButton={refreshButton} deleteButton={deleteButton} />
+        )}
         <ResultActions
           run={run}
           readOnly={readOnly}
@@ -73,10 +68,36 @@ export function ResultHeader({
           suiteName={suiteName}
           ordinal={ordinal}
           deleteButton={deleteButton}
+          compact={compactFailed ? { badge, refreshButton } : undefined}
         />
       </div>
       {sentence && <p className="result-sentence">{sentence}</p>}
     </header>
+  );
+}
+
+function ResultStatusRow({
+  badge,
+  phone,
+  refreshButton,
+  deleteButton,
+}: {
+  badge: ReactNode;
+  phone: boolean;
+  refreshButton: ReactNode;
+  deleteButton: ReactNode;
+}) {
+  return (
+    <div className="result-row">
+      {badge}
+      {!phone && refreshButton}
+      {phone && (refreshButton || deleteButton) && (
+        <MoreActions>
+          {refreshButton}
+          {deleteButton}
+        </MoreActions>
+      )}
+    </div>
   );
 }
 
@@ -87,6 +108,7 @@ function ResultActions({
   suiteName,
   ordinal,
   deleteButton,
+  compact,
 }: {
   run: Run;
   readOnly: boolean;
@@ -94,12 +116,14 @@ function ResultActions({
   suiteName: string | undefined;
   ordinal: number | undefined;
   deleteButton: ReactNode;
+  compact: { badge: ReactNode; refreshButton: ReactNode } | undefined;
 }) {
   const sourceActions = [
     <ResultCompare key="compare" run={run} suiteName={suiteName} />,
     <ResultDownloads key="download" run={run} ordinal={ordinal} />,
   ];
   const again = <RunAgain key="again" run={run} phone={phone} />;
+  const directActions = phone ? [...sourceActions, again] : [again, ...sourceActions];
   return (
     <div className="result-actions">
       {readOnly ? (
@@ -109,10 +133,18 @@ function ResultActions({
         </>
       ) : (
         <>
-          {phone ? [...sourceActions, again] : [again, ...sourceActions]}
+          {compact?.badge}
+          {compact ? again : directActions}
           <RunExportAction run={run} label={shortId(run.id)} />
           <PinControl run={run} shortLabel={phone} />
-          {!phone && deleteButton}
+          {compact && (
+            <MoreActions>
+              {sourceActions}
+              {compact.refreshButton}
+              {deleteButton}
+            </MoreActions>
+          )}
+          {!compact && !phone && deleteButton}
         </>
       )}
     </div>

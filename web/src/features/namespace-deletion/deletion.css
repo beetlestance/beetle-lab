@@ -24,3 +24,18 @@
   font-size: var(--fs-sm);
   max-width: 80ch;
 }
+
+.retirement-blockers {
+  margin: 0;
+  padding: var(--s-8) var(--s-16);
+  list-style: none;
+  border-radius: var(--r-md);
+  background: var(--panel);
+}
+.retirement-blockers li {
+  padding-block: var(--s-8);
+  overflow-wrap: anywhere;
+}
+.retirement-blockers li + li {
+  border-block-start: var(--border-width) solid var(--line);
+}

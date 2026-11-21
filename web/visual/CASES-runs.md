@@ -38,7 +38,8 @@ See [sections 1–4](CASES.md) for status and viewport keys.
 
 - [x] run-result — Run result — passed run — D P
 - [x] run-result-failed — Run result / Failed — D
-- [x] run-result-failed-run-again — Run result / Failed / Run again — Run again clicked, start pending ("Starting…") — D
+- [x] run-result-failed-run-again — Run result / Failed / Run again — Idle primary action with secondary actions in More actions — D
+- [x] run-result-failed-run-again-pending — — Start request pending ("Starting…") — D
 - [x] run-result-cancelled — Run result / Cancelled — D
 - [x] run-result-out-of-memory — Run result / Out of memory — D
 - [x] run-result-output-full — Run result / Output full — D

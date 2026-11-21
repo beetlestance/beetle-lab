@@ -117,6 +117,7 @@ export const STORAGE_ERROR_CODES = Object.freeze([
   'protected_dependency',
   'pin_limit',
   'run_active',
+  'organization_has_active_workspaces',
   'run_pinned',
   'cleanup_in_progress',
   'folder_name_conflict',

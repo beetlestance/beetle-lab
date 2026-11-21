@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { routes } from '../../app/routes.js';
 import { errorMessage, unknownOutcome } from '../../app/api.js';
 import { Banner } from '../../components/Banner.js';
-import { Button } from '../../components/Button.js';
+import { Button, buttonClass } from '../../components/Button.js';
 import { Dialog } from '../../components/Dialog.js';
 import { TextInput } from '../../components/Fields.js';
 import type { DeletionState, Target } from './useDeletion.js';
 import { useDeletion } from './useDeletion.js';
+import { ActiveWorkspaces } from './ActiveWorkspaces.js';
 
 export type Mode = 'delete' | 'retire';
 
@@ -42,7 +45,7 @@ function copyFor(target: Target, mode: Mode): Copy {
       body: `${name} disappears from the organization menu and search, and its address becomes free to reuse. Retire its workspaces first; an organization with active workspaces is refused. Its history stays on disk and still counts toward storage. You cannot undo this.`,
       cancel: 'Cancel',
       action: 'Retire organization',
-      refused: `${name} still has active workspaces`,
+      refused: `${name} couldn’t be retired`,
     };
   if (target.kind === 'organization')
     return {
@@ -50,7 +53,7 @@ function copyFor(target: Target, mode: Mode): Copy {
       body: `${name} leaves every list and its address becomes free to reuse. Delete its workspaces first; an organization with active workspaces is refused. Its history stays on disk and still counts toward storage.`,
       cancel: 'Not now',
       action: `Delete ${name}`,
-      refused: `${name} still has active workspaces`,
+      refused: `${name} couldn’t be deleted`,
     };
   return {
     title: `Delete ${name}?`,
@@ -81,6 +84,25 @@ export function ConfirmDeletion({
   const { state } = deletion;
   const copy = copyFor(target, mode);
   const unknown = state.phase === 'failed' && unknownOutcome(state.failure);
+  if (target.kind === 'organization' && blockedByActiveWorkspaces(state))
+    return (
+      <Dialog
+        title={`${target.entity.name} still has active workspaces`}
+        role="alertdialog"
+        description="Retire the active workspaces before retiring this organization. Retired workspaces do not block retirement."
+        onClose={onClose}
+        actions={
+          <>
+            <Link className={buttonClass()} to={routes.organizationWorkspaces(target.entity.id)} onClick={onClose}>
+              View workspaces
+            </Link>
+            <Button onClick={onClose}>Close</Button>
+          </>
+        }
+      >
+        <ActiveWorkspaces organization={target.entity} />
+      </Dialog>
+    );
   if (state.phase === 'failed' && !unknown)
     return (
       <Dialog
@@ -118,6 +140,12 @@ export function ConfirmDeletion({
       )}
     </Dialog>
   );
+}
+
+function blockedByActiveWorkspaces(state: DeletionState): boolean {
+  if (state.phase !== 'failed') return false;
+  const protocol = state.failure.protocol;
+  return protocol?.code === 'conflict' && protocol.reason === 'active';
 }
 
 function Actions({

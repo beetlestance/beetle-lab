@@ -113,9 +113,22 @@ test('run-result-failed-run-again', async ({ page, api }) => {
   const c = buildCase({ variant: 'failed' });
   installResult(api, c).on('createRun', 'pending');
   await open(page, c);
-  await page.getByRole('button', { name: 'Run again' }).click();
-  await page.getByText('Starting…').first().waitFor();
+  const header = page.locator('.result-head');
+  const again = header.getByRole('button', { name: 'Run again' });
+  await expect(again).toBeEnabled();
+  await expect(header.getByRole('button', { name: 'Refresh run' })).toBeHidden();
   await capture(page, 'run-result-failed-run-again-desktop', { viewportOnly: true });
+
+  const more = header.getByText('More actions', { exact: true });
+  await more.click();
+  for (const name of ['Compare', 'Download', 'Refresh run', 'Delete run…']) {
+    await expect(header.getByRole('button', { name, exact: true })).toBeVisible();
+  }
+  await page.keyboard.press('Escape');
+  await expect(more).toBeFocused();
+  await again.click();
+  await expect(header.getByRole('button', { name: 'Starting…' })).toBeDisabled();
+  await capture(page, 'run-result-failed-run-again-pending-desktop', { viewportOnly: true });
 });
 
 test('export-run-preparing', async ({ page, api }) => {

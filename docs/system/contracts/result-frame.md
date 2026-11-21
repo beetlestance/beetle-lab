@@ -38,7 +38,9 @@ Phone summary leads with average rate, p95 estimate, failure ratio and total
 requests from one accepted source. Other measurements stay in expandable details;
 partial-coverage warnings remain visible. Legacy/pending history keeps four explicit
 unknown figures, never invented zeros. Desktop summary stays unchanged.
-On desktop, Run again leads the result actions. Phone titles use 34 px tokens,
+On desktop, Run again leads the result actions. Failed results group it with status, export
+and pin. Compare, Download, Refresh and Delete remain available under More actions.
+Phone titles use 34 px tokens,
 and Compare and Download precede Run again and Pin. Export script… sits before Pin.
 Refresh and permitted deletion remain reachable under More actions. Phone context
 uses a stored finish time when present. The compact whole-run chart shows three
@@ -103,10 +105,10 @@ unknowns. These measurements leave whole-run totals and the stop instant unknown
 | --- | --- |
 | `web/src/features/runs/result/headline.ts` | `8e01d1114a29` |
 | `web/src/features/runs/result/SectionNav.tsx` | `df2ddd83ae5c` |
-| `web/src/features/runs/result/ResultHeader.tsx` | `e2372b950b86` |
+| `web/src/features/runs/result/ResultHeader.tsx` | `3dc8f2170c71` |
 | `web/src/features/runs/result/RunNote.tsx` | `77d15ea26068` |
 | `web/src/features/runs/result/PhoneDisclosure.tsx` | `476db0bf7a25` |
-| `web/src/features/runs/result/phone.css` | `ad8d1f8fbea4` |
+| `web/src/features/runs/result/phone.css` | `f760b964db68` |
 | `web/src/features/runs/result/ReportTabs.tsx` | `835b8f06014a` |
 | `web/src/features/runs/result/EndpointTable.tsx` | `992cc7cfab59` |
 | `web/src/features/runs/result/overview.css` | `5d868a563f67` |

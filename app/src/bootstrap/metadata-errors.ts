@@ -19,6 +19,7 @@ const codes = {
   protected_dependency: 'protected_dependency',
   pin_limit: 'conflict',
   run_active: 'conflict',
+  organization_has_active_workspaces: 'conflict',
   run_pinned: 'protected_dependency',
   cleanup_in_progress: 'conflict',
   folder_name_conflict: 'conflict',
@@ -29,6 +30,7 @@ const codes = {
 const reasons = {
   pin_limit: 'pin_limit',
   run_active: 'active',
+  organization_has_active_workspaces: 'active',
   run_pinned: 'pinned',
   cleanup_in_progress: 'cleanup_in_progress',
 } as const satisfies Partial<Record<ErrorCode, NonNullable<ApiError['reason']>>>;

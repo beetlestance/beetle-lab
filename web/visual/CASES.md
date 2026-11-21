@@ -73,9 +73,8 @@ missing the state or renders it wrongly (note says what; this is a finding, not 
 - [x] retire-workspace — Retire workspace — D
 - [x] retire-workspace-refused — Retire workspace / Refused — D
 - [x] phone-retire-workspace — Phone / Retire workspace — P
-- [!] delete-organization-blocked — Overlay / Delete organization / Blocked — unreachable: org delete mode is never opened; not captured — D
 - [x] retire-organization — Retire organization — newer board — D
-- [x] retire-organization-refused — Retire organization / Refused — D
+- [x] retire-organization-refused — Overlay / Delete organization / Blocked + Retire organization / Refused — Active workspace names from the scoped API — D
 - [x] new-folder — Overlay / New folder — D
 - [x] new-folder-name-taken — Overlay / New folder / Name taken — D
 - [x] new-folder-too-deep — Overlay / New folder / Too deep — D

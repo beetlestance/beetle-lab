@@ -20,7 +20,7 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 
 | Target | Rule |
 | --- | --- |
-| Organisation | Refused while any workspace is active. No workspace: removed. Only retired workspaces: retired, like a workspace, and its slug freed |
+| Organisation | Refused with `conflict` and reason `active` while any workspace is active. No workspace: removed. Only retired workspaces: retired, like a workspace, and its slug freed |
 | Folder (non-root) | Empty only: no child, suite or input; root folder refuses |
 | Workspace | Retired: hidden but retained with name, root, settings, history, receipts, pins and paid storage |
 
@@ -61,6 +61,6 @@ Owned by `app/src/adapters/outbound/sqlite/namespace-deletion` and `workspace-re
 | Code | Reviewed |
 | --- | --- |
 | `app/src/adapters/outbound/sqlite/namespace-deletion/` | `61ec0e63ba1e` |
-| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `bf734e210895` |
+| `app/src/adapters/outbound/sqlite/workspace-retirement/` | `0a11a3bd6aef` |
 | `app/src/adapters/inbound/http/workspace-visibility.ts` | `89d870a75696` |
 | `app/src/adapters/outbound/sqlite/retired-reclaim/` | `4b228eace1b2` |

@@ -2,6 +2,7 @@ import {expect, it} from 'vitest';
 import {workspaceFixture} from './workspace-retirement-fixture.js';
 import {command, digest, requestId, uuid} from './fixture.js';
 import {prepareNamespaceDeletion} from '../../src/application/namespace-deletion/index.js';
+import {classifyMetadataError, explainMetadataError} from '../../src/bootstrap/metadata-errors.js';
 import {markHistorical} from '../../src/adapters/outbound/sqlite/historical.js';
 const installation = {kind: 'installation'} as const;
 const organizationScope = {kind: 'organization', organizationId: uuid(1)} as const;
@@ -14,7 +15,15 @@ function retiredFixture() {
 }
 it('refuses while any workspace is active, then retires and keeps rows, settings and the canonical slug', () => {
  const f = workspaceFixture(); try {
-  expect(() => f.store.execute({kind: 'deleteNamespace', command: organizationDeletion()})).toThrow('conflict');
+  let refusal: unknown;
+  try {
+   f.store.execute({kind: 'deleteNamespace', command: organizationDeletion()});
+  } catch (error) {
+   refusal = error;
+  }
+  expect(refusal).toMatchObject({code: 'organization_has_active_workspaces'});
+  expect(classifyMetadataError(refusal)).toBe('conflict');
+  expect(explainMetadataError(refusal)).toBe('active');
   f.store.execute({kind: 'deleteNamespace', command: f.deletion()});
   const intent = organizationDeletion(); const receipt = f.store.execute({kind: 'deleteNamespace', command: intent});
   expect(receipt).toMatchObject({id: uuid(1), state: 'tombstoned', version: 2});

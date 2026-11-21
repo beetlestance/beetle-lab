@@ -12,8 +12,8 @@ Read-only/restored state comes from useSessionAccess, never a new session read.
   figures use a ready overview or indexed fallback, plus native SLOs/pinned limits.
   Ready nulls never borrow index figures; discovery triggers never become SLO failures.
 - ResultHeader: title, status, Refresh run, Run again with the saved run settings,
-  Pin and Delete. On phones, More actions holds Refresh and Delete. ResultContext
-  reads namespace names only; suite, revision, engine and times use accepted records. Read-only
+  Pin and Delete. On phones, More actions holds Refresh and Delete. For failed desktop
+  results, it holds Compare, Download, Refresh and Delete. ResultContext reads namespace names only. Read-only
   sessions hide writes; Refresh run and published downloads remain available.
 - ResultDownloads: metadata only on open, at most two pages/128 files, one
   manifest. Native UUID links only; errors hide links. Script opens its saved revision.

@@ -41,5 +41,5 @@ export function requireRetirableOrganization(db: DatabaseSync, id: string): void
     )
     .get(lower(id));
   if (!row || row.retired !== 0) throw new StorageError('not_found');
-  if (row.active !== 0) throw new StorageError('conflict');
+  if (row.active !== 0) throw new StorageError('organization_has_active_workspaces');
 }
